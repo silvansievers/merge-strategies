@@ -130,9 +130,22 @@ HEADERS += pdbs/canonical_pdbs_heuristic.h \
            pdbs/util.h \
            pdbs/zero_one_pdbs_heuristic.h \
 
+BLISSHEADERS = bliss/bignum.hh \
+               bliss/defs.hh \
+               bliss/graph.hh \
+               bliss/heap.hh \
+               bliss/kqueue.hh \
+               bliss/kstack.hh \
+               bliss/orbit.hh \
+               bliss/partition.hh \
+               bliss/timer.hh \
+               bliss/uintseqhash.hh \
+               bliss/utils.hh \
+
 SHELL = /bin/bash
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
+SOURCES += $(BLISSHEADERS:%.hh=%.cc)
 TARGET  = downward
 
 ARGS_PROFILE = --search 'astar(lmcut())' < profile-input.pre
