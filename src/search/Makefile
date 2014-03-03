@@ -92,12 +92,12 @@ HEADERS += merge_and_shrink/abstraction.h \
            merge_and_shrink/shrink_fh.h \
            merge_and_shrink/shrink_random.h \
            merge_and_shrink/shrink_strategy.h \
+           merge_and_shrink/variable_order_finder.h \
 #           merge_and_shrink/symmetries/graph_creator.h \
 #           merge_and_shrink/symmetries/permutation.h \
 #           merge_and_shrink/symmetries/scc.h \
 #           merge_and_shrink/symmetries/symmetries.h \
 #           merge_and_shrink/symmetries/symmetries_variable_order_finder.h \
-           merge_and_shrink/variable_order_finder.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \
