@@ -9,6 +9,7 @@
 #include <vector>
 
 class Labels;
+class Options;
 
 class Symmetries {
     GraphCreator gc;
@@ -27,7 +28,7 @@ class Symmetries {
     const Permutation* get_generator(int ind) const;
     const PermutationsWrapper &get_permutations_wrapper() const { return gc.get_permutations_wrapper(); }
 public:
-    Symmetries(const Labels *labels, bool debug_graph_creator, int version);
+    Symmetries(const Options &options, const Labels *labels);
 
     bool find_and_apply_atomar_symmetries(const std::vector<Abstraction *> &abstractions);
     bool find_to_be_merged_abstractions(const std::vector<Abstraction *> &abstractions,

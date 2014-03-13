@@ -5,6 +5,7 @@
 #include "../abstraction.h"
 
 #include "../../globals.h"
+#include "../../option_parser.h"
 #include "../../timer.h"
 #include "../../utilities.h"
 
@@ -16,8 +17,9 @@
 typedef __gnu_cxx::slist<AbstractStateRef> EquivClass;
 typedef std::vector<EquivClass> EquivRel;
 
-Symmetries::Symmetries(const Labels *labels, bool debug_graph_creator, int version_)
-    : gc(labels, debug_graph_creator), version(version_) {
+Symmetries::Symmetries(const Options &options, const Labels *labels)
+    : gc(labels, options.get<bool>("debug_graph_creator")),
+      version(options.get<int>("version")) {
 }
 
 bool Symmetries::is_atomar_generator(const vector<Abstraction *> abstractions, int gen_index) const {

@@ -3,6 +3,7 @@
 #include "abstraction.h"
 #include "labels.h"
 #include "merge_strategy.h"
+#include "merge_symmetries.h"
 #include "shrink_fh.h"
 #include "shrink_strategy.h"
 
@@ -23,6 +24,9 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
       use_expensive_statistics(opts.get<bool>("expensive_statistics")) {
     labels = new Labels(is_unit_cost_problem(), opts, cost_type);
+    if (merge_strategy->name() == "symmetries") {
+        dynamic_cast<MergeSymmetries *>(merge_strategy)->initialize(labels);
+    }
 }
 
 MergeAndShrinkHeuristic::~MergeAndShrinkHeuristic() {
