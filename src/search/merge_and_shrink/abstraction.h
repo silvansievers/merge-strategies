@@ -3,6 +3,7 @@
 
 #include "shrink_strategy.h"
 
+//#include "symmetries/symmetries.h"
 #include "../utilities.h"
 
 #include <ext/slist>
@@ -12,6 +13,7 @@ class EquivalenceRelation;
 class Label;
 class Labels;
 class State;
+class Symmetries;
 
 struct AbstractTransition {
     AbstractStateRef src;
@@ -43,6 +45,7 @@ class Abstraction {
     friend class CompositeAbstraction;
 
     friend class ShrinkStrategy; // for apply() -- TODO: refactor!
+    friend class Symmetries; // for apply() TODO
 
     static const int PRUNED_STATE = -1;
     static const int DISTANCE_UNKNOWN = -2;

@@ -3,15 +3,18 @@
 
 #include "merge_dfp.h"
 
+class Labels;
+
 class MergeSymmetries : public MergeDFP {
 protected:
     virtual void dump_strategy_specific_options() const {}
 public:
-    MergeSymmetries();
+    explicit MergeSymmetries();
     virtual ~MergeSymmetries() {}
 
     virtual bool done() const;
-    virtual std::pair<int, int> get_next(const std::vector<Abstraction *> &all_abstractions);
+    virtual std::pair<int, int> get_next(const Labels *labels,
+                                         const std::vector<Abstraction *> &all_abstractions);
     virtual std::string name() const;
 };
 

@@ -1,9 +1,15 @@
 #include "graph_creator.h"
-#include "../../operator.h"
+
 #include "permutation.h"
+
+#include "../label.h"
+#include "../labels.h"
+
+#include "../../globals.h"
 #include "../../timer.h"
 #include "../../utilities.h"
 
+#include <iostream>
 #include <vector>
 
 using namespace std;
@@ -15,8 +21,9 @@ void add_permutation(void* param, unsigned int, const unsigned int * full_perm) 
 //  cout << "Done adding permutation" << endl;
 }
 
-GraphCreator::GraphCreator(bool debug_) : time_bound(180), generators_bound(1000),
-    debug(debug_), num_identity_generators(0), stop_after_false_generated(10000) {
+GraphCreator::GraphCreator(const Labels *labels_, bool debug_)
+    : labels(labels_), debug(debug_), num_identity_generators(0) {
+    /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
 GraphCreator::~GraphCreator() {
@@ -43,11 +50,11 @@ void GraphCreator::add_generator(const unsigned int *full_perm) {
     } else {
         delete perm;
         ++num_identity_generators;
-        if (num_identity_generators > stop_after_false_generated) {
-            cout << endl << "Problems with generating symmetry group! Too many false generators." << endl;
-            cout<<"Number of generators: 0"<<endl;
-            exit_with(EXIT_CRITICAL_ERROR);
-        }
+//        if (num_identity_generators > stop_after_false_generated) {
+//            cout << endl << "Problems with generating symmetry group! Too many false generators." << endl;
+//            cout<<"Number of generators: 0"<<endl;
+//            exit_with(EXIT_CRITICAL_ERROR);
+//        }
     }
 }
 
@@ -62,8 +69,8 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
 //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
     graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
 
-    graph->set_time_bound(time_bound);
-    graph->set_generators_bound(generators_bound);
+//    graph->set_time_bound(time_bound);
+//    graph->set_generators_bound(generators_bound);
 
     bliss::Stats stats1;
 
@@ -157,29 +164,31 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     }
 
     // Now we add vertices for operators
-    for (int op_no = 0; op_no < g_operators.size(); op_no++){
+    int num_labels = labels->get_size();
+    for (int label_no = 0; label_no < num_labels; ++label_no){
 //      int label_op_by_cost = 3 * g_operators[op_no].get_cost();
         // Changed to one node per transition - two colors per operator
-        unsigned int label_op_by_cost = 2 * g_operators[op_no].get_cost();
+        const Label *label = labels->get_label_by_index(label_no);
+        unsigned int label_cost = 2 * label->get_cost(); // was label_op_by_cost
 
         // For each operator we have one label node
-        int label_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + node_color_added_val);
+        int label_idx = g->add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 //      cout << "Added label vertex: " << label_idx << " with color " << LABEL_VERTEX + label_op_by_cost <<" for operator " << op_no << endl;
 
         if (debug) {
-            cout << "    node" << label_idx << " [shape=circle, label=op_no" << op_no << "_" << g_operators[op_no].get_name() << "];" << endl;
+            cout << "    node" << label_idx << " [shape=circle, label=label_no" << label_no /*<< "_" << g_operators[label_no].get_name()*/ << "];" << endl;
         }
 
         for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
             if (abstractions[abs_ind] == 0)  //In case the abstraction is empty
                 continue;
 
-            const std::vector<AbstractTransition>& transitions = abstractions[abs_ind]->get_transitions_for_op(op_no);
+            const std::vector<AbstractTransition>& transitions = abstractions[abs_ind]->get_transitions_for_label(label_no);
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const AbstractTransition &trans = transitions[i];
 
                 // For each abstract transition we have a pair of nodes - pre and eff, both connected to their label node
-                int pre_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + 1 + node_color_added_val);
+                int pre_idx = g->add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
 
 //              cout << "Added pre vertex: " << pre_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 1 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
 //                int eff_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + 2);

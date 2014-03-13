@@ -13,7 +13,8 @@ bool MergeSymmetries::done() const {
     return MergeDFP::done();
 }
 
-pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeSymmetries::get_next(const Labels *,
+                                         const vector<Abstraction *> &all_abstractions) {
     return make_pair(all_abstractions.size(), 0);
 }
 

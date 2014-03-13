@@ -1,13 +1,16 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRIES_H
 #define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRIES_H
 
-#include "../abstraction.h"
 #include "graph_creator.h"
+
+#include "../abstraction.h"
+
 #include <set>
 #include <vector>
 
+class Labels;
+
 class Symmetries {
-    bool first_shrink;
     GraphCreator gc;
     int version;
 
@@ -24,7 +27,7 @@ class Symmetries {
     const Permutation* get_generator(int ind) const;
     const PermutationsWrapper &get_permutations_wrapper() const { return gc.get_permutations_wrapper(); }
 public:
-    Symmetries(bool debug_graph_creator, int version);
+    Symmetries(const Labels *labels, bool debug_graph_creator, int version);
 
     bool find_and_apply_atomar_symmetries(const std::vector<Abstraction *> &abstractions);
     bool find_to_be_merged_abstractions(const std::vector<Abstraction *> &abstractions,
@@ -33,4 +36,4 @@ public:
     int get_num_generators() const { return gc.get_generators().size(); }
 };
 
-#endif // MERGE_AND_SHRINK_SYMMETRIES_SYMMETRIES_H
+#endif

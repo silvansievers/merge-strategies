@@ -1,9 +1,12 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 #define MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 
-#include "../../bliss/graph.hh"
-#include "../abstraction.h"
 #include "permutation.h"
+
+#include "../abstraction.h"
+#include "../../bliss/graph.hh"
+
+class Labels;
 
 enum color_t {
     ABSTRACTION_VERTEX,
@@ -20,11 +23,12 @@ void add_permutation(void*, unsigned int, const unsigned int *);
  */
 
 class GraphCreator {
-    int time_bound;
-    int generators_bound;
+    const Labels *labels;
+    //int time_bound;
+    //int generators_bound;
     bool debug; //generate dot-readable output
     int num_identity_generators;
-    int stop_after_false_generated;
+    //int stop_after_false_generated;
 
     std::vector<const Permutation*> generators; // the generators for the automorphism
     PermutationsWrapper permutations_wrapper;
@@ -33,7 +37,7 @@ class GraphCreator {
 
     void delete_generators();
 public:
-    GraphCreator(bool debug);
+    GraphCreator(const Labels *labels, bool debug);
     ~GraphCreator();
 
     // method used by add_permutation

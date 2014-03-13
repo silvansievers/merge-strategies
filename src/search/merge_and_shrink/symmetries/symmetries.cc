@@ -1,7 +1,8 @@
 #include "symmetries.h"
 
-#include "../abstraction.h"
 #include "scc.h"
+
+#include "../abstraction.h"
 
 #include "../../globals.h"
 #include "../../timer.h"
@@ -11,13 +12,12 @@
 #include <iostream>
 #include <limits>
 
-// TODO: copied from shrink_strategy.h
-// TODO: rename! conflicts with class.
-typedef __gnu_cxx::slist<AbstractStateRef> EquivalenceClass;
-typedef std::vector<EquivalenceClass> EquivalenceRelation;
+// TODO: copied and renamed from shrink_strategy.h
+typedef __gnu_cxx::slist<AbstractStateRef> EquivClass;
+typedef std::vector<EquivClass> EquivRel;
 
-Symmetries::Symmetries(bool debug_graph_creator, int version_)
-    : first_shrink(true), gc(debug_graph_creator), version(version_) {
+Symmetries::Symmetries(const Labels *labels, bool debug_graph_creator, int version_)
+    : gc(labels, debug_graph_creator), version(version_) {
 }
 
 bool Symmetries::is_atomar_generator(const vector<Abstraction *> abstractions, int gen_index) const {
@@ -41,7 +41,7 @@ bool Symmetries::is_atomar_generator(const vector<Abstraction *> abstractions, i
         if (index == to_index)
             continue;
         if (affected_abs.insert(abs_index).second) {
-            cout << "abstraction " << abstractions[abs_index]->name() << " non-trivially affected" << endl;
+            cout << "abstraction " << abstractions[abs_index]->description() << " non-trivially affected" << endl;
             if (affected_abs.size() > 1) {
                 return false;
             }
@@ -208,7 +208,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                 }
             }
             affected_abs.insert(index);
-            cout << "abstraction " << abstractions[index]->name() << " mapped to " << abstractions[to_index]->name() << endl;
+            cout << "abstraction " << abstractions[index]->description() << " mapped to " << abstractions[to_index]->description() << endl;
             graph[index].push_back(to_index);
         }
         if (find_atomar_symmetry && !atomar_symmetry) {
@@ -227,7 +227,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             if (index == to_index)
                 continue;
             if (affected_abs.insert(abs_index).second) {
-                cout << "abstraction " << abstractions[abs_index]->name() << " non-trivially affected" << endl;
+                cout << "abstraction " << abstractions[abs_index]->description() << " non-trivially affected" << endl;
                 if (atomar_symmetry && affected_abs.size() > 1) {
                     // more than one abstraction is affected
                     atomar_symmetry = false;
@@ -295,7 +295,7 @@ void Symmetries::apply_symmetry(const vector<Abstraction *> &abstractions, int g
     // TODO: check if we really need this complex (at least it seems to be complex)
     // method of generating equivalence classes in the case of only applying one generator
     // Generate final result. Going over the result, putting the nodes to their respective places.
-    vector<EquivalenceRelation> equivalence_relations(abstractions.size(), EquivalenceRelation());
+    vector<EquivRel> equivalence_relations(abstractions.size(), EquivRel());
     for (size_t i = 0; i < abstractions.size(); ++i) {
         if (abstractions[i] == 0)  //In case the abstraction is empty
             continue;
@@ -379,7 +379,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions, con
     // TODO: check if we really need this complex (at least it seems to be complex)
     // method of generating equivalence classes in the case of only applying one generator
     // Generate final result. Going over the result, putting the nodes to their respective places.
-    vector<EquivalenceRelation> equivalence_relations(abstractions.size(), EquivalenceRelation());
+    vector<EquivRel> equivalence_relations(abstractions.size(), EquivRel());
     for (size_t i = 0; i < abstractions.size(); ++i) {
         if (abstractions[i] == 0)  //In case the abstraction is empty
             continue;
