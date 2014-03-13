@@ -11,8 +11,8 @@ class NonLinearMergeStrategy : public MergeStrategy {
     };
     NonLinearMergeStrategyType non_linear_merge_strategy_type;
     int remaining_merges;
-
-    void dump_strategy_specific_options() const;
+protected:
+    virtual void dump_strategy_specific_options() const;
 public:
     explicit NonLinearMergeStrategy(const Options &opts);
     virtual ~NonLinearMergeStrategy() {}

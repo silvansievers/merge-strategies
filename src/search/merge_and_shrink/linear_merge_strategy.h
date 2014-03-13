@@ -10,7 +10,7 @@ class Options;
 class LinearMergeStrategy : public MergeStrategy {
     VariableOrderFinder order;
     int first_index;
-
+protected:
     void dump_strategy_specific_options() const;
 public:
     explicit LinearMergeStrategy(const Options &opts);
