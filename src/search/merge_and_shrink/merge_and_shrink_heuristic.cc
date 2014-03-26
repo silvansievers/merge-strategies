@@ -24,9 +24,6 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
       use_expensive_statistics(opts.get<bool>("expensive_statistics")) {
     labels = new Labels(is_unit_cost_problem(), opts, cost_type);
-    if (merge_strategy->name() == "symmetries") {
-        dynamic_cast<MergeSymmetries *>(merge_strategy)->initialize(labels);
-    }
 }
 
 MergeAndShrinkHeuristic::~MergeAndShrinkHeuristic() {

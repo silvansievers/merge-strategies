@@ -1,9 +1,9 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_PERMUTATION_H
 #define MERGE_AND_SHRINK_SYMMETRIES_PERMUTATION_H
 
-#include "../shrink_strategy.h" // for AbstractStateRef
+typedef int AbstractStateRef; // TODO: duplicated from shrink_strategy.h
 
-#include <utility>
+//#include <utility>
 #include <vector>
 
 struct PermutationsWrapper {

@@ -7,10 +7,11 @@
 
 class Labels;
 class Options;
+class Symmetries;
 
 class MergeSymmetries : public MergeDFP {
     const Options &options;
-    class Symmetries *symmetries;
+    Symmetries *symmetries;
     std::set<int> abs_to_merge;
     /* this is the index at which the composite abstraction we aim to
        construct by merging all indices in abs_to_merge is stored in

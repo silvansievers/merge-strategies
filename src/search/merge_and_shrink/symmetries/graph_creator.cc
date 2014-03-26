@@ -1,16 +1,12 @@
 #include "graph_creator.h"
 
-#include "permutation.h"
-
-#include "../label.h"
-#include "../labels.h"
+#include "../abstraction.h"
 
 #include "../../globals.h"
 #include "../../timer.h"
 #include "../../utilities.h"
 
 #include <iostream>
-#include <vector>
 
 using namespace std;
 
@@ -21,8 +17,8 @@ void add_permutation(void* param, unsigned int, const unsigned int * full_perm) 
 //  cout << "Done adding permutation" << endl;
 }
 
-GraphCreator::GraphCreator(const Labels *labels_, bool debug_)
-    : labels(labels_), debug(debug_), num_identity_generators(0) {
+GraphCreator::GraphCreator(bool debug_)
+    : debug(debug_), num_identity_generators(0) {
     /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
@@ -142,9 +138,16 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     // TODO: Validate that this is what we want here - no connection between actions (probably not!).
     permutations_wrapper.length = num_of_nodes;
 
+    // We need an arbitrary valid abstraction to get access to the number of
+    // labels and their costs (we do not have access to the labels object).
+    const Abstraction *some_abs = 0;
+
     for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
         if (abstractions[abs_ind] == 0)  //In case the abstraction is empty
             continue;
+        if (!some_abs)
+            some_abs = abstractions[abs_ind];
+
         int abs_states = abstractions[abs_ind]->size();
 
         // Now add abs states for each abstraction
@@ -164,12 +167,12 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     }
 
     // Now we add vertices for operators
-    int num_labels = labels->get_size();
+    int num_labels = some_abs->get_num_labels();
+    // TODO: we probably should skip reduced labels
     for (int label_no = 0; label_no < num_labels; ++label_no){
 //      int label_op_by_cost = 3 * g_operators[op_no].get_cost();
         // Changed to one node per transition - two colors per operator
-        const Label *label = labels->get_label_by_index(label_no);
-        unsigned int label_cost = 2 * label->get_cost(); // was label_op_by_cost
+        unsigned int label_cost = 2 * some_abs->get_label_cost_by_index(label_no); // was label_op_by_cost
 
         // For each operator we have one label node
         int label_idx = g->add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);

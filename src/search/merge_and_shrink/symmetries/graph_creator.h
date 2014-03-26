@@ -3,18 +3,11 @@
 
 #include "permutation.h"
 
-#include "../abstraction.h"
 #include "../../bliss/graph.hh"
 
-class Labels;
+#include <vector>
 
-enum color_t {
-    ABSTRACTION_VERTEX,
-    ABS_STATE_VERTEX,
-    GOAL_VERTEX,
-    LABEL_VERTEX,
-    INITIAL_VERTEX
-};
+class Abstraction;
 
 void add_permutation(void*, unsigned int, const unsigned int *);
 
@@ -23,13 +16,23 @@ void add_permutation(void*, unsigned int, const unsigned int *);
  */
 
 class GraphCreator {
-    const Labels *labels;
+    enum color_t {
+        ABSTRACTION_VERTEX,
+        ABS_STATE_VERTEX,
+        GOAL_VERTEX,
+        LABEL_VERTEX,
+        INITIAL_VERTEX
+    };
+
     //int time_bound;
     //int generators_bound;
     bool debug; //generate dot-readable output
     int num_identity_generators;
     //int stop_after_false_generated;
 
+    // TODO: some thouhths on this: maybe we can use the permutations_wrapper
+    // to actually store all permutations. This would justify the name and
+    // possibly simplify the handling of all permutations.
     std::vector<const Permutation*> generators; // the generators for the automorphism
     PermutationsWrapper permutations_wrapper;
 
@@ -37,7 +40,7 @@ class GraphCreator {
 
     void delete_generators();
 public:
-    GraphCreator(const Labels *labels, bool debug);
+    GraphCreator(bool debug);
     ~GraphCreator();
 
     // method used by add_permutation

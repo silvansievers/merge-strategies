@@ -16,15 +16,22 @@ bool MergeSymmetries::done() const {
 }
 
 pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
-    // TODO: how and when do we invalidate the symmetries object
     if (abs_to_merge.empty()) {
-        bool found_symmetry = symmetries->find_and_apply_atomar_symmetries(all_abstractions);
+        Symmetries symmetries(options);
+        /* Some thoughts: can we combine find and apply symmetries and finde to be merged abstractions
+         * into one method? e.g., here we have something like
+         * while (find to be merged abstractions) {
+         *     if !abs_to_merge.empty()
+         *         break // then we need to actually merge.
+         * }
+         */
+        bool found_symmetry = symmetries.find_and_apply_atomar_symmetries(all_abstractions);
         if (found_symmetry) {
             cout << "Found and applied atomar symmetries." << endl;
         } else {
             cout << "No atomar symmetries found." << endl;
         }
-        found_symmetry = symmetries->find_to_be_merged_abstractions(all_abstractions, abs_to_merge);
+        found_symmetry = symmetries.find_to_be_merged_abstractions(all_abstractions, abs_to_merge);
         if (found_symmetry) {
             assert(abs_to_merge.size() > 1);
         } else {
@@ -51,10 +58,6 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
 string MergeSymmetries::name() const {
     return "symmetries";
-}
-
-void MergeSymmetries::initialize(const Labels *labels) {
-    symmetries = new Symmetries(options, labels);
 }
 
 static MergeStrategy *_parse(OptionParser &parser) {

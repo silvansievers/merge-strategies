@@ -10,8 +10,12 @@
 
 class Labels;
 class Options;
+class Permutation;
+class PermutationsWrapper;
 
 class Symmetries {
+    // TODO: get rid of gc and have the permutations wrapper object instead?
+    // This would store the actual generators as well.
     GraphCreator gc;
     int version;
 
@@ -25,15 +29,18 @@ class Symmetries {
     void apply_symmetries(const std::vector<Abstraction *> &abstractions, const std::vector<int> &indices) const;
 
     void print_generators_stat() const;
+    // TODO: replace by permutations wrapper object
     const Permutation* get_generator(int ind) const;
     const PermutationsWrapper &get_permutations_wrapper() const { return gc.get_permutations_wrapper(); }
 public:
-    Symmetries(const Options &options, const Labels *labels);
+    explicit Symmetries(const Options &options);
+    ~Symmetries() {}
 
     bool find_and_apply_atomar_symmetries(const std::vector<Abstraction *> &abstractions);
     bool find_to_be_merged_abstractions(const std::vector<Abstraction *> &abstractions,
                                         std::set<int> &abs_to_merge);
 
+    // TODO: make private
     int get_num_generators() const { return gc.get_generators().size(); }
 };
 

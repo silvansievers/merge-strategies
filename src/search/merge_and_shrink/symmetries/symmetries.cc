@@ -1,5 +1,6 @@
 #include "symmetries.h"
 
+#include "permutation.h"
 #include "scc.h"
 
 #include "../abstraction.h"
@@ -17,8 +18,8 @@
 typedef __gnu_cxx::slist<AbstractStateRef> EquivClass;
 typedef std::vector<EquivClass> EquivRel;
 
-Symmetries::Symmetries(const Options &options, const Labels *labels)
-    : gc(labels, options.get<bool>("debug_graph_creator")),
+Symmetries::Symmetries(const Options &options)
+    : gc(options.get<bool>("debug_graph_creator")),
       version(options.get<int>("version")) {
 }
 
