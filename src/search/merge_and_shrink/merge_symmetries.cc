@@ -2,13 +2,12 @@
 
 #include "symmetries/symmetries.h"
 
-#include "../option_parser.h"
 #include "../plugin.h"
 
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(), options(options_), symmetries(0), index_of_composite_abs(-1) {
+    : MergeDFP(options_), options(options_), index_of_composite_abs(-1) {
 }
 
 bool MergeSymmetries::done() const {
@@ -64,11 +63,20 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
     parser.add_option<int>("version", "debug application of atomar symmetries", "1");
+
+    // options for MergeDFP
+    vector<string> abstraction_order;
+    abstraction_order.push_back("all_composites_then_atomics");
+    abstraction_order.push_back("emulate_previous");
+    parser.add_enum_option("abstraction_order", abstraction_order,
+                           "order in which dfp considers abstractions "
+                           "(important for tie breaking",
+                           "all_composites_then_atomics");
     Options options = parser.parse();
-    if (!parser.dry_run())
-        return new MergeSymmetries(options);
-    else
+    if (parser.dry_run())
         return 0;
+    else
+        return new MergeSymmetries(options);
 }
 
 static Plugin<MergeStrategy> _plugin("merge_symmetries", _parse);
