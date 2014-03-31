@@ -3825,10 +3825,10 @@ Digraph::nucr_find_first_component(const unsigned int level,
       case shs_fs:
 	if(cell->length < sh_size or
 	   (cell->length == sh_size and cell->first <= sh_first)) {
-	  sh_return = cell;
+      sh_return = cell;
 	  sh_first = cell->first;
 	  sh_size = cell->length;
-	}
+    }
 	break;
       case shs_fl:
 	if(cell->length > sh_size or
@@ -3873,7 +3873,8 @@ Digraph::nucr_find_first_component(const unsigned int level,
 	return 0;
       }
     }
-  assert(sh_return);
+  // TODO: check!
+  //assert(sh_return);
 
   for(unsigned int i = 0; i < comp.size(); i++)
     {
