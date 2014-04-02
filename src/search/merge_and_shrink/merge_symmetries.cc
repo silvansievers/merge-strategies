@@ -44,6 +44,8 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
     int first;
     int second;
+    // TODO: we always return two abstractions from abs_to_merge, which should only
+    // happen the first time after having found a symmetry
     if (index_of_composite_abs == -1) {
         first = *abs_to_merge.begin();
         abs_to_merge.erase(abs_to_merge.begin());

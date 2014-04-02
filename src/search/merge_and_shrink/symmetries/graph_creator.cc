@@ -117,7 +117,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
  //     cout << "Adding abstraction vertex: " << idx << endl;
         assert(abs_ind == idx);
         if (debug) {
-            cout << "    node" << idx << " [shape=circle, label=abs" << abs_ind << "];" << endl;
+            cout << "    node" << idx << " [shape=circle, label=abs" << abs_ind << "]; // color: " << node_color_added_val << endl;
         }
 
         // Setting the indices for connections between abstract states and their abstractions
@@ -170,6 +170,8 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     int num_labels = some_abs->get_num_labels();
     // TODO: we probably should skip reduced labels
     for (int label_no = 0; label_no < num_labels; ++label_no){
+        if (some_abs->is_label_reduced(label_no))
+            continue;
 //      int label_op_by_cost = 3 * g_operators[op_no].get_cost();
         // Changed to one node per transition - two colors per operator
         unsigned int label_cost = 2 * some_abs->get_label_cost_by_index(label_no); // was label_op_by_cost

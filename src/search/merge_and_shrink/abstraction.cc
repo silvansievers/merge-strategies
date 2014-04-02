@@ -95,6 +95,10 @@ const vector<AbstractTransition> &Abstraction::get_transitions_for_label(int lab
     return transitions_by_label[label_no];
 }
 
+bool Abstraction::is_label_reduced(int label_no) const {
+    return labels->is_label_reduced(label_no);
+}
+
 void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
     // abstraction needs to be normalized when considering labels and their
     // transitions
@@ -875,6 +879,8 @@ void Abstraction::apply_abstraction(
         int &new_init_dist = new_init_distances[new_state];
         int &new_goal_dist = new_goal_distances[new_state];
 
+        cout << *pos << endl;
+        cout << init_distances.size() << endl;
         new_init_dist = init_distances[*pos];
         new_goal_dist = goal_distances[*pos];
         new_goal_states[new_state] = goal_states[*pos];
