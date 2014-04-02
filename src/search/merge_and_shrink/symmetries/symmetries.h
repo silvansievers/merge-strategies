@@ -25,6 +25,7 @@ class Symmetries {
                          std::vector<bool> &atomar_symmetries,
                          std::vector<std::vector<int> > &atomar_symmetries_by_affected_abs,
                          bool find_atomar_symmetry);
+    // TODO: there is a lot of duplicated code in here!
     void apply_symmetry(const std::vector<Abstraction *> &abstractions, int generator_index) const;
     void apply_symmetries(const std::vector<Abstraction *> &abstractions, const std::vector<int> &indices) const;
 

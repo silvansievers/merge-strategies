@@ -342,6 +342,8 @@ void Symmetries::apply_symmetry(const vector<Abstraction *> &abstractions, int g
             continue;
         }
 //      cout << "Abstracting from " << abstractions[i]->size() << " to " << equivalence_relations[i].size() << " states!" << endl;
+        if (!abstractions[i]->are_distances_computed())
+            abstractions[i]->compute_distances();
         abstractions[i]->apply_abstraction(equivalence_relations[i]);
     }
     cout << "Done abstracting. [t=" << g_timer << "]" << endl;
@@ -426,6 +428,8 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions, con
             continue;
         }
 //      cout << "Abstracting from " << abstractions[i]->size() << " to " << equivalence_relations[i].size() << " states!" << endl;
+        if (!abstractions[i]->are_distances_computed())
+            abstractions[i]->compute_distances();
         abstractions[i]->apply_abstraction(equivalence_relations[i]);
     }
     cout << "Done abstracting. [t=" << g_timer << "]" << endl;
