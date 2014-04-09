@@ -25,6 +25,7 @@ struct PermutationsWrapper {
     PermutationsWrapper();
     void reset();
     bool initialized() const;
+    // Returns the abstraction variable corresponding to the abstract state
     int get_var_by_index(const unsigned int val) const;
     std::pair<int, AbstractStateRef> get_var_val_by_index(const unsigned int ind) const;
     unsigned int get_index_by_var_val_pair(const int var, const AbstractStateRef val) const;

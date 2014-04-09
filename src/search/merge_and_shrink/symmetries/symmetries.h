@@ -17,14 +17,18 @@ class Symmetries {
     // TODO: get rid of gc and have the permutations wrapper object instead?
     // This would store the actual generators as well.
     GraphCreator gc;
+    // TODO: get rid of version or introduce an implementation for version 0
     int version;
 
-    bool is_atomar_generator(const std::vector<Abstraction *> abstractions, int gen_index) const;
+    bool is_atomic_generator(const std::vector<Abstraction *> abstractions, int gen_index) const;
+    bool find_atomic_symmetries(const std::vector<Abstraction *>& abstractions,
+                                std::vector<std::vector<int> > &atomic_symmetries_by_affected_abs);
+
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
                          std::vector<std::set<int> > &non_trivially_affected_abstractions,
-                         std::vector<bool> &atomar_symmetries,
-                         std::vector<std::vector<int> > &atomar_symmetries_by_affected_abs,
-                         bool find_atomar_symmetry);
+                         std::vector<bool> &atomic_symmetries,
+                         std::vector<std::vector<int> > &atomic_symmetries_by_affected_abs,
+                         bool find_atomic_symmetry);
     // TODO: there is a lot of duplicated code in here!
     void apply_symmetry(const std::vector<Abstraction *> &abstractions, int generator_index) const;
     void apply_symmetries(const std::vector<Abstraction *> &abstractions, const std::vector<int> &indices) const;
@@ -37,7 +41,7 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    bool find_and_apply_atomar_symmetries(const std::vector<Abstraction *> &abstractions);
+    void find_and_apply_atomic_symmetries(const std::vector<Abstraction *> &abstractions);
     bool find_to_be_merged_abstractions(const std::vector<Abstraction *> &abstractions,
                                         std::set<int> &abs_to_merge);
 

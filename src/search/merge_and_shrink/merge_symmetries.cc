@@ -19,26 +19,30 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
     if (abs_to_merge.empty()) {
         Symmetries symmetries(options);
-        /* Some thoughts: can we combine find and apply symmetries and finde to be merged abstractions
-         * into one method? e.g., here we have something like
+        /* Some thoughts: can we combine find and apply symmetries and find
+         * to be merged abstractions into one method? e.g., we could have
+         * something like at this place:
          * while (find to be merged abstractions) {
          *     if !abs_to_merge.empty()
          *         break // then we need to actually merge.
          * }
          */
-        bool found_symmetry = symmetries.find_and_apply_atomar_symmetries(all_abstractions);
+        // We must assert that all abstractions distances have been computed
+        // because of the nasty possible side effect of pruning irrelevant
+        // states. Alternativeley, we could compute distances here, *before*
+        // searching for symmetries.
+        for (size_t i = 0; i < all_abstractions.size(); ++i) {
+            if (all_abstractions[i])
+                assert(all_abstractions[i]->are_distances_computed());
+        }
+        symmetries.find_and_apply_atomic_symmetries(all_abstractions);
         if (started_merging_for_symmetries) {
-            // we were merging abstractions to allow symmetries application
-            // TODO: what if shrinking happens?
-            assert(found_symmetry);
+            // TODO: can we somehow make sure that if we were merging in order
+            // to apply a symmetry and no shrinking happened, then we indeed
+            // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        if (found_symmetry) {
-            cout << "Found and applied atomar symmetries." << endl;
-        } else {
-            cout << "No atomar symmetries found." << endl;
-        }
-        found_symmetry = symmetries.find_to_be_merged_abstractions(all_abstractions, abs_to_merge);
+        bool found_symmetry = symmetries.find_to_be_merged_abstractions(all_abstractions, abs_to_merge);
         if (found_symmetry) {
             assert(abs_to_merge.size() > 1);
         } else {
@@ -73,7 +77,7 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
-    parser.add_option<int>("version", "debug application of atomar symmetries", "1");
+    parser.add_option<int>("version", "apply all atomic symmetries at the same time (1) or separatedly (0)", "1");
 
     Options options = parser.parse();
     if (parser.dry_run())
