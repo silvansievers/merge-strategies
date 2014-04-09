@@ -7,7 +7,7 @@
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(), options(options_), index_of_composite_abs(-1) {
+    : MergeDFP(), options(options_), started_merging_for_symmetries(false) {
 }
 
 bool MergeSymmetries::done() const {
@@ -25,6 +25,12 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
          * }
          */
         bool found_symmetry = symmetries.find_and_apply_atomar_symmetries(all_abstractions);
+        if (started_merging_for_symmetries) {
+            // we were merging abstractions to allow symmetries application
+            // TODO: what if shrinking happens?
+            assert(found_symmetry);
+            started_merging_for_symmetries = false;
+        }
         if (found_symmetry) {
             cout << "Found and applied atomar symmetries." << endl;
         } else {
@@ -43,16 +49,15 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     }
 
     int first;
-    int second;
-    // TODO: we always return two abstractions from abs_to_merge, which should only
-    // happen the first time after having found a symmetry
-    if (index_of_composite_abs == -1) {
+    if (!started_merging_for_symmetries) {
+        started_merging_for_symmetries = true;
         first = *abs_to_merge.begin();
         abs_to_merge.erase(abs_to_merge.begin());
     } else {
-        first = index_of_composite_abs;
+        first = all_abstractions.size() - 1;
     }
-    second = *abs_to_merge.begin();
+    assert(!abs_to_merge.empty());
+    int second = *abs_to_merge.begin();
     abs_to_merge.erase(abs_to_merge.begin());
     return make_pair(first, second);
 }

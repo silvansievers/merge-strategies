@@ -132,6 +132,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
         Abstraction *new_abstraction = new CompositeAbstraction(labels,
                                                                 abstraction,
                                                                 other_abstraction);
+        new_abstraction->compute_distances();
 
         abstraction->release_memory();
         other_abstraction->release_memory();
