@@ -7,7 +7,7 @@
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(options_), options(options_), index_of_composite_abs(-1) {
+    : MergeDFP(), options(options_), index_of_composite_abs(-1) {
 }
 
 bool MergeSymmetries::done() const {
