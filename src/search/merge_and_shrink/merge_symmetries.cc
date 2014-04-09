@@ -66,14 +66,6 @@ static MergeStrategy *_parse(OptionParser &parser) {
                             "from the graph generating methods", "false");
     parser.add_option<int>("version", "debug application of atomar symmetries", "1");
 
-    // options for MergeDFP
-    vector<string> abstraction_order;
-    abstraction_order.push_back("all_composites_then_atomics");
-    abstraction_order.push_back("emulate_previous");
-    parser.add_enum_option("abstraction_order", abstraction_order,
-                           "order in which dfp considers abstractions "
-                           "(important for tie breaking",
-                           "all_composites_then_atomics");
     Options options = parser.parse();
     if (parser.dry_run())
         return 0;
