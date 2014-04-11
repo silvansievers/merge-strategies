@@ -39,6 +39,9 @@ static const char * const version = "0.72";
  */
 void fatal_error(const char* fmt, ...);
 
+// Silvan Sievers
+void _OUT_OF_MEMORY();
+
 
 #if defined(BLISS_DEBUG)
 #define BLISS_CONSISTENCY_CHECKS

@@ -98,6 +98,8 @@ void KQueue<Type>::init(const unsigned int k)
   if(entries)
     free(entries);
   entries = (Type*)malloc((k + 1) * sizeof(Type));
+  // Silvan Sievers
+  if (!entries) _OUT_OF_MEMORY();
   end = entries + k + 1;
   head = entries;
   tail = head;

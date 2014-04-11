@@ -35,7 +35,9 @@
 namespace bliss {
 
 #define _INTERNAL_ERROR() fatal_error("%s:%d: internal error",__FILE__,__LINE__)
-#define _OUT_OF_MEMORY() fatal_error("%s:%d: out of memory",__FILE__,__LINE__)
+// Silvan Sievers
+//#define _OUT_OF_MEMORY() fatal_error("%s:%d: out of memory",__FILE__,__LINE__)
+
 
 /*-------------------------------------------------------------------------
  *

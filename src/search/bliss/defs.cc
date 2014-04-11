@@ -21,6 +21,9 @@
   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+// Silvan Sievers
+#include <iostream>
+#include "../utilities.h"
 
 namespace bliss {
 
@@ -34,6 +37,11 @@ fatal_error(const char* fmt, ...)
   fprintf(stderr, "\nAborting!\n");
   va_end(ap);
   exit(1);
+}
+
+void _OUT_OF_MEMORY() {
+    std::cerr << __FILE__ << ":" << __LINE__ << " out of memory" << std::endl;
+    exit_with(EXIT_OUT_OF_MEMORY);
 }
 
 }
