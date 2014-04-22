@@ -91,6 +91,7 @@ bool Symmetries::find_atomic_symmetries(const vector<Abstraction *>& abstraction
 
     int num_abstractions = get_pw().num_abstractions;
     atomic_symmetries_by_affected_abs.resize(abstractions.size(), vector<int>());
+    bool found_atomic_symmetry = false;
     for (int gen_index = 0; gen_index < get_num_generators(); ++gen_index) {
         for (unsigned int index = 0; index < num_abstractions; ++index) {
             if (abstractions[index]) {
@@ -130,10 +131,11 @@ bool Symmetries::find_atomic_symmetries(const vector<Abstraction *>& abstraction
                 cerr << "found an identity generator (should have been deleted before)" << endl;
                 exit_with(EXIT_CRITICAL_ERROR);
             }
+            found_atomic_symmetry = true;
             atomic_symmetries_by_affected_abs[affected_abs].push_back(gen_index);
         }
     }
-    return true;
+    return found_atomic_symmetry;
 }
 
 bool Symmetries::find_to_be_merged_abstractions(const vector<Abstraction *>& abstractions,
