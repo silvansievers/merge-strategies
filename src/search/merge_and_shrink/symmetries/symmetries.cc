@@ -20,7 +20,10 @@ typedef std::vector<EquivClass> EquivRel;
 
 Symmetries::Symmetries(const Options &options)
     : gc(options.get<bool>("debug_graph_creator")),
-      version(options.get<int>("version")) {
+      version(options.get<int>("version")),
+      atomic_symmetries(0),
+      binary_symmetries(0),
+      other_symmetries(0) {
 }
 
 bool Symmetries::is_atomic_generator(const vector<Abstraction *> abstractions, int gen_index) const {
@@ -56,7 +59,7 @@ bool Symmetries::is_atomic_generator(const vector<Abstraction *> abstractions, i
 bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstractions,
                                                 set<int> &abs_to_merge) {
     assert(abs_to_merge.empty());
-    bool symmetry_found = false;
+    bool non_atomic_symmetry_found = false;
     while (abs_to_merge.empty()) {
         vector<set<int> > non_trivially_affected_abstractions_by_generator;
         // TODO: do we need the return value? both for find_symmetries and
@@ -67,22 +70,41 @@ bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstract
                                               non_trivially_affected_abstractions_by_generator,
                                               atomic_generators);
         if (found_symmetry) {
-            symmetry_found = true;
+            for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
+                switch (non_trivially_affected_abstractions_by_generator[generator].size()) {
+                case 0:
+                    cerr << "Found an identity generator!" << endl;
+                    exit_with(EXIT_CRITICAL_ERROR);
+                    break;
+                case 1:
+                    ++atomic_symmetries;
+                    break;
+                case 2:
+                    ++binary_symmetries;
+                    break;
+                default:
+                    ++other_symmetries;
+                    break;
+                }
+            }
+
             if (atomic_generators.empty()) {
+                non_atomic_symmetry_found = true;
                 int smallest_generator_index = -1;
                 int smallest_generator_size = numeric_limits<int>::max();
-                for (size_t i = 0; i < non_trivially_affected_abstractions_by_generator.size(); ++i) {
+                for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
                     // find the smallest symmetry (with the least number of affected abstractions)
-                    int number_affected_abs = non_trivially_affected_abstractions_by_generator[i].size();
+                    int number_affected_abs = non_trivially_affected_abstractions_by_generator[generator].size();
                     assert(number_affected_abs > 0);
                     if (number_affected_abs < smallest_generator_size) {
                         smallest_generator_size = number_affected_abs;
-                        smallest_generator_index = i;
+                        smallest_generator_index = generator;
                     }
                 }
                 assert(smallest_generator_index != -1);
                 abs_to_merge.insert(non_trivially_affected_abstractions_by_generator[smallest_generator_index].begin(),
                                     non_trivially_affected_abstractions_by_generator[smallest_generator_index].end());
+                break;
             } else {
                 apply_symmetries(abstractions, atomic_generators);
             }
@@ -90,7 +112,7 @@ bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstract
             break;
         }
     }
-    return symmetry_found;
+    return non_atomic_symmetry_found;
 }
 
 bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,

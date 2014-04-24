@@ -11,6 +11,12 @@ class MergeSymmetries : public MergeDFP {
     const Options options;
     std::set<int> abs_to_merge;
     bool started_merging_for_symmetries;
+    // the following serves for statistics output
+    int atomic_symmetries; // symmetries affecting one abstraction
+    int binary_symmetries; // symmetries affecting two abstractions
+    int other_symmetries; // symmetries affecting more than two abstractions
+    bool first_iteration; // first merge-and-shrink iteration
+    void dump_statistics() const;
 protected:
     virtual void dump_strategy_specific_options() const {}
 public:

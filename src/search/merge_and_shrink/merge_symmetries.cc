@@ -7,7 +7,25 @@
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(), options(options_), started_merging_for_symmetries(false) {
+    : MergeDFP(),
+      options(options_),
+      started_merging_for_symmetries(false),
+      atomic_symmetries(0),
+      binary_symmetries(0),
+      other_symmetries(0),
+      first_iteration(true) {
+}
+
+void MergeSymmetries::dump_statistics() const {
+    if (first_iteration) {
+        cout << "First iteration: atomic symmetries: " << atomic_symmetries << endl;
+        cout << "First iteration: binary symmetries: " << binary_symmetries << endl;
+        cout << "First iteration: other symmetries: " << other_symmetries << endl;
+    } else if (remaining_merges == -1) {
+        cout << "Total: atomic symmetries: " << atomic_symmetries << endl;
+        cout << "Total: binary symmetries: " << binary_symmetries << endl;
+        cout << "Total: other symmetries: " << other_symmetries << endl;
+    }
 }
 
 bool MergeSymmetries::done() const {
@@ -45,6 +63,10 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
         bool found_symmetry = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
         if (found_symmetry) {
             assert(abs_to_merge.size() > 1);
+            atomic_symmetries += symmetries.get_atomic_symmetries();
+            binary_symmetries += symmetries.get_binary_symmetries();
+            other_symmetries += symmetries.get_other_symmetries();
+            dump_statistics();
         } else {
             cout << "No symmetries found at all." << endl;
         }
@@ -67,6 +89,9 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     abs_to_merge.erase(abs_to_merge.begin());
 
     --remaining_merges;
+    if (first_iteration) {
+        first_iteration = false;
+    }
     return make_pair(first, second);
 }
 
