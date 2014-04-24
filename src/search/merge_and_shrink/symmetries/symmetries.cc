@@ -20,12 +20,12 @@ typedef std::vector<EquivClass> EquivRel;
 
 Symmetries::Symmetries(const Options &options)
     : gc(options.get<bool>("debug_graph_creator")),
-      version(options.get<int>("version")),
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0) {
 }
 
+/*
 bool Symmetries::is_atomic_generator(const vector<Abstraction *> abstractions, int gen_index) const {
     unsigned int num_abstractions = get_pw().num_abstractions;
     // Check if an abstraction is not mapped to itself
@@ -54,7 +54,7 @@ bool Symmetries::is_atomic_generator(const vector<Abstraction *> abstractions, i
         }
     }
     return true;
-}
+}*/
 
 bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstractions,
                                                 set<int> &abs_to_merge) {
@@ -188,6 +188,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
     return true;
 }
 
+/*
 void Symmetries::apply_symmetry(const vector<Abstraction *> &abstractions, int generator_index) const {
     if (get_num_generators() == 0) {
         cerr << "You first have to find symmetries before you can apply one of them!" << endl;
@@ -268,7 +269,7 @@ void Symmetries::apply_symmetry(const vector<Abstraction *> &abstractions, int g
     }
     cout << "Done abstracting. [t=" << g_timer << "]" << endl;
     cout << "==========================================================================================" << endl;
-}
+}*/
 
 void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
                                   const vector<int> &generator_indices) const {

@@ -21,7 +21,7 @@ void MergeSymmetries::dump_statistics() const {
         cout << "First iteration: atomic symmetries: " << atomic_symmetries << endl;
         cout << "First iteration: binary symmetries: " << binary_symmetries << endl;
         cout << "First iteration: other symmetries: " << other_symmetries << endl;
-    } else if (remaining_merges == -1) {
+    } else if (remaining_merges == 1) {
         cout << "Total: atomic symmetries: " << atomic_symmetries << endl;
         cout << "Total: binary symmetries: " << binary_symmetries << endl;
         cout << "Total: other symmetries: " << other_symmetries << endl;
@@ -60,16 +60,24 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
             // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        bool found_symmetry = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
-        if (found_symmetry) {
+        bool found_symmetry_for_merging = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        // TODO: for now, we count the number of generators, i.e. we count the
+        // of the combination of 1000 atomic generators as 1000 applied atomic
+        // symmetries. Maybe we only want to count the number of shrinks due
+        // to symmetries?
+        atomic_symmetries += symmetries.get_atomic_symmetries();
+        binary_symmetries += symmetries.get_binary_symmetries();
+        other_symmetries += symmetries.get_other_symmetries();
+        if (found_symmetry_for_merging) {
             assert(abs_to_merge.size() > 1);
-            atomic_symmetries += symmetries.get_atomic_symmetries();
-            binary_symmetries += symmetries.get_binary_symmetries();
-            other_symmetries += symmetries.get_other_symmetries();
-            dump_statistics();
         } else {
-            cout << "No symmetries found at all." << endl;
+            cout << "No symmetries for merging found." << endl;
         }
+    }
+
+    dump_statistics();
+    if (first_iteration) {
+        first_iteration = false;
     }
 
     if (abs_to_merge.empty()) {
@@ -89,9 +97,6 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     abs_to_merge.erase(abs_to_merge.begin());
 
     --remaining_merges;
-    if (first_iteration) {
-        first_iteration = false;
-    }
     return make_pair(first, second);
 }
 
@@ -102,7 +107,6 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
-    parser.add_option<int>("version", "apply all atomic symmetries at the same time (1) or separatedly (0)", "1");
 
     Options options = parser.parse();
     if (parser.dry_run())

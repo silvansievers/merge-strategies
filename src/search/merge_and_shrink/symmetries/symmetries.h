@@ -17,24 +17,19 @@ class Symmetries {
     // TODO: get rid of gc and have the permutations wrapper object instead?
     // This would store the actual generators as well.
     GraphCreator gc;
-    // TODO: get rid of version or introduce an implementation for version 0
-    int version;
 
     // the following serves for statistics output
     int atomic_symmetries; // symmetries affecting one abstraction
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
 
-    bool is_atomic_generator(const std::vector<Abstraction *> abstractions, int gen_index) const;
-    bool find_atomic_symmetries(const std::vector<Abstraction *>& abstractions,
-                                std::vector<std::vector<int> > &atomic_symmetries_by_affected_abs);
-
+    //bool is_atomic_generator(const std::vector<Abstraction *> abstractions, int gen_index) const;
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
                          std::vector<std::set<int> > &affected_abstractions_by_generator,
                          std::vector<int> &atomic_generators);
     // TODO: there is a lot of duplicated code in here!
-    void apply_symmetry(const std::vector<Abstraction *> &abstractions,
-                        int generator_index) const;
+    //void apply_symmetry(const std::vector<Abstraction *> &abstractions,
+    //                    int generator_index) const;
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 
