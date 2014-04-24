@@ -25,7 +25,8 @@ class Symmetries {
                                 std::vector<std::vector<int> > &atomic_symmetries_by_affected_abs);
 
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
-                         std::vector<std::set<int> > &affected_abstractions_by_generator);
+                         std::vector<std::set<int> > &affected_abstractions_by_generator,
+                         std::vector<int> &atomic_generators);
     // TODO: there is a lot of duplicated code in here!
     void apply_symmetry(const std::vector<Abstraction *> &abstractions,
                         int generator_index) const;

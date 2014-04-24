@@ -35,7 +35,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
             if (all_abstractions[i])
                 assert(all_abstractions[i]->are_distances_computed());
         }
-        symmetries.find_and_apply_atomic_symmetries(all_abstractions);
+        //symmetries.find_and_apply_atomic_symmetries(all_abstractions);
         if (started_merging_for_symmetries) {
             // TODO: can we somehow make sure that if we were merging in order
             // to apply a symmetry and no shrinking happened, then we indeed
