@@ -42,7 +42,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
             // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        bool found_symmetry = symmetries.find_to_be_merged_abstractions(all_abstractions, abs_to_merge);
+        bool found_symmetry = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
         if (found_symmetry) {
             assert(abs_to_merge.size() > 1);
         } else {

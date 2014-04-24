@@ -41,8 +41,7 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    void find_and_apply_atomic_symmetries(const std::vector<Abstraction *> &abstractions);
-    bool find_to_be_merged_abstractions(const std::vector<Abstraction *> &abstractions,
+    bool find_and_apply_symmetries(const std::vector<Abstraction *> &abstractions,
                                         std::set<int> &abs_to_merge);
 };
 
