@@ -59,7 +59,8 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
     // Deleting previously computed generators
     delete_generators();
 
-    cout << "Starting initializing symmetries [t=" << g_timer << "]" << endl;
+    Timer timer;
+    cout << "Starting initializing symmetries." << endl;
 
     bliss::Digraph* graph = create_bliss_graph(abstractions, stabilize_abstractions);
 //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
@@ -69,15 +70,24 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
 //    graph->set_generators_bound(generators_bound);
 
     bliss::Stats stats1;
+//    FILE *f = fopen("bliss.log", "w");
+//    FILE *stats_file = fopen("bliss.stats", "w");
+//    graph->set_verbose_file(f);
+//    graph->set_verbose_level(10);
 
     graph->find_automorphisms(stats1,&(add_permutation), this);
-    cout << "Got " << generators.size() << " group generators, time step: [t=" << g_timer << "]" << endl;
+
+//    stats1.print(stats_file);
+//    fclose(stats_file);
+//    fclose(f);
+
+    cout << "Got " << generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
     cout << "Got " << num_identity_generators << " identity generators" << endl;
 
     // Deleting the graph
     delete graph;
 
-    cout << "Done initializing symmetries [t=" << g_timer << "]" << endl;
+    cout << "Done initializing symmetries: " << timer << endl;
 }
 
 bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions, bool stabilize_abstractions) {
