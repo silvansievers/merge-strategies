@@ -51,7 +51,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
         // searching for symmetries.
         for (size_t i = 0; i < all_abstractions.size(); ++i) {
             if (all_abstractions[i])
-                assert(all_abstractions[i]->are_distances_computed());
+                all_abstractions[i]->compute_distances();
         }
         //symmetries.find_and_apply_atomic_symmetries(all_abstractions);
         if (started_merging_for_symmetries) {

@@ -23,6 +23,7 @@ LabelReducer::LabelReducer(const Options &options)
       label_reduction_system_order(LabelReductionSystemOrder(options.get_enum("label_reduction_system_order"))) {
 
     size_t max_no_systems = g_variable_domain.size() * 2 - 1;
+    cout << "reserve: " << max_no_systems << endl;
     system_order.reserve(max_no_systems);
     if (label_reduction_system_order == REGULAR
         || label_reduction_system_order == RANDOM) {
@@ -309,6 +310,7 @@ EquivalenceRelation *LabelReducer::compute_outside_equivalence(int abs_index,
     // create the equivalence relation where all labels are equivalent
     int num_labels = labels.size();
     vector<pair<int, int> > groups_and_labels;
+    cout << "reserve: " << num_labels << endl;
     groups_and_labels.reserve(num_labels);
     for (int label_no = 0; label_no < num_labels; ++label_no) {
         const Label *label = labels[label_no];

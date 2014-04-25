@@ -36,6 +36,7 @@ void ShrinkBucketBased::compute_abstraction(
     bool show_combine_buckets_warning = true;
 
     assert(equiv_relation.empty());
+    cout << "reserve: " << target_size << endl;
     equiv_relation.reserve(target_size);
 
     size_t num_states_to_go = 0;

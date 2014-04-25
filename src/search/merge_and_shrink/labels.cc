@@ -15,6 +15,7 @@ Labels::Labels(bool unit_cost_, const Options &options, OperatorCost cost_type)
     : unit_cost(unit_cost_) {
     label_reducer = new LabelReducer(options);
     if (!g_operators.empty())
+        cout << "reserve: " << g_operators.size() * 2 - 1 << endl;
         labels.reserve(g_operators.size() * 2 - 1);
     for (size_t i = 0; i < g_operators.size(); ++i) {
         labels.push_back(new OperatorLabel(i, get_adjusted_action_cost(g_operators[i], cost_type),

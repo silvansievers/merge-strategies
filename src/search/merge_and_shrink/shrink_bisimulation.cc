@@ -282,6 +282,7 @@ void ShrinkBisimulation::compute_abstraction(
 
     vector<int> state_to_group(num_states);
     vector<Signature> signatures;
+    cout << "reserve: " << num_states + 2 << endl;
     signatures.reserve(num_states + 2);
 
     int num_groups = initialize_groups(abs, state_to_group);

@@ -110,6 +110,7 @@ void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
         compute_distances();
     }
     assert(label_ranks.empty());
+    cout << "reserve: " << transitions_by_label.size() << endl;
     label_ranks.reserve(transitions_by_label.size());
     for (size_t label_no = 0; label_no < transitions_by_label.size(); ++label_no) {
         if (relevant_labels[label_no]) {
@@ -693,6 +694,7 @@ AtomicAbstraction::AtomicAbstraction(Labels *labels, int variable_)
     }
 
     num_states = range;
+    cout << "reserve: " << range << endl;
     lookup_table.reserve(range);
     goal_states.resize(num_states, false);
     for (int value = 0; value < range; value++) {
@@ -765,6 +767,7 @@ CompositeAbstraction::CompositeAbstraction(Labels *labels,
             const vector<AbstractTransition> &bucket2 =
                 abs2->transitions_by_label[label_no];
             if (relevant1 && relevant2) {
+                cout << "reserve: " << bucket1.size() * bucket2.size() << endl;
                 transitions.reserve(bucket1.size() * bucket2.size());
                 for (int i = 0; i < bucket1.size(); i++) {
                     int src1 = bucket1[i].src;
@@ -779,6 +782,7 @@ CompositeAbstraction::CompositeAbstraction(Labels *labels,
                 }
             } else if (relevant1) {
                 assert(!relevant2);
+                cout << "reserve: " << bucket1.size() * abs2->size() << endl;
                 transitions.reserve(bucket1.size() * abs2->size());
                 for (int i = 0; i < bucket1.size(); i++) {
                     int src1 = bucket1[i].src;
@@ -791,6 +795,7 @@ CompositeAbstraction::CompositeAbstraction(Labels *labels,
                 }
             } else if (relevant2) {
                 assert(!relevant1);
+                cout << "reserve: " << bucket2.size() * abs1->size() << endl;
                 transitions.reserve(bucket2.size() * abs1->size());
                 for (int s1 = 0; s1 < abs1->size(); s1++) {
                     for (int i = 0; i < bucket2.size(); i++) {
@@ -939,6 +944,7 @@ void Abstraction::apply_abstraction(
             transitions_by_label[label_no];
         vector<AbstractTransition> &new_transitions =
             new_transitions_by_label[label_no];
+        cout << "reserve: " << transitions.size() << endl;
         new_transitions.reserve(transitions.size());
         for (int i = 0; i < transitions.size(); i++) {
             const AbstractTransition &trans = transitions[i];
