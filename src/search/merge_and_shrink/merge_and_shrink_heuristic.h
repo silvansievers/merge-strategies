@@ -13,6 +13,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     ShrinkStrategy *const shrink_strategy;
     const bool use_expensive_statistics;
     Labels *labels;
+
     Abstraction *final_abstraction;
     Abstraction *build_abstraction();
 

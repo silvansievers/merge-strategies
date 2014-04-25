@@ -3,7 +3,6 @@
 
 #include "shrink_strategy.h"
 
-//#include "symmetries/symmetries.h"
 #include "../utilities.h"
 
 #include <ext/slist>
