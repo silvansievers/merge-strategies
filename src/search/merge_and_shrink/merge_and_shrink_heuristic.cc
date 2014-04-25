@@ -60,7 +60,8 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
 
     // vector of all abstractions. entries with 0 have been merged.
     vector<Abstraction *> all_abstractions;
-    cout << "reserve: " << g_variable_domain.size() * 2 - 1 << endl;
+    if (g_variable_domain.size() * 2 - 1 > all_abstractions.max_size())
+        exit_with(EXIT_OUT_OF_MEMORY);
     all_abstractions.reserve(g_variable_domain.size() * 2 - 1);
     Abstraction::build_atomic_abstractions(all_abstractions, labels);
 

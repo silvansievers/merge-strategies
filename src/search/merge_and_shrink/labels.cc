@@ -14,9 +14,11 @@ using namespace std;
 Labels::Labels(bool unit_cost_, const Options &options, OperatorCost cost_type)
     : unit_cost(unit_cost_) {
     label_reducer = new LabelReducer(options);
-    if (!g_operators.empty())
-        cout << "reserve: " << g_operators.size() * 2 - 1 << endl;
+    if (!g_operators.empty()) {
+        if (g_operators.size() * 2 - 1 > labels.max_size())
+            exit_with(EXIT_OUT_OF_MEMORY);
         labels.reserve(g_operators.size() * 2 - 1);
+    }
     for (size_t i = 0; i < g_operators.size(); ++i) {
         labels.push_back(new OperatorLabel(i, get_adjusted_action_cost(g_operators[i], cost_type),
                                            g_operators[i].get_prevail(), g_operators[i].get_pre_post()));
