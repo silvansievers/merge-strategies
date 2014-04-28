@@ -45,14 +45,6 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
          *         break // then we need to actually merge.
          * }
          */
-        // We must assert that all abstractions distances have been computed
-        // because of the nasty possible side effect of pruning irrelevant
-        // states. Alternativeley, we could compute distances here, *before*
-        // searching for symmetries.
-        for (size_t i = 0; i < all_abstractions.size(); ++i) {
-            if (all_abstractions[i])
-                all_abstractions[i]->compute_distances();
-        }
         //symmetries.find_and_apply_atomic_symmetries(all_abstractions);
         if (started_merging_for_symmetries) {
             // TODO: can we somehow make sure that if we were merging in order

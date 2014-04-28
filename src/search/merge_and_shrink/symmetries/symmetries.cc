@@ -118,14 +118,22 @@ bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstract
 bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                                  vector<set<int> > &affected_abstractions_by_generator,
                                  vector<int> &atomic_generators) {
-    /*
-     * Find non abstraction stabilized symmetries for abstractions.
-     * When returning, affected_abstractions_by_generator contains the
-     * abstraction indices that are affected by each generator and
-     * atomic_generators contains the indices of atomic generators.
-     * Returns true if any symmetry is found at all and false otherwise.
-     */
+    // Find non abstraction stabilized symmetries for abstractions.
+    // When returning, affected_abstractions_by_generator contains the
+    // abstraction indices that are affected by each generator and
+    // atomic_generators contains the indices of atomic generators.
+    // Returns true if any symmetry is found at all and false otherwise.
     assert(affected_abstractions_by_generator.empty());
+
+    // We must make sure that all abstractions distances have been computed
+    // because of the nasty possible side effect of pruning irrelevant
+    // states and because the application of an equivalence realtion to an
+    // abstraction requires distances to be computed.
+    for (size_t i = 0; i < abstractions.size(); ++i) {
+        if (abstractions[i])
+            abstractions[i]->compute_distances();
+    }
+
     cout << "Computing generators for non abstraction stabilized symmetries" << endl;
     gc.compute_generators(abstractions, false);
 
