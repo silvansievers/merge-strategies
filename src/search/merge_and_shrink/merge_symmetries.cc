@@ -37,15 +37,6 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
     if (abs_to_merge.empty()) {
         Symmetries symmetries(options);
-        /* Some thoughts: can we combine find and apply symmetries and find
-         * to be merged abstractions into one method? e.g., we could have
-         * something like at this place:
-         * while (find to be merged abstractions) {
-         *     if !abs_to_merge.empty()
-         *         break // then we need to actually merge.
-         * }
-         */
-        //symmetries.find_and_apply_atomic_symmetries(all_abstractions);
         if (started_merging_for_symmetries) {
             // TODO: can we somehow make sure that if we were merging in order
             // to apply a symmetry and no shrinking happened, then we indeed
@@ -54,7 +45,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
         }
         bool found_symmetry_for_merging = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
         // TODO: for now, we count the number of generators, i.e. we count the
-        // of the combination of 1000 atomic generators as 1000 applied atomic
+        // combined application of 1000 atomic generators as 1000 applied atomic
         // symmetries. Maybe we only want to count the number of shrinks due
         // to symmetries?
         atomic_symmetries += symmetries.get_atomic_symmetries();
