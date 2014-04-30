@@ -149,7 +149,7 @@ BLISSHEADERS = bliss/bignum.hh \
 SHELL = /bin/bash
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
-SOURCES += $(BLISSHEADERS:%.hh=%.cc)
+BLISSSOURCES = $(BLISSHEADERS:%.hh=%.cc)
 TARGET  = downward
 
 ARGS_PROFILE = --search 'astar(lmcut())' < profile-input.pre
@@ -189,13 +189,18 @@ OBJECT_SUFFIX_PROFILE = .profile
 TARGET_SUFFIX_PROFILE = -profile
 
 OBJECTS_RELEASE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
+BLISSOBJECTS_RELEASE = $(BLISSSOURCES:%.cc=.obj-bliss/%$(OBJECT_SUFFIX_RELEASE).o)
 TARGET_RELEASE  = $(TARGET)$(TARGET_SUFFIX_RELEASE)
 
 OBJECTS_DEBUG   = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_DEBUG).o)
+BLISSOBJECTS_DEBUG = $(BLISSSOURCES:%.cc=.obj-bliss/%$(OBJECT_SUFFIX_DEBUG).o)
 TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
 TARGET_PROFILE  = $(TARGET)$(TARGET_SUFFIX_PROFILE)
+
+# For the Makefile-depend loop
+#SOURCES += BLISSSOURCES
 
 CC     = g++
 DEPEND = g++ -MM
@@ -332,21 +337,30 @@ all: release debug profile
 
 release: $(TARGET_RELEASE)
 
-$(TARGET_RELEASE): $(OBJECTS_RELEASE)
-	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_RELEASE) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_RELEASE)
+$(TARGET_RELEASE): $(OBJECTS_RELEASE) $(BLISSOBJECTS_RELEASE)
+	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_RELEASE) $(BLISSOBJECTS_RELEASE) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_RELEASE)
 
 $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
 
+## We always compile bliss in debug mode
+$(BLISSOBJECTS_RELEASE): .obj-bliss/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
+
 ## Build rules for the debug target follow.
 
 debug: $(TARGET_DEBUG)
 
-$(TARGET_DEBUG): $(OBJECTS_DEBUG)
-	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
+$(TARGET_DEBUG): $(OBJECTS_DEBUG) $(BLISSOBJECTS_DEBUG)
+	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(BLISSOBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
 
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
+
+$(BLISSOBJECTS_DEBUG): .obj-bliss/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
 
@@ -368,7 +382,7 @@ PROFILE: $(TARGET_PROFILE)
 	gprof $(TARGET_PROFILE) | (cleanup-profile 2> /dev/null || cat) > PROFILE
 
 clean:
-	rm -rf .obj
+	rm -rf .obj .obj-bliss
 	rm -f *~ *.pyc
 	rm -f Makefile.depend gmon.out PROFILE core
 	rm -f sas_plan
@@ -380,7 +394,7 @@ distclean: clean
 ## subdirectory, it will strip the directory part in the output. Hence
 ## the for loop with the sed call.
 
-Makefile.depend: $(SOURCES) $(HEADERS)
+Makefile.depend: $(SOURCES) $(HEADERS) $(BLISSSOURCES) $(BLISSHEADERS)
 	rm -f Makefile.temp
 	for source in $(SOURCES) ; do \
 	    $(DEPEND) $$source > Makefile.temp0; \
@@ -392,6 +406,19 @@ Makefile.depend: $(SOURCES) $(HEADERS)
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
+	rm -f Makefile.temp
+
+	rm -f Makefile.temp
+	for source in $(BLISSSOURCES) ; do \
+	    $(DEPEND) $$source > Makefile.temp0; \
+	    objfile=$${source%%.cc}.o; \
+	    sed -i -e "s@^[^:]*:@$$objfile:@" Makefile.temp0; \
+	    cat Makefile.temp0 >> Makefile.temp; \
+	done
+	rm -f Makefile.temp0 Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
 	rm -f Makefile.temp
 
 ifneq ($(MAKECMDGOALS),clean)
