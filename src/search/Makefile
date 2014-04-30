@@ -96,7 +96,6 @@ HEADERS += merge_and_shrink/symmetries/graph_creator.h \
            merge_and_shrink/symmetries/permutation.h \
            merge_and_shrink/symmetries/scc.h \
            merge_and_shrink/symmetries/symmetries.h \
-#           merge_and_shrink/symmetries/symmetries_variable_order_finder.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \
@@ -146,10 +145,15 @@ BLISSHEADERS = bliss/bignum.hh \
                bliss/uintseqhash.hh \
                bliss/utils.hh \
 
+ALLHEADERS = $(HEADERS)
+ALLHEADERS += $(BLISSHEADERS)
+
 SHELL = /bin/bash
 
 SOURCES = planner.cc $(HEADERS:%.h=%.cc)
 BLISSSOURCES = $(BLISSHEADERS:%.hh=%.cc)
+ALLSOURCES = $(SOURCES)
+ALLSOURCES += $(BLISSSOURCES)
 TARGET  = downward
 
 ARGS_PROFILE = --search 'astar(lmcut())' < profile-input.pre
@@ -183,17 +187,22 @@ endif
 
 OBJECT_SUFFIX_RELEASE = .release
 TARGET_SUFFIX_RELEASE = -release
+OBJECT_SUFFIX_HYBRID_RELEASE = .hybrid.release
+OBJECT_SUFFIX_HYBRID_DEBUG = .hybrid.debug
+TARGET_SUFFIX_HYBRID = -hybrid
 OBJECT_SUFFIX_DEBUG   = .debug
 TARGET_SUFFIX_DEBUG   = -debug
 OBJECT_SUFFIX_PROFILE = .profile
 TARGET_SUFFIX_PROFILE = -profile
 
-OBJECTS_RELEASE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
-BLISSOBJECTS_RELEASE = $(BLISSSOURCES:%.cc=.obj-bliss/%$(OBJECT_SUFFIX_RELEASE).o)
+OBJECTS_RELEASE = $(ALLSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
 TARGET_RELEASE  = $(TARGET)$(TARGET_SUFFIX_RELEASE)
 
-OBJECTS_DEBUG   = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_DEBUG).o)
-BLISSOBJECTS_DEBUG = $(BLISSSOURCES:%.cc=.obj-bliss/%$(OBJECT_SUFFIX_DEBUG).o)
+OBJECTS_HYBRID = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_HYBRID_RELEASE).o)
+BLISSOBJECTS_HYBRID = $(BLISSSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_HYBRID_DEBUG).o)
+TARGET_HYBRID  = $(TARGET)$(TARGET_SUFFIX_HYBRID)
+
+OBJECTS_DEBUG   = $(ALLSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_DEBUG).o)
 TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
@@ -337,15 +346,25 @@ all: release debug profile
 
 release: $(TARGET_RELEASE)
 
-$(TARGET_RELEASE): $(OBJECTS_RELEASE) $(BLISSOBJECTS_RELEASE)
-	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_RELEASE) $(BLISSOBJECTS_RELEASE) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_RELEASE)
+$(TARGET_RELEASE): $(OBJECTS_RELEASE)
+	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_RELEASE) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_RELEASE)
 
 $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
 
-## We always compile bliss in debug mode
-$(BLISSOBJECTS_RELEASE): .obj-bliss/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
+hybrid: $(TARGET_HYBRID)
+
+$(TARGET_HYBRID): $(OBJECTS_HYBRID) $(BLISSOBJECTS_HYBRID)
+	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_HYBRID) $(BLISSOBJECTS_HYBRID) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_HYBRID)
+
+## regular source files compiled in release
+$(OBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_RELEASE).o: %.cc
+	@mkdir -p $$(dirname $@)
+	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
+
+## bliss source files compiled in debug
+$(BLISSOBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
 
@@ -353,18 +372,12 @@ $(BLISSOBJECTS_RELEASE): .obj-bliss/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 
 debug: $(TARGET_DEBUG)
 
-$(TARGET_DEBUG): $(OBJECTS_DEBUG) $(BLISSOBJECTS_DEBUG)
-	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(BLISSOBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
+$(TARGET_DEBUG): $(OBJECTS_DEBUG)
+	$(CC) $(LINKOPT) $(LINKOPT_DEBUG) $(OBJECTS_DEBUG) $(POSTLINKOPT) $(POSTLINKOPT_DEBUG) -o $(TARGET_DEBUG)
 
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
-
-$(BLISSOBJECTS_DEBUG): .obj-bliss/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
-	@mkdir -p $$(dirname $@)
-	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
-
-## Build rules for the profile target follow.
 
 profile: $(TARGET_PROFILE)
 
@@ -382,19 +395,19 @@ PROFILE: $(TARGET_PROFILE)
 	gprof $(TARGET_PROFILE) | (cleanup-profile 2> /dev/null || cat) > PROFILE
 
 clean:
-	rm -rf .obj .obj-bliss
+	rm -rf .obj
 	rm -f *~ *.pyc
 	rm -f Makefile.depend gmon.out PROFILE core
 	rm -f sas_plan
 
 distclean: clean
-	rm -f $(TARGET_RELEASE) $(TARGET_DEBUG) $(TARGET_PROFILE)
+	rm -f $(TARGET_RELEASE) $(TARGET_HYBRID) $(TARGET_DEBUG) $(TARGET_PROFILE)
 
 ## NOTE: If we just call gcc -MM on a source file that lives within a
 ## subdirectory, it will strip the directory part in the output. Hence
 ## the for loop with the sed call.
 
-Makefile.depend: $(SOURCES) $(HEADERS) $(BLISSSOURCES) $(BLISSHEADERS)
+Makefile.depend: $(ALLSOURCES) $(ALLHEADERS)
 	rm -f Makefile.temp
 	for source in $(SOURCES) ; do \
 	    $(DEPEND) $$source > Makefile.temp0; \
@@ -404,21 +417,10 @@ Makefile.depend: $(SOURCES) $(HEADERS) $(BLISSSOURCES) $(BLISSHEADERS)
 	done
 	rm -f Makefile.temp0 Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_HYBRID_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
+	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_HYBRID_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
-	rm -f Makefile.temp
-
-	rm -f Makefile.temp
-	for source in $(BLISSSOURCES) ; do \
-	    $(DEPEND) $$source > Makefile.temp0; \
-	    objfile=$${source%%.cc}.o; \
-	    sed -i -e "s@^[^:]*:@$$objfile:@" Makefile.temp0; \
-	    cat Makefile.temp0 >> Makefile.temp; \
-	done
-	rm -f Makefile.temp0 Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj-bliss/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
 	rm -f Makefile.temp
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -427,4 +429,4 @@ ifneq ($(MAKECMDGOALS),distclean)
 endif
 endif
 
-.PHONY: default all release debug profile clean distclean
+.PHONY: default all release hybrid debug profile clean distclean
