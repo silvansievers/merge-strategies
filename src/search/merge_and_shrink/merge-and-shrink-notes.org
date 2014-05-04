@@ -53,6 +53,8 @@
   about this variable order. One possible idea we could try in the
   future would be to take into account the size of the transition
   systems when deciding what to combine.
+- Abstraction::apply_abstraction_mapping: how can this remain private? Using
+  "friend" for classes that abstract abstractions seems not to be a good way.
 
 * General TODOs for later
 
@@ -112,10 +114,6 @@
 
   where apply label reduction means to determine combinable labels, to combine
   labels and to apply the label mapping in all abstractions (valid state!)
-
-- Main loop: use new indices in all_abstractions (reserve 2*#abs - 1). This
-  also makes sure that we do not choose indices at which we expect an atomic
-  abstraction for example, but find a composite abstraction.
 
 - Abstraction::compute_local_equivalence_relation():
   make computation faster through sorting transitions (O(n log n)) or hashing
