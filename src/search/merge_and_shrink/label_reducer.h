@@ -12,10 +12,9 @@ class Options;
 enum LabelReductionMethod {
     NONE,
     OLD,
-    APPROXIMATIVE,
-    APPROXIMATIVE_WITH_FIXPOINT,
-    EXACT,
-    EXACT_WITH_FIXPOINT
+    ONE_ABSTRACTION,
+    ALL_ABSTRACTIONS,
+    ALL_ABSTRACTIONS_WITH_FIXPOINT
 };
 
 enum FixpointVariableOrder {
@@ -32,15 +31,18 @@ class LabelReducer {
     // old label reduction
     LabelSignature build_label_signature(const Label &label,
         const std::vector<bool> &var_is_used) const;
-    int reduce_old(const std::vector<int> &abs_vars,
-                   std::vector<Label *> &labels) const;
+    // returns true iff at least one new label has been created
+    bool reduce_old(const std::vector<int> &abs_vars,
+                    std::vector<Label *> &labels) const;
 
     // exact label reduction
     EquivalenceRelation *compute_outside_equivalence(int abs_index,
                                                      const std::vector<Abstraction *> &all_abstractions,
                                                      const std::vector<Label *> &labels,
                                                      std::vector<EquivalenceRelation *> &local_equivalence_relations) const;
-    int reduce_exactly(const EquivalenceRelation *relation, std::vector<Label *> &labels) const;
+    // returns true iff at least one new label has been created
+    bool reduce_exactly(const EquivalenceRelation *relation,
+                        std::vector<Label *> &labels) const;
 public:
     explicit LabelReducer(const Options &options);
     ~LabelReducer() {}

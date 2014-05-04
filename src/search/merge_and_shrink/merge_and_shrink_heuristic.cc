@@ -78,8 +78,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
     vector<int> system_order;
     // TODO: reconsider in which order things are done in the main loop
     while (!merge_strategy->done()) {
-        pair<int, int> next_systems;
-        merge_strategy->get_next(all_abstractions, next_systems);
+        pair<int, int> next_systems = merge_strategy->get_next(all_abstractions);
         int system_one = next_systems.first;
         system_order.push_back(system_one);
         Abstraction *abstraction = all_abstractions[system_one];
@@ -171,7 +170,6 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
         cout << system_order[i - 1] << " " << system_order[i] << ", ";
     }
     cout << endl;
-    merge_strategy->print_summary();
     return final_abstraction;
 }
 
@@ -264,11 +262,10 @@ static Heuristic *_parse(OptionParser &parser) {
     vector<string> label_reduction;
     label_reduction.push_back("NONE");
     label_reduction.push_back("OLD");
-    label_reduction.push_back("APPROXIMATIVE");
-    label_reduction.push_back("APPROXIMATIVE_WITH_FIXPOINT");
-    label_reduction.push_back("EXACT");
-    label_reduction.push_back("EXACT_WITH_FIXPOINT");
-    parser.add_enum_option("label_reduction", label_reduction, "label reduction method", "EXACT_WITH_FIXPOINT");
+    label_reduction.push_back("ONE_ABSTRACTION");
+    label_reduction.push_back("ALL_ABSTRACTIONS");
+    label_reduction.push_back("ALL_ABSTRACTIONS_WITH_FIXPOINT");
+    parser.add_enum_option("label_reduction", label_reduction, "label reduction method", "ALL_ABSTRACTIONS_WITH_FIXPOINT");
     vector<string> fixpoint_variable_order;
     fixpoint_variable_order.push_back("REGULAR");
     fixpoint_variable_order.push_back("REVERSE");
