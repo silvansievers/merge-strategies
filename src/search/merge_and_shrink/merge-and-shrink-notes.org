@@ -8,18 +8,24 @@
   label2 have the same transitions, don't store "label1: transition1,
   ...; label2: transition1, ...", but instead store "{label1, label2}:
   transition1, ...".
+
 - Replace all the estimated memory stuff with actual memory
   measurements (or maybe better for now: add actual memory
   measurements)?
+
 - Split the representation of the abstraction function and
   heuristic from the transition systems so that we can throw away the
   transition systems after constructing them?
+
 - After we've started merging, the fixed-point variable order for
   label reduction doesn't really talk about variables any more but
   also about merged abstractions. Take this into account when thinking
   about this variable order. One possible idea we could try in the
   future would be to take into account the size of the transition
   systems when deciding what to combine.
+
+- Add a hybrid bisimulation/greedy bisimulation strategy, inspired from
+  the code used for the IJCAI 2011 paper. See also issue431.
 
 * General TODOs for the "big refactoring"
 
@@ -121,6 +127,11 @@
     bisimulation renames threshold to target and uses its own threshold
     parameter, which has a different meaning.
   - do we need shrink atomics (only for the sake of bisimulations)?
+  - Die Option threshold gibt es nur für shrink_bisimulation:
+    Ah, OK. Das könnte man evtl. später mal ändern, weil das gar nicht so
+    viel mit der Shrink-Strategie zu tun hat und mehr damit, wann und mit
+    welchen Parametern die Shrink-Strategie aufgerufen wird. Aber das ist
+    jetzt erst mal wurscht.
 
 * TODOs for rest of the code:
 
