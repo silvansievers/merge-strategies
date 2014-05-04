@@ -87,12 +87,12 @@ int Abstraction::get_label_cost_by_index(int label_no) const {
     return label->get_cost();
 }
 
-int Abstraction::get_num_labels() const {
-    return labels->get_size();
-}
-
 const vector<AbstractTransition> &Abstraction::get_transitions_for_label(int label_no) const {
     return transitions_by_label[label_no];
+}
+
+int Abstraction::get_num_labels() const {
+    return labels->get_size();
 }
 
 bool Abstraction::is_label_reduced(int label_no) const {
@@ -128,9 +128,20 @@ void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
     }
 }
 
+bool Abstraction::are_distances_computed() const {
+    if (max_h == DISTANCE_UNKNOWN ) {
+        assert(max_f == DISTANCE_UNKNOWN);
+        assert(max_g == DISTANCE_UNKNOWN);
+        assert(init_distances.empty());
+        assert(goal_distances.empty());
+        return false;
+    }
+    return true;
+}
+
 void Abstraction::compute_distances() {
     cout << tag() << flush;
-    if (max_h != DISTANCE_UNKNOWN) {
+    if (are_distances_computed()) {
         cout << "distances already known" << endl;
         return;
     }
@@ -879,8 +890,6 @@ void Abstraction::apply_abstraction(
         int &new_init_dist = new_init_distances[new_state];
         int &new_goal_dist = new_goal_distances[new_state];
 
-        cout << *pos << endl;
-        cout << init_distances.size() << endl;
         new_init_dist = init_distances[*pos];
         new_goal_dist = goal_distances[*pos];
         new_goal_states[new_state] = goal_states[*pos];
@@ -1023,7 +1032,7 @@ void Abstraction::statistics(bool include_expensive_statistics) const {
     cout << "/" << total_transitions() << " arcs, " << memory << " bytes"
          << endl;
     cout << tag();
-    if (max_h == DISTANCE_UNKNOWN) {
+    if (!are_distances_computed()) {
         cout << "distances not computed";
     } else if (is_solvable()) {
         cout << "init h=" << goal_distances[init_state] << ", max f=" << max_f
