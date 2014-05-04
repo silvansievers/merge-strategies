@@ -15,6 +15,8 @@ bool MergeSymmetries::done() const {
 }
 
 pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
+    assert(!done());
+
     if (abs_to_merge.empty()) {
         Symmetries symmetries(options);
         /* Some thoughts: can we combine find and apply symmetries and finde to be merged abstractions
@@ -59,6 +61,8 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     assert(!abs_to_merge.empty());
     int second = *abs_to_merge.begin();
     abs_to_merge.erase(abs_to_merge.begin());
+
+    --remaining_merges;
     return make_pair(first, second);
 }
 
