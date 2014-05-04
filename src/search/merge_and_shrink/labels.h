@@ -1,5 +1,5 @@
-#ifndef MERGE_AND_SHRINK_LABEL_REDUCTION_H
-#define MERGE_AND_SHRINK_LABEL_REDUCTION_H
+#ifndef MERGE_AND_SHRINK_LABELS_H
+#define MERGE_AND_SHRINK_LABELS_H
 
 #include "../operator_cost.h"
 
@@ -7,45 +7,35 @@
 
 class Abstraction;
 class Label;
-
-enum LabelReduction {
-    NONE,
-    OLD,
-    APPROXIMATIVE,
-    APPROXIMATIVE_WITH_FIXPOINT,
-    EXACT,
-    EXACT_WITH_FIXPOINT
-};
-
-enum FixpointVariableOrder {
-    REGULAR,
-    REVERSE,
-    RANDOM
-};
+class LabelReducer;
+class Options;
 
 /*
  The Labels class is basically a container class for the set of all
  labels used by merge-and-shrink abstractions.
  */
 class Labels {
+    const bool unit_cost;
+    const LabelReducer *label_reducer;
+
     std::vector<Label *> labels;
-    LabelReduction label_reduction;
-    FixpointVariableOrder fix_point_variable_order;
-    std::vector<int> variable_order;
 public:
-    Labels(OperatorCost cost_type, LabelReduction label_reduction,
-           FixpointVariableOrder fix_point_variable_order);
+    Labels(bool unit_cost, const Options &options, OperatorCost cost_type);
     ~Labels();
-    int reduce(int abs_index,
-               const std::vector<Abstraction *> &all_abstractions);
+    void reduce(int abs_index,
+                const std::vector<Abstraction *> &all_abstractions);
+    // TODO: consider removing get_label_by_index and forwarding all required
+    // methods of Label and giving access to them by label number.
     const Label *get_label_by_index(int index) const;
-    // TODO: rename and/or add is_leaf method
     bool is_label_reduced(int label_no) const;
     void dump() const;
     void dump_options() const;
 
     int get_size() const {
         return labels.size();
+    }
+    bool is_unit_cost() const {
+        return unit_cost;
     }
 };
 

@@ -6,7 +6,6 @@
 #include "../utilities.h"
 
 #include <ext/slist>
-#include <ext/hash_set>
 #include <vector>
 
 class EquivalenceRelation;
@@ -33,6 +32,10 @@ struct AbstractTransition {
     bool operator<(const AbstractTransition &other) const {
         return src < other.src || (src == other.src && target < other.target);
     }
+
+    bool operator>=(const AbstractTransition &other) const {
+        return !(*this < other);
+    }
 };
 
 class Abstraction {
@@ -44,20 +47,24 @@ class Abstraction {
     static const int PRUNED_STATE = -1;
     static const int DISTANCE_UNKNOWN = -2;
 
-    const bool is_unit_cost;
     // There should only be one instance of Labels at runtime. It is created
     // and managed by MergeAndShrinkHeuristic. All abstraction instances have
-    // a copy of the object required for normalization.
+    // a copy of this object to ease access to the set of labels.
     const Labels *labels;
-    // relevant_labels is updated in normalize() and only contains leaf labels
-    __gnu_cxx::hash_set<const Label *, hash_pointer> relevant_labels;
-    int num_states;
-    std::vector<std::vector<AbstractTransition> > transitions_by_label;
-    // The number of labels that this abstraction is "aware of", i.e. that have
-    // been incorporated into transitions_by_label. Whenever new labels are
-    // generated through label reduction, we do *not* update all abstractions
-    // immediately.
+    /* num_labels equals to the number of labels that this abstraction is
+       "aware of", i.e. that have
+       been incorporated into transitions_by_label. Whenever new labels are
+       generated through label reduction, we do *not* update all abstractions
+       immediately. This equals labels->size() after normalizing. */
     int num_labels;
+    /* transitions_by_label and relevant_labels both have size of (2 * n) - 1
+       if n is the number of operators, because when applying label reduction,
+       at most n - 1 fresh labels can be generated in addition to the n
+       original labels. */
+    std::vector<std::vector<AbstractTransition> > transitions_by_label;
+    std::vector<bool> relevant_labels;
+
+    int num_states;
 
     std::vector<int> init_distances;
     std::vector<int> goal_distances;
@@ -68,7 +75,7 @@ class Abstraction {
     int max_g;
     int max_h;
 
-    bool normalized;
+    bool transitions_sorted_unique;
     bool goal_relevant;
 
     mutable int peak_memory;
@@ -78,6 +85,11 @@ class Abstraction {
     void compute_goal_distances_unit_cost();
     void compute_init_distances_general_cost();
     void compute_goal_distances_general_cost();
+
+    // are_transitions_sorted_unique() is used to determine whether the
+    // transitions of an abstraction are sorted uniquely or not after
+    // construction (composite abstraction) and shrinking (apply_abstraction).
+    bool are_transitions_sorted_unique() const;
 
     void apply_abstraction(std::vector<__gnu_cxx::slist<AbstractStateRef> > &collapsed_groups);
 
@@ -91,7 +103,7 @@ protected:
                                                        AbstractStateRef> &abstraction_mapping) = 0;
     virtual int memory_estimate() const;
 public:
-    Abstraction(bool is_unit_cost, Labels *labels);
+    Abstraction(Labels *labels);
     virtual ~Abstraction();
 
     // Two methods to identify the abstraction in output.
@@ -100,8 +112,8 @@ public:
     virtual std::string description() const = 0;
     std::string tag() const;
 
-    static void build_atomic_abstractions(bool is_unit_cost,
-        std::vector<Abstraction *> &result, Labels *labels);
+    static void build_atomic_abstractions(std::vector<Abstraction *> &result,
+                                          Labels *labels);
     bool is_solvable() const;
 
     int get_cost(const State &state) const;
@@ -120,11 +132,6 @@ public:
     EquivalenceRelation *compute_local_equivalence_relation() const;
     void release_memory();
 
-    // For debugging purposes.
-    // sorted_unique() is currently also used to determine whether an
-    // abstraction is normalized or not after construction (composite abstraction)
-    // and shrinking (apply_abstraction)
-    bool sorted_unique() const;
     void dump_relevant_labels() const;
     void dump() const;
 
@@ -159,8 +166,6 @@ public:
     const std::vector<int> &get_varset() const {
         return varset;
     }
-    // For debugging
-    void trace_solution() const;
 };
 
 class AtomicAbstraction : public Abstraction {
@@ -173,7 +178,7 @@ protected:
     virtual AbstractStateRef get_abstract_state(const State &state) const;
     virtual int memory_estimate() const;
 public:
-    AtomicAbstraction(bool is_unit_cost, Labels *labels, int variable);
+    AtomicAbstraction(Labels *labels, int variable);
     virtual ~AtomicAbstraction();
 };
 
@@ -187,8 +192,7 @@ protected:
     virtual AbstractStateRef get_abstract_state(const State &state) const;
     virtual int memory_estimate() const;
 public:
-    CompositeAbstraction(bool is_unit_cost, Labels *labels,
-        Abstraction *abs1, Abstraction *abs2);
+    CompositeAbstraction(Labels *labels, Abstraction *abs1, Abstraction *abs2);
     virtual ~CompositeAbstraction();
 };
 

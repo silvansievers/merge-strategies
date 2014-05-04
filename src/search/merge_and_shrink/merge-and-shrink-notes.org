@@ -49,8 +49,8 @@
 
 * General TODOs for now
 
-- The attribute that knows if we have a unit-cost problem could live
-  in Labels rather than Abstraction.
+- CompositeAbstraction (constructor): swapping loops does not guarantee
+  sorting of transitions.
 - After we've started merging, the fixed-point variable order for
   label reduction doesn't really talk about variables any more but
   also about merged abstractions. Take this into account when thinking
@@ -72,9 +72,11 @@
 - Replace all the estimated memory stuff with actual memory
   measurements (or maybe better for now: add actual memory
   measurements)?
-- Later: split the representation of the abstraction function and
+- split the representation of the abstraction function and
   heuristic from the transition systems so that we can throw away the
   transition systems after constructing them?
+- Can we get rid of "shrink_atomic" (and the related block before the merge
+  and shrink main loop)?
 
 * General TODOs for the "big refactoring"
 
@@ -120,11 +122,17 @@
   where apply label reduction means to determine combinable labels, to combine
   labels and to apply the label mapping in all abstractions (valid state!)
 
-- Possible bug in apply_abstraction concerning flag must_clear_distances
-
 - Main loop: use new indices in all_abstractions (reserve 2*#abs - 1). This
   also makes sure that we do not choose indices at which we expect an atomic
   abstraction for example, but find a composite abstraction.
+
+- Abstraction::compute_local_equivalence_relation():
+  make computation faster through sorting transitions (O(n log n)) or hashing
+  (O(n)). Sorting is probably better, because we do not need to consider all
+  transitions in the best case.
+
+- Abstraction::apply_abstraction: possibly consider the special case that
+  nothing is actually being shrunk and then leave the method.
 
 * TODOs for rest of the code:
 

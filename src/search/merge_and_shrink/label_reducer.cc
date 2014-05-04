@@ -2,9 +2,11 @@
 
 #include "abstraction.h"
 #include "equivalence_relation.h"
+#include "label.h"
 
 #include "../globals.h"
 #include "../operator.h"
+#include "../option_parser.h"
 #include "../utilities.h"
 
 #include <algorithm>
@@ -15,16 +17,34 @@
 using namespace std;
 using namespace __gnu_cxx;
 
-LabelReducer::LabelReducer(int abs_index,
-                           const vector<Abstraction *> &all_abstractions,
-                           std::vector<Label *> &labels,
-                           const LabelReduction &label_reduction,
-                           const vector<int> &variable_order) {
-    num_reduced_labels = 0;
-    if (label_reduction == NONE) {
-        exit_with(EXIT_INPUT_ERROR);
+LabelReducer::LabelReducer(const Options &options)
+    : label_reduction_method(LabelReductionMethod(options.get_enum("label_reduction"))),
+      fixpoint_variable_order(FixpointVariableOrder(options.get_enum("fixpoint_var_order"))) {
+    if (label_reduction_method == APPROXIMATIVE_WITH_FIXPOINT
+            || label_reduction_method == EXACT_WITH_FIXPOINT) {
+        for (int i = 0; i < g_variable_domain.size(); ++i) {
+            if (fixpoint_variable_order == REGULAR
+                    || fixpoint_variable_order == RANDOM) {
+                variable_order.push_back(i);
+            } else if (fixpoint_variable_order == REVERSE) {
+                variable_order.push_back(g_variable_domain.size() - 1 - i);
+            } else {
+                exit_with(EXIT_CRITICAL_ERROR);
+            }
+        }
+        if (fixpoint_variable_order == RANDOM) {
+            random_shuffle(variable_order.begin(), variable_order.end());
+        }
     }
-    if (label_reduction == OLD) {
+}
+
+void LabelReducer::reduce_labels(int abs_index,
+                                 const vector<Abstraction *> &all_abstractions,
+                                 std::vector<Label *> &labels) const {
+    if (label_reduction_method == NONE) {
+        return;
+    }
+    if (label_reduction_method == OLD) {
         // we need to normalize all abstraction to incorporate possible previous
         // label reductions (normalize cannot deal with several label reductions
         // at the time)
@@ -33,12 +53,12 @@ LabelReducer::LabelReducer(int abs_index,
                 all_abstractions[i]->normalize();
             }
         }
-        num_reduced_labels += reduce_old(all_abstractions[abs_index]->get_varset(), labels);
+        reduce_old(all_abstractions[abs_index]->get_varset(), labels);
         return;
     }
     bool fixpoint = false;
-    if (label_reduction == APPROXIMATIVE_WITH_FIXPOINT
-            || label_reduction == EXACT_WITH_FIXPOINT) {
+    if (label_reduction_method == APPROXIMATIVE_WITH_FIXPOINT
+            || label_reduction_method == EXACT_WITH_FIXPOINT) {
         fixpoint = true;
     }
     int current_abs_index = abs_index;
@@ -56,7 +76,7 @@ LabelReducer::LabelReducer(int abs_index,
         Abstraction *current_abstraction = all_abstractions[current_abs_index];
         if (current_abstraction) {
             int reduced_labels = 0;
-            if (label_reduction == EXACT || label_reduction == EXACT_WITH_FIXPOINT) {
+            if (label_reduction_method == EXACT || label_reduction_method == EXACT_WITH_FIXPOINT) {
                 // Note: we need to normalize the current abstraction in order to
                 // avoid that when normalizing it at some point later, we would
                 // have two label reductions to incorporate.
@@ -66,13 +86,11 @@ LabelReducer::LabelReducer(int abs_index,
                 reduced_labels = reduce_exactly(relation, labels);
                 delete relation;
             } else {
-                exit_with(EXIT_INPUT_ERROR);
+                exit_with(EXIT_CRITICAL_ERROR);
             }
-            num_reduced_labels += reduced_labels;
             if (!fixpoint) {
                 break;
             }
-            assert(fixpoint);
             assert(reduced_labels >= 0);
             if (reduced_labels > 0) {
                 index_of_last_unsuccesful_reduction = -1;
@@ -230,7 +248,7 @@ int LabelReducer::reduce_old(const vector<int> &abs_vars,
         labels.push_back(new_label);
     }
 
-    cout << "Label reduction: "
+    cout << "Old, local label reduction: "
          << num_labels << " labels, "
          << num_labels_after_reduction << " after reduction"
          << endl;
@@ -248,6 +266,10 @@ EquivalenceRelation *LabelReducer::compute_outside_equivalence(int abs_index,
     Abstraction *abstraction = all_abstractions[abs_index];
     assert(abstraction);
     //cout << abstraction->tag() << "compute combinable labels" << endl;
+
+    // we always normalize the "starting" abstraction and delete the cached
+    // local equivalence relation (if exists) because this does not happen
+    // in the refinement loop below.
     abstraction->normalize();
     if (local_equivalence_relations[abs_index]) {
         delete local_equivalence_relations[abs_index];
@@ -255,8 +277,8 @@ EquivalenceRelation *LabelReducer::compute_outside_equivalence(int abs_index,
     }
 
     int num_labels = labels.size();
-    vector<pair<int, int> > labeled_label_nos;
-    labeled_label_nos.reserve(num_labels);
+    vector<pair<int, int> > groups_and_labels;
+    groups_and_labels.reserve(num_labels);
     for (int label_no = 0; label_no < num_labels; ++label_no) {
         const Label *label = labels[label_no];
         assert(label->get_id() == label_no);
@@ -264,10 +286,10 @@ EquivalenceRelation *LabelReducer::compute_outside_equivalence(int abs_index,
             // ignore already reduced labels
             continue;
         }
-        labeled_label_nos.push_back(make_pair(0, label_no));
+        groups_and_labels.push_back(make_pair(0, label_no));
     }
     // start with the relation where all labels are equivalent
-    EquivalenceRelation *relation = EquivalenceRelation::from_labels<int>(num_labels, labeled_label_nos);
+    EquivalenceRelation *relation = EquivalenceRelation::from_grouped_elements<int>(num_labels, groups_and_labels);
     for (size_t i = 0; i < all_abstractions.size(); ++i) {
         Abstraction *abs = all_abstractions[i];
         if (!abs || abs == abstraction) {
@@ -325,4 +347,46 @@ int LabelReducer::reduce_exactly(const EquivalenceRelation *relation, std::vecto
              << endl;
     }
     return number_reduced_labels;
+}
+
+void LabelReducer::dump_options() const {
+    cout << "Label reduction: ";
+    switch (label_reduction_method) {
+    case NONE:
+        cout << "disabled";
+        break;
+    case OLD:
+        cout << "old";
+        break;
+    case APPROXIMATIVE:
+        cout << "approximative";
+        break;
+    case APPROXIMATIVE_WITH_FIXPOINT:
+        cout << "approximative with fixpoint computation";
+        break;
+    case EXACT:
+        cout << "exact";
+        break;
+    case EXACT_WITH_FIXPOINT:
+        cout << "exact with fixpoint computation";
+        break;
+    }
+    cout << endl;
+    if (label_reduction_method == APPROXIMATIVE_WITH_FIXPOINT
+            || label_reduction_method == EXACT_WITH_FIXPOINT) {
+        cout << "Fixpoint variable order: ";
+        switch (fixpoint_variable_order) {
+        case REGULAR:
+            cout << "regular";
+            break;
+        case REVERSE:
+            cout << "reversed";
+            break;
+        case RANDOM:
+            cout << "random";
+            break;
+        }
+        cout << endl;
+        //cout << variable_order << endl;
+    }
 }
