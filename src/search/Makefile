@@ -83,16 +83,16 @@ HEADERS += merge_and_shrink/abstraction.h \
            merge_and_shrink/label.h \
            merge_and_shrink/labels.h \
            merge_and_shrink/label_reducer.h \
-           merge_and_shrink/linear_merge_strategy.h \
            merge_and_shrink/merge_and_shrink_heuristic.h \
+           merge_and_shrink/merge_dfp.h \
+           merge_and_shrink/merge_linear.h \
            merge_and_shrink/merge_strategy.h \
-           merge_and_shrink/non_linear_merge_strategy.h \
+           merge_and_shrink/merge_symmetries.h \
            merge_and_shrink/shrink_bisimulation.h \
            merge_and_shrink/shrink_bucket_based.h \
            merge_and_shrink/shrink_fh.h \
            merge_and_shrink/shrink_random.h \
            merge_and_shrink/shrink_strategy.h \
-           merge_and_shrink/symmetries_merge_strategy.h \
            merge_and_shrink/variable_order_finder.h \
 #           merge_and_shrink/symmetries/graph_creator.h \
 #           merge_and_shrink/symmetries/permutation.h \
