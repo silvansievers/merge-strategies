@@ -740,6 +740,19 @@ CompositeAbstraction::CompositeAbstraction(Labels *labels,
         }
     }
 
+    /* Note:
+       The way we construct the transitions of the new composite abstraction,
+       we cannot easily guarantee that they are sorted. Given that we have
+       transitions a->b and c->d in abstraction one and two, we would like to
+       have (a,c)->(b,d) in the resultin abstraction. There is no obvious way
+       at looking at the transitions of abstractions one and two that would
+       result in the desired ordering. Even in the case that the second
+       abstractions has only self loops, this is not trivial, as we would like
+       to sort transitions to (a,c,b). Only in the case that the first
+       abstraction has only self-lopos, by looking at each transition of the
+       first abstraction and multiplying in out with the transitions of the
+       second transition, we obtain the desired order (a,c,d).
+     */
     int multiplier = abs2->size();
     for (int label_no = 0; label_no < num_labels; label_no++) {
         bool relevant1 = abs1->relevant_labels[label_no];
@@ -779,15 +792,16 @@ CompositeAbstraction::CompositeAbstraction(Labels *labels,
             } else if (relevant2) {
                 assert(!relevant1);
                 transitions.reserve(bucket2.size() * abs1->size());
-                for (int i = 0; i < bucket2.size(); i++) {
-                    int src2 = bucket2[i].src;
-                    int target2 = bucket2[i].target;
-                    for (int s1 = 0; s1 < abs1->size(); s1++) {
+                for (int s1 = 0; s1 < abs1->size(); s1++) {
+                    for (int i = 0; i < bucket2.size(); i++) {
+                        int src2 = bucket2[i].src;
+                        int target2 = bucket2[i].target;
                         int src = s1 * multiplier + src2;
                         int target = s1 * multiplier + target2;
                         transitions.push_back(AbstractTransition(src, target));
                     }
                 }
+                assert(is_sorted_unique(transitions));
             }
         }
     }

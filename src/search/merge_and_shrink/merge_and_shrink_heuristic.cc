@@ -4,7 +4,6 @@
 #include "labels.h"
 #include "merge_strategy.h"
 #include "merge_symmetries.h"
-#include "shrink_fh.h"
 #include "shrink_strategy.h"
 
 #include "../globals.h"
@@ -93,7 +92,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
         // Note: we do not reduce labels several times for the same abstraction
         bool reduced_labels = false;
         if (shrink_strategy->reduce_labels_before_shrinking()) {
-            labels->reduce(system_one, all_abstractions);
+            labels->reduce(make_pair(system_one, system_two), all_abstractions);
             reduced_labels = true;
             abstraction->normalize();
             other_abstraction->normalize();
@@ -120,7 +119,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
         other_abstraction->statistics(use_expensive_statistics);
 
         if (!reduced_labels) {
-            labels->reduce(system_one, all_abstractions);
+            labels->reduce(make_pair(system_one, system_two), all_abstractions);
         }
         abstraction->normalize();
         other_abstraction->normalize();
@@ -160,11 +159,6 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
     final_abstraction->compute_distances();
     if (!final_abstraction->is_solvable())
         return final_abstraction;
-
-    // TODO: get rid of this block (unless it does something meaningful)
-    ShrinkStrategy *def_shrink = ShrinkFH::create_default(final_abstraction->size());
-    def_shrink->shrink(*final_abstraction, final_abstraction->size(), true);
-    final_abstraction->compute_distances();
 
     final_abstraction->statistics(use_expensive_statistics);
     final_abstraction->release_memory();
@@ -267,17 +261,20 @@ static Heuristic *_parse(OptionParser &parser) {
     label_reduction_method.push_back("NONE");
     label_reduction_method.push_back("OLD");
     label_reduction_method.push_back("ONE_ABSTRACTION");
+    label_reduction_method.push_back("TWO_ABSTRACTIONS_LARGER_FIRST");
+    label_reduction_method.push_back("TWO_ABSTRACTIONS_SMALLER_FIRST");
+    label_reduction_method.push_back("TWO_ABSTRACTIONS_GIVEN_ORDER");
     label_reduction_method.push_back("ALL_ABSTRACTIONS");
     label_reduction_method.push_back("ALL_ABSTRACTIONS_WITH_FIXPOINT");
     parser.add_enum_option("label_reduction_method", label_reduction_method,
                            "label reduction method", "ALL_ABSTRACTIONS_WITH_FIXPOINT");
-    vector<string> fixpoint_variable_order;
-    fixpoint_variable_order.push_back("REGULAR");
-    fixpoint_variable_order.push_back("REVERSE");
-    fixpoint_variable_order.push_back("RANDOM");
-    parser.add_enum_option("fixpoint_var_order", fixpoint_variable_order,
+    vector<string> label_reduction_system_order;
+    label_reduction_system_order.push_back("REGULAR");
+    label_reduction_system_order.push_back("REVERSE");
+    label_reduction_system_order.push_back("RANDOM");
+    parser.add_enum_option("label_reduction_system_order", label_reduction_system_order,
                            "order in which variables are considered when using "
-                           "fixpoint iteration for label reduction", "REGULAR");
+                           "fixpoint iteration for label reduction", "RANDOM");
     parser.add_option<bool>("expensive_statistics",
                             "show statistics on \"unique unlabeled edges\" (WARNING: "
                             "these are *very* slow, i.e. too expensive to show by default "
