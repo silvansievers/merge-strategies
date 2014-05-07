@@ -990,7 +990,11 @@ Partition::zplit_cell(Partition::Cell* const cell,
       else
   {
     /* Generic sorting and splitting */
-      assert(shellsort_cell(cell));
+    // Silvan Sievers: changed form assert(shellsort) to the following,
+    // because apparently, shellsort_cell has nasty side effects.
+    bool sorted = shellsort_cell(cell);
+    if (!sorted)
+      fatal_error("assertion failure");
     last_new_cell = split_cell(cell);
   }
     }
