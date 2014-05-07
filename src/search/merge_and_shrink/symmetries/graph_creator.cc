@@ -18,7 +18,7 @@ void add_permutation(void* param, unsigned int, const unsigned int * full_perm) 
 }
 
 GraphCreator::GraphCreator(bool debug_)
-    : debug(debug_), num_identity_generators(0) {
+    : debug(debug_), num_identity_generators(0), first_call(true) {
     /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
@@ -87,7 +87,12 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
     // Deleting the graph
     delete graph;
 
-    cout << "Done initializing symmetries: " << timer << endl;
+    if (first_call) {
+        first_call = false;
+        cout << "Bliss time: " << timer << endl;
+    } else {
+        cout << "Done initializing symmetries: " << timer << endl;
+    }
 }
 
 bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions, bool stabilize_abstractions) {

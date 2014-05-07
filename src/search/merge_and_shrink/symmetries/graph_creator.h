@@ -29,6 +29,7 @@ class GraphCreator {
     bool debug; //generate dot-readable output
     int num_identity_generators;
     //int stop_after_false_generated;
+    bool first_call;
 
     // TODO: some thouhths on this: maybe we can use the permutations_wrapper
     // to actually store all permutations. This would justify the name and
