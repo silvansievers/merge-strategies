@@ -6,6 +6,7 @@
 #include "../../timer.h"
 #include "../../utilities.h"
 
+#include <cassert>
 #include <iostream>
 
 using namespace std;
