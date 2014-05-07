@@ -208,9 +208,6 @@ TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
 TARGET_PROFILE  = $(TARGET)$(TARGET_SUFFIX_PROFILE)
 
-# For the Makefile-depend loop
-#SOURCES += BLISSSOURCES
-
 CC     = g++
 DEPEND = g++ -MM
 
@@ -340,7 +337,7 @@ endif
 
 endif # LP code
 
-all: release debug profile
+all: release hybrid debug profile
 
 ## Build rules for the release target follow.
 
@@ -363,10 +360,10 @@ $(OBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_RELEASE).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
 
-## bliss source files compiled in debug
+## bliss source files compiled in "debug": like release but without DNDEBUG
 $(BLISSOBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
-	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
+	$(CC) $(CCOPT) $(CCOPT_DEBUG) -fomit-frame-pointer -c $< -o $@
 
 ## Build rules for the debug target follow.
 
