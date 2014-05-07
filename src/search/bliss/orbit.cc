@@ -6,18 +6,18 @@
 /*
   Copyright (c) 2006-2011 Tommi Junttila
   Released under the GNU General Public License version 3.
-  
+
   This file is part of bliss.
-  
+
   bliss is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License version 3
   as published by the Free Software Foundation.
-  
+
   bliss is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -88,28 +88,28 @@ void Orbit::merge_orbits(OrbitEntry *orbit1, OrbitEntry *orbit2)
       _nof_orbits--;
       /* Only update the elements in the smaller orbit */
       if(orbit1->size > orbit2->size)
-	{
-	  OrbitEntry * const temp = orbit2;
-	  orbit2 = orbit1;
-	  orbit1 = temp;
-	}
+  {
+    OrbitEntry * const temp = orbit2;
+    orbit2 = orbit1;
+    orbit1 = temp;
+  }
       /* Link the elements of orbit1 to the almost beginning of orbit2 */
       OrbitEntry *e = orbit1;
       while(e->next)
-	{
-	  in_orbit[e->element] = orbit2;
-	  e = e->next;
-	}
+  {
+    in_orbit[e->element] = orbit2;
+    e = e->next;
+  }
       in_orbit[e->element] = orbit2;
       e->next = orbit2->next;
       orbit2->next = orbit1;
       /* Keep the minimal orbit representative in the beginning */
       if(orbit1->element < orbit2->element)
-	{
-	  const unsigned int temp = orbit1->element;
-	  orbit1->element = orbit2->element;
-	  orbit2->element = temp;
-	}
+  {
+    const unsigned int temp = orbit1->element;
+    orbit1->element = orbit2->element;
+    orbit2->element = temp;
+  }
       orbit2->size += orbit1->size;
     }
 }
@@ -139,7 +139,7 @@ unsigned int Orbit::get_minimal_representative(unsigned int element) const
 
 unsigned int Orbit::orbit_size(unsigned int element) const
 {
-  
+
   return(in_orbit[element]->size);
 }
 

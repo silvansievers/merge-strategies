@@ -4,18 +4,18 @@
 /*
   Copyright (c) 2006-2011 Tommi Junttila
   Released under the GNU General Public License version 3.
-  
+
   This file is part of bliss.
-  
+
   bliss is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License version 3
   as published by the Free Software Foundation.
-  
+
   bliss is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -141,10 +141,10 @@ public:
    * @return         the new unit Cell \a newcell
    */
   Cell* individualize(Cell* const cell,
-		      const unsigned int element);
+          const unsigned int element);
 
   Cell* aux_split_in_two(Cell* const cell,
-			 const unsigned int first_half_size);
+       const unsigned int first_half_size);
 
 
 private:
@@ -215,7 +215,7 @@ public:
   void cr_free();
   unsigned int cr_get_level(const unsigned int cell_index) const;
   unsigned int cr_split_level(const unsigned int level,
-			      const std::vector<unsigned int>& cells);
+            const std::vector<unsigned int>& cells);
 
   /** Clear the invariant_values of the elements in the Cell \a cell. */
   void clear_ivs(Cell* const cell);
@@ -235,7 +235,7 @@ private:
     CRCell** prev_next_ptr;
     void detach() {
       if(next)
-	next->prev_next_ptr = prev_next_ptr;
+  next->prev_next_ptr = prev_next_ptr;
       *(prev_next_ptr) = next;
       level = UINT_MAX;
       next = 0;

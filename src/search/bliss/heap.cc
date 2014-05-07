@@ -7,18 +7,18 @@
 /*
   Copyright (c) 2006-2011 Tommi Junttila
   Released under the GNU General Public License version 3.
-  
+
   This file is part of bliss.
-  
+
   bliss is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License version 3
   as published by the Free Software Foundation.
-  
+
   bliss is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-  
+
   You should have received a copy of the GNU General Public License
   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -57,9 +57,9 @@ void Heap::downheap(unsigned int index)
     {
       unsigned int new_index = index + index;
       if((new_index < n) and (array[new_index] > array[new_index+1]))
-	new_index++;
+  new_index++;
       if(v <= array[new_index])
-	break;
+  break;
       array[index] = array[new_index];
       index = new_index;
     }
@@ -71,7 +71,7 @@ void Heap::init(const unsigned int size)
   if(size > N)
     {
       if(array)
-	free(array);
+  free(array);
       array = (unsigned int*)malloc((size + 1) * sizeof(unsigned int));
       // Silvan Sievers
       if (!array) _OUT_OF_MEMORY();
