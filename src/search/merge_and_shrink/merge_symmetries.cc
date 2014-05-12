@@ -4,6 +4,8 @@
 
 #include "../plugin.h"
 
+#include <limits>
+
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
@@ -13,11 +15,15 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0),
-      first_iteration(true) {
+      iteration_counter(0) {
+    max_symmetry_iterations = options.get<int>("max_symmetry_iterations");
+    if (max_symmetry_iterations == -1) {
+        max_symmetry_iterations = numeric_limits<int>::max();
+    }
 }
 
 void MergeSymmetries::dump_statistics() const {
-    if (first_iteration) {
+    if (iteration_counter == 1) {
         cout << "First iteration: atomic symmetries: " << atomic_symmetries << endl;
         cout << "First iteration: binary symmetries: " << binary_symmetries << endl;
         cout << "First iteration: other symmetries: " << other_symmetries << endl;
@@ -34,8 +40,9 @@ bool MergeSymmetries::done() const {
 
 pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
     assert(!done());
+    ++iteration_counter;
 
-    if (abs_to_merge.empty()) {
+    if (iteration_counter <= max_symmetry_iterations && abs_to_merge.empty()) {
         Symmetries symmetries(options);
         if (started_merging_for_symmetries) {
             // TODO: can we somehow make sure that if we were merging in order
@@ -59,11 +66,8 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     }
 
     dump_statistics();
-    if (first_iteration) {
-        first_iteration = false;
-    }
 
-    if (abs_to_merge.empty()) {
+    if (abs_to_merge.empty() || iteration_counter > max_symmetry_iterations) {
         return MergeDFP::get_next(all_abstractions);
     }
 
@@ -90,6 +94,9 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
+    parser.add_option<int>("max_symmetry_iterations", "number of iteration up "
+                           "to which symmetries should be searched for and "
+                           "applied.", "-1");
 
     Options options = parser.parse();
     if (parser.dry_run())

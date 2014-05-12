@@ -15,7 +15,8 @@ class MergeSymmetries : public MergeDFP {
     int atomic_symmetries; // symmetries affecting one abstraction
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
-    bool first_iteration; // first merge-and-shrink iteration
+    int iteration_counter;
+    int max_symmetry_iterations;
     void dump_statistics() const;
 protected:
     virtual void dump_strategy_specific_options() const {}
