@@ -7,7 +7,6 @@
 ^src/preprocess/preprocess-debug$
 ^src/preprocess/preprocess-profile$
 ^src/search/\.obj/
-^src/search/\.obj-bliss/
 ^src/search/lp/coin/
 ^src/search/Makefile\.depend$
 ^src/search/downward-debug$

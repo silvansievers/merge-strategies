@@ -145,15 +145,9 @@ BLISSHEADERS = bliss/bignum.hh \
                bliss/uintseqhash.hh \
                bliss/utils.hh \
 
-ALLHEADERS = $(HEADERS)
-ALLHEADERS += $(BLISSHEADERS)
-
 SHELL = /bin/bash
 
-SOURCES = planner.cc $(HEADERS:%.h=%.cc)
-BLISSSOURCES = $(BLISSHEADERS:%.hh=%.cc)
-ALLSOURCES = $(SOURCES)
-ALLSOURCES += $(BLISSSOURCES)
+SOURCES = planner.cc $(HEADERS:%.h=%.cc) $(BLISSHEADERS:%.hh=%.cc)
 TARGET  = downward
 
 ARGS_PROFILE = --search 'astar(lmcut())' < profile-input.pre
@@ -187,22 +181,15 @@ endif
 
 OBJECT_SUFFIX_RELEASE = .release
 TARGET_SUFFIX_RELEASE = -release
-OBJECT_SUFFIX_HYBRID_RELEASE = .hybrid.release
-OBJECT_SUFFIX_HYBRID_DEBUG = .hybrid.debug
-TARGET_SUFFIX_HYBRID = -hybrid
 OBJECT_SUFFIX_DEBUG   = .debug
 TARGET_SUFFIX_DEBUG   = -debug
 OBJECT_SUFFIX_PROFILE = .profile
 TARGET_SUFFIX_PROFILE = -profile
 
-OBJECTS_RELEASE = $(ALLSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
+OBJECTS_RELEASE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_RELEASE).o)
 TARGET_RELEASE  = $(TARGET)$(TARGET_SUFFIX_RELEASE)
 
-OBJECTS_HYBRID = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_HYBRID_RELEASE).o)
-BLISSOBJECTS_HYBRID = $(BLISSSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_HYBRID_DEBUG).o)
-TARGET_HYBRID  = $(TARGET)$(TARGET_SUFFIX_HYBRID)
-
-OBJECTS_DEBUG   = $(ALLSOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_DEBUG).o)
+OBJECTS_DEBUG   = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_DEBUG).o)
 TARGET_DEBUG    = $(TARGET)$(TARGET_SUFFIX_DEBUG)
 
 OBJECTS_PROFILE = $(SOURCES:%.cc=.obj/%$(OBJECT_SUFFIX_PROFILE).o)
@@ -337,7 +324,7 @@ endif
 
 endif # LP code
 
-all: release hybrid debug profile
+all: release debug profile
 
 ## Build rules for the release target follow.
 
@@ -350,21 +337,6 @@ $(OBJECTS_RELEASE): .obj/%$(OBJECT_SUFFIX_RELEASE).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
 
-hybrid: $(TARGET_HYBRID)
-
-$(TARGET_HYBRID): $(OBJECTS_HYBRID) $(BLISSOBJECTS_HYBRID)
-	$(CC) $(LINKOPT) $(LINKOPT_RELEASE) $(OBJECTS_HYBRID) $(BLISSOBJECTS_HYBRID) $(POSTLINKOPT) $(POSTLINKOPT_RELEASE) -o $(TARGET_HYBRID)
-
-## regular source files compiled in release
-$(OBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_RELEASE).o: %.cc
-	@mkdir -p $$(dirname $@)
-	$(CC) $(CCOPT) $(CCOPT_RELEASE) -c $< -o $@
-
-## bliss source files compiled in "debug": like release but without DNDEBUG
-$(BLISSOBJECTS_HYBRID): .obj/%$(OBJECT_SUFFIX_HYBRID_DEBUG).o: %.cc
-	@mkdir -p $$(dirname $@)
-	$(CC) $(CCOPT) $(CCOPT_DEBUG) -fomit-frame-pointer -c $< -o $@
-
 ## Build rules for the debug target follow.
 
 debug: $(TARGET_DEBUG)
@@ -375,6 +347,8 @@ $(TARGET_DEBUG): $(OBJECTS_DEBUG)
 $(OBJECTS_DEBUG): .obj/%$(OBJECT_SUFFIX_DEBUG).o: %.cc
 	@mkdir -p $$(dirname $@)
 	$(CC) $(CCOPT) $(CCOPT_DEBUG) -c $< -o $@
+
+## Build rules for the profile target follow.
 
 profile: $(TARGET_PROFILE)
 
@@ -398,13 +372,13 @@ clean:
 	rm -f sas_plan
 
 distclean: clean
-	rm -f $(TARGET_RELEASE) $(TARGET_HYBRID) $(TARGET_DEBUG) $(TARGET_PROFILE)
+	rm -f $(TARGET_RELEASE) $(TARGET_DEBUG) $(TARGET_PROFILE)
 
 ## NOTE: If we just call gcc -MM on a source file that lives within a
 ## subdirectory, it will strip the directory part in the output. Hence
 ## the for loop with the sed call.
 
-Makefile.depend: $(ALLSOURCES) $(ALLHEADERS)
+Makefile.depend: $(SOURCES) $(HEADERS) $(BLISSHEADERS)
 	rm -f Makefile.temp
 	for source in $(SOURCES) ; do \
 	    $(DEPEND) $$source > Makefile.temp0; \
@@ -414,8 +388,6 @@ Makefile.depend: $(ALLSOURCES) $(ALLHEADERS)
 	done
 	rm -f Makefile.temp0 Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_HYBRID_RELEASE).o:\2@" Makefile.temp >> Makefile.depend
-	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_HYBRID_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_DEBUG).o:\2@" Makefile.temp >> Makefile.depend
 	sed -e "s@\(.*\)\.o:\(.*\)@.obj/\1$(OBJECT_SUFFIX_PROFILE).o:\2@" Makefile.temp >> Makefile.depend
 	rm -f Makefile.temp
@@ -426,4 +398,4 @@ ifneq ($(MAKECMDGOALS),distclean)
 endif
 endif
 
-.PHONY: default all release hybrid debug profile clean distclean
+.PHONY: default all release debug profile clean distclean
