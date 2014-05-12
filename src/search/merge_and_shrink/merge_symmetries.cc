@@ -15,11 +15,8 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0),
-      iteration_counter(0) {
-    max_symmetry_iterations = options.get<int>("max_symmetry_iterations");
-    if (max_symmetry_iterations == -1) {
-        max_symmetry_iterations = numeric_limits<int>::max();
-    }
+      iteration_counter(0),
+      max_symmetry_iterations(options.get<int>("max_symmetry_iterations")) {
 }
 
 void MergeSymmetries::dump_statistics() const {
@@ -96,7 +93,7 @@ static MergeStrategy *_parse(OptionParser &parser) {
                             "from the graph generating methods", "false");
     parser.add_option<int>("max_symmetry_iterations", "number of iteration up "
                            "to which symmetries should be searched for and "
-                           "applied.", "-1");
+                           "applied.", "infinity");
 
     Options options = parser.parse();
     if (parser.dry_run())
