@@ -57,11 +57,11 @@ bool Symmetries::is_atomic_generator(const vector<Abstraction *> abstractions, i
     return true;
 }*/
 
-bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstractions,
-                                                set<int> &abs_to_merge) {
+int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstractions,
+                                          set<int> &abs_to_merge) {
     assert(abs_to_merge.empty());
-    bool non_atomic_symmetry_found = false;
-    while (abs_to_merge.empty()) {
+    int number_of_applied_symmetries = 0;
+    while (true) {
         vector<set<int> > non_trivially_affected_abstractions_by_generator;
         // TODO: do we need the return value? both for find_symmetries and
         // find_to_be_merged_abstractions? abs_to_merge is empty if no symmetries
@@ -90,7 +90,6 @@ bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstract
             }
 
             if (atomic_generators.empty()) {
-                non_atomic_symmetry_found = true;
                 int smallest_generator_index = -1;
                 int smallest_generator_size = numeric_limits<int>::max();
                 for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
@@ -107,13 +106,14 @@ bool Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstract
                                     non_trivially_affected_abstractions_by_generator[smallest_generator_index].end());
                 break;
             } else {
+                ++number_of_applied_symmetries;
                 apply_symmetries(abstractions, atomic_generators);
             }
         } else {
             break;
         }
     }
-    return non_atomic_symmetry_found;
+    return number_of_applied_symmetries;
 }
 
 bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,

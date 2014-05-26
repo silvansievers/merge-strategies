@@ -12,6 +12,7 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
       started_merging_for_symmetries(false),
+      number_of_applied_symmetries(0),
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0),
@@ -47,17 +48,15 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
             // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        bool found_symmetry_for_merging = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
-        // TODO: for now, we count the number of generators, i.e. we count the
-        // combined application of 1000 atomic generators as 1000 applied atomic
-        // symmetries. Maybe we only want to count the number of shrinks due
-        // to symmetries?
+        number_of_applied_symmetries += symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
         atomic_symmetries += symmetries.get_atomic_symmetries();
         binary_symmetries += symmetries.get_binary_symmetries();
         other_symmetries += symmetries.get_other_symmetries();
-        if (found_symmetry_for_merging) {
-            assert(abs_to_merge.size() > 1);
-        } else {
+        if (abs_to_merge.size() == 1) {
+            cerr << "Atomic symmetry, not applied!" << endl;
+            exit_with(EXIT_CRITICAL_ERROR);
+        } else if (abs_to_merge.size() == 0) {
             cout << "No symmetries for merging found." << endl;
         }
     }
@@ -70,6 +69,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
     int first;
     if (!started_merging_for_symmetries) {
+        assert(abs_to_merge.size() > 1);
         started_merging_for_symmetries = true;
         first = *abs_to_merge.begin();
         abs_to_merge.erase(abs_to_merge.begin());

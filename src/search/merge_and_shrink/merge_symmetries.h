@@ -12,6 +12,8 @@ class MergeSymmetries : public MergeDFP {
     std::set<int> abs_to_merge;
     bool started_merging_for_symmetries;
     // the following serves for statistics output
+    // number of iterations where at least one symmetry has been applied
+    int number_of_applied_symmetries;
     int atomic_symmetries; // symmetries affecting one abstraction
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
