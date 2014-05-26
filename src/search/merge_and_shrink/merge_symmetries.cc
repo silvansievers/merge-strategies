@@ -94,6 +94,14 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<int>("max_symmetry_iterations", "number of iteration up "
                            "to which symmetries should be searched for and "
                            "applied.", "infinity");
+    vector<string> type_of_symmetries;
+    type_of_symmetries.push_back("ATOMIC");
+    type_of_symmetries.push_back("LOCAL");
+    type_of_symmetries.push_back("ANY");
+    parser.add_enum_option("type_of_symmetries", type_of_symmetries,
+                           "typo of symmetrie: only atomic symmetries, "
+                           "local and atomic symmetries, "
+                           "any kind of symmetry.", "ATOMIC");
 
     Options options = parser.parse();
     if (parser.dry_run())

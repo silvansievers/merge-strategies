@@ -18,6 +18,13 @@ class Symmetries {
     // This would store the actual generators as well.
     GraphCreator gc;
 
+    enum TypeOfSymmetries {
+        ATOMIC,
+        LOCAL,
+        ANY
+    };
+    TypeOfSymmetries type_of_symmetries;
+
     // the following serves for statistics output
     int atomic_symmetries; // symmetries affecting one abstraction
     int binary_symmetries; // symmetries affecting two abstractions
