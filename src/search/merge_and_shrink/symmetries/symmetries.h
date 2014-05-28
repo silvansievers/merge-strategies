@@ -31,14 +31,10 @@ class Symmetries {
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
 
-    //bool is_atomic_generator(const std::vector<Abstraction *> abstractions, int gen_index) const;
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
                          std::vector<std::set<int> > &affected_abstractions_by_generator,
                          std::vector<int> &atomic_generators,
                          std::vector<int> &local_generators);
-    // TODO: there is a lot of duplicated code in here!
-    //void apply_symmetry(const std::vector<Abstraction *> &abstractions,
-    //                    int generator_index) const;
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 
