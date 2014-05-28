@@ -80,7 +80,7 @@ void PermutationsWrapper::dump() const {
 
 
 Permutation::Permutation(const PermutationsWrapper &pw_, const unsigned int* full_permutation)
-    : pw(pw_), identity_perm(true), max_var_cycle_size(-1) {
+    : pw(pw_), identity_perm(true)/*, max_var_cycle_size(-1)*/ {
 //  cout << "Allocating" << endl;
     _allocate();
 //  cout << "Setting values" << endl;
@@ -143,14 +143,14 @@ void Permutation::reset_affected() {
     vars_affected.clear();
     from_vars.assign(pw.num_abstractions, -1);
 
-    affected_vars_cycles.clear();
+    //affected_vars_cycles.clear();
 }
 
 void Permutation::finalize(){
     // Sorting the vector of affected variables
     ::sort(vars_affected.begin(), vars_affected.end());
 
-    // Going over the vector from_vars of the mappings of the variables and finding cycles
+    /*// Going over the vector from_vars of the mappings of the variables and finding cycles
 //  affected_vars_cycles.clear();
     vector<bool> marked;
     marked.assign(pw.num_abstractions, false);
@@ -178,16 +178,16 @@ void Permutation::finalize(){
         affected_vars_cycles.push_back(cycle);
     }
 
-    set_maximal_variables_cycle_size();
+    set_maximal_variables_cycle_size();*/
 }
 
-void Permutation::set_maximal_variables_cycle_size() {
+/*void Permutation::set_maximal_variables_cycle_size() {
     max_var_cycle_size = 0;
     for (int i=0; i < affected_vars_cycles.size(); i++) {
         if (max_var_cycle_size < affected_vars_cycles[i].size())
             max_var_cycle_size = affected_vars_cycles[i].size();
     }
-}
+}*/
 
 bool Permutation::identity() const{
 //  return vars_affected.size() == 0;
@@ -206,7 +206,7 @@ unsigned int Permutation::get_inverse_value(unsigned int ind) const {
 }
 */
 
-void Permutation::print_variables_by_cycles() const {
+/*void Permutation::print_variables_by_cycles() const {
 
     cout << "Affected variables by cycles: " << endl;
     for (int i=0; i < affected_vars_cycles.size(); i++) {
@@ -217,13 +217,13 @@ void Permutation::print_variables_by_cycles() const {
         cout << ")  ";
     }
     cout << endl;
-}
+}*/
 
-int Permutation::get_maximal_variables_cycle_size() const {
+/*int Permutation::get_maximal_variables_cycle_size() const {
     return max_var_cycle_size;
-}
+}*/
 
-int Permutation::calculate_number_variables_to_merge(bool linear_merge) const {
+/*int Permutation::calculate_number_variables_to_merge(bool linear_merge) const {
     int num_vars = 0;
     for (int i=0; i < affected_vars_cycles.size(); i++) {
         if (affected_vars_cycles[i].size() < 2)
@@ -234,9 +234,9 @@ int Permutation::calculate_number_variables_to_merge(bool linear_merge) const {
             num_vars--;
     }
     return num_vars;
-}
+}*/
 
-void Permutation::print_cycle_notation() const {
+/*void Permutation::print_cycle_notation() const {
 //TODO revise
     vector<int> done;
     for (unsigned int i = pw.num_abstractions; i < pw.num_abs_and_states; i++){
@@ -267,15 +267,15 @@ void Permutation::print_cycle_notation() const {
         }
     }
 
-/*
-    cout << endl << "Variables:  ";
-    for(int i = 0; i < vars_affected.size(); i++) cout << vars_affected[i] << "  ";
-    cout << endl << "Variables permuted:  ";
 
-    for(int i = 0; i < vars_affected.size(); i++) cout << from_vars[vars_affected[i]] << " -> " << vars_affected[i] << "  ";
-*/
-    cout << endl;
-}
+//    cout << endl << "Variables:  ";
+//    for(int i = 0; i < vars_affected.size(); i++) cout << vars_affected[i] << "  ";
+//    cout << endl << "Variables permuted:  ";
+
+//    for(int i = 0; i < vars_affected.size(); i++) cout << from_vars[vars_affected[i]] << " -> " << vars_affected[i] << "  ";
+
+//    cout << endl;
+}*/
 
 /*
 string Permutation::get_cycle_notation() const {
@@ -333,11 +333,11 @@ void Permutation::dump_all() const {
     cout << "identiy perm: " << identity_perm << endl;
     cout << "from vars" << endl;
     cout << from_vars << endl;
-    cout << "affected vars cycles" << endl;
+    /*cout << "affected vars cycles" << endl;
     for (size_t i = 0; i < affected_vars_cycles.size(); ++i) {
         cout << i << endl;
         cout << affected_vars_cycles[i] << endl;
     }
-    cout << "max var cycle size: " << max_var_cycle_size << endl;
+    cout << "max var cycle size: " << max_var_cycle_size << endl;*/
     pw.dump();
 }

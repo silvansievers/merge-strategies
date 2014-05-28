@@ -43,8 +43,8 @@ class Permutation {
     // Need to keep the connection between affected vars, ie which var goes into which.
     std::vector<int> from_vars;
     // Affected vars by cycles
-    std::vector<std::vector<int> > affected_vars_cycles;
-    int max_var_cycle_size;
+    //std::vector<std::vector<int> > affected_vars_cycles;
+    //int max_var_cycle_size;
 
     void _allocate();
     void _deallocate();
@@ -52,7 +52,7 @@ class Permutation {
     void set_affected(unsigned int ind, unsigned int val);
     void reset_affected();
     void finalize();
-    void set_maximal_variables_cycle_size();
+    //void set_maximal_variables_cycle_size();
 public:
     Permutation(const PermutationsWrapper &pw, const unsigned int* full_permutation);
     ~Permutation();
@@ -60,10 +60,10 @@ public:
     bool identity() const;
     unsigned int get_value(unsigned int ind) const;
     //unsigned int get_inverse_value(unsigned int ind) const;
-    void print_variables_by_cycles() const;
-    int get_maximal_variables_cycle_size() const;
-    int calculate_number_variables_to_merge(bool linear_merge) const;
-    void print_cycle_notation() const;
+    //void print_variables_by_cycles() const;
+    //int get_maximal_variables_cycle_size() const;
+    //int calculate_number_variables_to_merge(bool linear_merge) const;
+    //void print_cycle_notation() const;
     //string get_cycle_notation() const;
     void dump() const;
     void dump_all() const;
