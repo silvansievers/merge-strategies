@@ -167,7 +167,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
         set<int> &affected_abs = affected_abstractions_by_generator[gen_index];
 
         // Find all abstractions not mapped to themselves
-        if (build_stabilized_pdg) {
+        if (!build_stabilized_pdg) {
             for (unsigned int index = 0; index < num_abstractions; ++index) {
                 if (abstractions[index]) {
                     unsigned int to_index = get_generator(gen_index)->get_value(index);
