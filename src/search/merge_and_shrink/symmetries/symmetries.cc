@@ -68,9 +68,11 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
         // find_to_be_merged_abstractions? abs_to_merge is empty if no symmetries
         // were found.
         vector<int> atomic_generators;
+        vector<int> local_generators;
         bool found_symmetry = find_symmetries(abstractions,
                                               non_trivially_affected_abstractions_by_generator,
-                                              atomic_generators);
+                                              atomic_generators,
+                                              local_generators);
         if (found_symmetry) {
             for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
                 switch (non_trivially_affected_abstractions_by_generator[generator].size()) {
@@ -108,7 +110,23 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
                 break;
             } else {
                 ++number_of_applied_symmetries;
-                apply_symmetries(abstractions, atomic_generators);
+                switch (type_of_symmetries) {
+                case ATOMIC:
+                    apply_symmetries(abstractions, atomic_generators);
+                    break;
+                case LOCAL:
+                    apply_symmetries(abstractions, local_generators);
+                    break;
+                case ANY:
+                    vector<int> all_generators;
+                    all_generators.reserve(get_num_generators());
+                    for (size_t i = 0; i < get_num_generators(); ++i)
+                        all_generators.push_back(i);
+                    apply_symmetries(abstractions, all_generators);
+                    break;
+                }
+
+
             }
         } else {
             break;
@@ -119,11 +137,14 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
 
 bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                                  vector<set<int> > &affected_abstractions_by_generator,
-                                 vector<int> &atomic_generators) {
-    // Find non abstraction stabilized symmetries for abstractions.
+                                 vector<int> &atomic_generators,
+                                 vector<int> &local_generators) {
+    // Find (non) abstraction stabilized symmetries for abstractions depending
+    // on the chosen option.
     // When returning, affected_abstractions_by_generator contains the
-    // abstraction indices that are affected by each generator and
-    // atomic_generators contains the indices of atomic generators.
+    // abstraction indices that are affected by each generator,
+    // atomic_generators contains the indices of atomic generators, and
+    // local_generators contains the indices of local generators.
     // Returns true if any symmetry is found at all and false otherwise.
     assert(affected_abstractions_by_generator.empty());
 
@@ -136,20 +157,6 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             abstractions[i]->compute_distances();
     }
 
-    /*switch (type_of_symmetries) {
-    case ATOMIC:
-        cout << "Computing generators for abstraction stabilized symmetries" << endl;
-        gc.compute_generators(abstractions, true);
-        break;
-    case LOCAL:
-        cout << "Computing generators for non abstraction stabilized symmetries" << endl;
-        gc.compute_generators(abstractions, false);
-        break;
-    case ANY:
-        cout << "Computing generators for non abstraction stabilized symmetries" << endl;
-        gc.compute_generators(abstractions, false);
-        break;
-    }*/
     gc.compute_generators(abstractions);
 
     unsigned int num_generators = get_num_generators();
@@ -165,13 +172,15 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
     for (int gen_index = 0; gen_index < num_generators; ++gen_index) {
         cout << "generator " << gen_index << endl;
         set<int> &affected_abs = affected_abstractions_by_generator[gen_index];
+        bool local_generator = true;
 
-        // Find all abstractions not mapped to themselves
         if (!build_stabilized_pdg) {
+            // Find all abstractions not mapped to themselves
             for (unsigned int index = 0; index < num_abstractions; ++index) {
                 if (abstractions[index]) {
                     unsigned int to_index = get_generator(gen_index)->get_value(index);
                     if (index != to_index) {
+                        local_generator = false;
                         affected_abs.insert(index);
                         cout << "abstraction " << abstractions[index]->description()
                              << " mapped to " << abstractions[to_index]->description() << endl;
@@ -180,13 +189,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             }
         }
 
-        // Find all abstractions whose states are not all mapped to states from the same abstraction
-        // TODO: this comment seems to be wrong. this loop seems to check if states from an abstraction are mapped
-        // at all (not necessarily to a different abstraction, but we do not need to check this here, i suppose)
-        // TODO: with our definition of the PDG, can we find symmetries that map
-        // states of an abstraction to states of a different abstraction *without*
-        // mapping the abstraction nodes onto each other? Conjectue: no. If this
-        // is true, we don't need to check what the comment above suggests.
+        // Find all abstractions whose states are not mapped to themselves.
         for (unsigned int index = num_abstractions; index < get_pw().num_abs_and_states; ++index) {
             int abs_index = get_pw().get_var_by_index(index);
             if (!abstractions[abs_index]) {
@@ -203,12 +206,12 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
 
         if (affected_abs.size() == 1) {
             atomic_generators.push_back(gen_index);
-//            cerr << "Something is wrong! The generator is either atomic or "
-//                    "even the identity generator." << endl;
-//            exit_with(EXIT_CRITICAL_ERROR);
         } else if (affected_abs.size() < 1) {
             cerr << "Something is wrong! The generator is the identity generator." << endl;
             exit_with(EXIT_CRITICAL_ERROR);
+        }
+        if (local_generator) {
+            local_generators.push_back(gen_index);
         }
     }
     return true;
