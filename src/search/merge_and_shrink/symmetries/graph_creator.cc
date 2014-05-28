@@ -3,6 +3,7 @@
 #include "../abstraction.h"
 
 #include "../../globals.h"
+#include "../../option_parser.h"
 #include "../../timer.h"
 #include "../../utilities.h"
 
@@ -18,8 +19,10 @@ void add_permutation(void* param, unsigned int, const unsigned int * full_perm) 
 //  cout << "Done adding permutation" << endl;
 }
 
-GraphCreator::GraphCreator(bool debug_)
-    : debug(debug_), num_identity_generators(0), first_call(true) {
+GraphCreator::GraphCreator(const Options &options)
+    : debug(options.get<bool>("debug_graph_creator")),
+      build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
+      num_identity_generators(0) {
     /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
@@ -55,7 +58,10 @@ void GraphCreator::add_generator(const unsigned int *full_perm) {
     }
 }
 
-void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions, bool stabilize_abstractions) {
+void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions) {
+
+    cout << "Computing generators for " << (build_stabilized_pdg? "" : "non ")
+         << "abstraction stabilized symmetries" << endl;
 
     // Deleting previously computed generators
     delete_generators();
@@ -63,7 +69,7 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
     Timer timer;
     cout << "Starting initializing symmetries." << endl;
 
-    bliss::Digraph* graph = create_bliss_graph(abstractions, stabilize_abstractions);
+    bliss::Digraph* graph = create_bliss_graph(abstractions);
 //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
     graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
 
@@ -88,15 +94,10 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions,
     // Deleting the graph
     delete graph;
 
-    if (first_call) {
-        first_call = false;
-        cout << "Bliss time: " << timer << endl;
-    } else {
-        cout << "Done initializing symmetries: " << timer << endl;
-    }
+    cout << "Done initializing symmetries: " << timer << endl;
 }
 
-bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions, bool stabilize_abstractions) {
+bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions) {
     //cout << stabilize_abstractions << endl;
 
     cout << "Creating the bliss graph object" << endl;
@@ -117,7 +118,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
 
     for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
         // Add vertex for each abstraction
-        if (stabilize_abstractions|| abstractions[abs_ind] == 0) {
+        if (build_stabilized_pdg|| abstractions[abs_ind] == 0) {
             // Either the abstraction is empty or all abstractions are stabilized.
             node_color_added_val++;
             // NOTE: we need to add an abstraction vertex for every abstraction, even the unused ones,

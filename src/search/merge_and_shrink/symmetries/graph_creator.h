@@ -8,6 +8,7 @@
 #include <vector>
 
 class Abstraction;
+class Options;
 
 void add_permutation(void*, unsigned int, const unsigned int *);
 
@@ -27,9 +28,9 @@ class GraphCreator {
     //int time_bound;
     //int generators_bound;
     bool debug; //generate dot-readable output
+    bool build_stabilized_pdg;
     int num_identity_generators;
     //int stop_after_false_generated;
-    bool first_call;
 
     // TODO: some thouhths on this: maybe we can use the permutations_wrapper
     // to actually store all permutations. This would justify the name and
@@ -37,17 +38,17 @@ class GraphCreator {
     std::vector<const Permutation*> generators; // the generators for the automorphism
     PermutationsWrapper permutations_wrapper;
 
-    bliss::Digraph* create_bliss_graph(const std::vector<Abstraction *>& abstractions, bool stabilize_abstractions);
+    bliss::Digraph* create_bliss_graph(const std::vector<Abstraction *>& abstractions);
 
     void delete_generators();
 public:
-    GraphCreator(bool debug);
+    explicit GraphCreator(const Options &options);
     ~GraphCreator();
 
     // method used by add_permutation
     void add_generator(const unsigned int *full_perm);
 
-    void compute_generators(const std::vector<Abstraction *>& abstractions, bool stabilize_abstractions);
+    void compute_generators(const std::vector<Abstraction *>& abstractions);
     const std::vector<const Permutation*>& get_generators () const { return generators; }
     const PermutationsWrapper &get_permutations_wrapper() const { return permutations_wrapper; }
 };

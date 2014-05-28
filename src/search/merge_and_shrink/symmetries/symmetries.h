@@ -24,6 +24,7 @@ class Symmetries {
         ANY
     };
     TypeOfSymmetries type_of_symmetries;
+    bool build_stabilized_pdg;
 
     // the following serves for statistics output
     int atomic_symmetries; // symmetries affecting one abstraction

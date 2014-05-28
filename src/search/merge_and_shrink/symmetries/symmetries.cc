@@ -19,8 +19,9 @@ typedef __gnu_cxx::slist<AbstractStateRef> EquivClass;
 typedef std::vector<EquivClass> EquivRel;
 
 Symmetries::Symmetries(const Options &options)
-    : gc(options.get<bool>("debug_graph_creator")),
+    : gc(options),
       type_of_symmetries(TypeOfSymmetries(options.get_enum("type_of_symmetries"))),
+      build_stabilized_pdg(options.get<bool>("build_stabilized_pdg;")),
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0) {
@@ -149,8 +150,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
         gc.compute_generators(abstractions, false);
         break;
     }*/
-    cout << "Computing generators for abstraction stabilized symmetries" << endl;
-    gc.compute_generators(abstractions, true);
+    gc.compute_generators(abstractions);
 
     unsigned int num_generators = get_num_generators();
     if (num_generators == 0) {
@@ -167,16 +167,18 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
         set<int> &affected_abs = affected_abstractions_by_generator[gen_index];
 
         // Find all abstractions not mapped to themselves
-        /*for (unsigned int index = 0; index < num_abstractions; ++index) {
-            if (abstractions[index]) {
-                unsigned int to_index = get_generator(gen_index)->get_value(index);
-                if (index != to_index) {
-                    affected_abs.insert(index);
-                    cout << "abstraction " << abstractions[index]->description()
-                         << " mapped to " << abstractions[to_index]->description() << endl;
+        if (build_stabilized_pdg) {
+            for (unsigned int index = 0; index < num_abstractions; ++index) {
+                if (abstractions[index]) {
+                    unsigned int to_index = get_generator(gen_index)->get_value(index);
+                    if (index != to_index) {
+                        affected_abs.insert(index);
+                        cout << "abstraction " << abstractions[index]->description()
+                             << " mapped to " << abstractions[to_index]->description() << endl;
+                    }
                 }
             }
-        }*/
+        }
 
         // Find all abstractions whose states are not all mapped to states from the same abstraction
         // TODO: this comment seems to be wrong. this loop seems to check if states from an abstraction are mapped

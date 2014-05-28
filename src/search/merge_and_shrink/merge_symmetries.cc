@@ -102,6 +102,9 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            "typo of symmetrie: only atomic symmetries, "
                            "local and atomic symmetries, "
                            "any kind of symmetry.", "ATOMIC");
+    parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
+                            "stabilized pdb, which results in bliss searching "
+                            "for local symmetries only", "False");
 
     Options options = parser.parse();
     if (parser.dry_run())
