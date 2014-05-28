@@ -21,7 +21,7 @@ typedef std::vector<EquivClass> EquivRel;
 Symmetries::Symmetries(const Options &options)
     : gc(options),
       type_of_symmetries(TypeOfSymmetries(options.get_enum("type_of_symmetries"))),
-      build_stabilized_pdg(options.get<bool>("build_stabilized_pdg;")),
+      build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
       atomic_symmetries(0),
       binary_symmetries(0),
       other_symmetries(0) {
