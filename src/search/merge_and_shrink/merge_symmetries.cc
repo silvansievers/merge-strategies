@@ -9,7 +9,7 @@
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(),
+    : MergeLinear(options_),
       options(options_),
       started_merging_for_symmetries(false),
       number_of_applied_symmetries(0),
@@ -33,7 +33,7 @@ void MergeSymmetries::dump_statistics() const {
 }
 
 bool MergeSymmetries::done() const {
-    return MergeDFP::done();
+    return MergeLinear::done();
 }
 
 pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
@@ -64,7 +64,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
     dump_statistics();
 
     if (abs_to_merge.empty() || iteration_counter > max_symmetry_iterations) {
-        return MergeDFP::get_next(all_abstractions);
+        return MergeLinear::get_next(all_abstractions);
     }
 
     int first;
@@ -85,7 +85,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 }
 
 string MergeSymmetries::name() const {
-    return "symmetries";
+    return "linear";
 }
 
 static MergeStrategy *_parse(OptionParser &parser) {
@@ -105,6 +105,20 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "
                             "for local symmetries only", "False");
+    vector<string> merge_strategies;
+    //TODO: it's a bit dangerous that the merge strategies here
+    // have to be specified exactly in the same order
+    // as in the enum definition. Try to find a way around this,
+    // or at least raise an error when the order is wrong.
+    merge_strategies.push_back("CG_GOAL_LEVEL");
+    merge_strategies.push_back("CG_GOAL_RANDOM");
+    merge_strategies.push_back("GOAL_CG_LEVEL");
+    merge_strategies.push_back("RANDOM");
+    merge_strategies.push_back("LEVEL");
+    merge_strategies.push_back("REVERSE_LEVEL");
+    parser.add_enum_option("variable_order", merge_strategies,
+                           "the order in which atomic abstractions are merged",
+                           "CG_GOAL_LEVEL");
 
     Options options = parser.parse();
     if (parser.dry_run())

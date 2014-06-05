@@ -1,13 +1,13 @@
 #ifndef MERGE_AND_SHRINK_MERGE_SYMMETRIES_H
 #define MERGE_AND_SHRINK_MERGE_SYMMETRIES_H
 
-#include "merge_dfp.h"
+#include "merge_linear.h"
 
 #include "../option_parser.h"
 
 #include <set>
 
-class MergeSymmetries : public MergeDFP {
+class MergeSymmetries : public MergeLinear {
     const Options options;
     std::set<int> abs_to_merge;
     bool started_merging_for_symmetries;
