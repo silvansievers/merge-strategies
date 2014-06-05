@@ -59,6 +59,11 @@ void LabelReducer::reduce_labels(pair<int, int> next_merge,
         assert(all_abstractions[next_merge.first]->get_varset().size() >=
                all_abstractions[next_merge.second]->get_varset().size());
         reduce_old(all_abstractions[next_merge.first]->get_varset(), labels);
+        for (size_t i = 0; i < all_abstractions.size(); ++i) {
+            if (all_abstractions[i]) {
+                all_abstractions[i]->normalize();
+            }
+        }
         return;
     }
 

@@ -32,19 +32,18 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
     assert(abs_to_merge.empty());
     int number_of_applied_symmetries = 0;
     while (true) {
-        vector<set<int> > non_trivially_affected_abstractions_by_generator;
-        // TODO: do we need the return value? both for find_symmetries and
-        // find_to_be_merged_abstractions? abs_to_merge is empty if no symmetries
-        // were found.
+        vector<set<int> > affected_abstractions_by_generator;
+        vector<set<int> > mapped_abstractions_by_generator;
         vector<int> atomic_generators;
         vector<int> local_generators;
         bool found_symmetry = find_symmetries(abstractions,
-                                              non_trivially_affected_abstractions_by_generator,
+                                              affected_abstractions_by_generator,
+                                              mapped_abstractions_by_generator,
                                               atomic_generators,
                                               local_generators);
         if (found_symmetry) {
-            for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
-                switch (non_trivially_affected_abstractions_by_generator[generator].size()) {
+            for (size_t generator = 0; generator < affected_abstractions_by_generator.size(); ++generator) {
+                switch (affected_abstractions_by_generator[generator].size()) {
                 case 0:
                     cerr << "Found an identity generator!" << endl;
                     exit_with(EXIT_CRITICAL_ERROR);
@@ -61,41 +60,45 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
                 }
             }
 
-            if (atomic_generators.empty()) {
-                int smallest_generator_index = -1;
-                int smallest_generator_size = numeric_limits<int>::max();
-                for (size_t generator = 0; generator < non_trivially_affected_abstractions_by_generator.size(); ++generator) {
+            switch (type_of_symmetries) {
+            case ATOMIC:
+                if (atomic_generators.empty()) {
                     // find the smallest symmetry (with the least number of affected abstractions)
-                    int number_affected_abs = non_trivially_affected_abstractions_by_generator[generator].size();
-                    assert(number_affected_abs > 0);
-                    if (number_affected_abs < smallest_generator_size) {
-                        smallest_generator_size = number_affected_abs;
-                        smallest_generator_index = generator;
-                    }
-                }
-                assert(smallest_generator_index != -1);
-                abs_to_merge.insert(non_trivially_affected_abstractions_by_generator[smallest_generator_index].begin(),
-                                    non_trivially_affected_abstractions_by_generator[smallest_generator_index].end());
-                break;
-            } else {
-                ++number_of_applied_symmetries;
-                switch (type_of_symmetries) {
-                case ATOMIC:
+                    find_smallest_generator(affected_abstractions_by_generator, abs_to_merge);
+                    return number_of_applied_symmetries;
+                } else {
+                    ++number_of_applied_symmetries;
                     apply_symmetries(abstractions, atomic_generators);
-                    break;
-                case LOCAL:
+                }
+                break;
+            case LOCAL:
+                if (local_generators.empty()) {
+                    if (!mapped_abstractions_by_generator.empty()) {
+                        // find the smallest symmetry (with the least number of mapped abstractions)
+                        find_smallest_generator(mapped_abstractions_by_generator, abs_to_merge);
+                    } else {
+                        // find the smallest symmetry (with the least number of affected abstractions)
+                        find_smallest_generator(affected_abstractions_by_generator, abs_to_merge);
+                    }
+                    return number_of_applied_symmetries;
+                } else {
+                    ++number_of_applied_symmetries;
                     apply_symmetries(abstractions, local_generators);
-                    break;
-                case ANY:
+                }
+                break;
+            case ANY:
+                ++number_of_applied_symmetries;
+                if (get_num_generators() == 0) {
+                    return number_of_applied_symmetries;
+                } else {
+                    ++number_of_applied_symmetries;
                     vector<int> all_generators;
                     all_generators.reserve(get_num_generators());
                     for (size_t i = 0; i < get_num_generators(); ++i)
                         all_generators.push_back(i);
                     apply_symmetries(abstractions, all_generators);
-                    break;
                 }
-
-
+                break;
             }
         } else {
             break;
@@ -104,8 +107,26 @@ int Symmetries::find_and_apply_symmetries(const vector<Abstraction *>& abstracti
     return number_of_applied_symmetries;
 }
 
+void Symmetries::find_smallest_generator(const vector<set<int> > &abstractions_by_generator,
+                                         set<int> &abs_to_merge) const {
+    int smallest_generator_index = -1;
+    int smallest_generator_size = numeric_limits<int>::max();
+    for (size_t generator = 0; generator < abstractions_by_generator.size(); ++generator) {
+        int number_affected_abs = abstractions_by_generator[generator].size();
+        assert(number_affected_abs > 0);
+        if (number_affected_abs < smallest_generator_size) {
+            smallest_generator_size = number_affected_abs;
+            smallest_generator_index = generator;
+        }
+    }
+    assert(smallest_generator_index != -1);
+    abs_to_merge.insert(abstractions_by_generator[smallest_generator_index].begin(),
+                        abstractions_by_generator[smallest_generator_index].end());
+}
+
 bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                                  vector<set<int> > &affected_abstractions_by_generator,
+                                 vector<set<int> > &mapped_abstractions_by_generator,
                                  vector<int> &atomic_generators,
                                  vector<int> &local_generators) {
     // Find (non) abstraction stabilized symmetries for abstractions depending
@@ -115,7 +136,9 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
     // atomic_generators contains the indices of atomic generators, and
     // local_generators contains the indices of local generators.
     // Returns true if any symmetry is found at all and false otherwise.
+
     assert(affected_abstractions_by_generator.empty());
+    assert(mapped_abstractions_by_generator.empty());
 
     // We must make sure that all abstractions distances have been computed
     // because of the nasty possible side effect of pruning irrelevant
@@ -138,9 +161,11 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
 
     // Find all affected abstractions
     affected_abstractions_by_generator.resize(num_generators, set<int>());
+    mapped_abstractions_by_generator.resize(num_generators, set<int>());
     for (int gen_index = 0; gen_index < num_generators; ++gen_index) {
         cout << "generator " << gen_index << endl;
         set<int> &affected_abs = affected_abstractions_by_generator[gen_index];
+        set<int> &mapped_abs = mapped_abstractions_by_generator[gen_index];
         bool local_generator = true;
 
         if (!build_stabilized_pdg) {
@@ -151,6 +176,10 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                     if (index != to_index) {
                         local_generator = false;
                         affected_abs.insert(index);
+                        // we could potentially also add to_index here, but
+                        // it will must be added when considering to_index
+                        // anyway.
+                        mapped_abs.insert(index);
                         cout << "abstraction " << abstractions[index]->description()
                              << " mapped to " << abstractions[to_index]->description() << endl;
                     }
@@ -173,7 +202,9 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             }
         }
 
+        assert(mapped_abs.size() <= affected_abs.size());
         if (affected_abs.size() == 1) {
+            assert(mapped_abs.empty());
             atomic_generators.push_back(gen_index);
         } else if (affected_abs.size() < 1) {
             cerr << "Something is wrong! The generator is the identity generator." << endl;

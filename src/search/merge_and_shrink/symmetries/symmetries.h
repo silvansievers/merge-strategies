@@ -33,8 +33,11 @@ class Symmetries {
 
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
                          std::vector<std::set<int> > &affected_abstractions_by_generator,
+                         std::vector<std::set<int> > &mapped_abstractions_by_generator,
                          std::vector<int> &atomic_generators,
                          std::vector<int> &local_generators);
+    void find_smallest_generator(const std::vector<std::set<int> > &abstractions_by_generator,
+                                 std::set<int> &abs_to_merge) const;
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 
