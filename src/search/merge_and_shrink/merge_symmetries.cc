@@ -63,9 +63,9 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
 
     dump_statistics();
 
-    if (abs_to_merge.empty() || iteration_counter > max_symmetry_iterations) {
+    //if (abs_to_merge.empty() || iteration_counter > max_symmetry_iterations) {
         return MergeLinear::get_next(all_abstractions);
-    }
+    //}
 
     int first;
     if (!started_merging_for_symmetries) {
