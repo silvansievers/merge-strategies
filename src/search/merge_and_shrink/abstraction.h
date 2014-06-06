@@ -1,11 +1,8 @@
 #ifndef MERGE_AND_SHRINK_ABSTRACTION_H
 #define MERGE_AND_SHRINK_ABSTRACTION_H
 
-#include "shrink_strategy.h"
-
-#include "../utilities.h"
-
 #include <ext/slist>
+#include <string>
 #include <set>
 #include <vector>
 
@@ -14,6 +11,8 @@ class Label;
 class Labels;
 class State;
 class Symmetries;
+
+typedef int AbstractStateRef;
 
 struct AbstractTransition {
     AbstractStateRef src;
