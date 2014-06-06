@@ -1151,7 +1151,8 @@ void Abstraction::dump_relevant_labels() const {
 }
 
 void Abstraction::dump_state() const {
-    assert(debug);
+    if (!debug)
+        return;
     cout << "State dump for " << tag() << endl;
     for (size_t i = 0; i < num_states; ++i) {
         cout << "Abstract state " << i << ":" << endl;
