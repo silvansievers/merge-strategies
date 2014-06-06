@@ -20,7 +20,8 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
     : Heuristic(opts),
       merge_strategy(opts.get<MergeStrategy *>("merge_strategy")),
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
-      use_expensive_statistics(opts.get<bool>("expensive_statistics")) {
+      use_expensive_statistics(opts.get<bool>("expensive_statistics")),
+      debug_abstractions(opts.get<bool>("debug_abstractions")) {
     labels = new Labels(is_unit_cost_problem(), opts, cost_type);
 }
 
@@ -63,7 +64,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
     if (g_variable_domain.size() * 2 - 1 > all_abstractions.max_size())
         exit_with(EXIT_OUT_OF_MEMORY);
     all_abstractions.reserve(g_variable_domain.size() * 2 - 1);
-    Abstraction::build_atomic_abstractions(all_abstractions, labels);
+    Abstraction::build_atomic_abstractions(all_abstractions, labels, debug_abstractions);
 
     cout << "Shrinking atomic abstractions..." << endl;
     for (size_t i = 0; i < all_abstractions.size(); ++i) {
@@ -132,7 +133,8 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
 
         Abstraction *new_abstraction = new CompositeAbstraction(labels,
                                                                 abstraction,
-                                                                other_abstraction);
+                                                                other_abstraction,
+                                                                debug_abstractions);
 
         abstraction->release_memory();
         other_abstraction->release_memory();
@@ -295,6 +297,8 @@ static Heuristic *_parse(OptionParser &parser) {
                             "prints a big warning on stderr with information on the performance impact. "
                             "Don't use when benchmarking!)",
                             "false");
+    parser.add_option<bool>("debug_abstractions", "store additional information "
+                            "in abstractions for debug output.", "False");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 

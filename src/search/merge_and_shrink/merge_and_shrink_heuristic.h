@@ -17,6 +17,8 @@ class MergeAndShrinkHeuristic : public Heuristic {
     Abstraction *final_abstraction;
     Abstraction *build_abstraction();
 
+    bool debug_abstractions;
+
     void dump_options() const;
     void warn_on_unusual_options() const;
 protected:
