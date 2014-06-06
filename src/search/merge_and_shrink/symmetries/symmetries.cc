@@ -296,18 +296,15 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         cout << "Abstracting " << abstractions[i]->description() << endl;
         abstractions[i]->dump();
         abstractions[i]->dump_state();
-        for (size_t j = 0; j < equivalence_relations[i].size(); ++j) {
-            cout << "relation " << j << endl;
-            const EquivRel &equiv_rel = equivalence_relations[j];
-            for (size_t k = 0; k < equiv_rel.size(); ++k) {
-                cout << "class " << k << endl;
-                const EquivClass &equiv_class = equiv_rel[k];
-                for (EquivClass::const_iterator it = equiv_class.begin();
-                     it != equiv_class.end(); ++it) {
-                    cout << *it << " ";
-                }
-                cout << endl;
+        const EquivRel &equiv_rel = equivalence_relations[i];
+        for (size_t j = 0; j < equiv_rel.size(); ++j) {
+            cout << "class " << j << endl;
+            const EquivClass &equiv_class = equiv_rel[j];
+            for (EquivClass::const_iterator it = equiv_class.begin();
+                 it != equiv_class.end(); ++it) {
+                cout << *it << " ";
             }
+            cout << endl;
         }
         abstractions[i]->apply_abstraction(equivalence_relations[i]);
     }
