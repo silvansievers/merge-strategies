@@ -36,12 +36,12 @@ class Permutation {
     const PermutationsWrapper &pw;
     unsigned int* value;
     //unsigned int* inverse_value;
-    std::vector<int> vars_affected;
-    std::vector<bool> affected;
+    //std::vector<int> vars_affected;
+    //std::vector<bool> affected;
     bool borrowed_buffer;
     bool identity_perm;
     // Need to keep the connection between affected vars, ie which var goes into which.
-    std::vector<int> from_vars;
+    //std::vector<int> from_vars;
     // Affected vars by cycles
     //std::vector<std::vector<int> > affected_vars_cycles;
     //int max_var_cycle_size;
@@ -49,9 +49,9 @@ class Permutation {
     void _allocate();
     void _deallocate();
     void set_value(unsigned int ind, unsigned int val);
-    void set_affected(unsigned int ind, unsigned int val);
-    void reset_affected();
-    void finalize();
+    //void set_affected(unsigned int ind, unsigned int val);
+    //void reset_affected();
+    //void finalize();
     //void set_maximal_variables_cycle_size();
 public:
     Permutation(const PermutationsWrapper &pw, const unsigned int* full_permutation);

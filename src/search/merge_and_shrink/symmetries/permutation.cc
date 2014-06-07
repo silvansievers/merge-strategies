@@ -90,7 +90,7 @@ Permutation::Permutation(const PermutationsWrapper &pw_, const unsigned int* ful
             identity_perm = false;
     }
 //  cout << "Finalizing" << endl;
-    finalize();
+    //finalize();
 //  cout << "Done" << endl;
 }
 
@@ -102,7 +102,7 @@ void Permutation::_allocate() {
     borrowed_buffer = false;
     value = new unsigned int[pw.length];
 
-    reset_affected();
+    //reset_affected();
 }
 
 void Permutation::_deallocate() {
@@ -114,10 +114,10 @@ void Permutation::_deallocate() {
 void Permutation::set_value(unsigned int ind, unsigned int val) {
     value[ind] = val;
 //  inverse_value[val] = ind;
-    set_affected(ind, val);
+    //set_affected(ind, val);
 }
 
-void Permutation::set_affected(unsigned int ind, unsigned int val) {
+/*void Permutation::set_affected(unsigned int ind, unsigned int val) {
     if (ind < pw.num_abstractions || ind == val || ind >= pw.num_abs_and_states)
         return;
 
@@ -150,7 +150,7 @@ void Permutation::finalize(){
     // Sorting the vector of affected variables
     ::sort(vars_affected.begin(), vars_affected.end());
 
-    /*// Going over the vector from_vars of the mappings of the variables and finding cycles
+    // Going over the vector from_vars of the mappings of the variables and finding cycles
 //  affected_vars_cycles.clear();
     vector<bool> marked;
     marked.assign(pw.num_abstractions, false);
@@ -178,8 +178,8 @@ void Permutation::finalize(){
         affected_vars_cycles.push_back(cycle);
     }
 
-    set_maximal_variables_cycle_size();*/
-}
+    set_maximal_variables_cycle_size();
+}*/
 
 /*void Permutation::set_maximal_variables_cycle_size() {
     max_var_cycle_size = 0;
@@ -325,14 +325,14 @@ void Permutation::dump_all() const {
         cout << value[i] << ", ";
     }
     cout << endl;
-    cout << "vars affected" << endl;
-    cout << vars_affected << endl;
-    cout << "affected" << endl;
-    cout << affected << endl;
+    //cout << "vars affected" << endl;
+    //cout << vars_affected << endl;
+    //cout << "affected" << endl;
+    //cout << affected << endl;
     cout << "borrowed buffer: " << borrowed_buffer << endl;
     cout << "identiy perm: " << identity_perm << endl;
-    cout << "from vars" << endl;
-    cout << from_vars << endl;
+    //cout << "from vars" << endl;
+    //cout << from_vars << endl;
     /*cout << "affected vars cycles" << endl;
     for (size_t i = 0; i < affected_vars_cycles.size(); ++i) {
         cout << i << endl;
