@@ -148,21 +148,26 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                         }
                         number_of_collapsed_abstractions += collapsed_abs.size() - 1;
                     } else {
-                        bool mapped_abstractions = false;
-                        for (size_t i = 0; i < mapped_abstractions_by_generator.size(); ++i) {
-                            if (!mapped_abstractions_by_generator[i].empty()) {
-                                mapped_abstractions = true;
-                                break;
+                        if (atomic_generators.empty()) {
+                            bool mapped_abstractions = false;
+                            for (size_t i = 0; i < mapped_abstractions_by_generator.size(); ++i) {
+                                if (!mapped_abstractions_by_generator[i].empty()) {
+                                    mapped_abstractions = true;
+                                    break;
+                                }
                             }
-                        }
-                        if (mapped_abstractions) {
-                            // find the smallest symmetry (with the least number of mapped abstractions)
-                            find_smallest_generator(mapped_abstractions_by_generator, abs_to_merge);
+                            if (mapped_abstractions) {
+                                // find the smallest symmetry (with the least number of mapped abstractions)
+                                find_smallest_generator(mapped_abstractions_by_generator, abs_to_merge);
+                            } else {
+                                // find the smallest symmetry (with the least number of affected abstractions)
+                                find_smallest_generator(affected_abstractions_by_generator, abs_to_merge);
+                            }
+                            return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
                         } else {
-                            // find the smallest symmetry (with the least number of affected abstractions)
-                            find_smallest_generator(affected_abstractions_by_generator, abs_to_merge);
+                            ++number_of_applied_symmetries;
+                            apply_symmetries(abstractions, atomic_generators);
                         }
-                        return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
                     }
                 }
                 break;
@@ -401,7 +406,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         }
 //      cout << "Abstracting from " << abstractions[i]->size() << " to " << equivalence_relations[i].size() << " states!" << endl;
         cout << "Abstracting " << abstractions[i]->description() << endl;
-        abstractions[i]->dump();
+        /*abstractions[i]->dump();
         abstractions[i]->dump_state();
         const EquivRel &equiv_rel = equivalence_relations[i];
         for (size_t j = 0; j < equiv_rel.size(); ++j) {
@@ -412,7 +417,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
                 cout << *it << " ";
             }
             cout << endl;
-        }
+        }*/
         abstractions[i]->apply_abstraction(equivalence_relations[i]);
     }
     cout << "Done abstracting. [t=" << g_timer << "]" << endl;
