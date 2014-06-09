@@ -21,6 +21,7 @@ class Symmetries {
     enum TypeOfSymmetries {
         ATOMIC,
         LOCAL,
+        AT_MOST_ONE_CYCLE,
         ANY
     };
     TypeOfSymmetries type_of_symmetries;
@@ -34,6 +35,8 @@ class Symmetries {
     bool find_symmetries(const std::vector<Abstraction *>& abstractions,
                          std::vector<std::set<int> > &affected_abstractions_by_generator,
                          std::vector<std::set<int> > &mapped_abstractions_by_generator,
+                         std::vector<std::set<int> > &affected_not_mapped_abs_by_gen,
+                         std::vector<std::vector<std::vector<int> > > &cycles_by_generator,
                          std::vector<int> &atomic_generators,
                          std::vector<int> &local_generators);
     void find_smallest_generator(const std::vector<std::set<int> > &abstractions_by_generator,
@@ -49,8 +52,8 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    int find_and_apply_symmetries(const std::vector<Abstraction *> &abstractions,
-                                  std::set<int> &abs_to_merge);
+    std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
+                                                  std::set<int> &abs_to_merge);
     int get_atomic_symmetries() const {return atomic_symmetries; }
     int get_binary_symmetries() const {return binary_symmetries; }
     int get_other_symmetries() const {return other_symmetries; }

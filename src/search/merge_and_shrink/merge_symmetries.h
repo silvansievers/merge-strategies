@@ -27,7 +27,7 @@ public:
     virtual ~MergeSymmetries() {}
 
     virtual bool done() const;
-    virtual std::pair<int, int> get_next(const std::vector<Abstraction *> &all_abstractions);
+    virtual std::pair<int, int> get_next(std::vector<Abstraction *> &all_abstractions);
     virtual std::string name() const;
 };
 

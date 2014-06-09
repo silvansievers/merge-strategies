@@ -21,7 +21,7 @@ public:
     }
     // implementations of get_next should decrease remaining_merges by one
     // everytime they return a pair of abstractions which are merged next.
-    virtual std::pair<int, int> get_next(const std::vector<Abstraction *> &all_abstractions) = 0;
+    virtual std::pair<int, int> get_next(std::vector<Abstraction *> &all_abstractions) = 0;
     virtual std::string name() const = 0;
 };
 

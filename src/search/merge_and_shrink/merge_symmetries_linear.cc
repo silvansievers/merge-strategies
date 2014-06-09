@@ -36,7 +36,7 @@ bool MergeSymmetriesLinear::done() const {
     return MergeLinear::done();
 }
 
-pair<int, int> MergeSymmetriesLinear::get_next(const vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeSymmetriesLinear::get_next(std::vector<Abstraction *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
 
@@ -48,7 +48,9 @@ pair<int, int> MergeSymmetriesLinear::get_next(const vector<Abstraction *> &all_
             // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        number_of_applied_symmetries += symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        number_of_applied_symmetries += stats.first;
+        remaining_merges -= stats.second;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
         atomic_symmetries += symmetries.get_atomic_symmetries();
         binary_symmetries += symmetries.get_binary_symmetries();

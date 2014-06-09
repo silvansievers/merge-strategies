@@ -146,7 +146,9 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
         all_abstractions.push_back(new_abstraction);
     }
 
-    assert(all_abstractions.size() == g_variable_domain.size() * 2 - 1);
+    // TODO: violated by merge symmetries! reconsider what information
+    // about symmetries should be passed here.
+    //assert(all_abstractions.size() == g_variable_domain.size() * 2 - 1);
     Abstraction *final_abstraction = 0;
     for (size_t i = 0; i < all_abstractions.size(); ++i) {
         if (all_abstractions[i]) {

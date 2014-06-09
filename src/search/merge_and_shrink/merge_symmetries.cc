@@ -36,7 +36,7 @@ bool MergeSymmetries::done() const {
     return MergeDFP::done();
 }
 
-pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
 
@@ -48,7 +48,9 @@ pair<int, int> MergeSymmetries::get_next(const vector<Abstraction *> &all_abstra
             // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
-        number_of_applied_symmetries += symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        number_of_applied_symmetries += stats.first;
+        remaining_merges -= stats.second;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
         atomic_symmetries += symmetries.get_atomic_symmetries();
         binary_symmetries += symmetries.get_binary_symmetries();
@@ -97,11 +99,12 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> type_of_symmetries;
     type_of_symmetries.push_back("ATOMIC");
     type_of_symmetries.push_back("LOCAL");
+    type_of_symmetries.push_back("AT_MOST_ONE_CYCLE");
     type_of_symmetries.push_back("ANY");
     parser.add_enum_option("type_of_symmetries", type_of_symmetries,
-                           "typo of symmetrie: only atomic symmetries, "
+                           "type of symmetry: only atomic symmetries, "
                            "local and atomic symmetries, "
-                           "any kind of symmetry.", "ATOMIC");
+                           "at most one cycle,.any.", "ATOMIC");
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "
                             "for local symmetries only", "False");

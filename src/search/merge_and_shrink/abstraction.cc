@@ -130,6 +130,25 @@ void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
     }
 }
 
+void Abstraction::merge_abstraction_into(const Abstraction *other) {
+    assert(is_normalized());
+    assert(other->is_normalized());
+    const vector<vector<AbstractTransition> > &other_transitions_by_label = other->transitions_by_label;
+    if (transitions_by_label.size() != other_transitions_by_label.size()) {
+        cerr << "Abstractions have different sizes of transitions!" << endl;
+        exit_with(EXIT_CRITICAL_ERROR);
+    }
+    for (size_t i = 0; i < transitions_by_label.size(); ++i) {
+        vector<AbstractTransition> &transitions = transitions_by_label[i];
+        const vector<AbstractTransition> &other_transitions = other_transitions_by_label[i];
+        for (size_t j = 0; j < other_transitions.size(); ++j) {
+            // add all transitions of the other abstractions, ignoring the fact
+            // that they may exist already in this abstratcion.
+            transitions.push_back(other_transitions[j]);
+        }
+    }
+}
+
 bool Abstraction::are_distances_computed() const {
     if (max_h == DISTANCE_UNKNOWN ) {
         assert(max_f == DISTANCE_UNKNOWN);

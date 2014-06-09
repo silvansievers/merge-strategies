@@ -177,6 +177,9 @@ public:
     const std::vector<int> &get_varset() const {
         return varset;
     }
+
+    // This is for joining symmetric abstractions into one
+    void merge_abstraction_into(const Abstraction *other);
 };
 
 class AtomicAbstraction : public Abstraction {

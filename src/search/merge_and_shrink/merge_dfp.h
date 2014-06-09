@@ -21,7 +21,7 @@ public:
     // for the moment, compute_label_ranks is a non-const method because it
     // possibly needs to normalize and/or compute distances of some
     // abstractions. This should change when abstractions are always valid.
-    virtual std::pair<int, int> get_next(const std::vector<Abstraction *> &all_abstractions);
+    virtual std::pair<int, int> get_next(std::vector<Abstraction *> &all_abstractions);
     virtual std::string name() const;
 };
 

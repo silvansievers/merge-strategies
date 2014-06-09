@@ -43,7 +43,7 @@ size_t MergeDFP::get_corrected_index(int index) const {
     return border_atomics_composites - 1 - index;
 }
 
-pair<int, int> MergeDFP::get_next(const std::vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeDFP::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
 
     vector<Abstraction *> sorted_abstractions;

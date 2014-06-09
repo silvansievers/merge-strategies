@@ -15,7 +15,7 @@ MergeLinear::MergeLinear(const Options &opts)
       need_first_index(true) {
 }
 
-pair<int, int> MergeLinear::get_next(const std::vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeLinear::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done() && !order.done());
 
     int first;
