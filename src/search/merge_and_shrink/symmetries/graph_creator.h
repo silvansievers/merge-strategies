@@ -10,7 +10,7 @@
 class Abstraction;
 class Options;
 
-void add_symmetry(void*, unsigned int, const unsigned int *);
+void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
 
 /**
  * This class is using bliss for finding symmetries of the given set of abstractions.
@@ -42,8 +42,8 @@ public:
     explicit GraphCreator(const Options &options);
     ~GraphCreator();
 
-    // method used by add_symmetry
-    void add_symmetry_generator(const unsigned int *symmetry_mapping);
+    // method used by add_automorphism
+    void create_symmetry_generator(const unsigned int *automorphism);
 
     void compute_generators(const std::vector<Abstraction *>& abstractions);
     const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const { return symmetry_generators; }

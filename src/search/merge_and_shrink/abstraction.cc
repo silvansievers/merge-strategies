@@ -131,6 +131,7 @@ void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
 }
 
 void Abstraction::merge_abstraction_into(const Abstraction *other) {
+    // TODO: this seems not to be correct.
     assert(is_normalized());
     assert(other->is_normalized());
     const vector<vector<AbstractTransition> > &other_transitions_by_label = other->transitions_by_label;

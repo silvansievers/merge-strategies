@@ -78,19 +78,47 @@ void SymmetryGeneratorInfo::dump() const {
 
 
 
-SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &pw_, const unsigned int* symmetry_mapping)
-    : pw(pw_), identity_generator(true)/*, max_var_cycle_size(-1)*/ {
-//  cout << "Allocating" << endl;
+SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
+                                     const unsigned int* automorphism,
+                                     bool abstraction_stabilized_symmetry)
+    : sym_gen_info(sym_gen_info_),
+      identity_generator(true)/*,
+      largest_cycle_size(0),
+      largest_cycle_index(0)*/ {
     _allocate();
-//  cout << "Setting values" << endl;
-    for (unsigned int i = 0; i < pw.length; i++){
-        set_value(i,symmetry_mapping[i]);
-        if (i != symmetry_mapping[i])
+
+    int num_abstractions = sym_gen_info.num_abstractions;
+    affected.resize(num_abstractions, false);
+    mapped.resize(num_abstractions, false);
+    for (unsigned int from_index = 0; from_index < sym_gen_info.length; from_index++){
+        if (from_index > sym_gen_info.num_abs_and_states) {
+            cerr << "Symmetry generator index out of range" << endl;
+            exit_with(EXIT_CRITICAL_ERROR);
+        }
+
+        int to_index = automorphism[from_index];
+        value[from_index] = to_index;
+
+        if (from_index != to_index) {
             identity_generator = false;
+            if (from_index < num_abstractions) {
+                assert(to_index < num_abstractions);
+                if (!mapped[from_index]) {
+                    mapped[from_index] = true;
+                    mapped_abstractions.push_back(from_index);
+                }
+            } else {
+                int abs_index = sym_gen_info.get_var_by_index(from_index);
+                if (!affected[abs_index]) {
+                    affected_abstractions.push_back(abs_index);
+                    affected[abs_index] = true;
+                }
+            }
+        }
     }
-//  cout << "Finalizing" << endl;
-    //finalize();
-//  cout << "Done" << endl;
+
+    if (!abstraction_stabilized_symmetry)
+        compute_cycles();
 }
 
 SymmetryGenerator::~SymmetryGenerator(){
@@ -99,7 +127,7 @@ SymmetryGenerator::~SymmetryGenerator(){
 
 void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
-    value = new unsigned int[pw.length];
+    value = new unsigned int[sym_gen_info.length];
 
     //reset_affected();
 }
@@ -110,10 +138,30 @@ void SymmetryGenerator::_deallocate() {
     }
 }
 
-void SymmetryGenerator::set_value(unsigned int ind, unsigned int val) {
-    value[ind] = val;
-//  inverse_value[val] = ind;
-    //set_affected(ind, val);
+void SymmetryGenerator::compute_cycles() {
+    int num_abstractions = sym_gen_info.num_abstractions;
+    vector<bool> marked(num_abstractions, false);
+    for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {
+        if (mapped[abs_index] && !marked[abs_index]) {
+            marked[abs_index] = true;
+            unsigned int to_index = get_value(abs_index);
+            assert(to_index != abs_index);
+            int from_index = abs_index;
+            vector<int> cycle;
+            cycle.push_back(from_index);
+            while (to_index != abs_index) {
+                marked[to_index] = true;
+                cycle.push_back(to_index);
+                from_index = to_index;
+                to_index = get_value(from_index);
+            }
+            cycles.push_back(cycle);
+            /*if (cycle.size > largest_cycle_size) {
+                largest_cycle_size = cycle.size();
+                largest_cycle_index = cycles.size() - 1;
+            }*/
+        }
+    }
 }
 
 /*void Permutation::set_affected(unsigned int ind, unsigned int val) {
@@ -189,7 +237,8 @@ void Permutation::finalize(){
 }*/
 
 bool SymmetryGenerator::identity() const{
-//  return vars_affected.size() == 0;
+    if (identity_generator)
+        assert(affected_abstractions.empty());
     return identity_generator;
 }
 
@@ -306,12 +355,12 @@ string Permutation::get_cycle_notation() const {
 */
 
 void SymmetryGenerator::dump() const {
-    for(unsigned int i = 0; i < pw.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.length; i++){
         if (get_value(i) != i)
             cout << setw(4) << i;
     }
     cout << endl;
-    for(unsigned int i = 0; i < pw.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.length; i++){
         if (get_value(i) != i)
             cout << setw(4) << get_value(i);
     }
@@ -320,7 +369,7 @@ void SymmetryGenerator::dump() const {
 
 void SymmetryGenerator::dump_all() const {
     cout << "values:" << endl;
-    for(unsigned int i = 0; i < pw.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.length; i++){
         cout << value[i] << ", ";
     }
     cout << endl;
@@ -338,5 +387,5 @@ void SymmetryGenerator::dump_all() const {
         cout << affected_vars_cycles[i] << endl;
     }
     cout << "max var cycle size: " << max_var_cycle_size << endl;*/
-    pw.dump();
+    sym_gen_info.dump();
 }

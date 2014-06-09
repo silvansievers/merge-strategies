@@ -4,6 +4,7 @@
 typedef int AbstractStateRef; // TODO: duplicated from shrink_strategy.h
 
 //#include <utility>
+#include <set>
 #include <vector>
 
 struct SymmetryGeneratorInfo {
@@ -33,11 +34,10 @@ struct SymmetryGeneratorInfo {
 };
 
 class SymmetryGenerator {
-    const SymmetryGeneratorInfo &pw;
+    const SymmetryGeneratorInfo &sym_gen_info;
     unsigned int* value;
     //unsigned int* inverse_value;
-    //std::vector<int> vars_affected;
-    //std::vector<bool> affected;
+
     bool borrowed_buffer;
     bool identity_generator;
     // Need to keep the connection between affected vars, ie which var goes into which.
@@ -48,13 +48,24 @@ class SymmetryGenerator {
 
     void _allocate();
     void _deallocate();
-    void set_value(unsigned int ind, unsigned int val);
     //void set_affected(unsigned int ind, unsigned int val);
     //void reset_affected();
     //void finalize();
     //void set_maximal_variables_cycle_size();
+
+    std::vector<bool> affected;
+    std::vector<int> affected_abstractions;
+    std::vector<bool> mapped;
+    std::vector<int> mapped_abstractions;
+    std::vector<std::vector<int> > cycles;
+    //int largest_cycle_size;
+    //int largest_cycle_index;
+
+    void compute_cycles();
 public:
-    SymmetryGenerator(const SymmetryGeneratorInfo &pw, const unsigned int* symmetry_mapping);
+    SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info,
+                      const unsigned int* automorphism,
+                      bool abstraction_stabilized_symmetry);
     ~SymmetryGenerator();
 
     bool identity() const;
@@ -65,6 +76,18 @@ public:
     //int calculate_number_variables_to_merge(bool linear_merge) const;
     //void print_cycle_notation() const;
     //string get_cycle_notation() const;
+
+    const std::vector<int> &get_affected_abstractions() const {
+        return affected_abstractions;
+    }
+    const std::vector<int> &get_mapped_abstractions() const {
+        return mapped_abstractions;
+    }
+    const std::vector<std::vector<int> > &get_cycles() const {
+        return cycles;
+    }
+    bool affects(int abs_index) const {return affected[abs_index]; }
+    bool maps(int abs_index) const {return mapped[abs_index]; }
     void dump() const;
     void dump_all() const;
 };

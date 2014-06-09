@@ -32,15 +32,7 @@ class Symmetries {
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
 
-    bool find_symmetries(const std::vector<Abstraction *>& abstractions,
-                         std::vector<std::set<int> > &affected_abstractions_by_generator,
-                         std::vector<std::set<int> > &mapped_abstractions_by_generator,
-                         std::vector<std::set<int> > &affected_not_mapped_abs_by_gen,
-                         std::vector<std::vector<std::vector<int> > > &cycles_by_generator,
-                         std::vector<int> &atomic_generators,
-                         std::vector<int> &local_generators);
-    void find_smallest_generator(const std::vector<std::set<int> > &abstractions_by_generator,
-                                 std::set<int> &abs_to_merge) const;
+    bool find_symmetries(const std::vector<Abstraction *>& abstractions);
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 

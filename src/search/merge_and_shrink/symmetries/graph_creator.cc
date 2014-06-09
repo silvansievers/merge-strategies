@@ -12,9 +12,9 @@
 
 using namespace std;
 
-void add_symmetry(void* param, unsigned int, const unsigned int * symmetry_mapping) {
+void add_automorphism(void* param, unsigned int, const unsigned int * automorphism) {
     GraphCreator *gc = (GraphCreator*) param;
-    gc->add_symmetry_generator(symmetry_mapping);
+    gc->create_symmetry_generator(automorphism);
 }
 
 GraphCreator::GraphCreator(const Options &options)
@@ -39,14 +39,14 @@ void GraphCreator::delete_generators() {
     num_identity_generators = 0;
 }
 
-void GraphCreator::add_symmetry_generator(const unsigned int *symmetry_mapping) {
-    SymmetryGenerator* perm = new SymmetryGenerator(symmetry_generator_info, symmetry_mapping);
+void GraphCreator::create_symmetry_generator(const unsigned int *automorphism) {
+    SymmetryGenerator* symmetry_generator = new SymmetryGenerator(symmetry_generator_info, automorphism, build_stabilized_pdg);
     //Only if we have non-identity generator we need to save it into the list of generators
 //  cout << "Checking for identity" << endl;
-    if(!perm->identity()) {
-        symmetry_generators.push_back(perm);
+    if(!symmetry_generator->identity()) {
+        symmetry_generators.push_back(symmetry_generator);
     } else {
-        delete perm;
+        delete symmetry_generator;
         ++num_identity_generators;
 //        if (num_identity_generators > stop_after_false_generated) {
 //            cout << endl << "Problems with generating symmetry group! Too many false generators." << endl;
@@ -62,6 +62,7 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
          << "abstraction stabilized symmetries" << endl;
 
     // Deleting previously computed generators
+    // TODO: we never need to do this, do we?
     delete_generators();
 
     Timer timer;
@@ -80,7 +81,7 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
 //    graph->set_verbose_file(f);
 //    graph->set_verbose_level(10);
 
-    graph->find_automorphisms(stats1,&(add_symmetry), this);
+    graph->find_automorphisms(stats1,&(add_automorphism), this);
 
 //    stats1.print(stats_file);
 //    fclose(stats_file);
