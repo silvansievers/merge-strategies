@@ -61,11 +61,13 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 if (number_affected_abs < 1) {
                     cerr << "Something is wrong! The generator is the identity generator." << endl;
                     exit_with(EXIT_CRITICAL_ERROR);
-                } else if (number_affected_abs == 1) {
+                }
+                if (number_affected_abs == 1) {
                     atomic_generators.push_back(generator_index);
                     // every atomic symmetry is also a local symmetry
                     assert(number_mapped_abs == 0);
-                } else if (number_mapped_abs == 0) {
+                }
+                if (number_mapped_abs == 0) {
                     local_generators.push_back(generator_index);
                 }
 
