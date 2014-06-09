@@ -37,8 +37,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         //    cout << i << " " << abstractions[i] << endl;
         //}
 
-        vector<int> atomic_generators;
-        vector<int> local_generators;
         bool found_symmetry = find_symmetries(abstractions);
         if (found_symmetry) {
             int smallest_generator_affected_abstractions_index = -1;
@@ -47,6 +45,8 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
             int smallest_generator_mapped_abstrations_size = numeric_limits<int>::max();
             int largest_atomic_cycle_index = -1;
             int largest_atomic_cycle_size = 0;
+            vector<int> atomic_generators;
+            vector<int> local_generators;
 
             for (size_t generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
                 const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
