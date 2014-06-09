@@ -1,4 +1,4 @@
-#include "permutation.h"
+#include "symmetry_generator.h"
 
 #include "../../globals.h"
 #include "../../utilities.h"
@@ -12,11 +12,11 @@
 
 using namespace std;
 
-PermutationsWrapper::PermutationsWrapper() {
+SymmetryGeneratorInfo::SymmetryGeneratorInfo() {
     reset();
 }
 
-void PermutationsWrapper::reset() {
+void SymmetryGeneratorInfo::reset() {
     num_abstractions = -1;
     num_abs_and_states = -1;
     length = -1;
@@ -24,7 +24,7 @@ void PermutationsWrapper::reset() {
     dom_sum_by_var.clear();
 }
 
-bool PermutationsWrapper::initialized() const {
+bool SymmetryGeneratorInfo::initialized() const {
     return num_abstractions != -1
             && num_abs_and_states != -1
             && length != -1
@@ -32,9 +32,8 @@ bool PermutationsWrapper::initialized() const {
             && !dom_sum_by_var.empty();
 }
 
-int PermutationsWrapper::get_var_by_index(const unsigned int ind) const {
+int SymmetryGeneratorInfo::get_var_by_index(const unsigned int ind) const {
     assert(initialized());
-    // PermutationsWrapper case of ind < pw.num_abstractions, returns the index itself, as this is the variable part of the permutation.
     if (ind < num_abstractions) {
         cout << "=====> WARNING!!!! Check that this is done on purpose!" << endl;
         return ind;
@@ -42,7 +41,7 @@ int PermutationsWrapper::get_var_by_index(const unsigned int ind) const {
     return var_by_val[ind-num_abstractions];
 }
 
-pair<int, AbstractStateRef> PermutationsWrapper::get_var_val_by_index(unsigned int ind) const {
+pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(unsigned int ind) const {
     assert(initialized());
     if (ind < num_abstractions) {
         cout << "=====> Error!!!! index too low, in the variable part!" << endl;
@@ -61,12 +60,12 @@ pair<int, AbstractStateRef> PermutationsWrapper::get_var_val_by_index(unsigned i
     return make_pair(var, val);
 }
 
-unsigned int PermutationsWrapper::get_index_by_var_val_pair(int var, AbstractStateRef val) const {
+unsigned int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, AbstractStateRef val) const {
     assert(initialized());
     return dom_sum_by_var[var] + val;
 }
 
-void PermutationsWrapper::dump() const {
+void SymmetryGeneratorInfo::dump() const {
     cout << "num abstractions: " << num_abstractions << endl;
     cout << "num abs and states: " << num_abs_and_states << endl;
     cout << "length: " << length << endl;
@@ -79,39 +78,39 @@ void PermutationsWrapper::dump() const {
 
 
 
-Permutation::Permutation(const PermutationsWrapper &pw_, const unsigned int* full_permutation)
-    : pw(pw_), identity_perm(true)/*, max_var_cycle_size(-1)*/ {
+SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &pw_, const unsigned int* symmetry_mapping)
+    : pw(pw_), identity_generator(true)/*, max_var_cycle_size(-1)*/ {
 //  cout << "Allocating" << endl;
     _allocate();
 //  cout << "Setting values" << endl;
     for (unsigned int i = 0; i < pw.length; i++){
-        set_value(i,full_permutation[i]);
-        if (i != full_permutation[i])
-            identity_perm = false;
+        set_value(i,symmetry_mapping[i]);
+        if (i != symmetry_mapping[i])
+            identity_generator = false;
     }
 //  cout << "Finalizing" << endl;
     //finalize();
 //  cout << "Done" << endl;
 }
 
-Permutation::~Permutation(){
+SymmetryGenerator::~SymmetryGenerator(){
     _deallocate();
 }
 
-void Permutation::_allocate() {
+void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
     value = new unsigned int[pw.length];
 
     //reset_affected();
 }
 
-void Permutation::_deallocate() {
+void SymmetryGenerator::_deallocate() {
     if (!borrowed_buffer) {
         delete[] value;
     }
 }
 
-void Permutation::set_value(unsigned int ind, unsigned int val) {
+void SymmetryGenerator::set_value(unsigned int ind, unsigned int val) {
     value[ind] = val;
 //  inverse_value[val] = ind;
     //set_affected(ind, val);
@@ -189,12 +188,12 @@ void Permutation::finalize(){
     }
 }*/
 
-bool Permutation::identity() const{
+bool SymmetryGenerator::identity() const{
 //  return vars_affected.size() == 0;
-    return identity_perm;
+    return identity_generator;
 }
 
-unsigned int Permutation::get_value(unsigned int ind) const {
+unsigned int SymmetryGenerator::get_value(unsigned int ind) const {
 //  check_index_range(ind);
     return value[ind];
 }
@@ -306,7 +305,7 @@ string Permutation::get_cycle_notation() const {
 }
 */
 
-void Permutation::dump() const {
+void SymmetryGenerator::dump() const {
     for(unsigned int i = 0; i < pw.length; i++){
         if (get_value(i) != i)
             cout << setw(4) << i;
@@ -319,7 +318,7 @@ void Permutation::dump() const {
     cout << endl;
 }
 
-void Permutation::dump_all() const {
+void SymmetryGenerator::dump_all() const {
     cout << "values:" << endl;
     for(unsigned int i = 0; i < pw.length; i++){
         cout << value[i] << ", ";
@@ -330,7 +329,7 @@ void Permutation::dump_all() const {
     //cout << "affected" << endl;
     //cout << affected << endl;
     cout << "borrowed buffer: " << borrowed_buffer << endl;
-    cout << "identiy perm: " << identity_perm << endl;
+    cout << "identiy perm: " << identity_generator << endl;
     //cout << "from vars" << endl;
     //cout << from_vars << endl;
     /*cout << "affected vars cycles" << endl;

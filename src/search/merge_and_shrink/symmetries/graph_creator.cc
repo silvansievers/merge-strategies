@@ -12,11 +12,9 @@
 
 using namespace std;
 
-void add_permutation(void* param, unsigned int, const unsigned int * full_perm) {
-//  cout << "Adding permutation" << endl;
+void add_symmetry(void* param, unsigned int, const unsigned int * symmetry_mapping) {
     GraphCreator *gc = (GraphCreator*) param;
-    gc->add_generator(full_perm);
-//  cout << "Done adding permutation" << endl;
+    gc->add_symmetry_generator(symmetry_mapping);
 }
 
 GraphCreator::GraphCreator(const Options &options)
@@ -31,22 +29,22 @@ GraphCreator::~GraphCreator() {
 }
 
 void GraphCreator::delete_generators() {
-    for (int i = 0; i < generators.size(); i++){
-        if (generators[i])
-            delete generators[i];
+    for (int i = 0; i < symmetry_generators.size(); i++){
+        if (symmetry_generators[i])
+            delete symmetry_generators[i];
     }
 
-    generators.clear();
-    permutations_wrapper.reset();
+    symmetry_generators.clear();
+    symmetry_generator_info.reset();
     num_identity_generators = 0;
 }
 
-void GraphCreator::add_generator(const unsigned int *full_perm) {
-    Permutation* perm = new Permutation(permutations_wrapper, full_perm);
-    //Only if we have non-identity permutation we need to save it into the list of generators
+void GraphCreator::add_symmetry_generator(const unsigned int *symmetry_mapping) {
+    SymmetryGenerator* perm = new SymmetryGenerator(symmetry_generator_info, symmetry_mapping);
+    //Only if we have non-identity generator we need to save it into the list of generators
 //  cout << "Checking for identity" << endl;
     if(!perm->identity()) {
-        generators.push_back(perm);
+        symmetry_generators.push_back(perm);
     } else {
         delete perm;
         ++num_identity_generators;
@@ -82,13 +80,13 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
 //    graph->set_verbose_file(f);
 //    graph->set_verbose_level(10);
 
-    graph->find_automorphisms(stats1,&(add_permutation), this);
+    graph->find_automorphisms(stats1,&(add_symmetry), this);
 
 //    stats1.print(stats_file);
 //    fclose(stats_file);
 //    fclose(f);
 
-    cout << "Got " << generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
+    cout << "Got " << symmetry_generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
     cout << "Got " << num_identity_generators << " identity generators" << endl;
 
     // Deleting the graph
@@ -107,7 +105,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     int num_of_nodes = abstractions.size();
 
     // Setting the number of abstractions
-    permutations_wrapper.num_abstractions = num_of_nodes;
+    symmetry_generator_info.num_abstractions = num_of_nodes;
     int node_color_added_val = 0;
 
     if (debug) {
@@ -138,22 +136,22 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
         }
 
         // Setting the indices for connections between abstract states and their abstractions
-        permutations_wrapper.dom_sum_by_var.push_back(num_of_nodes);
+        symmetry_generator_info.dom_sum_by_var.push_back(num_of_nodes);
 
         int abs_states = 0;
         if (abstractions[abs_ind]) //In case the abstraction is not empty
             abs_states = abstractions[abs_ind]->size();
         num_of_nodes += abs_states;
         for(int num_of_value = 0; num_of_value < abs_states; num_of_value++){
-            permutations_wrapper.var_by_val.push_back(abs_ind);
+            symmetry_generator_info.var_by_val.push_back(abs_ind);
         }
 
     }
     // Setting the total number of abstract states and abstractions
-    permutations_wrapper.num_abs_and_states = num_of_nodes;
+    symmetry_generator_info.num_abs_and_states = num_of_nodes;
 
     // TODO: Validate that this is what we want here - no connection between actions (probably not!).
-    permutations_wrapper.length = num_of_nodes;
+    symmetry_generator_info.length = num_of_nodes;
 
     // We need an arbitrary valid abstraction to get access to the number of
     // labels and their costs (we do not have access to the labels object).
@@ -217,8 +215,8 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
                 int eff_idx = pre_idx;
 //              cout << "Added eff vertex: " << eff_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 2 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
 
-                unsigned int src_idx = permutations_wrapper.get_index_by_var_val_pair(abs_ind, trans.src);
-                unsigned int target_idx = permutations_wrapper.get_index_by_var_val_pair(abs_ind, trans.target);
+                unsigned int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
+                unsigned int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
                 // Edges from abstract state source over pre=eff=transition-node to target
                 g->add_edge(src_idx, pre_idx);
                 g->add_edge(eff_idx, target_idx);
@@ -259,7 +257,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
             if (!abstractions[abs_ind]->is_goal_state(state))
                 continue;
 
-            unsigned int val_idx = permutations_wrapper.get_index_by_var_val_pair(abs_ind, state);
+            unsigned int val_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, state);
 
             // Edges from goal states to the goal node
             g->add_edge(val_idx, idx);

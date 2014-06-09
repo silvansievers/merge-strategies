@@ -1,7 +1,7 @@
 #include "symmetries.h"
 
-#include "permutation.h"
 #include "scc.h"
+#include "symmetry_generator.h"
 
 #include "../abstraction.h"
 
@@ -243,7 +243,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
         return false;
     }
 
-    int num_abstractions = get_pw().num_abstractions;
+    int num_abstractions = get_sym_gen_info().num_abstractions;
 
     // Find all affected abstractions
     affected_abstractions_by_generator.resize(num_generators, set<int>());
@@ -261,7 +261,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             // Find all abstractions not mapped to themselves
             for (unsigned int index = 0; index < num_abstractions; ++index) {
                 if (abstractions[index]) {
-                    unsigned int to_index = get_generator(gen_index)->get_value(index);
+                    unsigned int to_index = get_symmetry_generator(gen_index)->get_value(index);
                     if (index != to_index) {
                         local_generator = false;
                         affected_abs.insert(index);
@@ -279,7 +279,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
             for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {
                 if (!marked[abs_index] && abstractions[abs_index]) {
                     marked[abs_index] = true;
-                    unsigned int to_index = get_generator(gen_index)->get_value(abs_index);
+                    unsigned int to_index = get_symmetry_generator(gen_index)->get_value(abs_index);
                     if (to_index != abs_index) {
                         int from_index = abs_index;
                         vector<int> cycle;
@@ -288,7 +288,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
                             marked[to_index] = true;
                             cycle.push_back(to_index);
                             from_index = to_index;
-                            to_index = get_generator(gen_index)->get_value(from_index);
+                            to_index = get_symmetry_generator(gen_index)->get_value(from_index);
                         }
                         cycles.push_back(cycle);
                     }
@@ -297,13 +297,13 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions,
         }
 
         // Find all abstractions whose states are not mapped to themselves.
-        for (unsigned int index = num_abstractions; index < get_pw().num_abs_and_states; ++index) {
-            int abs_index = get_pw().get_var_by_index(index);
+        for (unsigned int index = num_abstractions; index < get_sym_gen_info().num_abs_and_states; ++index) {
+            int abs_index = get_sym_gen_info().get_var_by_index(index);
             if (!abstractions[abs_index]) {
                 cerr << "found an abstract state belonging to an invalid abstraction" << endl;
                 exit_with(EXIT_CRITICAL_ERROR);
             }
-            unsigned int to_index = get_generator(gen_index)->get_value(index);
+            unsigned int to_index = get_symmetry_generator(gen_index)->get_value(index);
             if (index != to_index) {
                 if (affected_abs.insert(abs_index).second) {
                     cout << "abstraction " << abstractions[abs_index]->description() << " is affected" << endl;
@@ -342,16 +342,16 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     // It seems like this process should better be done in all abstractions in parallel,
     // since we could exploit all the compositions of these abstractions this way as well.
     // Later we can reduce the first part - the abstraction vars and save some space/time
-    unsigned int num_states = get_pw().num_abs_and_states;
-    unsigned int num_abstractions = get_pw().num_abstractions;
+    unsigned int num_states = get_sym_gen_info().num_abs_and_states;
+    unsigned int num_abstractions = get_sym_gen_info().num_abstractions;
     // The graph is represented by vector of to_nodes for each node. (Change to sets?)
     vector<vector<unsigned int> > graph(num_states, vector<unsigned int>());
-    for (unsigned int index = num_abstractions; index < get_pw().num_abs_and_states; ++index) {
-        int abs_index = get_pw().get_var_by_index(index);
+    for (unsigned int index = num_abstractions; index < get_sym_gen_info().num_abs_and_states; ++index) {
+        int abs_index = get_sym_gen_info().get_var_by_index(index);
         if (abstractions[abs_index]) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 // Going over the generators, for each just add the edges.
-                unsigned int to_index = get_generator(generator_indices[i])->get_value(index);
+                unsigned int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
                 if (index != to_index)
                     graph[index].push_back(to_index);
             }
@@ -371,9 +371,9 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     for (unsigned int eqiv=0; eqiv < result.size(); eqiv++) {
         for (unsigned int i=0; i < result[eqiv].size(); i++) {
             unsigned int idx = result[eqiv][i];
-            if (idx < get_pw().num_abstractions)
+            if (idx < get_sym_gen_info().num_abstractions)
                 continue;
-            pair<int, AbstractStateRef> vals = get_pw().get_var_val_by_index(idx);
+            pair<int, AbstractStateRef> vals = get_sym_gen_info().get_var_val_by_index(idx);
             equivalence_relations[vals.first][eqiv].push_front(vals.second);
         }
     }
@@ -424,7 +424,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     cout << "==========================================================================================" << endl;
 }
 
-const Permutation* Symmetries::get_generator(int ind) const {
+const SymmetryGenerator* Symmetries::get_symmetry_generator(int ind) const {
     assert(ind >= 0 && ind < get_num_generators());
-    return gc.get_generators()[ind];
+    return gc.get_symmetry_generators()[ind];
 }

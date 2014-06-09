@@ -1,16 +1,16 @@
-#ifndef MERGE_AND_SHRINK_SYMMETRIES_PERMUTATION_H
-#define MERGE_AND_SHRINK_SYMMETRIES_PERMUTATION_H
+#ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GENERATOR_H
+#define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GENERATOR_H
 
 typedef int AbstractStateRef; // TODO: duplicated from shrink_strategy.h
 
 //#include <utility>
 #include <vector>
 
-struct PermutationsWrapper {
+struct SymmetryGeneratorInfo {
     int num_abstractions;
     unsigned int num_abs_and_states;
     unsigned int length;
-    // Silvan: this vector ranges over the total number of indices of this permutation.
+    // Silvan: this vector ranges over the total number of indices of this generator.
     // for every node it contains the number of the abstraction this node
     // belongs to.
     std::vector<int> var_by_val;
@@ -22,7 +22,7 @@ struct PermutationsWrapper {
     // size: number of abstractions
     std::vector<unsigned int> dom_sum_by_var;
 
-    PermutationsWrapper();
+    SymmetryGeneratorInfo();
     void reset();
     bool initialized() const;
     // Returns the abstraction variable corresponding to the abstract state
@@ -32,14 +32,14 @@ struct PermutationsWrapper {
     void dump() const;
 };
 
-class Permutation {
-    const PermutationsWrapper &pw;
+class SymmetryGenerator {
+    const SymmetryGeneratorInfo &pw;
     unsigned int* value;
     //unsigned int* inverse_value;
     //std::vector<int> vars_affected;
     //std::vector<bool> affected;
     bool borrowed_buffer;
-    bool identity_perm;
+    bool identity_generator;
     // Need to keep the connection between affected vars, ie which var goes into which.
     //std::vector<int> from_vars;
     // Affected vars by cycles
@@ -54,8 +54,8 @@ class Permutation {
     //void finalize();
     //void set_maximal_variables_cycle_size();
 public:
-    Permutation(const PermutationsWrapper &pw, const unsigned int* full_permutation);
-    ~Permutation();
+    SymmetryGenerator(const SymmetryGeneratorInfo &pw, const unsigned int* symmetry_mapping);
+    ~SymmetryGenerator();
 
     bool identity() const;
     unsigned int get_value(unsigned int ind) const;
@@ -69,4 +69,4 @@ public:
     void dump_all() const;
 };
 
-#endif // MERGE_AND_SHRINK_SYMMETRIES_PERMUTATION_H
+#endif

@@ -1,7 +1,7 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 #define MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 
-#include "permutation.h"
+#include "symmetry_generator.h"
 
 #include "../../bliss/graph.hh"
 
@@ -10,7 +10,7 @@
 class Abstraction;
 class Options;
 
-void add_permutation(void*, unsigned int, const unsigned int *);
+void add_symmetry(void*, unsigned int, const unsigned int *);
 
 /**
  * This class is using bliss for finding symmetries of the given set of abstractions.
@@ -32,11 +32,8 @@ class GraphCreator {
     int num_identity_generators;
     //int stop_after_false_generated;
 
-    // TODO: some thouhths on this: maybe we can use the permutations_wrapper
-    // to actually store all permutations. This would justify the name and
-    // possibly simplify the handling of all permutations.
-    std::vector<const Permutation*> generators; // the generators for the automorphism
-    PermutationsWrapper permutations_wrapper;
+    std::vector<const SymmetryGenerator*> symmetry_generators; // the generators for the automorphism
+    SymmetryGeneratorInfo symmetry_generator_info;
 
     bliss::Digraph* create_bliss_graph(const std::vector<Abstraction *>& abstractions);
 
@@ -45,12 +42,12 @@ public:
     explicit GraphCreator(const Options &options);
     ~GraphCreator();
 
-    // method used by add_permutation
-    void add_generator(const unsigned int *full_perm);
+    // method used by add_symmetry
+    void add_symmetry_generator(const unsigned int *symmetry_mapping);
 
     void compute_generators(const std::vector<Abstraction *>& abstractions);
-    const std::vector<const Permutation*>& get_generators () const { return generators; }
-    const PermutationsWrapper &get_permutations_wrapper() const { return permutations_wrapper; }
+    const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const { return symmetry_generators; }
+    const SymmetryGeneratorInfo &get_symmetry_generator_info() const { return symmetry_generator_info; }
 };
 
 #endif

@@ -10,8 +10,8 @@
 
 class Labels;
 class Options;
-class Permutation;
-class PermutationsWrapper;
+class SymmetryGenerator;
+class SymmetryGeneratorInfo;
 
 class Symmetries {
     // TODO: get rid of gc and have the permutations wrapper object instead?
@@ -45,9 +45,9 @@ class Symmetries {
                           const std::vector<int> &generator_indices) const;
 
     // TODO: replace by permutations wrapper object
-    const Permutation* get_generator(int ind) const;
-    const PermutationsWrapper &get_pw() const { return gc.get_permutations_wrapper(); }
-    int get_num_generators() const { return gc.get_generators().size(); }
+    const SymmetryGenerator* get_symmetry_generator(int ind) const;
+    const SymmetryGeneratorInfo &get_sym_gen_info() const { return gc.get_symmetry_generator_info(); }
+    int get_num_generators() const { return gc.get_symmetry_generators().size(); }
 public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}

@@ -94,9 +94,9 @@ HEADERS += merge_and_shrink/abstraction.h \
            merge_and_shrink/variable_order_finder.h \
 
 HEADERS += merge_and_shrink/symmetries/graph_creator.h \
-           merge_and_shrink/symmetries/permutation.h \
            merge_and_shrink/symmetries/scc.h \
            merge_and_shrink/symmetries/symmetries.h \
+           merge_and_shrink/symmetries/symmetry_generator.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \
