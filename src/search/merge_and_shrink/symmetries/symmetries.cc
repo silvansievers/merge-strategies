@@ -80,14 +80,24 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                     smallest_generator_mapped_abstractions_index = generator_index;
                 }
                 if (cycles.size() == 1) {
-                    vector<int> affected_not_mapped_abstractions;
-                    // affected not mapped is the set difference of affected abs minus
-                    // mapped abs. There may exist generators both mapping abstractions onto
-                    // each other and affecting each of them individually as well.
+                    vector<int> affected_minus_mapped;
+                    // affected minues mapped is the set difference of affected abs minus
+                    // mapped abs. If it is non-empty, there are abstractions not mapped
+                    // which are affected by the generator.
                     set_difference(affected_abstractions.begin(), affected_abstractions.end(),
                                    mapped_abstractions.begin(), mapped_abstractions.end(),
-                                   inserter(affected_not_mapped_abstractions, affected_not_mapped_abstractions.begin()));
-                    if (affected_not_mapped_abstractions.empty()) {
+                                   inserter(affected_minus_mapped, affected_minus_mapped.begin()));
+
+                    vector<int> intersection_affected_mapped;
+                    // intersection affected mapped is the set intersection of affected abs and
+                    // mapped abs. There may exist generators both mapping abstractions onto
+                    // each other and affecting each of them individually as well, which gives
+                    // means that the generator is not atomic.
+                    set_intersection(affected_abstractions.begin(), affected_abstractions.end(),
+                                     mapped_abstractions.begin(), mapped_abstractions.end(),
+                                     inserter(intersection_affected_mapped, intersection_affected_mapped.begin()));
+
+                    if (affected_minus_mapped.empty() && intersection_affected_mapped.empty()) {
                         int cycle_size = cycles[0].size();
                         if (cycle_size > largest_atomic_cycle_size) {
                             largest_atomic_cycle_size = cycle_size;
@@ -167,6 +177,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 } else {
                     if (largest_atomic_cycle_index != -1) {
                         ++number_of_applied_symmetries;
+                        cout << "Removing all but one abstraction from a cycle" << endl;
                         const vector<vector<int> > &cycles = get_symmetry_generator(largest_atomic_cycle_index)->get_cycles();
                         assert(cycles.size() == 1);
                         const vector<int> &collapsed_abs = cycles[0];
@@ -180,6 +191,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                         }
                         number_of_collapsed_abstractions += collapsed_abs.size() - 1;
                     } else {
+                        // TODO: copied from ATOMIC
                         if (atomic_generators.empty()) {
                             assert(smallest_generator_affected_abstractions_index != -1);
                             const vector<int> &affected_abstractions =

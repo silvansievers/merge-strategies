@@ -134,6 +134,10 @@ void Abstraction::merge_abstraction_into(const Abstraction *other) {
     // TODO: this seems not to be correct.
     assert(is_normalized());
     assert(other->is_normalized());
+    if (num_states != other->num_states) {
+        cerr << "Abstractions have different number of states!" << endl;
+        exit_with(EXIT_CRITICAL_ERROR);
+    }
     const vector<vector<AbstractTransition> > &other_transitions_by_label = other->transitions_by_label;
     if (transitions_by_label.size() != other_transitions_by_label.size()) {
         cerr << "Abstractions have different sizes of transitions!" << endl;
