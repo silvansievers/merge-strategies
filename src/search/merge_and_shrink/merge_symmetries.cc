@@ -60,6 +60,12 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
             exit_with(EXIT_CRITICAL_ERROR);
         } else if (abs_to_merge.size() == 0) {
             cout << "No symmetries for merging found." << endl;
+        } else {
+            cout << "Merging next: ";
+            for (set<int>::iterator it = abs_to_merge.begin(); it != abs_to_merge.end(); ++it) {
+                cout << *it << " ";
+            }
+            cout << endl;
         }
     }
 
