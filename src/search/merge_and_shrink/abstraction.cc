@@ -131,7 +131,6 @@ void Abstraction::compute_label_ranks(vector<int> &label_ranks) {
 }
 
 void Abstraction::merge_abstraction_into(const Abstraction *other) {
-    // TODO: this seems not to be correct.
     assert(is_normalized());
     assert(other->is_normalized());
     if (num_states != other->num_states) {
@@ -143,6 +142,12 @@ void Abstraction::merge_abstraction_into(const Abstraction *other) {
         cerr << "Abstractions have different sizes of transitions!" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
+    if ((dynamic_cast<const AtomicAbstraction *>(this) && dynamic_cast<const CompositeAbstraction *>(other))
+            || (dynamic_cast<const CompositeAbstraction *>(this) && dynamic_cast<const AtomicAbstraction *>(other))) {
+        cerr << "Trying to merge atomic and composite abstractions. It is "
+             << "not clear how to deal with this at the moment." << endl;
+        exit_with(EXIT_CRITICAL_ERROR);
+    }
     for (size_t i = 0; i < transitions_by_label.size(); ++i) {
         vector<AbstractTransition> &transitions = transitions_by_label[i];
         const vector<AbstractTransition> &other_transitions = other_transitions_by_label[i];
@@ -152,6 +157,9 @@ void Abstraction::merge_abstraction_into(const Abstraction *other) {
             transitions.push_back(other_transitions[j]);
         }
     }
+    vector<int> new_varset;
+    set_union(varset.begin(), varset.end(), other->varset.begin(), other->varset.end(), back_inserter(new_varset));
+    varset.swap(new_varset);
 }
 
 bool Abstraction::are_distances_computed() const {
@@ -892,15 +900,29 @@ CompositeAbstraction::~CompositeAbstraction() {
 }
 
 string AtomicAbstraction::description() const {
-    ostringstream s;
+    /*ostringstream s;
     s << "atomic abstraction #" << variable;
+    return s.str();*/
+    ostringstream s;
+    s << "abstraction (";
+    for (size_t i = 0; i < varset.size(); ++i) {
+        s << varset[i];
+        if (i != varset.size() - 1)
+            s << ",";
+    }
+    s << ")";
     return s.str();
 }
 
 string CompositeAbstraction::description() const {
     ostringstream s;
-    s << "abstraction (" << varset.size() << "/"
-      << g_variable_domain.size() << " vars)";
+    s << "abstraction (";
+    for (size_t i = 0; i < varset.size(); ++i) {
+        s << varset[i];
+        if (i != varset.size() - 1)
+            s << ",";
+    }
+    s << ")";
     return s.str();
 }
 

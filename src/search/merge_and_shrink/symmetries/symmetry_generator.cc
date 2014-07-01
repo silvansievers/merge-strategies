@@ -88,8 +88,9 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
     _allocate();
 
     int num_abstractions = sym_gen_info.num_abstractions;
-    affected.resize(num_abstractions, false);
+    internally_affected.resize(num_abstractions, false);
     mapped.resize(num_abstractions, false);
+    overall_affected.resize(num_abstractions, false);
     for (unsigned int from_index = 0; from_index < sym_gen_info.length; from_index++){
         if (from_index > sym_gen_info.num_abs_and_states) {
             cerr << "Symmetry generator index out of range" << endl;
@@ -107,15 +108,37 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                     mapped[from_index] = true;
                     mapped_abstractions.push_back(from_index);
                 }
+                if (!overall_affected[from_index]) {
+                    overall_affected[from_index] = true;
+                    overall_affected_abstractions.push_back(from_index);
+                }
             } else {
-                int abs_index = sym_gen_info.get_var_by_index(from_index);
-                if (!affected[abs_index]) {
-                    affected_abstractions.push_back(abs_index);
-                    affected[abs_index] = true;
+                int from_abs_index = sym_gen_info.get_var_by_index(from_index);
+                int to_abs_index = sym_gen_info_.get_var_by_index(to_index);
+                if (!overall_affected[from_abs_index]) {
+                    overall_affected[from_abs_index] = true;
+                    overall_affected_abstractions.push_back(from_abs_index);
+                }
+                if (from_abs_index == to_abs_index) {
+                    // abstraction affected internally
+                    if (!internally_affected[from_abs_index]) {
+                        internally_affected_abstractions.push_back(from_abs_index);
+                        internally_affected[from_abs_index] = true;
+                    }
+                } else {
+                    if (automorphism[from_abs_index] != to_abs_index) {
+                        cerr << "State of abstraction mapped to state of another"
+                             << " abstraction which differs from the abstractions"
+                             << " nodes mapping." << endl;
+                        exit_with(EXIT_CRITICAL_ERROR);
+                    }
                 }
             }
         }
     }
+
+    sort(internally_affected_abstractions.begin(), internally_affected_abstractions.end());
+    sort(mapped_abstractions.begin(), mapped_abstractions.end());
 
     if (!abstraction_stabilized_symmetry)
         compute_cycles();
@@ -238,7 +261,7 @@ void Permutation::finalize(){
 
 bool SymmetryGenerator::identity() const{
     if (identity_generator)
-        assert(affected_abstractions.empty());
+        assert(internally_affected_abstractions.empty());
     return identity_generator;
 }
 
