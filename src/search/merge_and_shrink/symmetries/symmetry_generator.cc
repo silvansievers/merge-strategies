@@ -103,6 +103,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
         if (from_index != to_index) {
             identity_generator = false;
             if (from_index < num_abstractions) {
+                // abstraction is mapped
                 assert(to_index < num_abstractions);
                 if (!mapped[from_index]) {
                     mapped[from_index] = true;
@@ -128,7 +129,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                 } else {
                     if (automorphism[from_abs_index] != to_abs_index) {
                         cerr << "State of abstraction mapped to state of another"
-                             << " abstraction which differs from the abstractions"
+                             << " abstraction which differs from the abstractions'"
                              << " nodes mapping." << endl;
                         exit_with(EXIT_CRITICAL_ERROR);
                     }

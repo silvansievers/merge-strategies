@@ -99,12 +99,9 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> type_of_symmetries;
     type_of_symmetries.push_back("ATOMIC");
     type_of_symmetries.push_back("LOCAL");
-    type_of_symmetries.push_back("AT_MOST_ONE_CYCLE");
-    type_of_symmetries.push_back("ANY");
     parser.add_enum_option("type_of_symmetries", type_of_symmetries,
                            "type of symmetry: only atomic symmetries, "
-                           "local and atomic symmetries, "
-                           "at most one cycle,.any.", "ATOMIC");
+                           "local symmetries", "ATOMIC");
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "
                             "for local symmetries only", "False");
