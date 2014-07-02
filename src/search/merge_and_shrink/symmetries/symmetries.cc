@@ -72,20 +72,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                     smallest_generator_affected_abstractions_index = generator_index;
                 }
 
-                vector<int> intersection_internally_affected_mapped;
-                // intersection affected mapped is the set intersection of affected abs and
-                // mapped abs. There may exist generators both mapping abstractions onto
-                // each other and affecting each of them individually as well, which
-                // means that the generator is not atomic.
-                // TODO: I think this can never happen
-                set_intersection(internally_affected_abstractions.begin(), internally_affected_abstractions.end(),
-                                 mapped_abstractions.begin(), mapped_abstractions.end(),
-                                 inserter(intersection_internally_affected_mapped, intersection_internally_affected_mapped.begin()));
-                if (!intersection_internally_affected_mapped.empty()) {
-                    cerr << "Abstraction is mapped and internally affected!" << endl;
-                    exit_with(EXIT_CRITICAL_ERROR);
-                }
-
                 if (cycles.size() > 0) {
                     int cycles_size = 0;
                     for (size_t i = 0; i < cycles.size(); ++i) {
@@ -99,12 +85,16 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                         vector<int> affected_minus_mapped;
                         // affected minues mapped is the set difference of affected abs minus
                         // mapped abs. If it is non-empty, there are abstractions not mapped
-                        // which are affected by the generator.
+                        // which are affected by the generator. As a result, the generator
+                        // is not atomic.
+                        // NOTE: No generator may both internally affect an abstraction
+                        // and map it onto another one at the same time, due to the
+                        // definition of the PDG.
                         set_difference(internally_affected_abstractions.begin(), internally_affected_abstractions.end(),
                                        mapped_abstractions.begin(), mapped_abstractions.end(),
                                        inserter(affected_minus_mapped, affected_minus_mapped.begin()));
 
-                        if (affected_minus_mapped.empty() && intersection_internally_affected_mapped.empty()) {
+                        if (affected_minus_mapped.empty()) {
                             if (cycles_size > largest_atomic_cycle_size) {
                                 largest_atomic_cycle_size = cycles_size;
                                 largest_atomic_cycle_index = generator_index;

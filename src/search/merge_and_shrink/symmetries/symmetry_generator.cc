@@ -109,6 +109,11 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                     mapped[from_index] = true;
                     mapped_abstractions.push_back(from_index);
                 }
+                if (mapped[from_index] && internally_affected[from_index]) {
+                    cerr << "Abstraction " << from_index << "both internally "
+                         << "affected and mapped to another abstraction" << endl;
+                    exit_with(EXIT_CRITICAL_ERROR);
+                }
                 if (!overall_affected[from_index]) {
                     overall_affected[from_index] = true;
                     overall_affected_abstractions.push_back(from_index);
@@ -125,6 +130,11 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                     if (!internally_affected[from_abs_index]) {
                         internally_affected_abstractions.push_back(from_abs_index);
                         internally_affected[from_abs_index] = true;
+                    }
+                    if (mapped[from_abs_index] && internally_affected[from_abs_index]) {
+                        cerr << "Abstraction " << from_abs_index << "both internally "
+                             << "affected and mapped to another abstraction" << endl;
+                        exit_with(EXIT_CRITICAL_ERROR);
                     }
                 } else {
                     if (automorphism[from_abs_index] != to_abs_index) {
