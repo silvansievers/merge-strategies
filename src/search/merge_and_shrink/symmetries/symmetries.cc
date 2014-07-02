@@ -33,20 +33,16 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
     int number_of_applied_symmetries = 0;
     int number_of_collapsed_abstractions = 0;
     while (true) {
-        //for (size_t i = 0; i < abstractions.size(); ++i) {
-        //    cout << i << " " << abstractions[i] << endl;
-        //}
-
         bool found_symmetry = find_symmetries(abstractions);
         if (found_symmetry) {
             int smallest_generator_affected_abstractions_index = -1;
             int smallest_generator_affected_abstrations_size = numeric_limits<int>::max();
-            //int smallest_generator_mapped_abstractions_index = -1;
-            //int smallest_generator_mapped_abstrations_size = numeric_limits<int>::max();
-            int largest_atomic_cycle_index = -1;
-            int largest_atomic_cycle_size = 0;
-            int largest_local_cycle_index = -1;
-            int largest_local_cycle_size = 0;
+            //int largest_atomic_cycle_index = -1;
+            //int largest_atomic_cycle_size = 0;
+            //int largest_local_cycle_index = -1;
+            //int largest_local_cycle_size = 0;
+            vector<int> atomic_cycles;
+            vector<int> local_cycles;
             vector<int> atomic_generators;
             vector<int> local_generators;
 
@@ -73,14 +69,15 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 }
 
                 if (cycles.size() > 0) {
-                    int cycles_size = 0;
+                    local_cycles.push_back(generator_index);
+                    /*int cycles_size = 0;
                     for (size_t i = 0; i < cycles.size(); ++i) {
                         cycles_size += cycles[i].size();
                     }
                     if (cycles_size > largest_local_cycle_size) {
                         largest_local_cycle_size = cycles_size;
                         largest_local_cycle_index = generator_index;
-                    }
+                    }*/
                     if (cycles.size() == 1) {
                         vector<int> affected_minus_mapped;
                         // affected minues mapped is the set difference of affected abs minus
@@ -95,10 +92,11 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                                        inserter(affected_minus_mapped, affected_minus_mapped.begin()));
 
                         if (affected_minus_mapped.empty()) {
-                            if (cycles_size > largest_atomic_cycle_size) {
-                                largest_atomic_cycle_size = cycles_size;
-                                largest_atomic_cycle_index = generator_index;
-                            }
+                            atomic_cycles.push_back(generator_index);
+                            //if (cycles_size > largest_atomic_cycle_size) {
+                            //    largest_atomic_cycle_size = cycles_size;
+                            //    largest_atomic_cycle_index = generator_index;
+                            //}
                         }
                     }
                 }
@@ -139,69 +137,54 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
 
             switch (type_of_symmetries) {
             case ATOMIC:
-                if (largest_atomic_cycle_index != -1) {
-                    // there is a generator with exactly one cyclic mapping
-                    ++number_of_applied_symmetries;
-                    cout << "Applying cyclic atomic generator: " << largest_atomic_cycle_index << endl;
-                    const SymmetryGenerator *generator = get_symmetry_generator(largest_atomic_cycle_index);
+                // NOTE: atomic generators and atomic cycles are always disjoint
+                // sets of generators, as an atomic generator affects exactly
+                // one abstraction, whereas an atomic cycle consists of at least
+                // two abstractions.
+                if (atomic_generators.empty() && atomic_cycles.empty()) {
+                    // find the "smallest" symmetry to merge for
+                    assert(smallest_generator_affected_abstractions_index != -1);
+                    const vector<int> &overall_affected_abstractions =
+                            get_symmetry_generator(smallest_generator_affected_abstractions_index)->
+                            get_overall_affected_abstractions();
+                    abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
+                    return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
+                }
+
+                ++number_of_applied_symmetries;
+
+                if (!atomic_generators.empty()) {
+                    // apply atomic symmetries
+                    cout << "Applying all atomic symmetries" << endl;
+                    apply_symmetries(abstractions, atomic_generators);
+                }
+
+                // apply all generators with exactly one cycle and no other
+                // affected abstractions
+                for (size_t i = 0; i < atomic_cycles.size(); ++i) {
+                    int generator_index = atomic_cycles[i];
+                    cout << "Applying cyclic atomic generator: " << generator_index << endl;
+                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
                     const vector<vector<int> > &cycles = generator->get_cycles();
                     assert(cycles.size() == 1);
-                    const vector<int> &collapsed_abs = cycles[0];
-                    Abstraction *chosen_representative = abstractions[collapsed_abs[0]];
-                    for (size_t i = 1; i < collapsed_abs.size(); ++i) {
-                        size_t abs_index = collapsed_abs[i];
-                        Abstraction *abs = abstractions[abs_index];
-                        chosen_representative->merge_abstraction_into(abs);
-                        chosen_representative->normalize();
-                        abs->release_memory();
-                        abstractions[abs_index] = 0;
-                    }
-                    number_of_collapsed_abstractions += collapsed_abs.size() - 1;
-                } else {
-                    // no atomic cyclic mappings
-                    if (atomic_generators.empty()) {
-                        // find the "smallest" symmetry to merge for
-                        assert(smallest_generator_affected_abstractions_index != -1);
-                        const vector<int> &overall_affected_abstractions =
-                                get_symmetry_generator(smallest_generator_affected_abstractions_index)->
-                                get_overall_affected_abstractions();
-                        abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
-                        return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
-                    } else {
-                        // apply atomic symmetries
-                        ++number_of_applied_symmetries;
-                        cout << "Applying all atomic symmetries" << endl;
-                        apply_symmetries(abstractions, atomic_generators);
-                    }
-                }
-                break;
-            case LOCAL:
-                if (largest_local_cycle_index != -1) {
-                    // there is a generator with cyclic abstraction mappings
-                    ++number_of_applied_symmetries;
-                    cout << "Applying cyclic local generator: " << largest_local_cycle_index << endl;
-
-                    // first, apply the generator to the set of all abstractions.
-                    // this is required as to make sure that the internally
-                    // affected abstractions by the generator are correctly
-                    // modified.
-                    // TODO: only do this for generators that actually affect
-                    // abstractions internally besides having cyclic mappings
-                    // -> this information should be computed in the generators
-                    // already.
-                    vector<int> generator_to_be_applied;
-                    generator_to_be_applied.push_back(largest_local_cycle_index);
-                    apply_symmetries(abstractions, generator_to_be_applied);
-
-                    // second, for all cycles, choose a single representing
-                    // abstraction
-                    const SymmetryGenerator *generator = get_symmetry_generator(largest_local_cycle_index);
-                    const vector<vector<int> > &cycles = generator->get_cycles();
+                    vector<bool> mapped_abstractions(abstractions.size(), false);
                     for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
                         const vector<int> &collapsed_abs = cycles[cycle_no];
                         Abstraction *chosen_representative = abstractions[collapsed_abs[0]];
+                        if (!mapped_abstractions[collapsed_abs[0]]) {
+                            mapped_abstractions[collapsed_abs[0]] = true;
+                        } else {
+                            cerr << "Abstraction is included in several cycles" << endl;
+                            exit_with(EXIT_CRITICAL_ERROR);
+                        }
                         for (size_t i = 1; i < collapsed_abs.size(); ++i) {
                             size_t abs_index = collapsed_abs[i];
+                            if (!mapped_abstractions[abs_index]) {
+                                mapped_abstractions[abs_index] = true;
+                            } else {
+                                cerr << "Abstraction is included in several cycles" << endl;
+                                exit_with(EXIT_CRITICAL_ERROR);
+                            }
                             Abstraction *abs = abstractions[abs_index];
                             chosen_representative->merge_abstraction_into(abs);
                             chosen_representative->normalize();
@@ -210,13 +193,54 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                         }
                         number_of_collapsed_abstractions += collapsed_abs.size() - 1;
                     }
-                } else {
-                    // no cyclic mappings at all
-                    ++number_of_applied_symmetries;
-                    cout << "Applying all (local) symmetries" << endl;
-                    apply_symmetries(abstractions, local_generators);
-                    break;
                 }
+                break;
+            case LOCAL:
+                ++number_of_applied_symmetries;
+
+                if (!local_generators.empty()) {
+                    // apply local symmetries
+                    cout << "Applying all local symmetries" << endl;
+                    apply_symmetries(abstractions, local_generators);
+                }
+
+                // apply all generators with cycles
+                for (size_t i = 0; i < local_cycles.size(); ++i) {
+                    int generator_index = local_cycles[i];
+                // apply single generator with largest number of mapped abstractions
+                //if (largest_local_cycle_index != -1) {
+                    //int generator_index = largest_local_cycle_index;
+                    cout << "Applying cyclic local generator: " << generator_index << endl;
+                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
+                    const vector<vector<int> > &cycles = generator->get_cycles();
+                    vector<bool> mapped_abstractions(abstractions.size(), false);
+                    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
+                        const vector<int> &collapsed_abs = cycles[cycle_no];
+                        Abstraction *chosen_representative = abstractions[collapsed_abs[0]];
+                        if (!mapped_abstractions[collapsed_abs[0]]) {
+                            mapped_abstractions[collapsed_abs[0]] = true;
+                        } else {
+                            cerr << "Abstraction is included in several cycles" << endl;
+                            exit_with(EXIT_CRITICAL_ERROR);
+                        }
+                        for (size_t i = 1; i < collapsed_abs.size(); ++i) {
+                            size_t abs_index = collapsed_abs[i];
+                            if (!mapped_abstractions[abs_index]) {
+                                mapped_abstractions[abs_index] = true;
+                            } else {
+                                cerr << "Abstraction is included in several cycles" << endl;
+                                exit_with(EXIT_CRITICAL_ERROR);
+                            }
+                            Abstraction *abs = abstractions[abs_index];
+                            chosen_representative->merge_abstraction_into(abs);
+                            chosen_representative->normalize();
+                            abs->release_memory();
+                            abstractions[abs_index] = 0;
+                        }
+                        number_of_collapsed_abstractions += collapsed_abs.size() - 1;
+                    }
+                }
+                break;
             }
         } else {
             break;
