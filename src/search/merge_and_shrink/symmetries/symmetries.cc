@@ -157,117 +157,125 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                     apply_symmetries(abstractions, atomic_generators);
                 }
 
-                // copy all cycles into a new data structure
-                vector<vector<int> > new_cycles;
-                for (size_t i = 0; i < atomic_cycles.size(); ++i) {
-                    int generator_index = atomic_cycles[i];
-                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
-                    const vector<vector<int> > &cycles = generator->get_cycles();
-                    assert(cycles.size() == 1);
-                    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
-                        const vector<int> &collapsed_abs = cycles[cycle_no];
-                        new_cycles.push_back(vector<int>(collapsed_abs));
-                    }
-                }
-
-                // find and combine all "overlapping" cycles
-                for (int i = 0; i < new_cycles.size() - 1; ++i) {
-                    vector<int> &cycle1 = new_cycles[i];
-                    //cout << "considering cycle " << cycle1 << endl;
-                    for (int j = i + 1; j < new_cycles.size(); ++j) {
-                        const vector<int> &cycle2 = new_cycles[j];
-                        //cout << "and " << cycle2 << endl;
-
-                        vector<int> intersection;
-                        set_intersection(cycle1.begin(), cycle1.end(),
-                                         cycle2.begin(), cycle2.end(),
-                                         back_inserter(intersection));
-                        if (!intersection.empty()) {
-                            // cycles overlap
-                            vector<int> unified_cycle;
-                            set_union(cycle1.begin(), cycle1.end(),
-                                      cycle2.begin(), cycle2.end(),
-                                      back_inserter(unified_cycle));
-                            // replace cycle1 by the union of cycle1 and cycle2
-                            cycle1.swap(unified_cycle);
-                            // erase cycle2
-                            new_cycles.erase(new_cycles.begin() + j);
-                            // repeat outer loop
-                            --i;
-
-                            //cout << "overlap!" << endl;
-                            //for (size_t x = 0; x < new_cycles.size(); ++x)
-                            //    cout << new_cycles[x] << endl;
-                            break;
-                        }
-                    }
-                }
-
-                // apply all cycles
-                vector<bool> mapped_abstractions(abstractions.size(), false);
-                abstractions[7]->dump();
-                for (size_t cycle_no = 0; cycle_no < new_cycles.size(); ++cycle_no) {
-                    const vector<int> &cycle = new_cycles[cycle_no];
-                    cout << "Collapsing cycle: " << cycle << endl;
-                    Abstraction *chosen_representative = abstractions[cycle[0]];
-                    if (!mapped_abstractions[cycle[0]]) {
-                        mapped_abstractions[cycle[0]] = true;
-                    } else {
-                        cerr << "Abstraction is included in several cycles" << endl;
-                        exit_with(EXIT_CRITICAL_ERROR);
-                    }
-                    for (size_t j = 1; j < cycle.size(); ++j) {
-                        size_t abs_index = cycle[j];
-                        if (!mapped_abstractions[abs_index]) {
-                            mapped_abstractions[abs_index] = true;
-                        } else {
-                            cerr << "Abstraction is included in several cycles" << endl;
-                            exit_with(EXIT_CRITICAL_ERROR);
-                        }
-                        Abstraction *abs = abstractions[abs_index];
-                        chosen_representative->merge_abstraction_into(abs);
-                        chosen_representative->normalize();
-                        abs->release_memory();
-                        abstractions[abs_index] = 0;
-                    }
-                    number_of_collapsed_abstractions += cycle.size() - 1;
-                }
-
-                // apply all generators with exactly one cycle and no other
-                // affected abstractions
-//                vector<bool> mapped_abstractions(abstractions.size(), false);
+//                // copy all cycles into a new data structure
+//                vector<vector<int> > new_cycles;
 //                for (size_t i = 0; i < atomic_cycles.size(); ++i) {
 //                    int generator_index = atomic_cycles[i];
-//                    cout << "Applying cyclic atomic generator: " << generator_index << endl;
 //                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
 //                    const vector<vector<int> > &cycles = generator->get_cycles();
 //                    assert(cycles.size() == 1);
 //                    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
 //                        const vector<int> &collapsed_abs = cycles[cycle_no];
-//                        Abstraction *chosen_representative = abstractions[collapsed_abs[0]];
+//                        new_cycles.push_back(vector<int>(collapsed_abs));
+//                    }
+//                }
+
+//                // find and combine all "overlapping" cycles
+//                for (int i = 0; i < new_cycles.size() - 1; ++i) {
+//                    vector<int> &cycle1 = new_cycles[i];
+//                    //cout << "considering cycle " << cycle1 << endl;
+//                    for (int j = i + 1; j < new_cycles.size(); ++j) {
+//                        const vector<int> &cycle2 = new_cycles[j];
+//                        //cout << "and " << cycle2 << endl;
+
+//                        vector<int> intersection;
+//                        set_intersection(cycle1.begin(), cycle1.end(),
+//                                         cycle2.begin(), cycle2.end(),
+//                                         back_inserter(intersection));
+//                        if (!intersection.empty()) {
+//                            // cycles overlap
+//                            vector<int> unified_cycle;
+//                            set_union(cycle1.begin(), cycle1.end(),
+//                                      cycle2.begin(), cycle2.end(),
+//                                      back_inserter(unified_cycle));
+//                            // replace cycle1 by the union of cycle1 and cycle2
+//                            cycle1.swap(unified_cycle);
+//                            // erase cycle2
+//                            new_cycles.erase(new_cycles.begin() + j);
+//                            // repeat outer loop
+//                            --i;
+
+//                            //cout << "overlap!" << endl;
+//                            //for (size_t x = 0; x < new_cycles.size(); ++x)
+//                            //    cout << new_cycles[x] << endl;
+//                            break;
+//                        }
+//                    }
+//                }
+
+//                // apply all cycles
+//                vector<bool> mapped_abstractions(abstractions.size(), false);
+//                abstractions[7]->dump();
+//                for (size_t cycle_no = 0; cycle_no < new_cycles.size(); ++cycle_no) {
+//                    const vector<int> &cycle = new_cycles[cycle_no];
+//                    cout << "Collapsing cycle: " << cycle << endl;
+//                    Abstraction *chosen_representative = abstractions[cycle[0]];
+//                    if (!mapped_abstractions[cycle[0]]) {
+//                        mapped_abstractions[cycle[0]] = true;
+//                    } else {
+//                        cerr << "Abstraction is included in several cycles" << endl;
+//                        exit_with(EXIT_CRITICAL_ERROR);
+//                    }
+//                    for (size_t j = 1; j < cycle.size(); ++j) {
+//                        size_t abs_index = cycle[j];
+//                        if (!mapped_abstractions[abs_index]) {
+//                            mapped_abstractions[abs_index] = true;
+//                        } else {
+//                            cerr << "Abstraction is included in several cycles" << endl;
+//                            exit_with(EXIT_CRITICAL_ERROR);
+//                        }
+//                        Abstraction *abs = abstractions[abs_index];
+//                        chosen_representative->merge_abstraction_into(abs);
+//                        chosen_representative->normalize();
+//                        abs->release_memory();
+//                        abstractions[abs_index] = 0;
+//                    }
+//                    number_of_collapsed_abstractions += cycle.size() - 1;
+//                }
+
+                // apply all generators with exactly one cycle and no other
+                // affected abstractions
+                //vector<bool> mapped_abstractions(abstractions.size(), false);
+                for (size_t i = 0; i < atomic_cycles.size(); ++i) {
+                    int generator_index = atomic_cycles[i];
+                    cout << "Applying cyclic atomic generator: " << generator_index << endl;
+                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
+                    vector<vector<pair<int, vector<int> > > > blubb;
+                    generator->get_mappings_for_cycles(blubb);
+                    const vector<vector<int> > &cycles = generator->get_cycles();
+                    assert(cycles.size() == 1);
+                    assert(blubb.size() == cycles.size());
+                    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
+                        const vector<int> &collapsed_abs = cycles[cycle_no];
+                        const vector<pair<int, vector<int> > > &cycle_mapping = blubb[cycle_no];
+                        Abstraction *chosen_representative = abstractions[collapsed_abs[0]];
 //                        if (!mapped_abstractions[collapsed_abs[0]]) {
 //                            mapped_abstractions[collapsed_abs[0]] = true;
 //                        } else {
 //                            cerr << "Abstraction is included in several cycles" << endl;
 //                            exit_with(EXIT_CRITICAL_ERROR);
 //                        }
-//                        for (size_t j = 1; j < collapsed_abs.size(); ++j) {
-//                            size_t abs_index = collapsed_abs[j];
+                        for (size_t j = 1; j < collapsed_abs.size(); ++j) {
+                            size_t abs_index = collapsed_abs[j];
+                            const pair<int, vector<int> > &abs_mapping = cycle_mapping[j];
+                            cout << abs_mapping.first << endl;
+                            cout << abs_mapping.second << endl;
+                            assert(abs_index == abs_mapping.first);
 //                            if (!mapped_abstractions[abs_index]) {
 //                                mapped_abstractions[abs_index] = true;
 //                            } else {
 //                                cerr << "Abstraction is included in several cycles" << endl;
 //                                exit_with(EXIT_CRITICAL_ERROR);
 //                            }
-//                            Abstraction *abs = abstractions[abs_index];
-//                            chosen_representative->merge_abstraction_into(abs);
-//                            chosen_representative->normalize();
-//                            abs->release_memory();
-//                            abstractions[abs_index] = 0;
-//                        }
-//                        number_of_collapsed_abstractions += collapsed_abs.size() - 1;
-//                    }
-//                }
+                            Abstraction *abs = abstractions[abs_index];
+                            chosen_representative->merge_abstraction_into(abs);
+                            //chosen_representative->normalize();
+                            abs->release_memory();
+                            abstractions[abs_index] = 0;
+                        }
+                        number_of_collapsed_abstractions += collapsed_abs.size() - 1;
+                    }
+                }
                 break;
             }
             case LOCAL: {
@@ -318,6 +326,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 break;
             }
         }
+        break;
     }
     return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
 }

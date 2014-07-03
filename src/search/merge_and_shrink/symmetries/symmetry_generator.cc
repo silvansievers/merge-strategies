@@ -75,6 +75,16 @@ void SymmetryGeneratorInfo::dump() const {
     cout << dom_sum_by_var << endl;
 }
 
+void SymmetryGeneratorInfo::dump_var_by_val() const {
+    int size = num_abs_and_states - num_abstractions;
+    for (size_t i = 0; i < size; ++i) {
+        cout << i << ": " << var_by_val[i];
+        if (i != size - 1)
+            cout << ", ";
+    }
+    cout << endl;
+}
+
 
 
 
@@ -195,6 +205,56 @@ void SymmetryGenerator::compute_cycles() {
                 largest_cycle_index = cycles.size() - 1;
             }*/
         }
+    }
+}
+
+void SymmetryGenerator::get_mappings_for_cycles(vector<vector<pair<int, vector<int> > > > &mapping) const {
+    mapping.reserve(cycles.size());
+    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
+        const vector<int> &cycle = cycles[cycle_no];
+        vector<pair<int, vector<int> > > cycle_mappings;
+        cycle_mappings.reserve(cycle.size());
+        cout << "cycle " << cycle_no << endl;
+        cout << sym_gen_info.dom_sum_by_var << endl;
+        dump_value();
+        sym_gen_info.dump_var_by_val();
+        for (size_t i = 0; i < cycle.size(); ++i) {
+            size_t from_abs_index = cycle[i];
+            size_t to_abs_index;
+            if (i != cycle.size() - 1)
+                to_abs_index = cycle[i + 1];
+            else
+                to_abs_index = cycle[0];
+            cout << "abstraction " << from_abs_index << " -> " << to_abs_index << endl;
+            vector<int> internal_abs_mapping;
+            size_t value_index = 0;
+            while (sym_gen_info.var_by_val[value_index] != from_abs_index) {
+                // find starting index in value[] for abstraction from_abs_index
+                ++value_index;
+            }
+            while (value_index < sym_gen_info.num_abs_and_states - sym_gen_info.num_abstractions && sym_gen_info.var_by_val[value_index] == from_abs_index) {
+                // the entry x in var_by_val corresponds to the index
+                // x + num_abstractions in value[]
+                //cout << "value_index " << value_index << endl;
+                int from_index = value_index + sym_gen_info.num_abstractions;
+                //cout << "from_index " << from_index << endl;
+                int to_index = value[from_index];
+                //cout << "to_index " << to_index << endl;
+                //assert(sym_gen_info.get_var_by_index(to_index) == to_abs_index);
+                int to_abs_index = sym_gen_info.get_var_by_index(to_index);
+                //cout << "to_abs_index " << to_abs_index << endl;
+                if (i != cycle.size() - 1)
+                    assert(to_abs_index == cycle[i + 1]);
+                else
+                    assert(to_abs_index == cycle[0]);
+                int to_state_index = to_index - sym_gen_info.dom_sum_by_var[to_abs_index];
+                cout << from_index - sym_gen_info.dom_sum_by_var[from_abs_index] << " -> " << to_state_index << endl;
+                internal_abs_mapping.push_back(to_state_index);
+                ++value_index;
+            }
+            cycle_mappings.push_back(make_pair(from_abs_index, internal_abs_mapping));
+        }
+        mapping.push_back(cycle_mappings);
     }
 }
 
@@ -397,6 +457,15 @@ void SymmetryGenerator::dump() const {
     for(unsigned int i = 0; i < sym_gen_info.length; i++){
         if (get_value(i) != i)
             cout << setw(4) << get_value(i);
+    }
+    cout << endl;
+}
+
+void SymmetryGenerator::dump_value() const {
+    for (size_t i = 0; i < sym_gen_info.length; ++i) {
+        cout << i << " -> " << value[i];
+        if (i != sym_gen_info.length - 1)
+            cout << ", ";
     }
     cout << endl;
 }

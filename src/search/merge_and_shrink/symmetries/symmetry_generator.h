@@ -11,7 +11,7 @@ struct SymmetryGeneratorInfo {
     int num_abstractions;
     unsigned int num_abs_and_states;
     unsigned int length;
-    // Silvan: this vector ranges over the total number of indices of this generator.
+    // Silvan: this vector ranges over the number of abstract states of this generator.
     // for every node it contains the number of the abstraction this node
     // belongs to.
     std::vector<int> var_by_val;
@@ -31,6 +31,7 @@ struct SymmetryGeneratorInfo {
     std::pair<int, AbstractStateRef> get_var_val_by_index(const unsigned int ind) const;
     unsigned int get_index_by_var_val_pair(const int var, const AbstractStateRef val) const;
     void dump() const;
+    void dump_var_by_val() const;
 };
 
 class SymmetryGenerator {
@@ -91,9 +92,11 @@ public:
     const std::vector<std::vector<int> > &get_cycles() const {
         return cycles;
     }
+    void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
     bool internally_affects(int abs_index) const {return internally_affected[abs_index]; }
     bool maps(int abs_index) const {return mapped[abs_index]; }
     void dump() const;
+    void dump_value() const;
     void dump_all() const;
 };
 
