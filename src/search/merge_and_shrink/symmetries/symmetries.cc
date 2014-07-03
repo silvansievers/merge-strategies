@@ -29,6 +29,7 @@ Symmetries::Symmetries(const Options &options)
 
 pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
                                                      set<int> &abs_to_merge) {
+    cout << abs_to_merge.size() << endl;
     assert(abs_to_merge.empty());
     int number_of_applied_symmetries = 0;
     int number_of_collapsed_abstractions = 0;
