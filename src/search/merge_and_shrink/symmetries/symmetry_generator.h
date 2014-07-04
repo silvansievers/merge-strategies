@@ -61,8 +61,6 @@ class SymmetryGenerator {
     std::vector<bool> overall_affected;
     std::vector<int> overall_affected_abstractions;
     std::vector<std::vector<int> > cycles;
-    //int largest_cycle_size;
-    //int largest_cycle_index;
 
     void compute_cycles();
 public:

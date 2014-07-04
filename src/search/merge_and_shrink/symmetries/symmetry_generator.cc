@@ -92,9 +92,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                                      const unsigned int* automorphism,
                                      bool abstraction_stabilized_symmetry)
     : sym_gen_info(sym_gen_info_),
-      identity_generator(true)/*,
-      largest_cycle_size(0),
-      largest_cycle_index(0)*/ {
+      identity_generator(true) {
     _allocate();
 
     int num_abstractions = sym_gen_info.num_abstractions;
@@ -201,15 +199,12 @@ void SymmetryGenerator::compute_cycles() {
                 to_index = get_value(from_index);
             }
             cycles.push_back(cycle);
-            /*if (cycle.size > largest_cycle_size) {
-                largest_cycle_size = cycle.size();
-                largest_cycle_index = cycles.size() - 1;
-            }*/
         }
     }
 }
 
 void SymmetryGenerator::get_mappings_for_cycles(vector<vector<pair<int, vector<int> > > > &mapping) const {
+    return;
     mapping.reserve(cycles.size());
     for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
         const vector<int> &cycle = cycles[cycle_no];
