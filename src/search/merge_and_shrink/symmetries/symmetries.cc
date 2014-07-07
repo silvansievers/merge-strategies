@@ -42,12 +42,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
     int largest_generator_affected_abstrations_size = 0;
     int largest_generator_mapped_abstractions_index = -1;
     int largest_generator_mapped_abstractions_size = 0;
-    //int largest_atomic_cycle_index = -1;
-    //int largest_atomic_cycle_size = 0;
-    //int largest_local_cycle_index = -1;
-    //int largest_local_cycle_size = 0;
-    //vector<int> atomic_cycles;
-    //vector<int> local_cycles;
     vector<int> atomic_generators;
     vector<int> local_generators;
 
@@ -56,7 +50,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         const vector<int> &internally_affected_abstractions = generator->get_internally_affected_abstractions();
         const vector<int> &mapped_abstractions = generator->get_mapped_abstractions();
         const vector<int> &overall_affected_abstractions = generator->get_overall_affected_abstractions();
-        //const vector<vector<int> > &cycles = generator->get_cycles();
 
         int number_overall_affected_abstractions = overall_affected_abstractions.size();
         if (number_overall_affected_abstractions < 1) {
@@ -89,39 +82,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 largest_generator_mapped_abstractions_index = generator_index;
             }
         }
-
-//            if (cycles.size() > 0) {
-//                local_cycles.push_back(generator_index);
-//                /*int cycles_size = 0;
-//                for (size_t i = 0; i < cycles.size(); ++i) {
-//                    cycles_size += cycles[i].size();
-//                }
-//                if (cycles_size > largest_local_cycle_size) {
-//                    largest_local_cycle_size = cycles_size;
-//                    largest_local_cycle_index = generator_index;
-//                }*/
-//                if (cycles.size() == 1) {
-//                    vector<int> affected_minus_mapped;
-//                    // affected minues mapped is the set difference of affected abs minus
-//                    // mapped abs. If it is non-empty, there are abstractions not mapped
-//                    // which are affected by the generator. As a result, the generator
-//                    // is not atomic.
-//                    // NOTE: No generator may both internally affect an abstraction
-//                    // and map it onto another one at the same time, due to the
-//                    // definition of the PDG.
-//                    set_difference(internally_affected_abstractions.begin(), internally_affected_abstractions.end(),
-//                                   mapped_abstractions.begin(), mapped_abstractions.end(),
-//                                   inserter(affected_minus_mapped, affected_minus_mapped.begin()));
-
-//                    if (affected_minus_mapped.empty()) {
-//                        atomic_cycles.push_back(generator_index);
-//                        //if (cycles_size > largest_atomic_cycle_size) {
-//                        //    largest_atomic_cycle_size = cycles_size;
-//                        //    largest_atomic_cycle_index = generator_index;
-//                        //}
-//                    }
-//                }
-//            }
 
         switch (number_overall_affected_abstractions) {
         case 0:
@@ -166,11 +126,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 apply_symmetries(abstractions, atomic_generators);
             }
 
-            // NOTE: atomic generators and atomic cycles are always disjoint
-            // sets of generators, as an atomic generator affects exactly
-            // one abstraction, whereas an atomic cycle consists of at least
-            // two abstractions.
-            //if (atomic_generators.empty()/* && atomic_cycles.empty()*/) {
             int chosen_generator_index = -1;
             if (symmetries_for_merging == SMALLEST && smallest_generator_affected_abstractions_index != -1) {
                 // use the "smallest" symmetry to merge for
@@ -186,82 +141,6 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                         get_overall_affected_abstractions();
                 abs_to_merge.insert(abs_to_merge.begin(), overall_affected_abstractions.begin(), overall_affected_abstractions.end());
             }
-
-//                // copy all cycles into a new data structure
-//                vector<vector<int> > new_cycles;
-//                for (size_t i = 0; i < atomic_cycles.size(); ++i) {
-//                    int generator_index = atomic_cycles[i];
-//                    const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
-//                    const vector<vector<int> > &cycles = generator->get_cycles();
-//                    assert(cycles.size() == 1);
-//                    for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
-//                        const vector<int> &collapsed_abs = cycles[cycle_no];
-//                        new_cycles.push_back(vector<int>(collapsed_abs));
-//                    }
-//                }
-
-//                // find and combine all "overlapping" cycles
-//                for (int i = 0; i < new_cycles.size() - 1; ++i) {
-//                    vector<int> &cycle1 = new_cycles[i];
-//                    //cout << "considering cycle " << cycle1 << endl;
-//                    for (int j = i + 1; j < new_cycles.size(); ++j) {
-//                        const vector<int> &cycle2 = new_cycles[j];
-//                        //cout << "and " << cycle2 << endl;
-
-//                        vector<int> intersection;
-//                        set_intersection(cycle1.begin(), cycle1.end(),
-//                                         cycle2.begin(), cycle2.end(),
-//                                         back_inserter(intersection));
-//                        if (!intersection.empty()) {
-//                            // cycles overlap
-//                            vector<int> unified_cycle;
-//                            set_union(cycle1.begin(), cycle1.end(),
-//                                      cycle2.begin(), cycle2.end(),
-//                                      back_inserter(unified_cycle));
-//                            // replace cycle1 by the union of cycle1 and cycle2
-//                            cycle1.swap(unified_cycle);
-//                            // erase cycle2
-//                            new_cycles.erase(new_cycles.begin() + j);
-//                            // repeat outer loop
-//                            --i;
-
-//                            //cout << "overlap!" << endl;
-//                            //for (size_t x = 0; x < new_cycles.size(); ++x)
-//                            //    cout << new_cycles[x] << endl;
-//                            break;
-//                        }
-//                    }
-//                }
-
-//                // apply all cycles
-//                vector<bool> mapped_abstractions(abstractions.size(), false);
-//                abstractions[7]->dump();
-//                for (size_t cycle_no = 0; cycle_no < new_cycles.size(); ++cycle_no) {
-//                    const vector<int> &cycle = new_cycles[cycle_no];
-//                    cout << "Collapsing cycle: " << cycle << endl;
-//                    Abstraction *chosen_representative = abstractions[cycle[0]];
-//                    if (!mapped_abstractions[cycle[0]]) {
-//                        mapped_abstractions[cycle[0]] = true;
-//                    } else {
-//                        cerr << "Abstraction is included in several cycles" << endl;
-//                        exit_with(EXIT_CRITICAL_ERROR);
-//                    }
-//                    for (size_t j = 1; j < cycle.size(); ++j) {
-//                        size_t abs_index = cycle[j];
-//                        if (!mapped_abstractions[abs_index]) {
-//                            mapped_abstractions[abs_index] = true;
-//                        } else {
-//                            cerr << "Abstraction is included in several cycles" << endl;
-//                            exit_with(EXIT_CRITICAL_ERROR);
-//                        }
-//                        Abstraction *abs = abstractions[abs_index];
-//                        chosen_representative->merge_abstraction_into(abs);
-//                        chosen_representative->normalize();
-//                        abs->release_memory();
-//                        abstractions[abs_index] = 0;
-//                    }
-//                    number_of_collapsed_abstractions += cycle.size() - 1;
-//                }
             break;
         }
         case LOCAL: {

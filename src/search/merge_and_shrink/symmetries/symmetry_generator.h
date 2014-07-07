@@ -37,22 +37,12 @@ struct SymmetryGeneratorInfo {
 class SymmetryGenerator {
     const SymmetryGeneratorInfo &sym_gen_info;
     unsigned int* value;
-    //unsigned int* inverse_value;
 
     bool borrowed_buffer;
     bool identity_generator;
-    // Need to keep the connection between affected vars, ie which var goes into which.
-    //std::vector<int> from_vars;
-    // Affected vars by cycles
-    //std::vector<std::vector<int> > affected_vars_cycles;
-    //int max_var_cycle_size;
 
     void _allocate();
     void _deallocate();
-    //void set_affected(unsigned int ind, unsigned int val);
-    //void reset_affected();
-    //void finalize();
-    //void set_maximal_variables_cycle_size();
 
     std::vector<bool> internally_affected;
     std::vector<int> internally_affected_abstractions;
@@ -71,12 +61,6 @@ public:
 
     bool identity() const;
     unsigned int get_value(unsigned int ind) const;
-    //unsigned int get_inverse_value(unsigned int ind) const;
-    //void print_variables_by_cycles() const;
-    //int get_maximal_variables_cycle_size() const;
-    //int calculate_number_variables_to_merge(bool linear_merge) const;
-    //void print_cycle_notation() const;
-    //string get_cycle_notation() const;
 
     const std::vector<int> &get_internally_affected_abstractions() const {
         return internally_affected_abstractions;

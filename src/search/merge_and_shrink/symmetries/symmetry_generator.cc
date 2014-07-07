@@ -170,8 +170,6 @@ SymmetryGenerator::~SymmetryGenerator(){
 void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
     value = new unsigned int[sym_gen_info.length];
-
-    //reset_affected();
 }
 
 void SymmetryGenerator::_deallocate() {
@@ -274,78 +272,6 @@ void SymmetryGenerator::compute_cycles(vector<vector<int> > cycles) const {
 //    }
 //}
 
-/*void Permutation::set_affected(unsigned int ind, unsigned int val) {
-    if (ind < pw.num_abstractions || ind == val || ind >= pw.num_abs_and_states)
-        return;
-
-    int var = pw.get_var_by_index(ind);
-    int to_var = pw.get_var_by_index(val);
-
-//  cout << "Setting the affected variables - variable " << var << " is mapped to the variable " << to_var << endl;
-
-    if (!affected[var]) {
-        vars_affected.push_back(var);
-        affected[var] = true;
-    }
-    if (!affected[to_var]) {
-        vars_affected.push_back(to_var);
-        affected[to_var] = true;
-    }
-    // Keeping the orig. var for each var.
-    from_vars[to_var] = var;
-}
-
-void Permutation::reset_affected() {
-    affected.assign(pw.num_abstractions, false);
-    vars_affected.clear();
-    from_vars.assign(pw.num_abstractions, -1);
-
-    //affected_vars_cycles.clear();
-}
-
-void Permutation::finalize(){
-    // Sorting the vector of affected variables
-    ::sort(vars_affected.begin(), vars_affected.end());
-
-    // Going over the vector from_vars of the mappings of the variables and finding cycles
-//  affected_vars_cycles.clear();
-    vector<bool> marked;
-    marked.assign(pw.num_abstractions, false);
-//  for (int i = 0; i < from_vars.size(); i++) {
-//      cout << from_vars[i] << " ";
-//  }
-//  cout << endl;
-    for (int i = 0; i < from_vars.size(); i++) {
-        if (marked[i] || from_vars[i] == -1)
-            continue;
-//      if (from_vars[i] == i)
-//          continue;
-
-        int current = i;
-        marked[current] = true;
-        vector<int> cycle;
-        cycle.push_back(current);
-
-        while (from_vars[current] != i){
-            current = from_vars[current];
-            marked[current] = true;
-            cycle.insert(cycle.begin(),current);
-        }
-        // Get here when from_vars[current] == i.
-        affected_vars_cycles.push_back(cycle);
-    }
-
-    set_maximal_variables_cycle_size();
-}*/
-
-/*void Permutation::set_maximal_variables_cycle_size() {
-    max_var_cycle_size = 0;
-    for (int i=0; i < affected_vars_cycles.size(); i++) {
-        if (max_var_cycle_size < affected_vars_cycles[i].size())
-            max_var_cycle_size = affected_vars_cycles[i].size();
-    }
-}*/
-
 bool SymmetryGenerator::identity() const{
     if (identity_generator)
         assert(internally_affected_abstractions.empty());
@@ -356,113 +282,6 @@ unsigned int SymmetryGenerator::get_value(unsigned int ind) const {
 //  check_index_range(ind);
     return value[ind];
 }
-
-/*
-unsigned int Permutation::get_inverse_value(unsigned int ind) const {
-//  check_index_range(ind);
-    return inverse_value[ind];
-}
-*/
-
-/*void Permutation::print_variables_by_cycles() const {
-
-    cout << "Affected variables by cycles: " << endl;
-    for (int i=0; i < affected_vars_cycles.size(); i++) {
-        cout << "( " ;
-        for (int j=0; j < affected_vars_cycles[i].size(); j++) {
-            cout << affected_vars_cycles[i][j] << " ";
-        }
-        cout << ")  ";
-    }
-    cout << endl;
-}*/
-
-/*int Permutation::get_maximal_variables_cycle_size() const {
-    return max_var_cycle_size;
-}*/
-
-/*int Permutation::calculate_number_variables_to_merge(bool linear_merge) const {
-    int num_vars = 0;
-    for (int i=0; i < affected_vars_cycles.size(); i++) {
-        if (affected_vars_cycles[i].size() < 2)
-            continue;
-
-        num_vars += affected_vars_cycles[i].size();
-        if (!linear_merge)
-            num_vars--;
-    }
-    return num_vars;
-}*/
-
-/*void Permutation::print_cycle_notation() const {
-//TODO revise
-    vector<int> done;
-    for (unsigned int i = pw.num_abstractions; i < pw.num_abs_and_states; i++){
-        if (find(done.begin(), done.end(), i) == done.end()){
-            unsigned int current = i;
-            if(get_value(i) == i) continue; //don't print cycles of size 1
-
-            pair<int, AbstractStateRef> varval = pw.get_var_val_by_index(i);
-//          cout<<"("<< varval.first << "=" << (int) varval.second <<" ";
-            cout<<"("<< g_fact_names[varval.first][(int) varval.second]  <<" ";
-
-//          cout<<"("<<i<<" ";
-
-            while(get_value(current) != i){
-                done.push_back(current);
-                current = get_value(current);
-
-                pair<int, AbstractStateRef> currvarval = pw.get_var_val_by_index(current);
-                // Silvan:
-                //cout << currvarval.first << " " << currvarval.second << endl;
-                cout<< g_fact_names[currvarval.first][(int) currvarval.second] <<" ";
-//              cout<< currvarval.first << "=" << (int) currvarval.second <<" ";
-//              cout<<current<<" ";
-
-            }
-            done.push_back(current);
-            cout<<") ";
-        }
-    }
-
-
-//    cout << endl << "Variables:  ";
-//    for(int i = 0; i < vars_affected.size(); i++) cout << vars_affected[i] << "  ";
-//    cout << endl << "Variables permuted:  ";
-
-//    for(int i = 0; i < vars_affected.size(); i++) cout << from_vars[vars_affected[i]] << " -> " << vars_affected[i] << "  ";
-
-//    cout << endl;
-}*/
-
-/*
-string Permutation::get_cycle_notation() const {
-    std::stringstream ss;
-    ss << "  ";
-    vector<int> done;
-    for (unsigned int i = pw.num_abstractions; i < pw.num_abs_and_states; i++){
-        if (find(done.begin(), done.end(), i) == done.end()){
-            unsigned int current = i;
-            if(get_value(i) == i) continue; //don't print cycles of size 1
-
-            pair<int, AbstractStateRef> varval = get_var_val_by_index(i);
-            ss << "( " << g_fact_names[varval.first][varval.second];
-//          ss << "( " << i;
-            while(get_value(current) != i){
-                done.push_back(current);
-                current = get_value(current);
-                varval = get_var_val_by_index(current);
-                ss << "  " << g_fact_names[varval.first][varval.second];
-//              ss << "  " << current;
-            }
-            done.push_back(current);
-            ss << " ), ";
-        }
-    }
-    string first = ss.str();
-    return first.substr(0, first.size()-2);
-}
-*/
 
 void SymmetryGenerator::dump() const {
     for(unsigned int i = 0; i < sym_gen_info.length; i++){
@@ -492,19 +311,7 @@ void SymmetryGenerator::dump_all() const {
         cout << value[i] << ", ";
     }
     cout << endl;
-    //cout << "vars affected" << endl;
-    //cout << vars_affected << endl;
-    //cout << "affected" << endl;
-    //cout << affected << endl;
     cout << "borrowed buffer: " << borrowed_buffer << endl;
     cout << "identiy perm: " << identity_generator << endl;
-    //cout << "from vars" << endl;
-    //cout << from_vars << endl;
-    /*cout << "affected vars cycles" << endl;
-    for (size_t i = 0; i < affected_vars_cycles.size(); ++i) {
-        cout << i << endl;
-        cout << affected_vars_cycles[i] << endl;
-    }
-    cout << "max var cycle size: " << max_var_cycle_size << endl;*/
     sym_gen_info.dump();
 }
