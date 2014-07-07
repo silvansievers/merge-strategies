@@ -24,6 +24,12 @@ class Symmetries {
     };
     SymmetriesForShrinking symmetries_for_shrinking;
 
+    enum SymmetriesForMerging {
+        SMALLEST,
+        LARGEST
+    };
+    SymmetriesForMerging symmetries_for_merging;
+
     // search for local symmetries if true, for general ones if false
     bool build_stabilized_pdg;
 

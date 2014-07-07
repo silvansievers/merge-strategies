@@ -21,6 +21,7 @@ typedef std::vector<EquivClass> EquivRel;
 Symmetries::Symmetries(const Options &options)
     : gc(options),
       symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
+      symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
       atomic_symmetries(0),
       binary_symmetries(0),
@@ -33,14 +34,14 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
     int number_of_applied_symmetries = 0;
     int number_of_collapsed_abstractions = 0;
     find_symmetries(abstractions);
-//    int smallest_generator_affected_abstractions_index = -1;
-//    int smallest_generator_affected_abstrations_size = numeric_limits<int>::max();
-//    int smallest_local_generator_mapped_abstractions_index = -1;
-//    int smallest_local_generator_mapped_abstractions_size = numeric_limits<int>::max();
+    int smallest_generator_affected_abstractions_index = -1;
+    int smallest_generator_affected_abstrations_size = numeric_limits<int>::max();
+    int smallest_generator_mapped_abstractions_index = -1;
+    int smallest_generator_mapped_abstractions_size = numeric_limits<int>::max();
     int largest_generator_affected_abstractions_index = -1;
     int largest_generator_affected_abstrations_size = 0;
-    int largest_local_generator_mapped_abstractions_index = -1;
-    int largest_local_generator_mapped_abstractions_size = 0;
+    int largest_generator_mapped_abstractions_index = -1;
+    int largest_generator_mapped_abstractions_size = 0;
     //int largest_atomic_cycle_index = -1;
     //int largest_atomic_cycle_size = 0;
     //int largest_local_cycle_index = -1;
@@ -65,11 +66,11 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         if (number_overall_affected_abstractions == 1) {
             atomic_generators.push_back(generator_index);
         } else {
-//            if (number_overall_affected_abstractions < smallest_generator_affected_abstrations_size) {
-//                smallest_generator_affected_abstrations_size = number_overall_affected_abstractions;
-//                smallest_generator_affected_abstractions_index = generator_index;
-//            }
-            if (number_overall_affected_abstractions > largest_generator_affected_abstrations_size) {
+            if (symmetries_for_merging == SMALLEST && number_overall_affected_abstractions < smallest_generator_affected_abstrations_size) {
+                smallest_generator_affected_abstrations_size = number_overall_affected_abstractions;
+                smallest_generator_affected_abstractions_index = generator_index;
+            }
+            if (symmetries_for_merging == LARGEST && number_overall_affected_abstractions > largest_generator_affected_abstrations_size) {
                 largest_generator_affected_abstrations_size = number_overall_affected_abstractions;
                 largest_generator_affected_abstractions_index = generator_index;
             }
@@ -79,13 +80,13 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         if (number_mapped_abstractions == 0) {
             local_generators.push_back(generator_index);
         } else {
-//            if (number_mapped_abstractions < smallest_local_generator_mapped_abstractions_size) {
-//                smallest_local_generator_mapped_abstractions_size = number_mapped_abstractions;
-//                smallest_local_generator_mapped_abstractions_index = generator_index;
-//            }
-            if (number_mapped_abstractions > largest_local_generator_mapped_abstractions_size) {
-                largest_local_generator_mapped_abstractions_size = number_mapped_abstractions;
-                largest_local_generator_mapped_abstractions_index = generator_index;
+            if (symmetries_for_merging == SMALLEST && number_mapped_abstractions < smallest_generator_mapped_abstractions_size) {
+                smallest_generator_mapped_abstractions_size = number_mapped_abstractions;
+                smallest_generator_mapped_abstractions_index = generator_index;
+            }
+            if (symmetries_for_merging == LARGEST && number_mapped_abstractions > largest_generator_mapped_abstractions_size) {
+                largest_generator_mapped_abstractions_size = number_mapped_abstractions;
+                largest_generator_mapped_abstractions_index = generator_index;
             }
         }
 
@@ -170,17 +171,18 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
             // one abstraction, whereas an atomic cycle consists of at least
             // two abstractions.
             //if (atomic_generators.empty()/* && atomic_cycles.empty()*/) {
-//            if (smallest_generator_affected_abstractions_index != -1) {
-//                // use the "smallest" symmetry to merge for
-//                const vector<int> &overall_affected_abstractions =
-//                        get_symmetry_generator(smallest_generator_affected_abstractions_index)->
-//                        get_overall_affected_abstractions();
-//                abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
-//            }
-            if (largest_generator_affected_abstractions_index != -1) {
+            int chosen_generator_index = -1;
+            if (symmetries_for_merging == SMALLEST && smallest_generator_affected_abstractions_index != -1) {
+                // use the "smallest" symmetry to merge for
+                chosen_generator_index = smallest_generator_affected_abstractions_index;
+            }
+            if (symmetries_for_merging == LARGEST && largest_generator_affected_abstractions_index != -1) {
                 // use the "largest" symmetry to merge for
+                chosen_generator_index = largest_generator_affected_abstractions_index;
+            }
+            if (chosen_generator_index != -1) {
                 const vector<int> &overall_affected_abstractions =
-                        get_symmetry_generator(largest_generator_affected_abstractions_index)->
+                        get_symmetry_generator(chosen_generator_index)->
                         get_overall_affected_abstractions();
                 abs_to_merge.insert(abs_to_merge.begin(), overall_affected_abstractions.begin(), overall_affected_abstractions.end());
             }
@@ -270,33 +272,36 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 apply_symmetries(abstractions, local_generators);
             }
 
-            //if (local_generators.empty()) {
-//            if (smallest_local_generator_mapped_abstractions_index != -1) {
-//                // use the "smallest" symmetry to merge for
-//                const vector<int> &mapped_abstractions =
-//                        get_symmetry_generator(smallest_local_generator_mapped_abstractions_index)->
-//                        get_mapped_abstractions();
-//                abs_to_merge.insert(mapped_abstractions.begin(), mapped_abstractions.end());
-//            }
-            if (largest_local_generator_mapped_abstractions_index != -1) {
+            int chosen_generator_index = -1;
+            if (symmetries_for_merging == SMALLEST && smallest_generator_mapped_abstractions_index != -1) {
+                // use the "smallest" symmetry to merge for
+                chosen_generator_index = smallest_generator_mapped_abstractions_index;
+            }
+            if (symmetries_for_merging == LARGEST && largest_generator_mapped_abstractions_index != -1) {
                 // use the "largest" symmetry to merge for
+                chosen_generator_index = largest_generator_mapped_abstractions_index;
+            }
+            if (chosen_generator_index != -1) {
                 const vector<int> &mapped_abstractions =
-                        get_symmetry_generator(largest_local_generator_mapped_abstractions_index)->
+                        get_symmetry_generator(chosen_generator_index)->
                         get_mapped_abstractions();
                 abs_to_merge.insert(abs_to_merge.begin(), mapped_abstractions.begin(), mapped_abstractions.end());
             }
             break;
         }
         case NONE: {
-//            if (smallest_generator_affected_abstractions_index != -1) {
-//                const vector<int> &overall_affected_abstractions =
-//                        get_symmetry_generator(smallest_generator_affected_abstractions_index)->
-//                        get_overall_affected_abstractions();
-//                abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
-//            }
-            if (largest_generator_affected_abstractions_index != -1) {
+            int chosen_generator_index = -1;
+            if (symmetries_for_merging == SMALLEST && smallest_generator_affected_abstractions_index != -1) {
+                // use the "smallest" symmetry to merge for
+                chosen_generator_index = smallest_generator_affected_abstractions_index;
+            }
+            if (symmetries_for_merging == LARGEST && largest_generator_affected_abstractions_index != -1) {
+                // use the "largest" symmetry to merge for
+                chosen_generator_index = largest_generator_affected_abstractions_index;
+            }
+            if (chosen_generator_index != -1) {
                 const vector<int> &overall_affected_abstractions =
-                        get_symmetry_generator(largest_generator_affected_abstractions_index)->
+                        get_symmetry_generator(chosen_generator_index)->
                         get_overall_affected_abstractions();
                 abs_to_merge.insert(abs_to_merge.begin(), overall_affected_abstractions.begin(), overall_affected_abstractions.end());
             }

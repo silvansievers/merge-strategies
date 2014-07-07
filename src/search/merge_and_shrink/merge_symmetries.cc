@@ -110,6 +110,16 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            "local symmetries, "
                            "only use for merging, no shrinking.",
                            "ATOMIC");
+    vector<string> symmetries_for_merging;
+    symmetries_for_merging.push_back("SMALLEST");
+    symmetries_for_merging.push_back("LARGEST");
+    parser.add_enum_option("symmetries_for_merging",
+                           symmetries_for_merging,
+                           "choose the type of symmetries used for merging: "
+                           "the smallest or the largest in number of abstractions "
+                           "that are affected (atomic shrinking or no shrinking) "
+                           "or mapped (local shrinking).",
+                           "SMALLEST");
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
