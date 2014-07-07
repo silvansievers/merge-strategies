@@ -20,7 +20,7 @@ typedef std::vector<EquivClass> EquivRel;
 
 Symmetries::Symmetries(const Options &options)
     : gc(options),
-      type_of_symmetries(TypeOfSymmetries(options.get_enum("type_of_symmetries"))),
+      symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
       atomic_symmetries(0),
       binary_symmetries(0),
@@ -156,7 +156,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         }
     }
 
-    switch (type_of_symmetries) {
+    switch (symmetries_for_shrinking) {
         case ATOMIC: {
             if (!atomic_generators.empty()) {
                 // apply atomic symmetries
@@ -287,7 +287,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
             }
             break;
         }
-        case MERGE_ONLY: {
+        case NONE: {
 //            if (smallest_generator_affected_abstractions_index != -1) {
 //                const vector<int> &overall_affected_abstractions =
 //                        get_symmetry_generator(smallest_generator_affected_abstractions_index)->

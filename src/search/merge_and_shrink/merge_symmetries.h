@@ -9,8 +9,16 @@
 
 class MergeSymmetries : public MergeDFP {
     const Options options;
+    int max_symmetry_iterations;
+    enum InternalMerging {
+        LINEAR,
+        NON_LINEAR
+    };
+    InternalMerging internal_merging;
+
     std::set<int> abs_to_merge;
     bool started_merging_for_symmetries;
+
     // the following serves for statistics output
     // number of applications of at least one symmetry
     int number_of_applied_symmetries;
@@ -18,7 +26,7 @@ class MergeSymmetries : public MergeDFP {
     int binary_symmetries; // symmetries affecting two abstractions
     int other_symmetries; // symmetries affecting more than two abstractions
     int iteration_counter;
-    int max_symmetry_iterations;
+
     void dump_statistics() const;
 protected:
     virtual void dump_strategy_specific_options() const {}
@@ -26,7 +34,6 @@ public:
     explicit MergeSymmetries(const Options &options);
     virtual ~MergeSymmetries() {}
 
-    virtual bool done() const;
     virtual std::pair<int, int> get_next(std::vector<Abstraction *> &all_abstractions);
     virtual std::string name() const;
 };

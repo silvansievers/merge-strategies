@@ -60,9 +60,9 @@ class SymmetryGenerator {
     std::vector<int> mapped_abstractions;
     std::vector<bool> overall_affected;
     std::vector<int> overall_affected_abstractions;
-    std::vector<std::vector<int> > cycles;
+    //std::vector<std::vector<int> > cycles;
 
-    void compute_cycles();
+    //void compute_cycles();
 public:
     SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info,
                       const unsigned int* automorphism,
@@ -87,10 +87,11 @@ public:
     const std::vector<int> &get_overall_affected_abstractions() const {
         return overall_affected_abstractions;
     }
-    const std::vector<std::vector<int> > &get_cycles() const {
-        return cycles;
-    }
-    void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
+    //const std::vector<std::vector<int> > &get_cycles() const {
+    //    return cycles;
+    //}
+    void compute_cycles(std::vector<std::vector<int> > cycles) const;
+    //void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
     bool internally_affects(int abs_index) const {return internally_affected[abs_index]; }
     bool maps(int abs_index) const {return mapped[abs_index]; }
     void dump() const;

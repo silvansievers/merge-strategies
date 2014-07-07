@@ -18,12 +18,14 @@ class Symmetries {
     // This would store the actual generators as well.
     GraphCreator gc;
 
-    enum TypeOfSymmetries {
+    enum SymmetriesForShrinking {
         ATOMIC,
         LOCAL,
-        MERGE_ONLY
+        NONE
     };
-    TypeOfSymmetries type_of_symmetries;
+    SymmetriesForShrinking symmetries_for_shrinking;
+
+    // search for local symmetries if true, for general ones if false
     bool build_stabilized_pdg;
 
     // the following serves for statistics output
