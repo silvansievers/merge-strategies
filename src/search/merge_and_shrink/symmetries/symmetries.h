@@ -26,17 +26,13 @@ class Symmetries {
 
     enum SymmetriesForMerging {
         SMALLEST,
-        LARGEST
+        LARGEST,
+        ZERO
     };
     SymmetriesForMerging symmetries_for_merging;
 
     // search for local symmetries if true, for general ones if false
     bool build_stabilized_pdg;
-
-    // the following serves for statistics output
-    int atomic_symmetries; // symmetries affecting one abstraction
-    int binary_symmetries; // symmetries affecting two abstractions
-    int other_symmetries; // symmetries affecting more than two abstractions
 
     bool find_symmetries(const std::vector<Abstraction *>& abstractions);
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
@@ -52,9 +48,6 @@ public:
 
     std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
                                                   std::vector<int> &abs_to_merge);
-    int get_atomic_symmetries() const {return atomic_symmetries; }
-    int get_binary_symmetries() const {return binary_symmetries; }
-    int get_other_symmetries() const {return other_symmetries; }
 };
 
 #endif

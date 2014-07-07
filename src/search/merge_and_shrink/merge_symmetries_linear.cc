@@ -52,8 +52,8 @@ pair<int, int> MergeSymmetriesLinear::get_next(std::vector<Abstraction *> &all_a
         number_of_applied_symmetries += stats.first;
         remaining_merges -= stats.second;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
-        atomic_symmetries += symmetries.get_atomic_symmetries();
-        binary_symmetries += symmetries.get_binary_symmetries();
+        atomic_symmetries += symmetries.get_number_applied_atomic_symmetries();
+        binary_symmetries += symmetries.get_number_applied_local_symmetries();
         other_symmetries += symmetries.get_other_symmetries();
         if (abs_to_merge.size() == 1) {
             cerr << "Atomic symmetry, not applied!" << endl;

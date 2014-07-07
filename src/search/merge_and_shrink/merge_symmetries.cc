@@ -15,25 +15,10 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       started_merging_for_symmetries(false),
       number_of_applied_symmetries(0),
-      atomic_symmetries(0),
-      binary_symmetries(0),
-      other_symmetries(0),
       iteration_counter(0) {
     if (internal_merging == NON_LINEAR) {
         cerr << "Not implemented" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
-    }
-}
-
-void MergeSymmetries::dump_statistics() const {
-    if (iteration_counter == 1) {
-        cout << "First iteration: atomic symmetries: " << atomic_symmetries << endl;
-        cout << "First iteration: binary symmetries: " << binary_symmetries << endl;
-        cout << "First iteration: other symmetries: " << other_symmetries << endl;
-    } else if (remaining_merges == 1) {
-        cout << "Total: atomic symmetries: " << atomic_symmetries << endl;
-        cout << "Total: binary symmetries: " << binary_symmetries << endl;
-        cout << "Total: other symmetries: " << other_symmetries << endl;
     }
 }
 
@@ -50,9 +35,6 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
         number_of_applied_symmetries += stats.first;
         remaining_merges -= stats.second;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
-        atomic_symmetries += symmetries.get_atomic_symmetries();
-        binary_symmetries += symmetries.get_binary_symmetries();
-        other_symmetries += symmetries.get_other_symmetries();
         if (abs_to_merge.size() == 1) {
             cerr << "Atomic symmetry, not applied!" << endl;
             exit_with(EXIT_CRITICAL_ERROR);
@@ -66,8 +48,6 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
             cout << endl;
         }
     }
-
-    dump_statistics();
 
     if (abs_to_merge.empty()) {
         return MergeDFP::get_next(all_abstractions);
@@ -114,6 +94,7 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> symmetries_for_merging;
     symmetries_for_merging.push_back("SMALLEST");
     symmetries_for_merging.push_back("LARGEST");
+    symmetries_for_merging.push_back("ZERO");
     parser.add_enum_option("symmetries_for_merging",
                            symmetries_for_merging,
                            "choose the type of symmetries used for merging: "
