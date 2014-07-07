@@ -23,6 +23,22 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       use_expensive_statistics(opts.get<bool>("expensive_statistics")),
       debug_abstractions(opts.get<bool>("debug_abstractions")) {
     labels = new Labels(is_unit_cost_problem(), opts, cost_type);
+    Timer timer;
+    cout << "Initializing merge-and-shrink heuristic..." << endl;
+    dump_options();
+    warn_on_unusual_options();
+
+    verify_no_axioms();
+
+    cout << "Building abstraction..." << endl;
+    final_abstraction = build_abstraction();
+    if (!final_abstraction->is_solvable()) {
+        cout << "Abstract problem is unsolvable!" << endl;
+    }
+
+    cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
+         << endl << "initial h value: " << compute_heuristic(g_initial_state()) << endl;
+    cout << "Estimated peak memory for abstraction: " << final_abstraction->get_peak_memory_estimate() << " bytes" << endl;
 }
 
 MergeAndShrinkHeuristic::~MergeAndShrinkHeuristic() {
@@ -177,22 +193,6 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
 }
 
 void MergeAndShrinkHeuristic::initialize() {
-    Timer timer;
-    cout << "Initializing merge-and-shrink heuristic..." << endl;
-    dump_options();
-    warn_on_unusual_options();
-
-    verify_no_axioms();
-
-    cout << "Building abstraction..." << endl;
-    final_abstraction = build_abstraction();
-    if (!final_abstraction->is_solvable()) {
-        cout << "Abstract problem is unsolvable!" << endl;
-    }
-
-    cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
-         << endl << "initial h value: " << compute_heuristic(g_initial_state()) << endl;
-    cout << "Estimated peak memory for abstraction: " << final_abstraction->get_peak_memory_estimate() << " bytes" << endl;
 }
 
 int MergeAndShrinkHeuristic::compute_heuristic(const State &state) {
