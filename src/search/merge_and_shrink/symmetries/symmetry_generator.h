@@ -74,7 +74,7 @@ public:
     //const std::vector<std::vector<int> > &get_cycles() const {
     //    return cycles;
     //}
-    void compute_cycles(std::vector<std::vector<int> > cycles) const;
+    void compute_cycles(std::vector<std::vector<int> > &cycles) const;
     //void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
     bool internally_affects(int abs_index) const {return internally_affected[abs_index]; }
     bool maps(int abs_index) const {return mapped[abs_index]; }

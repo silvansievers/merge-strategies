@@ -8,14 +8,9 @@
 class MergeSymmetries : public MergeDFP {
     const Options options;
     int max_iterations;
-    enum InternalMerging {
-        LINEAR,
-        NON_LINEAR
-    };
-    InternalMerging internal_merging;
 
-    std::vector<int> abs_to_merge;
-    bool started_merging_for_symmetries;
+    std::vector<std::vector<int> > abs_to_merge;
+    bool started_merging_cycle;
     int number_of_applied_symmetries;
     int iteration_counter;
 

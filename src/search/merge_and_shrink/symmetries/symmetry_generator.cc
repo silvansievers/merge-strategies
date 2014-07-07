@@ -200,7 +200,7 @@ void SymmetryGenerator::_deallocate() {
 //    }
 //}
 
-void SymmetryGenerator::compute_cycles(vector<vector<int> > cycles) const {
+void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) const {
     int num_abstractions = sym_gen_info.num_abstractions;
     vector<bool> marked(num_abstractions, false);
     for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {

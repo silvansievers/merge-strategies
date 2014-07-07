@@ -31,6 +31,12 @@ class Symmetries {
     };
     SymmetriesForMerging symmetries_for_merging;
 
+    enum InternalMerging {
+        LINEAR,
+        NON_LINEAR
+    };
+    InternalMerging internal_merging;
+
     // search for local symmetries if true, for general ones if false
     bool build_stabilized_pdg;
 
@@ -47,7 +53,7 @@ public:
     ~Symmetries() {}
 
     std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
-                                                  std::vector<int> &abs_to_merge);
+                                                  std::vector<std::vector<int> > &abs_to_merge);
 };
 
 #endif
