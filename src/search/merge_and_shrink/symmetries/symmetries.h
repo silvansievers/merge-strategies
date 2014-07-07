@@ -5,7 +5,6 @@
 
 #include "../abstraction.h"
 
-#include <set>
 #include <vector>
 
 class Labels;
@@ -46,7 +45,7 @@ public:
     ~Symmetries() {}
 
     std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
-                                                  std::set<int> &abs_to_merge);
+                                                  std::vector<int> &abs_to_merge);
     int get_atomic_symmetries() const {return atomic_symmetries; }
     int get_binary_symmetries() const {return binary_symmetries; }
     int get_other_symmetries() const {return other_symmetries; }

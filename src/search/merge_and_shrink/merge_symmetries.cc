@@ -59,7 +59,7 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
             cout << "No symmetries for merging found." << endl;
         } else {
             cout << "Merging next: ";
-            for (set<int>::iterator it = abs_to_merge.begin(); it != abs_to_merge.end(); ++it) {
+            for (vector<int>::iterator it = abs_to_merge.begin(); it != abs_to_merge.end(); ++it) {
                 cout << *it << " ";
             }
             cout << endl;
@@ -111,8 +111,8 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            "only use for merging, no shrinking.",
                            "ATOMIC");
     vector<string> internal_merging;
-    symmetries_for_shrinking.push_back("LINEAR");
-    symmetries_for_shrinking.push_back("NON_LINEAR");
+    internal_merging.push_back("LINEAR");
+    internal_merging.push_back("NON_LINEAR");
     parser.add_enum_option("internal_merging",
                            internal_merging,
                            "choose how the set of abstractions that must be "

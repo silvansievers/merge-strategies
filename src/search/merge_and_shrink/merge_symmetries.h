@@ -5,8 +5,6 @@
 
 #include "../option_parser.h"
 
-#include <set>
-
 class MergeSymmetries : public MergeDFP {
     const Options options;
     int max_symmetry_iterations;
@@ -16,7 +14,7 @@ class MergeSymmetries : public MergeDFP {
     };
     InternalMerging internal_merging;
 
-    std::set<int> abs_to_merge;
+    std::vector<int> abs_to_merge;
     bool started_merging_for_symmetries;
 
     // the following serves for statistics output

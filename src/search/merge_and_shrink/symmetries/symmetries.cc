@@ -28,7 +28,7 @@ Symmetries::Symmetries(const Options &options)
 }
 
 pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
-                                                     set<int> &abs_to_merge) {
+                                                     vector<int> &abs_to_merge) {
     assert(abs_to_merge.empty());
     int number_of_applied_symmetries = 0;
     int number_of_collapsed_abstractions = 0;
@@ -182,7 +182,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 const vector<int> &overall_affected_abstractions =
                         get_symmetry_generator(largest_generator_affected_abstractions_index)->
                         get_overall_affected_abstractions();
-                abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
+                abs_to_merge.insert(abs_to_merge.begin(), overall_affected_abstractions.begin(), overall_affected_abstractions.end());
             }
 
 //                // copy all cycles into a new data structure
@@ -283,7 +283,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 const vector<int> &mapped_abstractions =
                         get_symmetry_generator(largest_local_generator_mapped_abstractions_index)->
                         get_mapped_abstractions();
-                abs_to_merge.insert(mapped_abstractions.begin(), mapped_abstractions.end());
+                abs_to_merge.insert(abs_to_merge.begin(), mapped_abstractions.begin(), mapped_abstractions.end());
             }
             break;
         }
@@ -298,7 +298,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 const vector<int> &overall_affected_abstractions =
                         get_symmetry_generator(largest_generator_affected_abstractions_index)->
                         get_overall_affected_abstractions();
-                abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
+                abs_to_merge.insert(abs_to_merge.begin(), overall_affected_abstractions.begin(), overall_affected_abstractions.end());
             }
         }
     }
