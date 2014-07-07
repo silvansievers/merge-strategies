@@ -11,7 +11,7 @@ using namespace std;
 MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
-      max_symmetry_iterations(options.get<int>("max_symmetry_iterations")),
+      max_iterations(options.get<int>("max_iterations")),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       started_merging_for_symmetries(false),
       number_of_applied_symmetries(0),
@@ -19,6 +19,10 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       binary_symmetries(0),
       other_symmetries(0),
       iteration_counter(0) {
+    if (internal_merging == NON_LINEAR) {
+        cerr << "Not implemented" << endl;
+        exit_with(EXIT_CRITICAL_ERROR);
+    }
 }
 
 void MergeSymmetries::dump_statistics() const {
@@ -37,12 +41,9 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
     assert(!done());
     ++iteration_counter;
 
-    if (iteration_counter <= max_symmetry_iterations && abs_to_merge.empty()) {
+    if (iteration_counter <= max_iterations && abs_to_merge.empty()) {
         Symmetries symmetries(options);
         if (started_merging_for_symmetries) {
-            // TODO: can we somehow make sure that if we were merging in order
-            // to apply a symmetry and no shrinking happened, then we indeed
-            // applied an atomic symmetry in the line above?
             started_merging_for_symmetries = false;
         }
         pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
@@ -68,7 +69,7 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
 
     dump_statistics();
 
-    if (abs_to_merge.empty() || iteration_counter > max_symmetry_iterations) {
+    if (abs_to_merge.empty()) {
         return MergeDFP::get_next(all_abstractions);
     }
 
@@ -96,9 +97,9 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
-    parser.add_option<int>("max_symmetry_iterations", "number of iteration up "
-                           "to which symmetries should be searched for and "
-                           "applied.", "infinity");
+    parser.add_option<int>("max_iterations", "number of merge-and-shrink "
+                           "iterations up to which symmetries should be computed."
+                           "infinity");
     vector<string> symmetries_for_shrinking;
     symmetries_for_shrinking.push_back("ATOMIC");
     symmetries_for_shrinking.push_back("LOCAL");

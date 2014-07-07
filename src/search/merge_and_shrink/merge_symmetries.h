@@ -7,7 +7,7 @@
 
 class MergeSymmetries : public MergeDFP {
     const Options options;
-    int max_symmetry_iterations;
+    int max_iterations;
     enum InternalMerging {
         LINEAR,
         NON_LINEAR
