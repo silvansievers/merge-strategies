@@ -267,6 +267,14 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 }
                 break;
             }
+            case MERGE_ONLY: {
+                if (smallest_generator_affected_abstractions_index != -1) {
+                    const vector<int> &overall_affected_abstractions =
+                            get_symmetry_generator(smallest_generator_affected_abstractions_index)->
+                            get_overall_affected_abstractions();
+                    abs_to_merge.insert(overall_affected_abstractions.begin(), overall_affected_abstractions.end());
+                }
+            }
         }
     //}
     return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);

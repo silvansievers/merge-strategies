@@ -20,7 +20,8 @@ class Symmetries {
 
     enum TypeOfSymmetries {
         ATOMIC,
-        LOCAL
+        LOCAL,
+        MERGE_ONLY
     };
     TypeOfSymmetries type_of_symmetries;
     bool build_stabilized_pdg;

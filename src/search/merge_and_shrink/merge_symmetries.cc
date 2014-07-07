@@ -105,9 +105,10 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> type_of_symmetries;
     type_of_symmetries.push_back("ATOMIC");
     type_of_symmetries.push_back("LOCAL");
+    type_of_symmetries.push_back("MERGE_ONLY");
     parser.add_enum_option("type_of_symmetries", type_of_symmetries,
                            "type of symmetry: only atomic symmetries, "
-                           "local symmetries", "ATOMIC");
+                           "local symmetries, only use for merging.", "ATOMIC");
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "
                             "for local symmetries only", "False");
