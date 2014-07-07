@@ -307,10 +307,6 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     }
     cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
 
-    // TODO: this does not work for abstractions which are entirely mapped to
-    // another abstractions (see cycles above)! We need to make sure here that
-    // states of an abstraction are only mapped to states of the same abstraction
-
     // Abstracting by the generators as follows:
     // Creating a graph with nodes being the abstract states and the edges represent the connections as given by the generators.
     // It seems like this process should better be done in all abstractions in parallel,
@@ -325,9 +321,15 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         if (abstractions[abs_index]) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 // Going over the generators, for each just add the edges.
-                unsigned int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
-                if (index != to_index)
-                    graph[index].push_back(to_index);
+                if (get_symmetry_generator(generator_indices[i])->get_value(abs_index) == abs_index) {
+                    // we only add an edge if the corresponding states belong to
+                    // the same abstractions. in other words, we do not compute
+                    // equivalence relations for mappings of abstractions, as
+                    // these are not applied anyways.
+                    unsigned int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
+                    if (index != to_index)
+                        graph[index].push_back(to_index);
+                }
             }
         }
     }
