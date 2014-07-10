@@ -183,6 +183,7 @@ Abstraction *MergeAndShrinkHeuristic::build_abstraction() {
 
     final_abstraction->statistics(use_expensive_statistics);
     final_abstraction->release_memory();
+    cout << "Final abstraction size: " << final_abstraction->size() << endl;
 
     cout << "Order of merged systems: ";
     for (size_t i = 1; i < system_order.size(); i += 2) {
