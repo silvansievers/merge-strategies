@@ -55,27 +55,28 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            "iterations up to which symmetries should be computed."
                            "infinity");
     vector<string> symmetries_for_shrinking;
+    symmetries_for_shrinking.push_back("NO_SHRINKING");
     symmetries_for_shrinking.push_back("ATOMIC");
     symmetries_for_shrinking.push_back("LOCAL");
-    symmetries_for_shrinking.push_back("NONE");
     parser.add_enum_option("symmetries_for_shrinking",
                            symmetries_for_shrinking,
                            "choose the type of symmetries used for shrinking: "
+                           "no shrinking, "
                            "only atomic symmetries, "
-                           "local symmetries, "
-                           "only use for merging, no shrinking.",
-                           "ATOMIC");
+                           "local symmetries.",
+                           "NO_SHRINKING");
     vector<string> symmetries_for_merging;
-    symmetries_for_merging.push_back("SMALLEST");
-    symmetries_for_merging.push_back("LARGEST");
-    symmetries_for_merging.push_back("ZERO");
+    symmetries_for_merging.push_back("NO_MERGING");
+    symmetries_for_merging.push_back("LEAST_OVERALL_AFFECTED");
+    symmetries_for_merging.push_back("MOST_OVERALL_AFFECTED");
+    symmetries_for_merging.push_back("LEAST_MAPPED");
+    symmetries_for_merging.push_back("MOST_MAPPED");
     parser.add_enum_option("symmetries_for_merging",
                            symmetries_for_merging,
                            "choose the type of symmetries used for merging: "
                            "the smallest or the largest in number of abstractions "
-                           "that are affected (atomic shrinking or no shrinking) "
-                           "or mapped (local shrinking).",
-                           "SMALLEST");
+                           "that are affected or mapped.",
+                           "LEAST_OVERALL_AFFECTED");
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
@@ -83,9 +84,10 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            internal_merging,
                            "choose how the set of abstractions that must be "
                            "merged for symmetries is merged: "
-                           "linearly, resulting in one large abstractions, "
-                           "non linearly, resulting in one composite abstraction "
-                           "for every previous cycle of the chosen symmetry.",
+                           "linearly, over the entire set of abstractions, "
+                           "non linearly, which means merging every cycle, "
+                           "then linearly all remaining and resultin "
+                           "abstractions.",
                            "LINEAR");
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "

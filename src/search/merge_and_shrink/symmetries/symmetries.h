@@ -18,16 +18,18 @@ class Symmetries {
     GraphCreator gc;
 
     enum SymmetriesForShrinking {
+        NO_SHRINKING,
         ATOMIC,
-        LOCAL,
-        NONE
+        LOCAL
     };
     SymmetriesForShrinking symmetries_for_shrinking;
 
     enum SymmetriesForMerging {
-        SMALLEST,
-        LARGEST,
-        ZERO
+        NO_MERGING,
+        LEAST_OVERALL_AFFECTED,
+        MOST_OVERALL_AFFECTED,
+        LEAST_MAPPED,
+        MOST_MAPPED
     };
     SymmetriesForMerging symmetries_for_merging;
 
