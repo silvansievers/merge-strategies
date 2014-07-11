@@ -53,7 +53,7 @@ public:
     ~Symmetries() {}
 
     std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
-                                                  std::vector<std::vector<int> > &abs_to_merge);
+                                                  std::vector<std::pair<int, int> > &merge_order);
 };
 
 #endif

@@ -12,7 +12,6 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
       max_iterations(options.get<int>("max_iterations")),
-      started_merging_cycle(false),
       number_of_applied_symmetries(0),
       iteration_counter(0) {
 }
@@ -21,49 +20,28 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
     assert(!done());
     ++iteration_counter;
 
-    if (iteration_counter <= max_iterations && abs_to_merge.empty()) {
+    if (iteration_counter <= max_iterations && merge_order.empty()) {
         Symmetries symmetries(options);
-        pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions, abs_to_merge);
+        pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions,
+                                                                    merge_order);
         number_of_applied_symmetries += stats.first;
         remaining_merges -= stats.second;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
-        if (abs_to_merge.size() == 1 && abs_to_merge[0].size() == 1) {
-            cerr << "Got one abstraction to merge!" << endl;
-            exit_with(EXIT_CRITICAL_ERROR);
-        } else if (!abs_to_merge.empty()) {
-            cout << "Merging next: ";
-            for (vector<vector<int> >::iterator it = abs_to_merge.begin(); it != abs_to_merge.end(); ++it) {
-                cout << *it << " ";
-            }
-            cout << endl;
-            // reset
-            started_merging_cycle = false;
-        }
     }
 
-    if (abs_to_merge.empty()) {
+    if (merge_order.empty()) {
         return MergeDFP::get_next(all_abstractions);
     }
 
-    int first;
-    if (!started_merging_cycle) {
-        assert(abs_to_merge[0].size() > 1);
-        started_merging_cycle = true;
-        first = *abs_to_merge[0].begin();
-        abs_to_merge[0].erase(abs_to_merge[0].begin());
-    } else {
-        first = all_abstractions.size() - 1;
+    pair<int, int> next_merge = merge_order.front();
+    if (!all_abstractions[next_merge.first] || !all_abstractions[next_merge.second]) {
+        cerr << "Problem with the merge strategy: invalid indices" << endl;
+        exit_with(EXIT_CRITICAL_ERROR);
     }
-    assert(!abs_to_merge[0].empty());
-    int second = *abs_to_merge[0].begin();
-    abs_to_merge[0].erase(abs_to_merge[0].begin());
-    if (abs_to_merge[0].empty()) {
-        abs_to_merge.erase(abs_to_merge.begin());
-        started_merging_cycle = false;
-    }
+    merge_order.erase(merge_order.begin());
 
     --remaining_merges;
-    return make_pair(first, second);
+    return next_merge;
 }
 
 string MergeSymmetries::name() const {
@@ -114,13 +92,6 @@ static MergeStrategy *_parse(OptionParser &parser) {
                             "for local symmetries only", "False");
 
     Options options = parser.parse();
-    if ((options.get_enum("symmetries_for_shrinking") == 0
-            || options.get_enum("symmetries_for_shrinking") == 2)
-         && (options.get_enum("internal_merging") == 1)) {
-        parser.error("non-linear internal merging only affects when "
-                     "using local symmetries for shrinking!");
-    }
-
     if (parser.dry_run())
         return 0;
     else

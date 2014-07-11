@@ -8,9 +8,8 @@
 class MergeSymmetries : public MergeDFP {
     const Options options;
     int max_iterations;
+    std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
 
-    std::vector<std::vector<int> > abs_to_merge;
-    bool started_merging_cycle;
     int number_of_applied_symmetries;
     int iteration_counter;
 

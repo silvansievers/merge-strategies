@@ -27,8 +27,7 @@ Symmetries::Symmetries(const Options &options)
 }
 
 pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
-                                                     vector<vector<int> > &abs_to_merge) {
-    assert(abs_to_merge.empty());
+                                                     vector<pair<int, int> > &merge_order) {
     int number_of_applied_symmetries = 0;
     int number_of_collapsed_abstractions = 0;
     find_symmetries(abstractions);
@@ -41,6 +40,10 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
     vector<int> atomic_generators;
     vector<int> local_generators;
 
+    // go over the generators and classify them into atomic, local or general
+    // ones. also store information about the smallest/largest generator
+    // with respect to overall affected abstractions or mapped abstractions,
+    // depending on the chosen setting.
     for (size_t generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
         const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
         const vector<int> &internally_affected_abstractions = generator->get_internally_affected_abstractions();
@@ -101,6 +104,8 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         }
     }
 
+    // apply symmetries if possible
+    int chosen_generator_for_merging = -1;
     switch (symmetries_for_shrinking) {
         case ATOMIC: {
             if (!atomic_generators.empty()) {
@@ -109,6 +114,7 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 cout << "Applying all atomic symmetries" << endl;
                 apply_symmetries(abstractions, atomic_generators);
             }
+            chosen_generator_for_merging = chosen_generator_affected_abstractions_index;
             break;
         }
         case LOCAL: {
@@ -118,32 +124,87 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
                 cout << "Applying all local symmetries" << endl;
                 apply_symmetries(abstractions, local_generators);
             }
+            chosen_generator_for_merging = chosen_generator_mapped_abstractions_index;
             break;
         }
         case NONE: {
+            chosen_generator_for_merging = chosen_generator_affected_abstractions_index;
             break;
         }
     }
 
-    if (symmetries_for_merging != ZERO) {
+    if (symmetries_for_merging != ZERO && chosen_generator_for_merging != -1) {
+        // compute a merge order for merging
+        vector<vector<int> > merge_non_linear_abstractions;
+        vector<int> merge_linear_abstractions;
+        const SymmetryGenerator *generator =
+                get_symmetry_generator(chosen_generator_for_merging);
+
+        if (internal_merging == NON_LINEAR) {
+            // if the internal merge strategy is non linear, we need to
+            // compute the actual cycles of abstraction mappings.
+            generator->compute_cycles(merge_non_linear_abstractions);
+        } else if (internal_merging == LINEAR) {
+            // if the internal merge strategy is linear, we simply collect
+            // all mapped abstractions (i.e. the same abstractions as above,
+            // but we do not compute cycle information)
+            const vector<int> &mapped_abstractions =
+                    generator->get_mapped_abstractions();
+            merge_linear_abstractions.insert(merge_linear_abstractions.end(),
+                                             mapped_abstractions.begin(),
+                                             mapped_abstractions.end());
+        }
+
         if (symmetries_for_shrinking == ATOMIC || symmetries_for_shrinking == NONE) {
-            if (chosen_generator_affected_abstractions_index != -1) {
-                const vector<int> &overall_affected_abstractions =
-                        get_symmetry_generator(chosen_generator_affected_abstractions_index)->
-                        get_overall_affected_abstractions();
-                abs_to_merge.push_back(vector<int>(overall_affected_abstractions));
+            const vector<int> &internally_affected_abstractions =
+                    generator->get_internally_affected_abstractions();
+            merge_linear_abstractions.insert(merge_linear_abstractions.end(),
+                                             internally_affected_abstractions.begin(),
+                                             internally_affected_abstractions.end());
+        }
+
+        // compute a merge tree
+        assert(merge_order.empty());
+        int number_of_abstractions = abstractions.size();
+        int number_of_merges = 0;
+        vector<int> merge_linear_indices;
+        for (size_t cycle_no = 0; cycle_no < merge_non_linear_abstractions.size(); ++cycle_no) {
+            // go over the cycles and compute a non-linear merge order.
+            const vector<int> &cycle = merge_non_linear_abstractions[cycle_no];
+            size_t abs_index_1 = cycle[0];
+            for (size_t i = 1; i < cycle.size(); ++i) {
+                size_t abs_index_2 = cycle[i];
+                merge_order.push_back(make_pair(abs_index_1, abs_index_2));
+                abs_index_1 = number_of_abstractions + number_of_merges;
+                ++number_of_merges;
             }
-        } else if (symmetries_for_shrinking == LOCAL) {
-            if (chosen_generator_mapped_abstractions_index != -1) {
-                if (internal_merging == LINEAR) {
-                    const vector<int> &mapped_abstractions =
-                            get_symmetry_generator(chosen_generator_mapped_abstractions_index)->
-                            get_mapped_abstractions();
-                    abs_to_merge.push_back(vector<int>(mapped_abstractions));
-                } else if (internal_merging == NON_LINEAR) {
-                    get_symmetry_generator(chosen_generator_mapped_abstractions_index)->compute_cycles(abs_to_merge);
-                }
-            }
+            // number_of_abstractions + number_of_merges always is the *next*
+            // position where a new merged abstraction will be stored at.
+            // here, we need the *last* position where the abstraction
+            // resulting from merging the cycle was stored, hence the -1.
+            merge_linear_indices.push_back(number_of_abstractions + number_of_merges - 1);
+        }
+
+        // merge_linear_indices possibly contains abstractions that have been
+        // non-linearly merged from information about cycles.
+        // here we add abstractions that need to be merged linearly anyways
+        merge_linear_indices.insert(merge_linear_indices.end(),
+                                    merge_linear_abstractions.begin(),
+                                    merge_linear_abstractions.end());
+
+        // go over all abstractions that (now) need to be merged linearly
+        size_t abs_index_1 = merge_linear_indices[0];
+        for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
+            size_t abs_index_2 = merge_linear_indices[i];
+            merge_order.push_back(make_pair(abs_index_1, abs_index_2));
+            abs_index_1 = number_of_abstractions + number_of_merges;
+            ++number_of_merges;
+        }
+
+        cout << "current number of abstractions " << number_of_abstractions << endl;
+        cout << "chosen internal merge order: " << endl;
+        for (size_t i = 0; i < merge_order.size(); ++i) {
+            cout << merge_order[i].first << ", " << merge_order[i].second << endl;
         }
     }
 
