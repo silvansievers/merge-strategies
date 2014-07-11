@@ -26,10 +26,8 @@ Symmetries::Symmetries(const Options &options)
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")) {
 }
 
-pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
-                                                     vector<pair<int, int> > &merge_order) {
-    int number_of_applied_symmetries = 0;
-    int number_of_collapsed_abstractions = 0;
+bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
+                                           vector<pair<int, int> > &merge_order) {
     find_symmetries(abstractions);
     int chosen_generator_for_merging = -1;
     int smallest_generator_affected_abstrations_size = numeric_limits<int>::max();
@@ -104,16 +102,17 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
     }
 
     // apply symmetries if possible
+    bool applied_symmetries = false;
     if (symmetries_for_shrinking == ATOMIC && !atomic_generators.empty()) {
         // apply atomic symmetries
-        ++number_of_applied_symmetries;
         cout << "Applying all atomic symmetries" << endl;
         apply_symmetries(abstractions, atomic_generators);
+        applied_symmetries = true;
     } else if (symmetries_for_shrinking == LOCAL && !local_generators.empty()) {
         // apply local symmetries
-        ++number_of_applied_symmetries;
         cout << "Applying all local symmetries" << endl;
         apply_symmetries(abstractions, local_generators);
+        applied_symmetries = true;
     }
 
     if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
@@ -195,10 +194,10 @@ pair<int, int> Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abst
         }
     }
 
-    return make_pair(number_of_applied_symmetries, number_of_collapsed_abstractions);
+    return applied_symmetries;
 }
 
-bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions) {
+void Symmetries::find_symmetries(const vector<Abstraction *>& abstractions) {
     // Find (non) abstraction stabilized symmetries for abstractions depending
     // on the chosen option.
     // Returns true if any symmetry is found at all and false otherwise.
@@ -213,13 +212,7 @@ bool Symmetries::find_symmetries(const vector<Abstraction *>& abstractions) {
     }
 
     gc.compute_generators(abstractions);
-
-    unsigned int num_generators = get_num_generators();
-    if (num_generators == 0) {
-        cout << "No generators found! Done searching for symmetries. [t=" << g_timer << "]" << endl;
-        return false;
-    }
-    return true;
+    cout << "Done searching for symmetries. [t=" << g_timer << "]" << endl;
 }
 
 void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,

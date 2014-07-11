@@ -42,7 +42,7 @@ class Symmetries {
     // search for local symmetries if true, for general ones if false
     bool build_stabilized_pdg;
 
-    bool find_symmetries(const std::vector<Abstraction *>& abstractions);
+    void find_symmetries(const std::vector<Abstraction *>& abstractions);
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 
@@ -54,8 +54,8 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    std::pair<int, int> find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
-                                                  std::vector<std::pair<int, int> > &merge_order);
+    bool find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
+                                   std::vector<std::pair<int, int> > &merge_order);
 };
 
 #endif

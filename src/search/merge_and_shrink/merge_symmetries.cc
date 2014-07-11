@@ -22,10 +22,10 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
 
     if (iteration_counter <= max_iterations && merge_order.empty()) {
         Symmetries symmetries(options);
-        pair<int, int> stats = symmetries.find_and_apply_symmetries(all_abstractions,
-                                                                    merge_order);
-        number_of_applied_symmetries += stats.first;
-        remaining_merges -= stats.second;
+        bool applied_symmetries =
+                symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
+        if (applied_symmetries)
+            ++number_of_applied_symmetries;
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }
 
