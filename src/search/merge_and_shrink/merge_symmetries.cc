@@ -80,6 +80,7 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
+    internal_merging.push_back("NON_LINEAR_INCOMPLETE");
     parser.add_enum_option("internal_merging",
                            internal_merging,
                            "choose how the set of abstractions that must be "

@@ -122,7 +122,8 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
                 get_symmetry_generator(chosen_generator_for_merging);
 
         // Always include all mapped abstractions
-        if (internal_merging == NON_LINEAR) {
+        if (internal_merging == NON_LINEAR
+                || internal_merging == NON_LINEAR_INCOMPLETE) {
             // if the internal merge strategy is non linear, we need to
             // compute the actual cycles of abstraction mappings.
             generator->compute_cycles(merge_non_linear_abstractions);
@@ -171,20 +172,22 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
             merge_linear_indices.push_back(number_of_abstractions + number_of_merges - 1);
         }
 
-        // merge_linear_indices possibly contains abstractions that have been
-        // non-linearly merged from information about cycles.
-        // here we add abstractions that need to be merged linearly anyways
-        merge_linear_indices.insert(merge_linear_indices.end(),
-                                    merge_linear_abstractions.begin(),
-                                    merge_linear_abstractions.end());
+        if (internal_merging != NON_LINEAR_INCOMPLETE) {
+            // merge_linear_indices possibly contains abstractions that have been
+            // non-linearly merged from information about cycles.
+            // here we add abstractions that need to be merged linearly anyways
+            merge_linear_indices.insert(merge_linear_indices.end(),
+                                        merge_linear_abstractions.begin(),
+                                        merge_linear_abstractions.end());
 
-        // go over all abstractions that (now) need to be merged linearly
-        size_t abs_index_1 = merge_linear_indices[0];
-        for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
-            size_t abs_index_2 = merge_linear_indices[i];
-            merge_order.push_back(make_pair(abs_index_1, abs_index_2));
-            abs_index_1 = number_of_abstractions + number_of_merges;
-            ++number_of_merges;
+            // go over all abstractions that (now) need to be merged linearly
+            size_t abs_index_1 = merge_linear_indices[0];
+            for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
+                size_t abs_index_2 = merge_linear_indices[i];
+                merge_order.push_back(make_pair(abs_index_1, abs_index_2));
+                abs_index_1 = number_of_abstractions + number_of_merges;
+                ++number_of_merges;
+            }
         }
 
         cout << "current number of abstractions " << number_of_abstractions << endl;

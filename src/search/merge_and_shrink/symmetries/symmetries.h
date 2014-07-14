@@ -35,7 +35,8 @@ class Symmetries {
 
     enum InternalMerging {
         LINEAR,
-        NON_LINEAR
+        NON_LINEAR,
+        NON_LINEAR_INCOMPLETE
     };
     InternalMerging internal_merging;
 
