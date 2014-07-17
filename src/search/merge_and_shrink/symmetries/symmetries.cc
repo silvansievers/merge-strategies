@@ -117,6 +117,16 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         cout << "Applying all local symmetries" << endl;
         apply_symmetries(abstractions, local_generators);
         applied_symmetries = true;
+    } else if ((symmetries_for_shrinking == LOCAL_ONE_SYM
+                || symmetries_for_shrinking == LOCAL_ONE_ABS_SYM)
+               && !local_generators.empty()) {
+        // apply one local symmetry
+        cout << "Applying random local symmetry" << endl;
+        int random = g_rng.next(local_generators.size());
+        vector<int> symmetry;
+        symmetry.push_back(local_generators[random]);
+        apply_symmetries(abstractions, symmetry);
+        applied_symmetries = true;
     }
 
     if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
@@ -231,7 +241,8 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
 
     int chosen_abstraction = -1;
-    if (symmetries_for_shrinking == LOCAL_ONE_ABS) {
+    if (symmetries_for_shrinking == LOCAL_ONE_ABS
+            || symmetries_for_shrinking == LOCAL_ONE_ABS_SYM) {
         set<int> affected_abstractions;
         for (size_t i = 0; i < generator_indices.size(); ++i) {
             const vector<int> &overall_affected_abstractions

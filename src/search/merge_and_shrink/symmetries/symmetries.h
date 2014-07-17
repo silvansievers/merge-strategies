@@ -21,7 +21,9 @@ class Symmetries {
         NO_SHRINKING,
         ATOMIC,
         LOCAL,
-        LOCAL_ONE_ABS
+        LOCAL_ONE_ABS,
+        LOCAL_ONE_SYM,
+        LOCAL_ONE_ABS_SYM
     };
     SymmetriesForShrinking symmetries_for_shrinking;
 

@@ -59,6 +59,8 @@ static MergeStrategy *_parse(OptionParser &parser) {
     symmetries_for_shrinking.push_back("ATOMIC");
     symmetries_for_shrinking.push_back("LOCAL");
     symmetries_for_shrinking.push_back("LOCAL_ONE_ABS");
+    symmetries_for_shrinking.push_back("LOCAL_ONE_SYM");
+    symmetries_for_shrinking.push_back("LOCAL_ONE_ABS_SYM");
     parser.add_enum_option("symmetries_for_shrinking",
                            symmetries_for_shrinking,
                            "choose the type of symmetries used for shrinking: "
