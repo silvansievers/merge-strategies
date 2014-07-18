@@ -4,22 +4,47 @@
 
 #include "../plugin.h"
 
-#include <limits>
+#include <algorithm>
 
 using namespace std;
 
 MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
-      //max_iterations(options.get<int>("max_iterations")),
       number_of_applied_symmetries(0),
-      //iteration_counter(0),
       bliss_limit_reached(false) {
+}
+
+void MergeSymmetries::dump_statistics() {
+    if (!bliss_times.empty()) {
+        sort(bliss_times.begin(), bliss_times.end());
+        double summed_up_bliss_times = 0;
+        size_t total_bliss_calls = bliss_times.size();
+        cout << "total bliss calls: " << total_bliss_calls << endl;
+        for (size_t i = 0; i < total_bliss_calls; ++i) {
+            cout << bliss_times[i] << endl;
+            summed_up_bliss_times += bliss_times[i];
+        }
+        double average_bliss_time = summed_up_bliss_times
+                / (double) total_bliss_calls;
+        cout << "Average bliss time: " << average_bliss_time << endl;
+        double median_bliss_time;
+        if (total_bliss_calls % 2 == 0) {
+            size_t lower_median_index = (total_bliss_calls - 1) / 2;
+            size_t higher_median_index = lower_median_index + 1;
+            median_bliss_time = (bliss_times[lower_median_index]
+                                 + bliss_times[higher_median_index])
+                    / 2.0;
+        } else {
+            size_t median_index = total_bliss_calls / 2;
+            median_bliss_time = bliss_times[median_index];
+        }
+        cout << "Median bliss time: " << median_bliss_time << endl;
+    }
 }
 
 pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
-    //++iteration_counter;
 
     if (!bliss_limit_reached && merge_order.empty()) {
         Symmetries symmetries(options);
@@ -30,7 +55,12 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
         if (symmetries.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
+        bliss_times.push_back(symmetries.get_bliss_time());
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
+    }
+
+    if (remaining_merges == 1) {
+        dump_statistics();
     }
 
     if (merge_order.empty()) {
@@ -55,9 +85,9 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
-    //parser.add_option<int>("max_iterations", "number of merge-and-shrink "
-    //                       "iterations up to which symmetries should be computed."
-    //                       "infinity");
+    parser.add_option<int>("bliss_time_limit", "time in seconds one bliss "
+                           "run is allowed to last at most (0 means no limit)",
+                           "0");
     vector<string> symmetries_for_shrinking;
     symmetries_for_shrinking.push_back("NO_SHRINKING");
     symmetries_for_shrinking.push_back("ATOMIC");

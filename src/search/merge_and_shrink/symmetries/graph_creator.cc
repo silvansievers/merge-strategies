@@ -20,9 +20,10 @@ void add_automorphism(void* param, unsigned int, const unsigned int * automorphi
 GraphCreator::GraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
+      time_limit(options.get<int>("bliss_time_limit")),
       num_identity_generators(0),
       bliss_limit_reached(false) {
-    /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
+    /*generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
 GraphCreator::~GraphCreator() {
@@ -57,7 +58,7 @@ void GraphCreator::create_symmetry_generator(const unsigned int *automorphism) {
     }
 }
 
-void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions) {
+double GraphCreator::compute_generators(const vector<Abstraction *>& abstractions) {
     // Find (non) abstraction stabilized symmetries for abstractions depending
     // on the chosen option.
 
@@ -75,7 +76,7 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
 //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
     graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
 
-//    graph->set_time_bound(time_bound);
+    graph->set_time_limit(time_limit);
 //    graph->set_generators_bound(generators_bound);
 
     bliss::Stats stats1;
@@ -86,12 +87,12 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
 
     try {
         graph->find_automorphisms(stats1,&(add_automorphism), this);
-    } catch (bliss::BlissMemoryOut) {
-        cout << "Bliss out of memory" << endl;
+    } catch (bliss::BlissException &e) {
+        e.dump();
         delete_generators();
         delete graph;
         bliss_limit_reached = true;
-        return;
+        return timer();
     }
 
 //    stats1.print(stats_file);
@@ -105,6 +106,7 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
     delete graph;
 
     cout << "Done initializing symmetries: " << timer << endl;
+    return timer();
 }
 
 bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions) {

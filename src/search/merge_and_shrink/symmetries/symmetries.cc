@@ -25,7 +25,7 @@ Symmetries::Symmetries(const Options &options)
       symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
       symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
-      build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")) {
+      bliss_time(0) {
 }
 
 bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
@@ -38,7 +38,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         if (abstractions[i])
             abstractions[i]->compute_distances();
     }
-    gc.compute_generators(abstractions);
+    bliss_time = gc.compute_generators(abstractions);
     if (get_num_generators() == 0 || is_bliss_limit_reached()) {
         return false;
     }

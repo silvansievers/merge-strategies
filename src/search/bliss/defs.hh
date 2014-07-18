@@ -6,6 +6,7 @@
 
 // Silvan Sievers
 #include <exception>
+#include <iostream>
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila
@@ -43,7 +44,20 @@ static const char * const version = "0.72";
 void fatal_error(const char* fmt, ...);
 
 // Silvan Sievers
-struct BlissMemoryOut : public std::exception {};
+struct BlissException : public std::exception {
+    virtual void dump() const = 0;
+};
+struct BlissMemoryOut : public BlissException {
+    virtual void dump() const {
+        std::cout << "Bliss memory out" << std::endl;
+    }
+};
+struct BlissTimeOut : public BlissException {
+    virtual void dump() const {
+        std::cout << "Bliss timeout" << std::endl;
+    }
+};
+
 void _OUT_OF_MEMORY(const char *file, int line);
 
 

@@ -43,8 +43,7 @@ class Symmetries {
     };
     InternalMerging internal_merging;
 
-    // search for local symmetries if true, for general ones if false
-    bool build_stabilized_pdg;
+    double bliss_time; // elapsed bliss time
 
     void apply_symmetries(const std::vector<Abstraction *> &abstractions,
                           const std::vector<int> &generator_indices) const;
@@ -60,6 +59,7 @@ public:
     bool find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {return gc.is_bliss_limit_reached(); }
+    double get_bliss_time() const {return bliss_time; }
 };
 
 #endif

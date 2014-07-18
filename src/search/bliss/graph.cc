@@ -70,6 +70,9 @@ AbstractGraph::AbstractGraph()
 
   report_hook = 0;
   report_user_param = 0;
+
+  // Silvan Sievers
+  time_limit = 0;
 }
 
 
@@ -843,6 +846,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
    */
   while(!search_stack.empty())
     {
+      // Silvan Sievers
+      if (timer1.get_duration() >= time_limit) {
+          throw BlissTimeOut();
+      }
+
       TreeNode&          current_node  = search_stack.back();
       const unsigned int current_level = (unsigned int)search_stack.size()-1;
 

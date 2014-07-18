@@ -7,14 +7,13 @@
 
 class MergeSymmetries : public MergeDFP {
     const Options options;
-    //int max_iterations;
     std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
 
     int number_of_applied_symmetries;
-    //int iteration_counter;
     bool bliss_limit_reached;
+    std::vector<double> bliss_times;
 
-    void dump_statistics() const;
+    void dump_statistics();
 protected:
     virtual void dump_strategy_specific_options() const {}
 public:

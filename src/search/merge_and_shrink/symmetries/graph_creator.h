@@ -25,15 +25,16 @@ class GraphCreator {
         INITIAL_VERTEX
     };
 
-    //int time_bound;
-    //int generators_bound;
+    // Options
     bool debug; //generate dot-readable output
     bool build_stabilized_pdg;
+    int time_limit;
+
     int num_identity_generators;
     //int stop_after_false_generated;
     bool bliss_limit_reached;
 
-    std::vector<const SymmetryGenerator*> symmetry_generators; // the generators for the automorphism
+    std::vector<const SymmetryGenerator*> symmetry_generators;
     SymmetryGeneratorInfo symmetry_generator_info;
 
     bliss::Digraph* create_bliss_graph(const std::vector<Abstraction *>& abstractions);
@@ -46,7 +47,7 @@ public:
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
 
-    void compute_generators(const std::vector<Abstraction *>& abstractions);
+    double compute_generators(const std::vector<Abstraction *>& abstractions);
     const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const {
         return symmetry_generators;
     }

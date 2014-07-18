@@ -350,8 +350,8 @@ protected:
    */
   unsigned int cr_component_elements;
 
-
-
+  // Silvan Sievers
+  int time_limit; // time limit for find_automorphism. 0 means no time limit
 
 public:
   AbstractGraph();
@@ -498,6 +498,9 @@ public:
     assert(!in_search);
     opt_use_long_prune = active;
   }
+
+  // Silvan Sievers
+  void set_time_limit(int time_limit_) {time_limit = time_limit_; }
 
 };
 
