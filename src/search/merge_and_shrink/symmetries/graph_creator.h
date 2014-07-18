@@ -31,6 +31,7 @@ class GraphCreator {
     bool build_stabilized_pdg;
     int num_identity_generators;
     //int stop_after_false_generated;
+    bool bliss_limit_reached;
 
     std::vector<const SymmetryGenerator*> symmetry_generators; // the generators for the automorphism
     SymmetryGeneratorInfo symmetry_generator_info;
@@ -46,8 +47,15 @@ public:
     void create_symmetry_generator(const unsigned int *automorphism);
 
     void compute_generators(const std::vector<Abstraction *>& abstractions);
-    const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const { return symmetry_generators; }
-    const SymmetryGeneratorInfo &get_symmetry_generator_info() const { return symmetry_generator_info; }
+    const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const {
+        return symmetry_generators;
+    }
+    const SymmetryGeneratorInfo &get_symmetry_generator_info() const {
+        return symmetry_generator_info;
+    }
+    bool is_bliss_limit_reached() const {
+        return bliss_limit_reached;
+    }
 };
 
 #endif

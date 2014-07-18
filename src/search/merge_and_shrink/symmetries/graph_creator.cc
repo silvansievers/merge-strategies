@@ -20,7 +20,8 @@ void add_automorphism(void* param, unsigned int, const unsigned int * automorphi
 GraphCreator::GraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
-      num_identity_generators(0) {
+      num_identity_generators(0),
+      bliss_limit_reached(false) {
     /*time_bound(180), generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
@@ -57,6 +58,8 @@ void GraphCreator::create_symmetry_generator(const unsigned int *automorphism) {
 }
 
 void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions) {
+    // Find (non) abstraction stabilized symmetries for abstractions depending
+    // on the chosen option.
 
     cout << "Computing generators for " << (build_stabilized_pdg? "" : "non ")
          << "abstraction stabilized symmetries" << endl;
@@ -81,7 +84,15 @@ void GraphCreator::compute_generators(const vector<Abstraction *>& abstractions)
 //    graph->set_verbose_file(f);
 //    graph->set_verbose_level(10);
 
-    graph->find_automorphisms(stats1,&(add_automorphism), this);
+    try {
+        graph->find_automorphisms(stats1,&(add_automorphism), this);
+    } catch (bliss::BlissMemoryOut) {
+        cout << "Bliss out of memory" << endl;
+        delete_generators();
+        delete graph;
+        bliss_limit_reached = true;
+        return;
+    }
 
 //    stats1.print(stats_file);
 //    fclose(stats_file);

@@ -118,7 +118,7 @@ KStack<Type>::KStack(int k)
   kapacity = k;
   entries = (Type*)malloc((k+1) * sizeof(Type));
   // Silvan Sievers
-  if (!entries) _OUT_OF_MEMORY();
+  if (!entries) _OUT_OF_MEMORY(__FILE__, __LINE__);
   cursor = entries;
 }
 
@@ -131,7 +131,7 @@ void KStack<Type>::init(int k)
   kapacity = k;
   entries = (Type*)malloc((k+1) * sizeof(Type));
   // Silvan Sievers
-  if (!entries) _OUT_OF_MEMORY();
+  if (!entries) _OUT_OF_MEMORY(__FILE__, __LINE__);
   cursor = entries;
 }
 

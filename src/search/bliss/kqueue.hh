@@ -99,7 +99,7 @@ void KQueue<Type>::init(const unsigned int k)
     free(entries);
   entries = (Type*)malloc((k + 1) * sizeof(Type));
   // Silvan Sievers
-  if (!entries) _OUT_OF_MEMORY();
+  if (!entries) _OUT_OF_MEMORY(__FILE__, __LINE__);
   end = entries + k + 1;
   head = entries;
   tail = head;

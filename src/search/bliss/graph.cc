@@ -703,10 +703,10 @@ AbstractGraph::search(const bool canonical, Stats& stats)
    */
   if(first_path_labeling) free(first_path_labeling);
   first_path_labeling = (unsigned int*)calloc(N, sizeof(unsigned int));
-  if(!first_path_labeling) _OUT_OF_MEMORY();
+  if(!first_path_labeling) _OUT_OF_MEMORY(__FILE__, __LINE__);
   if(best_path_labeling) free(best_path_labeling);
   best_path_labeling = (unsigned int*)calloc(N, sizeof(unsigned int));
-  if(!best_path_labeling) _OUT_OF_MEMORY();
+  if(!best_path_labeling) _OUT_OF_MEMORY(__FILE__, __LINE__);
 
   /*
    * Is the initial partition discrete?
@@ -725,20 +725,20 @@ AbstractGraph::search(const bool canonical, Stats& stats)
    */
   if(first_path_labeling_inv) free(first_path_labeling_inv);
   first_path_labeling_inv = (unsigned int*)calloc(N, sizeof(unsigned int));
-  if(!first_path_labeling_inv) _OUT_OF_MEMORY();
+  if(!first_path_labeling_inv) _OUT_OF_MEMORY(__FILE__, __LINE__);
   if(best_path_labeling_inv) free(best_path_labeling_inv);
   best_path_labeling_inv = (unsigned int*)calloc(N, sizeof(unsigned int));
-  if(!best_path_labeling_inv) _OUT_OF_MEMORY();
+  if(!best_path_labeling_inv) _OUT_OF_MEMORY(__FILE__, __LINE__);
 
   /*
    * Allocate space for the automorphisms
    */
   if(first_path_automorphism) free(first_path_automorphism);
   first_path_automorphism = (unsigned int*)malloc(N * sizeof(unsigned int));
-  if(!first_path_automorphism) _OUT_OF_MEMORY();
+  if(!first_path_automorphism) _OUT_OF_MEMORY(__FILE__, __LINE__);
   if(best_path_automorphism) free(best_path_automorphism);
   best_path_automorphism = (unsigned int*)malloc(N * sizeof(unsigned int));
-  if(!best_path_automorphism) _OUT_OF_MEMORY();
+  if(!best_path_automorphism) _OUT_OF_MEMORY(__FILE__, __LINE__);
 
   /*
    * Initialize orbit information so that all vertices are in their own orbits

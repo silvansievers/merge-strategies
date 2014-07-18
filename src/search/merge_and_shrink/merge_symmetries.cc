@@ -11,21 +11,25 @@ using namespace std;
 MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
-      max_iterations(options.get<int>("max_iterations")),
+      //max_iterations(options.get<int>("max_iterations")),
       number_of_applied_symmetries(0),
-      iteration_counter(0) {
+      //iteration_counter(0),
+      bliss_limit_reached(false) {
 }
 
 pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
-    ++iteration_counter;
+    //++iteration_counter;
 
-    if (iteration_counter <= max_iterations && merge_order.empty()) {
+    if (!bliss_limit_reached && merge_order.empty()) {
         Symmetries symmetries(options);
         bool applied_symmetries =
                 symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
         if (applied_symmetries)
             ++number_of_applied_symmetries;
+        if (symmetries.is_bliss_limit_reached()) {
+            bliss_limit_reached = true;
+        }
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }
 
@@ -51,9 +55,9 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
-    parser.add_option<int>("max_iterations", "number of merge-and-shrink "
-                           "iterations up to which symmetries should be computed."
-                           "infinity");
+    //parser.add_option<int>("max_iterations", "number of merge-and-shrink "
+    //                       "iterations up to which symmetries should be computed."
+    //                       "infinity");
     vector<string> symmetries_for_shrinking;
     symmetries_for_shrinking.push_back("NO_SHRINKING");
     symmetries_for_shrinking.push_back("ATOMIC");

@@ -4,6 +4,9 @@
 #include <cassert>
 #include <cstdarg>
 
+// Silvan Sievers
+#include <exception>
+
 /*
   Copyright (c) 2006-2011 Tommi Junttila
   Released under the GNU General Public License version 3.
@@ -40,7 +43,8 @@ static const char * const version = "0.72";
 void fatal_error(const char* fmt, ...);
 
 // Silvan Sievers
-void _OUT_OF_MEMORY();
+struct BlissMemoryOut : public std::exception {};
+void _OUT_OF_MEMORY(const char *file, int line);
 
 
 #if defined(BLISS_DEBUG)

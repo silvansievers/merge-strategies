@@ -30,7 +30,20 @@ Symmetries::Symmetries(const Options &options)
 
 bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
                                            vector<pair<int, int> > &merge_order) {
-    find_symmetries(abstractions);
+    // We must make sure that all abstractions distances have been computed
+    // because of the nasty possible side effect of pruning irrelevant
+    // states and because the application of an equivalence realtion to an
+    // abstraction requires distances to be computed.
+    for (size_t i = 0; i < abstractions.size(); ++i) {
+        if (abstractions[i])
+            abstractions[i]->compute_distances();
+    }
+    gc.compute_generators(abstractions);
+    if (get_num_generators() == 0 || is_bliss_limit_reached()) {
+        return false;
+    }
+
+
     int chosen_generator_for_merging = -1;
     int smallest_generator_affected_abstrations_size = numeric_limits<int>::max();
     int smallest_generator_mapped_abstractions_size = numeric_limits<int>::max();
@@ -212,24 +225,6 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
     }
 
     return applied_symmetries;
-}
-
-void Symmetries::find_symmetries(const vector<Abstraction *>& abstractions) {
-    // Find (non) abstraction stabilized symmetries for abstractions depending
-    // on the chosen option.
-    // Returns true if any symmetry is found at all and false otherwise.
-
-    // We must make sure that all abstractions distances have been computed
-    // because of the nasty possible side effect of pruning irrelevant
-    // states and because the application of an equivalence realtion to an
-    // abstraction requires distances to be computed.
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        if (abstractions[i])
-            abstractions[i]->compute_distances();
-    }
-
-    gc.compute_generators(abstractions);
-    cout << "Done searching for symmetries. [t=" << g_timer << "]" << endl;
 }
 
 void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
