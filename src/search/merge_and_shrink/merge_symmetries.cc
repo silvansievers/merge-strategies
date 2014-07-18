@@ -5,6 +5,7 @@
 #include "../plugin.h"
 
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -22,12 +23,11 @@ void MergeSymmetries::dump_statistics() {
         size_t total_bliss_calls = bliss_times.size();
         cout << "total bliss calls: " << total_bliss_calls << endl;
         for (size_t i = 0; i < total_bliss_calls; ++i) {
-            cout << bliss_times[i] << endl;
             summed_up_bliss_times += bliss_times[i];
         }
         double average_bliss_time = summed_up_bliss_times
                 / (double) total_bliss_calls;
-        cout << "Average bliss time: " << average_bliss_time << endl;
+        cout << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
         double median_bliss_time;
         if (total_bliss_calls % 2 == 0) {
             size_t lower_median_index = (total_bliss_calls - 1) / 2;
@@ -39,7 +39,7 @@ void MergeSymmetries::dump_statistics() {
             size_t median_index = total_bliss_calls / 2;
             median_bliss_time = bliss_times[median_index];
         }
-        cout << "Median bliss time: " << median_bliss_time << endl;
+        cout << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
 }
 

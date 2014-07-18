@@ -847,7 +847,7 @@ AbstractGraph::search(const bool canonical, Stats& stats)
   while(!search_stack.empty())
     {
       // Silvan Sievers
-      if (timer1.get_duration() >= time_limit) {
+      if (time_limit && timer1.get_duration() >= time_limit) {
           throw BlissTimeOut();
       }
 
