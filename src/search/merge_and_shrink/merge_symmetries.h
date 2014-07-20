@@ -6,12 +6,17 @@
 #include "../option_parser.h"
 
 class MergeSymmetries : public MergeDFP {
+    // options
     const Options options;
-    std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
+    int max_bliss_iterations;
 
+    // statistics
+    int iteration_counter;
     int number_of_applied_symmetries;
     bool bliss_limit_reached;
     std::vector<double> bliss_times;
+
+    std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
 
     void dump_statistics();
 protected:

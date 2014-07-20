@@ -12,6 +12,8 @@ using namespace std;
 MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
+      max_bliss_iterations(options.get<int>("max_bliss_iterations")),
+      iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false) {
 }
@@ -21,7 +23,7 @@ void MergeSymmetries::dump_statistics() {
         sort(bliss_times.begin(), bliss_times.end());
         double summed_up_bliss_times = 0;
         size_t total_bliss_calls = bliss_times.size();
-        cout << "total bliss calls: " << total_bliss_calls << endl;
+        cout << "Total bliss calls: " << total_bliss_calls << endl;
         for (size_t i = 0; i < total_bliss_calls; ++i) {
             summed_up_bliss_times += bliss_times[i];
         }
@@ -45,8 +47,9 @@ void MergeSymmetries::dump_statistics() {
 
 pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
+    ++iteration_counter;
 
-    if (!bliss_limit_reached && merge_order.empty()) {
+    if (!bliss_limit_reached && iteration_counter <= max_bliss_iterations && merge_order.empty()) {
         Symmetries symmetries(options);
         bool applied_symmetries =
                 symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
@@ -85,6 +88,9 @@ string MergeSymmetries::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
+    parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
+                           "which bliss is allowed to run.",
+                           "infinity");
     parser.add_option<int>("bliss_time_limit", "time in seconds one bliss "
                            "run is allowed to last at most (0 means no limit)",
                            "0");
