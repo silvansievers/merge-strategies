@@ -6,6 +6,7 @@
 
 // Silvan Sievers
 #include <exception>
+#include <new>
 #include <iostream>
 
 /*
@@ -47,7 +48,7 @@ void fatal_error(const char* fmt, ...);
 struct BlissException : public std::exception {
     virtual void dump() const = 0;
 };
-struct BlissMemoryOut : public BlissException {
+struct BlissMemoryOut : public BlissException, public std::bad_alloc {
     virtual void dump() const {
         std::cout << "Bliss memory out" << std::endl;
     }

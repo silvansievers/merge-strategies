@@ -2,6 +2,7 @@
 
 #include "../abstraction.h"
 
+#include "../../bliss/defs.hh"
 #include "../../globals.h"
 #include "../../option_parser.h"
 #include "../../timer.h"
@@ -11,6 +12,10 @@
 #include <iostream>
 
 using namespace std;
+
+static void out_of_memory_handler() {
+    throw bliss::BlissMemoryOut();
+}
 
 void add_automorphism(void* param, unsigned int, const unsigned int * automorphism) {
     GraphCreator *gc = (GraphCreator*) param;
@@ -32,8 +37,10 @@ GraphCreator::~GraphCreator() {
 
 void GraphCreator::delete_generators() {
     for (int i = 0; i < symmetry_generators.size(); i++){
-        if (symmetry_generators[i])
+        if (symmetry_generators[i]) {
             delete symmetry_generators[i];
+            symmetry_generators[i] = 0;
+        }
     }
 
     symmetry_generators.clear();
@@ -72,38 +79,39 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     Timer timer;
     cout << "Starting initializing symmetries." << endl;
 
-    bliss::Digraph* graph = create_bliss_graph(abstractions);
-//    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
-    graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
-
-    graph->set_time_limit(time_limit);
-//    graph->set_generators_bound(generators_bound);
-
-    bliss::Stats stats1;
-//    FILE *f = fopen("bliss.log", "w");
-//    FILE *stats_file = fopen("bliss.stats", "w");
-//    graph->set_verbose_file(f);
-//    graph->set_verbose_level(10);
-
+    new_handler original_new_handler = set_new_handler(out_of_memory_handler);
+    bliss::Digraph* graph = 0;
     try {
+        graph = create_bliss_graph(abstractions);
+    //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
+        graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
+
+        graph->set_time_limit(time_limit);
+    //    graph->set_generators_bound(generators_bound);
+
+        bliss::Stats stats1;
+    //    FILE *f = fopen("bliss.log", "w");
+    //    FILE *stats_file = fopen("bliss.stats", "w");
+    //    graph->set_verbose_file(f);
+    //    graph->set_verbose_level(10);
+
+
         graph->find_automorphisms(stats1,&(add_automorphism), this);
+  //    stats1.print(stats_file);
+  //    fclose(stats_file);
+  //    fclose(f);
+
+        cout << "Got " << symmetry_generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
+        cout << "Got " << num_identity_generators << " identity generators" << endl;
     } catch (bliss::BlissException &e) {
         e.dump();
-        delete_generators();
-        delete graph;
         bliss_limit_reached = true;
-        return timer();
     }
 
-//    stats1.print(stats_file);
-//    fclose(stats_file);
-//    fclose(f);
-
-    cout << "Got " << symmetry_generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
-    cout << "Got " << num_identity_generators << " identity generators" << endl;
-
-    // Deleting the graph
+    set_new_handler(original_new_handler);
+    delete_generators();
     delete graph;
+    graph = 0;
 
     cout << "Done initializing symmetries: " << timer << endl;
     return timer();
