@@ -109,9 +109,8 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
         e.dump();
         bliss_limit_reached = true;
     }
-
     set_new_handler(original_new_handler);
-    delete_generators();
+
     cout << "Done initializing symmetries: " << timer << endl;
     return timer();
 }
