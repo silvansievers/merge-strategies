@@ -3,6 +3,7 @@
 #include "../abstraction.h"
 
 #include "../../bliss/defs.hh"
+
 #include "../../globals.h"
 #include "../../option_parser.h"
 #include "../../timer.h"
@@ -80,23 +81,24 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     cout << "Starting initializing symmetries." << endl;
 
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
-    bliss::Digraph* graph = 0;
     try {
-        graph = create_bliss_graph(abstractions);
-    //    graph->set_splitting_heuristic(bliss::Digraph::shs_flm);
-        graph->set_splitting_heuristic(bliss::Digraph::shs_fs);
+        cout << "Creating the bliss graph object..." << endl;
+        bliss::Digraph bliss_graph = bliss::Digraph();
+        create_bliss_graph(abstractions, bliss_graph);
+    //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
+        bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
 
-        graph->set_time_limit(time_limit);
-    //    graph->set_generators_bound(generators_bound);
+        bliss_graph.set_time_limit(time_limit);
+    //    bliss_graph.set_generators_bound(generators_bound);
 
         bliss::Stats stats1;
     //    FILE *f = fopen("bliss.log", "w");
     //    FILE *stats_file = fopen("bliss.stats", "w");
-    //    graph->set_verbose_file(f);
-    //    graph->set_verbose_level(10);
+    //    bliss_graph.set_verbose_file(f);
+    //    bliss_graph.set_verbose_level(10);
 
-
-        graph->find_automorphisms(stats1,&(add_automorphism), this);
+        cout << "Searching for autmorphisms..." << endl;
+        bliss_graph.find_automorphisms(stats1,&(add_automorphism), this);
   //    stats1.print(stats_file);
   //    fclose(stats_file);
   //    fclose(f);
@@ -110,18 +112,12 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
 
     set_new_handler(original_new_handler);
     delete_generators();
-    delete graph;
-    graph = 0;
-
     cout << "Done initializing symmetries: " << timer << endl;
     return timer();
 }
 
-bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions) {
-    //cout << stabilize_abstractions << endl;
-
-    cout << "Creating the bliss graph object" << endl;
-    bliss::Digraph* g = new bliss::Digraph();
+void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
+                                      bliss::Digraph &bliss_graph) {
     int idx = 0;
 
     int num_of_nodes = abstractions.size();
@@ -147,9 +143,9 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
             // We further add an extra color for each empty abstraction even when
             // when not stabilizing abstractions in order to ensure that no trivial
             // symmetries that map two empty abstractions to each other are found.
-            idx = g->add_vertex(ABSTRACTION_VERTEX + node_color_added_val);
+            idx = bliss_graph.add_vertex(ABSTRACTION_VERTEX + node_color_added_val);
         } else {
-          idx = g->add_vertex(ABSTRACTION_VERTEX);
+          idx = bliss_graph.add_vertex(ABSTRACTION_VERTEX);
         }
  //     cout << "Adding abstraction vertex: " << idx << endl;
         assert(abs_ind == idx);
@@ -190,11 +186,11 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
         // Now add abs states for each abstraction
         for(AbstractStateRef state = 0; state < abs_states; state++){
 
-            idx = g->add_vertex(ABS_STATE_VERTEX + node_color_added_val);
+            idx = bliss_graph.add_vertex(ABS_STATE_VERTEX + node_color_added_val);
 //          cout << "Added abstract state vertex: " << idx << " for abstraction " << abs_ind << endl;
 
             // Edge from abstraction nodes to all the abstraction's states
-            g->add_edge(abs_ind, idx);
+            bliss_graph.add_edge(abs_ind, idx);
 
             if (debug) {
                 cout << "    node" << idx << " [shape=circle, label=abs" << abs_ind << "_state" << state << "];" << endl;
@@ -214,7 +210,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
         unsigned int label_cost = 2 * some_abs->get_label_cost_by_index(label_no); // was label_op_by_cost
 
         // For each operator we have one label node
-        int label_idx = g->add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
+        int label_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 //      cout << "Added label vertex: " << label_idx << " with color " << LABEL_VERTEX + label_op_by_cost <<" for operator " << op_no << endl;
 
         if (debug) {
@@ -230,7 +226,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
                 const AbstractTransition &trans = transitions[i];
 
                 // For each abstract transition we have a pair of nodes - pre and eff, both connected to their label node
-                int pre_idx = g->add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
+                int pre_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
 
 //              cout << "Added pre vertex: " << pre_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 1 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
 //                int eff_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + 2);
@@ -240,13 +236,13 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
                 unsigned int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
                 unsigned int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
                 // Edges from abstract state source over pre=eff=transition-node to target
-                g->add_edge(src_idx, pre_idx);
-                g->add_edge(eff_idx, target_idx);
+                bliss_graph.add_edge(src_idx, pre_idx);
+                bliss_graph.add_edge(eff_idx, target_idx);
 
 //                g->add_edge(pre_idx, eff_idx);
 
                 // Edge from operator-label to transitions (pre=eff=transition-node) induced by that operator
-                g->add_edge(label_idx, pre_idx);
+                bliss_graph.add_edge(label_idx, pre_idx);
 
 //                g->add_edge(label_idx, eff_idx);
 
@@ -261,7 +257,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     }
 
     // Finally, adding the goal node
-    idx = g->add_vertex(GOAL_VERTEX + node_color_added_val);
+    idx = bliss_graph.add_vertex(GOAL_VERTEX + node_color_added_val);
 
     if (debug) {
         cout << "    node [shape = doublecircle] node" << idx << " [label = goal];" << endl;
@@ -282,7 +278,7 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
             unsigned int val_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, state);
 
             // Edges from goal states to the goal node
-            g->add_edge(val_idx, idx);
+            bliss_graph.add_edge(val_idx, idx);
 
             if (debug) {
                 cout << "    node" << val_idx << " -> node" << idx << ";" << endl;
@@ -293,6 +289,4 @@ bliss::Digraph* GraphCreator::create_bliss_graph(const vector<Abstraction *>& ab
     if (debug) {
         cout << "}" << endl;
     }
-
-    return g;
 }

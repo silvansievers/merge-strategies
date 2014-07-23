@@ -37,7 +37,8 @@ class GraphCreator {
     std::vector<const SymmetryGenerator*> symmetry_generators;
     SymmetryGeneratorInfo symmetry_generator_info;
 
-    bliss::Digraph* create_bliss_graph(const std::vector<Abstraction *>& abstractions);
+    void create_bliss_graph(const std::vector<Abstraction *>& abstractions,
+                            bliss::Digraph &bliss_graph);
 
     void delete_generators();
 public:
