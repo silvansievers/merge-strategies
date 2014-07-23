@@ -58,6 +58,9 @@ Partition::~Partition()
   if(in_pos)              {free(in_pos); in_pos = 0; }
   if(invariant_values)    {free(invariant_values); invariant_values = 0; }
   N = 0;
+
+  // Silvan Sievers
+  cr_free();
 }
 
 

@@ -93,6 +93,9 @@ AbstractGraph::~AbstractGraph()
 
   report_hook = 0;
   report_user_param = 0;
+
+  // Silvan Sievers
+  long_prune_deallocate();
 }
 
 
