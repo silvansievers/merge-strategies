@@ -353,7 +353,7 @@ protected:
   unsigned int cr_component_elements;
 
   // Silvan Sievers
-  int time_limit; // time limit for find_automorphism. 0 means no time limit
+  double time_limit; // time limit for find_automorphism. 0 means no time limit
   Timer *timer;
 
 public:
@@ -503,7 +503,7 @@ public:
   }
 
   // Silvan Sievers
-  void set_time_limit(int time_limit_) {time_limit = time_limit_; }
+  void set_time_limit(double time_limit_) {time_limit = time_limit_; }
 
 };
 

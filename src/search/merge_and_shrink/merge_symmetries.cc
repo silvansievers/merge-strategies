@@ -52,15 +52,15 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
     ++iteration_counter;
 
     if (!bliss_limit_reached && iteration_counter <= max_bliss_iterations && merge_order.empty()) {
-        int time_limit = 0;
+        double time_limit = 0.0;
         if (bliss_remaining_time_budget) {
             // we round everything down to the full second
-            time_limit = (int) bliss_remaining_time_budget;
+            time_limit = bliss_remaining_time_budget;
         } else if (bliss_call_time_limit) {
             time_limit = bliss_call_time_limit;
         }
-        cout << "setting bliss time limit to " << time_limit << endl;
-        options.set<int>("bliss_time_limit", time_limit);
+        cout << "Setting bliss time limit to " << time_limit << endl;
+        options.set<double>("bliss_time_limit", time_limit);
         Symmetries symmetries(options);
         bool applied_symmetries =
                 symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
@@ -75,13 +75,11 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
             bliss_remaining_time_budget -= bliss_time;
             if (bliss_remaining_time_budget <= 0) {
                 assert(bliss_limit_reached);
-                // if the remaining time budget is 0 or smaller, which can
-                // happen because bliss is only restricted in running find_
-                // automorphism, whereas we measure the time starting from
-                // creating the bliss graph until its deletion.
-                //bliss_limit_reached = true;
+                // in case of measurement inaccuracies, set bliss limit
+                // reached to true in any case.
+                bliss_limit_reached = true;
             }
-            cout << "remaining bliss time budget " << bliss_remaining_time_budget << endl;
+            cout << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
         }
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }

@@ -72,7 +72,7 @@ AbstractGraph::AbstractGraph()
   report_user_param = 0;
 
   // Silvan Sievers
-  time_limit = 0;
+  time_limit = 0.0;
   timer = new Timer();
 }
 
@@ -173,6 +173,9 @@ AbstractGraph::do_refine_to_equitable()
 
   while(!p.splitting_queue_is_empty())
   {
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
+    }
     Partition::Cell* const cell = p.splitting_queue_pop();
 
     if(cell->is_unit())
@@ -912,6 +915,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
       }
     }
 
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
+    }
+
     /* Restore partition ... */
     p.goto_backtrack_point(current_node.partition_bt_point);
     /* ... and re-remember backtracking point */
@@ -986,6 +994,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
           }
         }
       }
+    }
+
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
     }
 
 
@@ -1066,6 +1079,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
 
       /* Split on smallest */
       current_node.split_element = next_split_element;
+    }
+
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
     }
 
     const unsigned int child_level = current_level+1;
@@ -1218,6 +1236,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
       }
     }
 
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
+    }
+
 #if defined(BLISS_VERIFY_EQUITABLEDNESS)
     /* The new partition should be equitable */
     if(!is_equitable())
@@ -1331,6 +1354,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
      * Backtrack to the previous level
      */
       continue;
+    }
+
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
     }
 
 

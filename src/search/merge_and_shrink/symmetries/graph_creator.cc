@@ -26,7 +26,7 @@ void add_automorphism(void* param, unsigned int, const unsigned int * automorphi
 GraphCreator::GraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
-      bliss_time_limit(options.get<int>("bliss_time_limit")),
+      bliss_time_limit(options.get<double>("bliss_time_limit")),
       stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
       num_identity_generators(0),
       bliss_limit_reached(false) {
@@ -83,12 +83,12 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     try {
         cout << "Creating the bliss graph..." << endl;
         bliss::Digraph bliss_graph = bliss::Digraph();
+        bliss_graph.set_time_limit(bliss_time_limit);
+
         create_bliss_graph(abstractions, bliss_graph);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
 
-        cout << "set bliss limit: " << bliss_time_limit << endl;
-        bliss_graph.set_time_limit(bliss_time_limit);
     //    bliss_graph.set_generators_bound(generators_bound);
 
         bliss::Stats stats1;
