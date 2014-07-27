@@ -154,7 +154,7 @@ AbstractGraph::refine_to_equitable(Partition::Cell* const unit_cell)
 
 void
 AbstractGraph::refine_to_equitable(Partition::Cell* const unit_cell1,
-           Partition::Cell* const unit_cell2)
+                                   Partition::Cell* const unit_cell2)
 {
 
   p.splitting_queue_add(unit_cell1);
@@ -172,41 +172,41 @@ AbstractGraph::do_refine_to_equitable()
   eqref_hash.reset();
 
   while(!p.splitting_queue_is_empty())
-    {
-      Partition::Cell* const cell = p.splitting_queue_pop();
+  {
+    Partition::Cell* const cell = p.splitting_queue_pop();
 
-      if(cell->is_unit())
-  {
-    if(in_search) {
-      const unsigned int index = cell->first;
-      if(first_path_automorphism)
+    if(cell->is_unit())
+    {
+      if(in_search) {
+        const unsigned int index = cell->first;
+        if(first_path_automorphism)
         {
-    /* Build the (potential) automorphism on-the-fly */
-    first_path_automorphism[first_path_labeling_inv[index]] =
-      p.elements[index];
+          /* Build the (potential) automorphism on-the-fly */
+          first_path_automorphism[first_path_labeling_inv[index]] =
+              p.elements[index];
         }
-      if(best_path_automorphism)
+        if(best_path_automorphism)
         {
-    /* Build the (potential) automorphism on-the-fly */
-    best_path_automorphism[best_path_labeling_inv[index]] =
-      p.elements[index];
+          /* Build the (potential) automorphism on-the-fly */
+          best_path_automorphism[best_path_labeling_inv[index]] =
+              p.elements[index];
         }
+      }
+      const bool worse = split_neighbourhood_of_unit_cell(cell);
+      if(in_search and worse)
+        goto worse_exit;
     }
-    const bool worse = split_neighbourhood_of_unit_cell(cell);
-    if(in_search and worse)
-      goto worse_exit;
-  }
-      else
-  {
-    const bool worse = split_neighbourhood_of_cell(cell);
-    if(in_search and worse)
-      goto worse_exit;
-  }
+    else
+    {
+      const bool worse = split_neighbourhood_of_cell(cell);
+      if(in_search and worse)
+        goto worse_exit;
     }
+  }
 
   return true;
 
- worse_exit:
+worse_exit:
   /* Clear splitting_queue */
   p.splitting_queue_clear();
   return false;
@@ -254,7 +254,7 @@ AbstractGraph::update_labeling(unsigned int* const labeling)
  */
 void
 AbstractGraph::update_labeling_and_its_inverse(unsigned int* const labeling,
-                 unsigned int* const labeling_inv)
+                                               unsigned int* const labeling_inv)
 {
   const unsigned int N = get_nof_vertices();
   unsigned int* ep = p.elements;
@@ -320,32 +320,32 @@ AbstractGraph::is_automorphism(const std::vector<unsigned int>& perm) const
 
 void
 AbstractGraph::cert_add(const unsigned int v1,
-      const unsigned int v2,
-      const unsigned int v3)
+                        const unsigned int v2,
+                        const unsigned int v3)
 {
   if(refine_compare_certificate)
-    {
-      if(refine_equal_to_first)
   {
-    /* So far equivalent to the first path... */
-    unsigned int index = certificate_current_path.size();
-    if(index >= refine_first_path_subcertificate_end)
+    if(refine_equal_to_first)
+    {
+      /* So far equivalent to the first path... */
+      unsigned int index = certificate_current_path.size();
+      if(index >= refine_first_path_subcertificate_end)
       {
         refine_equal_to_first = false;
       }
-    else if(certificate_first_path[index] != v1)
+      else if(certificate_first_path[index] != v1)
       {
         refine_equal_to_first = false;
       }
-    else if(certificate_first_path[++index] != v2)
+      else if(certificate_first_path[++index] != v2)
       {
         refine_equal_to_first = false;
       }
-    else if(certificate_first_path[++index] != v3)
+      else if(certificate_first_path[++index] != v3)
       {
         refine_equal_to_first = false;
       }
-    if(opt_use_failure_recording and !refine_equal_to_first)
+      if(opt_use_failure_recording and !refine_equal_to_first)
       {
         /* We just became different from the first path,
          * remember the deviation point tree-specific invariant
@@ -358,44 +358,44 @@ AbstractGraph::cert_add(const unsigned int v1,
         h.update(eqref_hash.get_value());
         failure_recording_fp_deviation = h.get_value();
       }
-  }
-      if(refine_cmp_to_best == 0)
-  {
-    /* So far equivalent to the current best path... */
-    unsigned int index = certificate_current_path.size();
-    if(index >= refine_best_path_subcertificate_end)
-      {
-        refine_cmp_to_best = 1;
-      }
-    else if(v1 > certificate_best_path[index])
-      {
-        refine_cmp_to_best = 1;
-      }
-    else if(v1 < certificate_best_path[index])
-      {
-        refine_cmp_to_best = -1;
-      }
-    else if(v2 > certificate_best_path[++index])
-      {
-        refine_cmp_to_best = 1;
-      }
-    else if(v2 < certificate_best_path[index])
-      {
-        refine_cmp_to_best = -1;
-      }
-    else if(v3 > certificate_best_path[++index])
-      {
-        refine_cmp_to_best = 1;
-      }
-    else if(v3 < certificate_best_path[index])
-      {
-        refine_cmp_to_best = -1;
-      }
-  }
-      if((refine_equal_to_first == false) and
-   (refine_cmp_to_best < 0))
-  return;
     }
+    if(refine_cmp_to_best == 0)
+    {
+      /* So far equivalent to the current best path... */
+      unsigned int index = certificate_current_path.size();
+      if(index >= refine_best_path_subcertificate_end)
+      {
+        refine_cmp_to_best = 1;
+      }
+      else if(v1 > certificate_best_path[index])
+      {
+        refine_cmp_to_best = 1;
+      }
+      else if(v1 < certificate_best_path[index])
+      {
+        refine_cmp_to_best = -1;
+      }
+      else if(v2 > certificate_best_path[++index])
+      {
+        refine_cmp_to_best = 1;
+      }
+      else if(v2 < certificate_best_path[index])
+      {
+        refine_cmp_to_best = -1;
+      }
+      else if(v3 > certificate_best_path[++index])
+      {
+        refine_cmp_to_best = 1;
+      }
+      else if(v3 < certificate_best_path[index])
+      {
+        refine_cmp_to_best = -1;
+      }
+    }
+    if((refine_equal_to_first == false) and
+       (refine_cmp_to_best < 0))
+      return;
+  }
   /* Update the current path certificate */
   certificate_current_path.push_back(v1);
   certificate_current_path.push_back(v2);
@@ -405,8 +405,8 @@ AbstractGraph::cert_add(const unsigned int v1,
 
 void
 AbstractGraph::cert_add_redundant(const unsigned int v1,
-          const unsigned int v2,
-          const unsigned int v3)
+                                  const unsigned int v2,
+                                  const unsigned int v3)
 {
   return cert_add(v1, v2, v3);
 }
@@ -436,7 +436,7 @@ AbstractGraph::long_prune_init()
   /* Of how many automorphisms we can store information in
      the predefined, fixed amount of memory? */
   const unsigned int nof_fitting_in_max_mem =
-    (long_prune_options_max_mem * 1024 * 1024) / (((N * 2) / 8)+1);
+      (long_prune_options_max_mem * 1024 * 1024) / (((N * 2) / 8)+1);
   long_prune_max_stored_autss = long_prune_options_max_stored_auts;
   /* Had some problems with g++ in using (a<b)?a:b when constants involved,
      so had to make this in a stupid way... */
@@ -454,15 +454,15 @@ void
 AbstractGraph::long_prune_deallocate()
 {
   while(!long_prune_fixed.empty())
-    {
-      delete long_prune_fixed.back();
-      long_prune_fixed.pop_back();
-    }
+  {
+    delete long_prune_fixed.back();
+    long_prune_fixed.pop_back();
+  }
   while(!long_prune_mcrs.empty())
-    {
-      delete long_prune_mcrs.back();
-      long_prune_mcrs.pop_back();
-    }
+  {
+    delete long_prune_mcrs.back();
+    long_prune_mcrs.pop_back();
+  }
 }
 
 void
@@ -519,34 +519,34 @@ AbstractGraph::long_prune_add_automorphism(const unsigned int* aut)
 
   /* If the buffer of stored auts is full, remove the oldest aut */
   if(long_prune_end - long_prune_begin == long_prune_max_stored_autss)
-    {
-      long_prune_begin++;
-    }
+  {
+    long_prune_begin++;
+  }
   long_prune_end++;
   std::vector<bool>& fixed = long_prune_allocget_fixed(long_prune_end-1);
   std::vector<bool>& mcrs = long_prune_allocget_mcrs(long_prune_end-1);
   /* Mark nodes that are (i) fixed or (ii) minimal orbit representatives
    * under the automorphism 'aut' */
   for(unsigned int i = 0; i < N; i++)
-    {
-      fixed[i] = (aut[i] == i);
-      if(long_prune_temp[i] == false)
   {
-    mcrs[i] = true;
-    unsigned int j = aut[i];
-    while(j != i)
+    fixed[i] = (aut[i] == i);
+    if(long_prune_temp[i] == false)
+    {
+      mcrs[i] = true;
+      unsigned int j = aut[i];
+      while(j != i)
       {
         long_prune_temp[j] = true;
         j = aut[j];
       }
-  }
-      else
-  {
-    mcrs[i] = false;
-  }
-      /* Clear the temp array on-the-fly... */
-      long_prune_temp[i] = false;
     }
+    else
+    {
+      mcrs[i] = false;
+    }
+    /* Clear the temp array on-the-fly... */
+    long_prune_temp[i] = false;
+  }
 
 
 }
@@ -672,10 +672,10 @@ AbstractGraph::search(const bool canonical, Stats& stats)
     free(best_path_automorphism); best_path_automorphism = 0; }
 
   if(N == 0)
-    {
-      /* Nothing to do, return... */
-      return;
-    }
+  {
+    /* Nothing to do, return... */
+    return;
+  }
 
   /* Initialize the partition ... */
   p.init(N);
@@ -699,11 +699,11 @@ AbstractGraph::search(const bool canonical, Stats& stats)
 
 
   if(verbstr and verbose_level >= 2)
-    {
-      fprintf(verbstr, "Initial partition computed in %.2f seconds\n",
-        timer1.get_duration());
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Initial partition computed in %.2f seconds\n",
+            timer1.get_duration());
+    fflush(verbstr);
+  }
 
 
 
@@ -721,13 +721,13 @@ AbstractGraph::search(const bool canonical, Stats& stats)
    * Is the initial partition discrete?
    */
   if(p.is_discrete())
-    {
-      /* Make the best path labeling i.e. the canonical labeling */
-      update_labeling(best_path_labeling);
-      /* Update statistics */
-      stats.nof_leaf_nodes = 1;
-      return;
-    }
+  {
+    /* Make the best path labeling i.e. the canonical labeling */
+    update_labeling(best_path_labeling);
+    /* Update statistics */
+    stats.nof_leaf_nodes = 1;
+    return;
+  }
 
   /*
    * Allocate the inverses of the "first path" and "best path" labelings
@@ -798,18 +798,18 @@ AbstractGraph::search(const bool canonical, Stats& stats)
      nucr_find_first_component(cr_level) == true and
      p.nof_discrete_cells() + cr_component_elements <
      cr_cep_stack[cr_cep_index].discrete_cell_limit)
-    {
-      cr_level = p.cr_split_level(0, cr_component);
-      CR_CEP cep;
-      cep.creation_level = 0;
-      cep.discrete_cell_limit = p.nof_discrete_cells() + cr_component_elements;
-      cep.next_cr_level = 0;
-      cep.next_cep_index = cr_cep_index;
-      cep.first_checked = false;
-      cep.best_checked = false;
-      cr_cep_index = cr_cep_stack.size();
-      cr_cep_stack.push_back(cep);
-    }
+  {
+    cr_level = p.cr_split_level(0, cr_component);
+    CR_CEP cep;
+    cep.creation_level = 0;
+    cep.discrete_cell_limit = p.nof_discrete_cells() + cr_component_elements;
+    cep.next_cr_level = 0;
+    cep.next_cep_index = cr_cep_index;
+    cep.first_checked = false;
+    cep.best_checked = false;
+    cr_cep_index = cr_cep_stack.size();
+    cr_cep_stack.push_back(cep);
+  }
 
   /*
    * Build the root node of the search tree
@@ -851,323 +851,323 @@ AbstractGraph::search(const bool canonical, Stats& stats)
    * The actual backtracking search
    */
   while(!search_stack.empty())
-    {
-      // Silvan Sievers
-      if (time_limit && timer->get_duration() >= time_limit) {
-          throw BlissTimeOut();
-      }
-
-      TreeNode&          current_node  = search_stack.back();
-      const unsigned int current_level = (unsigned int)search_stack.size()-1;
-
-
-      if(opt_use_comprec)
   {
-    CR_CEP& cep = cr_cep_stack[current_node.cr_cep_index];
-    if(cep.first_checked == true and
-       current_node.fp_extendable == TreeNode::MAYBE and
-       !search_stack[cep.creation_level].fp_on)
+    // Silvan Sievers
+    if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
+    }
+
+    TreeNode&          current_node  = search_stack.back();
+    const unsigned int current_level = (unsigned int)search_stack.size()-1;
+
+
+    if(opt_use_comprec)
+    {
+      CR_CEP& cep = cr_cep_stack[current_node.cr_cep_index];
+      if(cep.first_checked == true and
+         current_node.fp_extendable == TreeNode::MAYBE and
+         !search_stack[cep.creation_level].fp_on)
       {
         current_node.fp_extendable = TreeNode::NO;
       }
-  }
+    }
 
-      if(current_node.fp_on)
-  {
-    if(current_node.split_element == TreeNode::SPLIT_END)
+    if(current_node.fp_on)
+    {
+      if(current_node.split_element == TreeNode::SPLIT_END)
       {
         search_stack.pop_back();
         continue;
       }
-  }
-      else
-  {
-    if(current_node.fp_extendable == TreeNode::YES)
+    }
+    else
+    {
+      if(current_node.fp_extendable == TreeNode::YES)
       {
         search_stack.pop_back();
         continue;
       }
-    if(current_node.split_element == TreeNode::SPLIT_END)
+      if(current_node.split_element == TreeNode::SPLIT_END)
       {
         if(opt_use_failure_recording)
-    {
-      TreeNode& parent_node = search_stack[current_level-1];
-      if(parent_node.fp_on)
-        failure_recording_hashes[current_level-1].insert(current_node.failure_recording_ival);
-    }
+        {
+          TreeNode& parent_node = search_stack[current_level-1];
+          if(parent_node.fp_on)
+            failure_recording_hashes[current_level-1].insert(current_node.failure_recording_ival);
+        }
         search_stack.pop_back();
         continue;
       }
-    if(current_node.fp_extendable == TreeNode::NO and
-       (!canonical or current_node.cmp_to_best_path < 0))
+      if(current_node.fp_extendable == TreeNode::NO and
+         (!canonical or current_node.cmp_to_best_path < 0))
       {
         if(opt_use_failure_recording)
-    {
-      TreeNode& parent_node = search_stack[current_level-1];
-      if(parent_node.fp_on)
-        failure_recording_hashes[current_level-1].insert(current_node.failure_recording_ival);
-    }
+        {
+          TreeNode& parent_node = search_stack[current_level-1];
+          if(parent_node.fp_on)
+            failure_recording_hashes[current_level-1].insert(current_node.failure_recording_ival);
+        }
         search_stack.pop_back();
         continue;
       }
-  }
+    }
 
-      /* Restore partition ... */
-      p.goto_backtrack_point(current_node.partition_bt_point);
-      /* ... and re-remember backtracking point */
-      current_node.partition_bt_point = p.set_backtrack_point();
+    /* Restore partition ... */
+    p.goto_backtrack_point(current_node.partition_bt_point);
+    /* ... and re-remember backtracking point */
+    current_node.partition_bt_point = p.set_backtrack_point();
 
-      /* Restore current path certificate */
-      certificate_index = current_node.certificate_index;
-      refine_current_path_certificate_index = current_node.certificate_index;
-      certificate_current_path.resize(certificate_index);
+    /* Restore current path certificate */
+    certificate_index = current_node.certificate_index;
+    refine_current_path_certificate_index = current_node.certificate_index;
+    certificate_current_path.resize(certificate_index);
 
-      /* Fetch split cell information */
-      Partition::Cell * const cell =
-  p.get_cell(p.elements[current_node.split_cell_first]);
+    /* Fetch split cell information */
+    Partition::Cell * const cell =
+        p.get_cell(p.elements[current_node.split_cell_first]);
 
-      /* Restore component recursion information */
-      cr_level = current_node.cr_level;
-      cr_cep_stack.resize(current_node.cr_cep_stack_size);
-      cr_cep_index = current_node.cr_cep_index;
+    /* Restore component recursion information */
+    cr_level = current_node.cr_level;
+    cr_cep_stack.resize(current_node.cr_cep_stack_size);
+    cr_cep_index = current_node.cr_cep_index;
 
 
-      /*
+    /*
        * Update long prune redundancy sets
        */
-      if(opt_use_long_prune and current_level >= 1 and !current_node.fp_on)
-  {
-    unsigned int begin = (current_node.long_prune_begin>long_prune_begin)?current_node.long_prune_begin:long_prune_begin;
-    for(unsigned int i = begin; i < long_prune_end; i++)
+    if(opt_use_long_prune and current_level >= 1 and !current_node.fp_on)
+    {
+      unsigned int begin = (current_node.long_prune_begin>long_prune_begin)?current_node.long_prune_begin:long_prune_begin;
+      for(unsigned int i = begin; i < long_prune_end; i++)
       {
         const std::vector<bool>& fixed = long_prune_get_fixed(i);
 #if defined(BLISS_CONSISTENCY_CHECKS)
         for(unsigned int l = 0; l < search_stack.size()-2; l++)
-    assert(fixed[search_stack[l].split_element]);
+          assert(fixed[search_stack[l].split_element]);
 #endif
         if(fixed[search_stack[search_stack.size()-1-1].split_element] ==
-     false)
-    {
-      long_prune_swap(begin, i);
-      begin++;
-      current_node.long_prune_begin = begin;
-      continue;
-    }
-      }
-
-    if(current_node.split_element == TreeNode::SPLIT_START)
-      {
-        current_node.needs_long_prune = true;
-      }
-    else if(current_node.needs_long_prune)
-      {
-        current_node.needs_long_prune = false;
-        unsigned int begin = (current_node.long_prune_begin>long_prune_begin)?current_node.long_prune_begin:long_prune_begin;
-        for(unsigned int i = begin; i < long_prune_end; i++)
-    {
-      const std::vector<bool>& fixed = long_prune_get_fixed(i);
-#if defined(BLISS_CONSISTENCY_CHECKS)
-      for(unsigned int l = 0; l < search_stack.size()-2; l++)
-        assert(fixed[search_stack[l].split_element]);
-#endif
-      assert(fixed[search_stack[current_level-1].split_element] == true);
-      if(fixed[search_stack[current_level-1].split_element] == false)
+           false)
         {
           long_prune_swap(begin, i);
           begin++;
           current_node.long_prune_begin = begin;
           continue;
         }
-      const std::vector<bool>& mcrs = long_prune_get_mcrs(i);
-      unsigned int* ep = p.elements + cell->first;
-      for(unsigned int j = cell->length; j > 0; j--, ep++) {
-        if(mcrs[*ep] == false)
-          current_node.long_prune_redundant.insert(*ep);
+      }
+
+      if(current_node.split_element == TreeNode::SPLIT_START)
+      {
+        current_node.needs_long_prune = true;
+      }
+      else if(current_node.needs_long_prune)
+      {
+        current_node.needs_long_prune = false;
+        unsigned int begin = (current_node.long_prune_begin>long_prune_begin)?current_node.long_prune_begin:long_prune_begin;
+        for(unsigned int i = begin; i < long_prune_end; i++)
+        {
+          const std::vector<bool>& fixed = long_prune_get_fixed(i);
+#if defined(BLISS_CONSISTENCY_CHECKS)
+          for(unsigned int l = 0; l < search_stack.size()-2; l++)
+            assert(fixed[search_stack[l].split_element]);
+#endif
+          assert(fixed[search_stack[current_level-1].split_element] == true);
+          if(fixed[search_stack[current_level-1].split_element] == false)
+          {
+            long_prune_swap(begin, i);
+            begin++;
+            current_node.long_prune_begin = begin;
+            continue;
+          }
+          const std::vector<bool>& mcrs = long_prune_get_mcrs(i);
+          unsigned int* ep = p.elements + cell->first;
+          for(unsigned int j = cell->length; j > 0; j--, ep++) {
+            if(mcrs[*ep] == false)
+              current_node.long_prune_redundant.insert(*ep);
+          }
+        }
       }
     }
-      }
-  }
 
 
-      /*
+    /*
        * Find the next smallest, non-isomorphic element in the cell and
        * store it in current_node.split_element
        */
-      {
-  unsigned int  next_split_element = UINT_MAX;
-  unsigned int* ep = p.elements + cell->first;
-  if(current_node.fp_on)
     {
-      /* Find the next larger splitting element that is
-       * a minimal orbit representative w.r.t. first_path_orbits */
-      for(unsigned int i = cell->length; i > 0; i--, ep++) {
-        if((int)(*ep) > current_node.split_element and
-     *ep < next_split_element and
-     first_path_orbits.is_minimal_representative(*ep)) {
-    next_split_element = *ep;
-        }
-      }
-    }
-  else if(current_node.in_best_path)
-    {
-      /* Find the next larger splitting element that is
-       * a minimal orbit representative w.r.t. best_path_orbits */
-      for(unsigned int i = cell->length; i > 0; i--, ep++) {
-        if((int)(*ep) > current_node.split_element and
-     *ep < next_split_element and
-     best_path_orbits.is_minimal_representative(*ep) and
-     (!opt_use_long_prune or
-      current_node.long_prune_redundant.find(*ep) ==
-      current_node.long_prune_redundant.end())) {
-    next_split_element = *ep;
-        }
-      }
-    }
-  else
-    {
-      /* Find the next larger splitting element */
-      for(unsigned int i = cell->length; i > 0; i--, ep++) {
-        if((int)(*ep) > current_node.split_element and
-     *ep < next_split_element and
-     (!opt_use_long_prune or
-      current_node.long_prune_redundant.find(*ep) ==
-      current_node.long_prune_redundant.end())) {
-    next_split_element = *ep;
-        }
-      }
-    }
-  if(next_split_element == UINT_MAX)
-    {
-      /* No more (unexplored children) in the cell */
-      current_node.split_element = TreeNode::SPLIT_END;
+      unsigned int  next_split_element = UINT_MAX;
+      unsigned int* ep = p.elements + cell->first;
       if(current_node.fp_on)
+      {
+        /* Find the next larger splitting element that is
+       * a minimal orbit representative w.r.t. first_path_orbits */
+        for(unsigned int i = cell->length; i > 0; i--, ep++) {
+          if((int)(*ep) > current_node.split_element and
+             *ep < next_split_element and
+             first_path_orbits.is_minimal_representative(*ep)) {
+            next_split_element = *ep;
+          }
+        }
+      }
+      else if(current_node.in_best_path)
+      {
+        /* Find the next larger splitting element that is
+       * a minimal orbit representative w.r.t. best_path_orbits */
+        for(unsigned int i = cell->length; i > 0; i--, ep++) {
+          if((int)(*ep) > current_node.split_element and
+             *ep < next_split_element and
+             best_path_orbits.is_minimal_representative(*ep) and
+             (!opt_use_long_prune or
+              current_node.long_prune_redundant.find(*ep) ==
+              current_node.long_prune_redundant.end())) {
+            next_split_element = *ep;
+          }
+        }
+      }
+      else
+      {
+        /* Find the next larger splitting element */
+        for(unsigned int i = cell->length; i > 0; i--, ep++) {
+          if((int)(*ep) > current_node.split_element and
+             *ep < next_split_element and
+             (!opt_use_long_prune or
+              current_node.long_prune_redundant.find(*ep) ==
+              current_node.long_prune_redundant.end())) {
+            next_split_element = *ep;
+          }
+        }
+      }
+      if(next_split_element == UINT_MAX)
+      {
+        /* No more (unexplored children) in the cell */
+        current_node.split_element = TreeNode::SPLIT_END;
+        if(current_node.fp_on)
         {
-    /* Update group size */
-    const unsigned int index = first_path_orbits.orbit_size(first_path_info[search_stack.size()-1].splitting_element);
-    stats.group_size.multiply(index);
-    stats.group_size_approx *= (long double)index;
-    /*
+          /* Update group size */
+          const unsigned int index = first_path_orbits.orbit_size(first_path_info[search_stack.size()-1].splitting_element);
+          stats.group_size.multiply(index);
+          stats.group_size_approx *= (long double)index;
+          /*
      * Update all_same_level
      */
-    if(index == cell->length and all_same_level == current_level+1)
-      all_same_level = current_level;
-    if(verbstr and verbose_level >= 2) {
-      fprintf(verbstr,
-        "Level %u: orbits=%u, index=%u/%u, all_same_level=%u\n",
-        current_level,
-        first_path_orbits.nof_orbits(),
-        index, cell->length,
-        all_same_level);
-      fflush(verbstr);
-    }
+          if(index == cell->length and all_same_level == current_level+1)
+            all_same_level = current_level;
+          if(verbstr and verbose_level >= 2) {
+            fprintf(verbstr,
+                    "Level %u: orbits=%u, index=%u/%u, all_same_level=%u\n",
+                    current_level,
+                    first_path_orbits.nof_orbits(),
+                    index, cell->length,
+                    all_same_level);
+            fflush(verbstr);
+          }
         }
-      continue;
-    }
-
-  /* Split on smallest */
-  current_node.split_element = next_split_element;
+        continue;
       }
 
-      const unsigned int child_level = current_level+1;
-      /* Update some statistics */
-      stats.nof_nodes++;
-      if(search_stack.size() > stats.max_level)
-  stats.max_level = search_stack.size();
+      /* Split on smallest */
+      current_node.split_element = next_split_element;
+    }
+
+    const unsigned int child_level = current_level+1;
+    /* Update some statistics */
+    stats.nof_nodes++;
+    if(search_stack.size() > stats.max_level)
+      stats.max_level = search_stack.size();
 
 
 
-      /* Set flags and indices for the refiner certificate builder */
-      refine_equal_to_first = current_node.fp_cert_equal;
-      refine_cmp_to_best = current_node.cmp_to_best_path;
-      if(!first_path_info.empty())
-  {
-    if(refine_equal_to_first)
-      refine_first_path_subcertificate_end =
-        first_path_info[search_stack.size()-1].certificate_index +
-        first_path_info[search_stack.size()-1].subcertificate_length;
-    if(canonical)
+    /* Set flags and indices for the refiner certificate builder */
+    refine_equal_to_first = current_node.fp_cert_equal;
+    refine_cmp_to_best = current_node.cmp_to_best_path;
+    if(!first_path_info.empty())
+    {
+      if(refine_equal_to_first)
+        refine_first_path_subcertificate_end =
+            first_path_info[search_stack.size()-1].certificate_index +
+            first_path_info[search_stack.size()-1].subcertificate_length;
+      if(canonical)
       {
         if(refine_cmp_to_best == 0)
-    refine_best_path_subcertificate_end =
-      best_path_info[search_stack.size()-1].certificate_index +
-      best_path_info[search_stack.size()-1].subcertificate_length;
+          refine_best_path_subcertificate_end =
+              best_path_info[search_stack.size()-1].certificate_index +
+              best_path_info[search_stack.size()-1].subcertificate_length;
       }
-    else
-      refine_cmp_to_best = -1;
-  }
+      else
+        refine_cmp_to_best = -1;
+    }
 
-      const bool was_fp_cert_equal = current_node.fp_cert_equal;
+    const bool was_fp_cert_equal = current_node.fp_cert_equal;
 
-      /* Individualize, i.e. split the cell in two, the latter new cell
+    /* Individualize, i.e. split the cell in two, the latter new cell
        * will be a unit one containing info.split_element */
-      Partition::Cell* const new_cell =
-  p.individualize(cell, current_node.split_element);
+    Partition::Cell* const new_cell =
+        p.individualize(cell, current_node.split_element);
 
-      /*
+    /*
        * Refine the new partition to equitable
        */
-      if(cell->is_unit())
-  refine_to_equitable(cell, new_cell);
-      else
-  refine_to_equitable(new_cell);
+    if(cell->is_unit())
+      refine_to_equitable(cell, new_cell);
+    else
+      refine_to_equitable(new_cell);
 
 
 
 
-      /* Update statistics */
-      if(p.is_discrete())
-  stats.nof_leaf_nodes++;
+    /* Update statistics */
+    if(p.is_discrete())
+      stats.nof_leaf_nodes++;
 
 
-      if(!first_path_info.empty())
-  {
-    /* We are no longer on the first path */
-    const unsigned int subcertificate_length =
-      certificate_current_path.size() - certificate_index;
-    if(refine_equal_to_first)
+    if(!first_path_info.empty())
+    {
+      /* We are no longer on the first path */
+      const unsigned int subcertificate_length =
+          certificate_current_path.size() - certificate_index;
+      if(refine_equal_to_first)
       {
         /* Was equal to the first path so far */
         PathInfo& first_pinfo = first_path_info[current_level];
         assert(first_pinfo.certificate_index == certificate_index);
         if(subcertificate_length != first_pinfo.subcertificate_length)
-    {
-      refine_equal_to_first = false;
-      if(opt_use_failure_recording)
-        failure_recording_fp_deviation = subcertificate_length;
-    }
+        {
+          refine_equal_to_first = false;
+          if(opt_use_failure_recording)
+            failure_recording_fp_deviation = subcertificate_length;
+        }
         else if(first_pinfo.eqref_hash.cmp(eqref_hash) != 0)
-    {
-      refine_equal_to_first = false;
-      if(opt_use_failure_recording)
-        failure_recording_fp_deviation = eqref_hash.get_value();
-    }
+        {
+          refine_equal_to_first = false;
+          if(opt_use_failure_recording)
+            failure_recording_fp_deviation = eqref_hash.get_value();
+        }
       }
-    if(canonical and (refine_cmp_to_best == 0))
+      if(canonical and (refine_cmp_to_best == 0))
       {
         /* Was equal to the best path so far */
         PathInfo& bestp_info = best_path_info[current_level];
         assert(bestp_info.certificate_index == certificate_index);
         if(subcertificate_length < bestp_info.subcertificate_length)
-    {
-      refine_cmp_to_best = -1;
-    }
+        {
+          refine_cmp_to_best = -1;
+        }
         else if(subcertificate_length > bestp_info.subcertificate_length)
-    {
-      refine_cmp_to_best = 1;
-    }
+        {
+          refine_cmp_to_best = 1;
+        }
         else if(bestp_info.eqref_hash.cmp(eqref_hash) > 0)
-    {
-      refine_cmp_to_best = -1;
-    }
+        {
+          refine_cmp_to_best = -1;
+        }
         else if(bestp_info.eqref_hash.cmp(eqref_hash) < 0)
-    {
-      refine_cmp_to_best = 1;
-    }
+        {
+          refine_cmp_to_best = 1;
+        }
       }
 
-    if(opt_use_failure_recording and
-       was_fp_cert_equal and
-       !refine_equal_to_first)
+      if(opt_use_failure_recording and
+         was_fp_cert_equal and
+         !refine_equal_to_first)
       {
         UintSeqHash k;
         k.update(failure_recording_fp_deviation);
@@ -1175,312 +1175,312 @@ AbstractGraph::search(const bool canonical, Stats& stats)
         failure_recording_fp_deviation = k.get_value();
 
         if(current_node.fp_on)
-    failure_recording_hashes[current_level].insert(failure_recording_fp_deviation);
+          failure_recording_hashes[current_level].insert(failure_recording_fp_deviation);
         else
-    {
-      for(unsigned int i = current_level; i > 0; i--)
         {
-          if(search_stack[i].fp_on)
-      break;
-          const FailureRecordingSet& s = failure_recording_hashes[i];
-          if(i == current_level and
-       s.find(failure_recording_fp_deviation) != s.end())
-      break;
-          if(s.find(0) != s.end())
-      break;
-          search_stack[i].fp_extendable = TreeNode::NO;
+          for(unsigned int i = current_level; i > 0; i--)
+          {
+            if(search_stack[i].fp_on)
+              break;
+            const FailureRecordingSet& s = failure_recording_hashes[i];
+            if(i == current_level and
+               s.find(failure_recording_fp_deviation) != s.end())
+              break;
+            if(s.find(0) != s.end())
+              break;
+            search_stack[i].fp_extendable = TreeNode::NO;
+          }
         }
-    }
       }
 
 
-    /* Check if no longer equal to the first path and,
+      /* Check if no longer equal to the first path and,
      * if canonical labeling is desired, also worse than the
      * current best path */
-    if(refine_equal_to_first == false and
-       (!canonical or (refine_cmp_to_best < 0)))
+      if(refine_equal_to_first == false and
+         (!canonical or (refine_cmp_to_best < 0)))
       {
         /* Yes, backtrack */
         stats.nof_bad_nodes++;
         if(current_node.fp_cert_equal == true and
-     current_level+1 > all_same_level)
-    {
-      assert(all_same_level >= 1);
-      for(unsigned int i = all_same_level;
-          i < search_stack.size();
-          i++)
+           current_level+1 > all_same_level)
         {
-          search_stack[i].fp_extendable = TreeNode::NO;
+          assert(all_same_level >= 1);
+          for(unsigned int i = all_same_level;
+              i < search_stack.size();
+              i++)
+          {
+            search_stack[i].fp_extendable = TreeNode::NO;
+          }
         }
-    }
 
         continue;
       }
-  }
+    }
 
 #if defined(BLISS_VERIFY_EQUITABLEDNESS)
-      /* The new partition should be equitable */
-      if(!is_equitable())
-  fatal_error("consistency check failed - partition after refinement is not equitable");
+    /* The new partition should be equitable */
+    if(!is_equitable())
+      fatal_error("consistency check failed - partition after refinement is not equitable");
 #endif
 
-      /*
+    /*
        * Next level search tree node info
        */
-      TreeNode child_node;
+    TreeNode child_node;
 
-      /* No more in the first path */
-      child_node.fp_on = false;
-      /* No more in the best path */
-      child_node.in_best_path = false;
+    /* No more in the first path */
+    child_node.fp_on = false;
+    /* No more in the best path */
+    child_node.in_best_path = false;
 
-      child_node.fp_cert_equal = refine_equal_to_first;
-      if(current_node.fp_extendable == TreeNode::NO or
-   (current_node.fp_extendable == TreeNode::MAYBE and
-    child_node.fp_cert_equal == false))
-  child_node.fp_extendable = TreeNode::NO;
-      else
-  child_node.fp_extendable = TreeNode::MAYBE;
-      child_node.cmp_to_best_path = refine_cmp_to_best;
+    child_node.fp_cert_equal = refine_equal_to_first;
+    if(current_node.fp_extendable == TreeNode::NO or
+       (current_node.fp_extendable == TreeNode::MAYBE and
+        child_node.fp_cert_equal == false))
+      child_node.fp_extendable = TreeNode::NO;
+    else
+      child_node.fp_extendable = TreeNode::MAYBE;
+    child_node.cmp_to_best_path = refine_cmp_to_best;
 
-      child_node.failure_recording_ival = 0;
-      child_node.cr_cep_stack_size = current_node.cr_cep_stack_size;
-      child_node.cr_cep_index = current_node.cr_cep_index;
-      child_node.cr_level = current_node.cr_level;
+    child_node.failure_recording_ival = 0;
+    child_node.cr_cep_stack_size = current_node.cr_cep_stack_size;
+    child_node.cr_cep_index = current_node.cr_cep_index;
+    child_node.cr_level = current_node.cr_level;
 
-      certificate_index = certificate_current_path.size();
+    certificate_index = certificate_current_path.size();
 
-      current_node.eqref_hash = eqref_hash;
-      current_node.subcertificate_length =
-  certificate_index - current_node.certificate_index;
+    current_node.eqref_hash = eqref_hash;
+    current_node.subcertificate_length =
+        certificate_index - current_node.certificate_index;
 
 
-      /*
+    /*
        * The first encountered leaf node at the end of the "first path"?
        */
-      if(p.is_discrete() and first_path_info.empty())
-  {
-    //fprintf(stdout, "Level %u: FIRST\n", child_level); fflush(stdout);
-    stats.nof_canupdates++;
-    /*
+    if(p.is_discrete() and first_path_info.empty())
+    {
+      //fprintf(stdout, "Level %u: FIRST\n", child_level); fflush(stdout);
+      stats.nof_canupdates++;
+      /*
      * Update labelings and their inverses
      */
-    update_labeling_and_its_inverse(first_path_labeling,
-            first_path_labeling_inv);
-    update_labeling_and_its_inverse(best_path_labeling,
-            best_path_labeling_inv);
-    /*
+      update_labeling_and_its_inverse(first_path_labeling,
+                                      first_path_labeling_inv);
+      update_labeling_and_its_inverse(best_path_labeling,
+                                      best_path_labeling_inv);
+      /*
      * Reset automorphism array
      */
-    reset_permutation(first_path_automorphism);
-    reset_permutation(best_path_automorphism);
-    /*
+      reset_permutation(first_path_automorphism);
+      reset_permutation(best_path_automorphism);
+      /*
      * Reset orbit information
      */
-    first_path_orbits.reset();
-    best_path_orbits.reset();
-    /*
+      first_path_orbits.reset();
+      best_path_orbits.reset();
+      /*
      * Reset group size
      */
-    stats.group_size.assign(1);
-    stats.group_size_approx = 1.0;
-    /*
+      stats.group_size.assign(1);
+      stats.group_size_approx = 1.0;
+      /*
      * Reset all_same_level
      */
-    all_same_level = child_level;
-    /*
+      all_same_level = child_level;
+      /*
      * Mark the current path to be the first and best one and save it
      */
-    const unsigned int base_size = search_stack.size();
-    best_path_info.clear();
-    //fprintf(stdout, " New base is: ");
-    for(unsigned int i = 0; i < base_size; i++) {
-      search_stack[i].fp_on = true;
-      search_stack[i].fp_cert_equal = true;
-      search_stack[i].fp_extendable = TreeNode::YES;
-      search_stack[i].in_best_path = true;
-      search_stack[i].cmp_to_best_path = 0;
-      PathInfo path_info;
-      path_info.splitting_element = search_stack[i].split_element;
-      path_info.certificate_index = search_stack[i].certificate_index;
-      path_info.eqref_hash = search_stack[i].eqref_hash;
-      path_info.subcertificate_length = search_stack[i].subcertificate_length;
-      first_path_info.push_back(path_info);
-      best_path_info.push_back(path_info);
-      //fprintf(stdout, "%u ", search_stack[i].split_element);
-    }
-    //fprintf(stdout, "\n"); fflush(stdout);
-    /* Copy certificates */
-    certificate_first_path = certificate_current_path;
-    certificate_best_path = certificate_current_path;
+      const unsigned int base_size = search_stack.size();
+      best_path_info.clear();
+      //fprintf(stdout, " New base is: ");
+      for(unsigned int i = 0; i < base_size; i++) {
+        search_stack[i].fp_on = true;
+        search_stack[i].fp_cert_equal = true;
+        search_stack[i].fp_extendable = TreeNode::YES;
+        search_stack[i].in_best_path = true;
+        search_stack[i].cmp_to_best_path = 0;
+        PathInfo path_info;
+        path_info.splitting_element = search_stack[i].split_element;
+        path_info.certificate_index = search_stack[i].certificate_index;
+        path_info.eqref_hash = search_stack[i].eqref_hash;
+        path_info.subcertificate_length = search_stack[i].subcertificate_length;
+        first_path_info.push_back(path_info);
+        best_path_info.push_back(path_info);
+        //fprintf(stdout, "%u ", search_stack[i].split_element);
+      }
+      //fprintf(stdout, "\n"); fflush(stdout);
+      /* Copy certificates */
+      certificate_first_path = certificate_current_path;
+      certificate_best_path = certificate_current_path;
 
-    /* From now on, compare certificates when refining */
-    refine_compare_certificate = true;
+      /* From now on, compare certificates when refining */
+      refine_compare_certificate = true;
 
-    if(opt_use_failure_recording)
-      failure_recording_hashes.resize(base_size);
+      if(opt_use_failure_recording)
+        failure_recording_hashes.resize(base_size);
 
-    /*
+      /*
     for(unsigned int j = 0; j < search_stack.size(); j++)
       fprintf(stderr, "%u ", search_stack[j].split_element);
     fprintf(stderr, "\n");
     p.print(stderr); fprintf(stderr, "\n");
     */
 
-    /*
+      /*
      * Backtrack to the previous level
      */
-    continue;
-  }
+      continue;
+    }
 
 
-      if(p.is_discrete() and child_node.fp_cert_equal)
-  {
-    /*
+    if(p.is_discrete() and child_node.fp_cert_equal)
+    {
+      /*
      * A leaf node that is equal to the first one.
      * An automorphism found: aut[i] = elements[first_path_labeling[i]]
      */
-    goto handle_first_path_automorphism;
-  }
+      goto handle_first_path_automorphism;
+    }
 
 
-      if(!p.is_discrete())
-  {
-    Partition::Cell* next_split_cell = 0;
-    /*
+    if(!p.is_discrete())
+    {
+      Partition::Cell* next_split_cell = 0;
+      /*
      * An internal, non-leaf node
      */
-    if(opt_use_comprec)
+      if(opt_use_comprec)
       {
         assert(p.nof_discrete_cells() <=
-         cr_cep_stack[cr_cep_index].discrete_cell_limit);
+               cr_cep_stack[cr_cep_index].discrete_cell_limit);
         assert(cr_level == child_node.cr_level);
 
 
         if(p.nof_discrete_cells() ==
-     cr_cep_stack[cr_cep_index].discrete_cell_limit)
-    {
-      /* We have reached the end of a component */
-      assert(cr_cep_index != 0);
-      CR_CEP& cep = cr_cep_stack[cr_cep_index];
+           cr_cep_stack[cr_cep_index].discrete_cell_limit)
+        {
+          /* We have reached the end of a component */
+          assert(cr_cep_index != 0);
+          CR_CEP& cep = cr_cep_stack[cr_cep_index];
 
-      /* First, compare with respect to the first path */
-      if(first_path_info.empty() or child_node.fp_cert_equal) {
-        if(cep.first_checked == false)
-          {
-      /* First time, go to the next component */
-      cep.first_checked = true;
-          }
-        else
-          {
-      assert(!first_path_info.empty());
-      assert(cep.creation_level < search_stack.size());
-      TreeNode& old_info = search_stack[cep.creation_level];
-      /* If the component was found when on the first path,
+          /* First, compare with respect to the first path */
+          if(first_path_info.empty() or child_node.fp_cert_equal) {
+            if(cep.first_checked == false)
+            {
+              /* First time, go to the next component */
+              cep.first_checked = true;
+            }
+            else
+            {
+              assert(!first_path_info.empty());
+              assert(cep.creation_level < search_stack.size());
+              TreeNode& old_info = search_stack[cep.creation_level];
+              /* If the component was found when on the first path,
        * handle the found automorphism as the other
        * first path automorphisms */
-      if(old_info.fp_on)
-        goto handle_first_path_automorphism;
-      /* Should never get here because of CR:FP */
-      _INTERNAL_ERROR();
+              if(old_info.fp_on)
+                goto handle_first_path_automorphism;
+              /* Should never get here because of CR:FP */
+              _INTERNAL_ERROR();
+            }
           }
-      }
 
-      if(canonical and
-         !first_path_info.empty() and
-         child_node.cmp_to_best_path >= 0) {
-        if(cep.best_checked == false)
-          {
-      /* First time, go to the next component */
-      cep.best_checked = true;
-          }
-        else
-          {
-      assert(cep.creation_level < search_stack.size());
-      TreeNode& old_info = search_stack[cep.creation_level];
-      if(child_node.cmp_to_best_path == 0) {
-        /* If the component was found when on the best path,
+          if(canonical and
+             !first_path_info.empty() and
+             child_node.cmp_to_best_path >= 0) {
+            if(cep.best_checked == false)
+            {
+              /* First time, go to the next component */
+              cep.best_checked = true;
+            }
+            else
+            {
+              assert(cep.creation_level < search_stack.size());
+              TreeNode& old_info = search_stack[cep.creation_level];
+              if(child_node.cmp_to_best_path == 0) {
+                /* If the component was found when on the best path,
          * handle the found automorphism as the other
          * best path automorphisms */
-        if(old_info.in_best_path)
-          goto handle_best_path_automorphism;
-        /* Otherwise, we do not remember the automorhism as
+                if(old_info.in_best_path)
+                  goto handle_best_path_automorphism;
+                /* Otherwise, we do not remember the automorhism as
          * we didn't memorize the path that was invariant
          * equal to the best one and passed through the
          * component.
          * Thus we can only backtrack to the previous level */
-        child_node.cmp_to_best_path = -1;
-        if(!child_node.fp_cert_equal)
-          {
-            continue;
-          }
-      }
-      else {
-        assert(child_node.cmp_to_best_path > 0);
-        if(old_info.in_best_path)
-          {
-            stats.nof_canupdates++;
-            /*
+                child_node.cmp_to_best_path = -1;
+                if(!child_node.fp_cert_equal)
+                {
+                  continue;
+                }
+              }
+              else {
+                assert(child_node.cmp_to_best_path > 0);
+                if(old_info.in_best_path)
+                {
+                  stats.nof_canupdates++;
+                  /*
              * Update canonical labeling and its inverse
              */
-            for(unsigned int i = 0; i < N; i++) {
-        if(p.get_cell(p.elements[i])->is_unit()) {
-          best_path_labeling[p.elements[i]] = i;
-          best_path_labeling_inv[i] = p.elements[i];
-        }
+                  for(unsigned int i = 0; i < N; i++) {
+                    if(p.get_cell(p.elements[i])->is_unit()) {
+                      best_path_labeling[p.elements[i]] = i;
+                      best_path_labeling_inv[i] = p.elements[i];
+                    }
+                  }
+                  //update_labeling_and_its_inverse(best_path_labeling, best_path_labeling_inv);
+                  /* Reset best path automorphism */
+                  reset_permutation(best_path_automorphism);
+                  /* Reset best path orbit structure */
+                  best_path_orbits.reset();
+                  /* Mark to be the best one and save prefix */
+                  unsigned int postfix_start = cep.creation_level;
+                  assert(postfix_start < best_path_info.size());
+                  while(p.get_cell(best_path_info[postfix_start].splitting_element)->is_unit()) {
+                    postfix_start++;
+                    assert(postfix_start < best_path_info.size());
+                  }
+                  unsigned int postfix_start_cert = best_path_info[postfix_start].certificate_index;
+                  std::vector<PathInfo> best_path_temp = best_path_info;
+                  best_path_info.clear();
+                  for(unsigned int i = 0; i < search_stack.size(); i++) {
+                    TreeNode& ss_info = search_stack[i];
+                    PathInfo  bp_info;
+                    ss_info.cmp_to_best_path = 0;
+                    ss_info.in_best_path = true;
+                    bp_info.splitting_element = ss_info.split_element;
+                    bp_info.certificate_index = ss_info.certificate_index;
+                    bp_info.subcertificate_length = ss_info.subcertificate_length;
+                    bp_info.eqref_hash = ss_info.eqref_hash;
+                    best_path_info.push_back(bp_info);
+                  }
+                  /* Copy the postfix of the previous best path */
+                  for(unsigned int i = postfix_start;
+                      i < best_path_temp.size();
+                      i++)
+                  {
+                    best_path_info.push_back(best_path_temp[i]);
+                    best_path_info[best_path_info.size()-1].certificate_index =
+                        best_path_info[best_path_info.size()-2].certificate_index +
+                        best_path_info[best_path_info.size()-2].subcertificate_length;
+                  }
+                  std::vector<unsigned int> certificate_best_path_old = certificate_best_path;
+                  certificate_best_path = certificate_current_path;
+                  for(unsigned int i = postfix_start_cert;  i < certificate_best_path_old.size(); i++)
+                    certificate_best_path.push_back(certificate_best_path_old[i]);
+                  assert(certificate_best_path.size() == best_path_info.back().certificate_index + best_path_info.back().subcertificate_length);
+                  /* Backtrack to the previous level */
+                  continue;
+                }
+              }
             }
-            //update_labeling_and_its_inverse(best_path_labeling, best_path_labeling_inv);
-            /* Reset best path automorphism */
-            reset_permutation(best_path_automorphism);
-            /* Reset best path orbit structure */
-            best_path_orbits.reset();
-            /* Mark to be the best one and save prefix */
-            unsigned int postfix_start = cep.creation_level;
-            assert(postfix_start < best_path_info.size());
-            while(p.get_cell(best_path_info[postfix_start].splitting_element)->is_unit()) {
-        postfix_start++;
-        assert(postfix_start < best_path_info.size());
-            }
-            unsigned int postfix_start_cert = best_path_info[postfix_start].certificate_index;
-            std::vector<PathInfo> best_path_temp = best_path_info;
-            best_path_info.clear();
-            for(unsigned int i = 0; i < search_stack.size(); i++) {
-        TreeNode& ss_info = search_stack[i];
-        PathInfo  bp_info;
-        ss_info.cmp_to_best_path = 0;
-        ss_info.in_best_path = true;
-        bp_info.splitting_element = ss_info.split_element;
-        bp_info.certificate_index = ss_info.certificate_index;
-        bp_info.subcertificate_length = ss_info.subcertificate_length;
-        bp_info.eqref_hash = ss_info.eqref_hash;
-        best_path_info.push_back(bp_info);
-            }
-            /* Copy the postfix of the previous best path */
-            for(unsigned int i = postfix_start;
-          i < best_path_temp.size();
-          i++)
-        {
-          best_path_info.push_back(best_path_temp[i]);
-          best_path_info[best_path_info.size()-1].certificate_index =
-            best_path_info[best_path_info.size()-2].certificate_index +
-            best_path_info[best_path_info.size()-2].subcertificate_length;
-        }
-            std::vector<unsigned int> certificate_best_path_old = certificate_best_path;
-            certificate_best_path = certificate_current_path;
-            for(unsigned int i = postfix_start_cert;  i < certificate_best_path_old.size(); i++)
-        certificate_best_path.push_back(certificate_best_path_old[i]);
-            assert(certificate_best_path.size() == best_path_info.back().certificate_index + best_path_info.back().subcertificate_length);
-            /* Backtrack to the previous level */
-            continue;
           }
-      }
-          }
-      }
 
-      /* No backtracking performed, go to next componenet */
-      cr_level = cep.next_cr_level;
-      cr_cep_index = cep.next_cep_index;
-    }
+          /* No backtracking performed, go to next componenet */
+          cr_level = cep.next_cr_level;
+          cr_cep_index = cep.next_cep_index;
+        }
 
         /* Check if the current component has been split into
          * new non-uniformity subcomponents */
@@ -1488,273 +1488,273 @@ AbstractGraph::search(const bool canonical, Stats& stats)
         // p.nof_discrete_cells() + cr_component_elements <
         // cr_cep_stack[cr_cep_index].discrete_cell_limit)
         if(nucr_find_first_component(cr_level, cr_component,
-             cr_component_elements,
-             next_split_cell) == true and
-     p.nof_discrete_cells() + cr_component_elements <
-     cr_cep_stack[cr_cep_index].discrete_cell_limit)
-    {
-      const unsigned int next_cr_level =
-        p.cr_split_level(cr_level, cr_component);
-      CR_CEP cep;
-      cep.creation_level = search_stack.size();
-      cep.discrete_cell_limit =
-        p.nof_discrete_cells() + cr_component_elements;
-      cep.next_cr_level = cr_level;
-      cep.next_cep_index = cr_cep_index;
-      cep.first_checked = false;
-      cep.best_checked = false;
-      cr_cep_index = cr_cep_stack.size();
-      cr_cep_stack.push_back(cep);
-      cr_level = next_cr_level;
-    }
+                                     cr_component_elements,
+                                     next_split_cell) == true and
+           p.nof_discrete_cells() + cr_component_elements <
+           cr_cep_stack[cr_cep_index].discrete_cell_limit)
+        {
+          const unsigned int next_cr_level =
+              p.cr_split_level(cr_level, cr_component);
+          CR_CEP cep;
+          cep.creation_level = search_stack.size();
+          cep.discrete_cell_limit =
+              p.nof_discrete_cells() + cr_component_elements;
+          cep.next_cr_level = cr_level;
+          cep.next_cep_index = cr_cep_index;
+          cep.first_checked = false;
+          cep.best_checked = false;
+          cr_cep_index = cr_cep_stack.size();
+          cr_cep_stack.push_back(cep);
+          cr_level = next_cr_level;
+        }
       }
 
 
-    /*
+      /*
      * Build the next node info
      */
-    /* Find the next cell to be splitted */
-    if(!next_split_cell)
+      /* Find the next cell to be splitted */
+      if(!next_split_cell)
         next_split_cell = find_next_cell_to_be_splitted();
-    //Partition::Cell * const next_split_cell = find_next_cell_to_be_splitted(p.get_cell(p.elements[current_node.split_cell_first]));
-    child_node.split_cell_first = next_split_cell->first;
-    child_node.split_element = TreeNode::SPLIT_START;
-    child_node.certificate_index = certificate_index;
-    child_node.partition_bt_point = p.set_backtrack_point();
-    child_node.long_prune_redundant.clear();
-    child_node.long_prune_begin = current_node.long_prune_begin;
+      //Partition::Cell * const next_split_cell = find_next_cell_to_be_splitted(p.get_cell(p.elements[current_node.split_cell_first]));
+      child_node.split_cell_first = next_split_cell->first;
+      child_node.split_element = TreeNode::SPLIT_START;
+      child_node.certificate_index = certificate_index;
+      child_node.partition_bt_point = p.set_backtrack_point();
+      child_node.long_prune_redundant.clear();
+      child_node.long_prune_begin = current_node.long_prune_begin;
 
-    /* Save component recursion info for backtracking */
-    child_node.cr_level = cr_level;
-    child_node.cr_cep_stack_size = cr_cep_stack.size();
-    child_node.cr_cep_index = cr_cep_index;
+      /* Save component recursion info for backtracking */
+      child_node.cr_level = cr_level;
+      child_node.cr_cep_stack_size = cr_cep_stack.size();
+      child_node.cr_cep_index = cr_cep_index;
 
-    search_stack.push_back(child_node);
-    continue;
-  }
+      search_stack.push_back(child_node);
+      continue;
+    }
 
-      /*
+    /*
        * A leaf node not in the first path or equivalent to the first path
        */
 
 
 
-      if(child_node.cmp_to_best_path > 0)
-  {
-    /*
+    if(child_node.cmp_to_best_path > 0)
+    {
+      /*
      * A new, better representative found
      */
-    //fprintf(stdout, "Level %u: NEW BEST\n", child_level); fflush(stdout);
-    stats.nof_canupdates++;
-    /*
+      //fprintf(stdout, "Level %u: NEW BEST\n", child_level); fflush(stdout);
+      stats.nof_canupdates++;
+      /*
      * Update canonical labeling and its inverse
      */
-    update_labeling_and_its_inverse(best_path_labeling,
-            best_path_labeling_inv);
-    /* Reset best path automorphism */
-    reset_permutation(best_path_automorphism);
-    /* Reset best path orbit structure */
-    best_path_orbits.reset();
-    /*
+      update_labeling_and_its_inverse(best_path_labeling,
+                                      best_path_labeling_inv);
+      /* Reset best path automorphism */
+      reset_permutation(best_path_automorphism);
+      /* Reset best path orbit structure */
+      best_path_orbits.reset();
+      /*
      * Mark the current path to be the best one and save it
      */
-    const unsigned int base_size = search_stack.size();
-    assert(current_level+1 == base_size);
-    best_path_info.clear();
-    for(unsigned int i = 0; i < base_size; i++) {
-      search_stack[i].cmp_to_best_path = 0;
-      search_stack[i].in_best_path = true;
-      PathInfo path_info;
-      path_info.splitting_element = search_stack[i].split_element;
-      path_info.certificate_index = search_stack[i].certificate_index;
-      path_info.subcertificate_length = search_stack[i].subcertificate_length;
-      path_info.eqref_hash = search_stack[i].eqref_hash;
-      best_path_info.push_back(path_info);
-    }
-    certificate_best_path = certificate_current_path;
-    /*
+      const unsigned int base_size = search_stack.size();
+      assert(current_level+1 == base_size);
+      best_path_info.clear();
+      for(unsigned int i = 0; i < base_size; i++) {
+        search_stack[i].cmp_to_best_path = 0;
+        search_stack[i].in_best_path = true;
+        PathInfo path_info;
+        path_info.splitting_element = search_stack[i].split_element;
+        path_info.certificate_index = search_stack[i].certificate_index;
+        path_info.subcertificate_length = search_stack[i].subcertificate_length;
+        path_info.eqref_hash = search_stack[i].eqref_hash;
+        best_path_info.push_back(path_info);
+      }
+      certificate_best_path = certificate_current_path;
+      /*
      * Backtrack to the previous level
      */
-    continue;
-  }
+      continue;
+    }
 
 
-    handle_best_path_automorphism:
-      /*
+handle_best_path_automorphism:
+    /*
        *
        * Best path automorphism handling
        *
        */
-      {
+    {
 
-  /*
+      /*
    * Equal to the previous best path
    */
-  if(p.is_discrete())
-    {
+      if(p.is_discrete())
+      {
 #if defined(BLISS_CONSISTENCY_CHECKS)
-      /* Verify that the automorphism is correctly built */
-      for(unsigned int i = 0; i < N; i++)
-        assert(best_path_automorphism[i] ==
-         p.elements[best_path_labeling[i]]);
+        /* Verify that the automorphism is correctly built */
+        for(unsigned int i = 0; i < N; i++)
+          assert(best_path_automorphism[i] ==
+                 p.elements[best_path_labeling[i]]);
 #endif
-    }
-  else
-    {
-      /* An automorphism that was found before the partition was discrete.
-       * Set the image of all elements in non-disrete cells accordingly */
-      for(Partition::Cell* c = p.first_nonsingleton_cell; c;
-    c = c->next_nonsingleton) {
-        for(unsigned int i = c->first; i < c->first+c->length; i++)
-    if(p.get_cell(p.elements[best_path_labeling[p.elements[i]]])->is_unit())
-      best_path_automorphism[p.elements[best_path_labeling[p.elements[i]]]] = p.elements[i];
-    else
-      best_path_automorphism[p.elements[i]] = p.elements[i];
       }
-    }
+      else
+      {
+        /* An automorphism that was found before the partition was discrete.
+       * Set the image of all elements in non-disrete cells accordingly */
+        for(Partition::Cell* c = p.first_nonsingleton_cell; c;
+            c = c->next_nonsingleton) {
+          for(unsigned int i = c->first; i < c->first+c->length; i++)
+            if(p.get_cell(p.elements[best_path_labeling[p.elements[i]]])->is_unit())
+              best_path_automorphism[p.elements[best_path_labeling[p.elements[i]]]] = p.elements[i];
+            else
+              best_path_automorphism[p.elements[i]] = p.elements[i];
+        }
+      }
 
 #if defined(BLISS_VERIFY_AUTOMORPHISMS)
-  /* Verify that it really is an automorphism */
-  if(!is_automorphism(best_path_automorphism))
-    fatal_error("Best path automorhism validation check failed");
+      /* Verify that it really is an automorphism */
+      if(!is_automorphism(best_path_automorphism))
+        fatal_error("Best path automorhism validation check failed");
 #endif
 
-  unsigned int gca_level_with_first = 0;
-  for(unsigned int i = search_stack.size(); i > 0; i--) {
-    if((int)first_path_info[gca_level_with_first].splitting_element !=
-       search_stack[gca_level_with_first].split_element)
-      break;
-    gca_level_with_first++;
-  }
-
-  unsigned int gca_level_with_best = 0;
-  for(unsigned int i = search_stack.size(); i > 0; i--) {
-    if((int)best_path_info[gca_level_with_best].splitting_element !=
-       search_stack[gca_level_with_best].split_element)
-      break;
-    gca_level_with_best++;
-  }
-
-  if(opt_use_long_prune)
-    {
-      /* Record automorphism */
-      long_prune_add_automorphism(best_path_automorphism);
-    }
-
-  /*
-   * Update orbit information
-   */
-  update_orbit_information(best_path_orbits, best_path_automorphism);
-
-  /*
-   * Update orbit information
-   */
-  const unsigned int nof_old_orbits = first_path_orbits.nof_orbits();
-  update_orbit_information(first_path_orbits, best_path_automorphism);
-  if(nof_old_orbits != first_path_orbits.nof_orbits())
-    {
-      /* Some orbits were merged */
-      /* Report automorphism */
-      if(report_hook)
-        (*report_hook)(report_user_param,
-           get_nof_vertices(),
-           best_path_automorphism);
-      /* Update statistics */
-      stats.nof_generators++;
-    }
-
-  /*
-   * Compute backjumping level
-   */
-  unsigned int backjumping_level = current_level+1-1;
-  if(!first_path_orbits.is_minimal_representative(search_stack[gca_level_with_first].split_element))
-    {
-      backjumping_level = gca_level_with_first;
-    }
-  else
-    {
-      assert(!best_path_orbits.is_minimal_representative(search_stack[gca_level_with_best].split_element));
-      backjumping_level = gca_level_with_best;
-    }
-  /* Backtrack */
-  search_stack.resize(backjumping_level + 1);
-  continue;
+      unsigned int gca_level_with_first = 0;
+      for(unsigned int i = search_stack.size(); i > 0; i--) {
+        if((int)first_path_info[gca_level_with_first].splitting_element !=
+           search_stack[gca_level_with_first].split_element)
+          break;
+        gca_level_with_first++;
       }
 
+      unsigned int gca_level_with_best = 0;
+      for(unsigned int i = search_stack.size(); i > 0; i--) {
+        if((int)best_path_info[gca_level_with_best].splitting_element !=
+           search_stack[gca_level_with_best].split_element)
+          break;
+        gca_level_with_best++;
+      }
 
-      _INTERNAL_ERROR();
+      if(opt_use_long_prune)
+      {
+        /* Record automorphism */
+        long_prune_add_automorphism(best_path_automorphism);
+      }
 
-
-    handle_first_path_automorphism:
       /*
+   * Update orbit information
+   */
+      update_orbit_information(best_path_orbits, best_path_automorphism);
+
+      /*
+   * Update orbit information
+   */
+      const unsigned int nof_old_orbits = first_path_orbits.nof_orbits();
+      update_orbit_information(first_path_orbits, best_path_automorphism);
+      if(nof_old_orbits != first_path_orbits.nof_orbits())
+      {
+        /* Some orbits were merged */
+        /* Report automorphism */
+        if(report_hook)
+          (*report_hook)(report_user_param,
+                         get_nof_vertices(),
+                         best_path_automorphism);
+        /* Update statistics */
+        stats.nof_generators++;
+      }
+
+      /*
+   * Compute backjumping level
+   */
+      unsigned int backjumping_level = current_level+1-1;
+      if(!first_path_orbits.is_minimal_representative(search_stack[gca_level_with_first].split_element))
+      {
+        backjumping_level = gca_level_with_first;
+      }
+      else
+      {
+        assert(!best_path_orbits.is_minimal_representative(search_stack[gca_level_with_best].split_element));
+        backjumping_level = gca_level_with_best;
+      }
+      /* Backtrack */
+      search_stack.resize(backjumping_level + 1);
+      continue;
+    }
+
+
+    _INTERNAL_ERROR();
+
+
+handle_first_path_automorphism:
+    /*
        *
        * A first-path automorphism: aut[i] = elements[first_path_labeling[i]]
        *
        */
 
 
-      if(p.is_discrete())
-  {
+    if(p.is_discrete())
+    {
 #if defined(BLISS_CONSISTENCY_CHECKS)
-    /* Verify that the complete automorphism is correctly built */
-    for(unsigned int i = 0; i < N; i++)
-      assert(first_path_automorphism[i] ==
-       p.elements[first_path_labeling[i]]);
+      /* Verify that the complete automorphism is correctly built */
+      for(unsigned int i = 0; i < N; i++)
+        assert(first_path_automorphism[i] ==
+               p.elements[first_path_labeling[i]]);
 #endif
-  }
-      else
-  {
-    /* An automorphism that was found before the partition was discrete.
-     * Set the image of all elements in non-disrete cells accordingly */
-    for(Partition::Cell* c = p.first_nonsingleton_cell; c;
-        c = c->next_nonsingleton) {
-      for(unsigned int i = c->first; i < c->first+c->length; i++)
-        if(p.get_cell(p.elements[first_path_labeling[p.elements[i]]])->is_unit())
-    first_path_automorphism[p.elements[first_path_labeling[p.elements[i]]]] = p.elements[i];
-        else
-    first_path_automorphism[p.elements[i]] = p.elements[i];
     }
-  }
+    else
+    {
+      /* An automorphism that was found before the partition was discrete.
+     * Set the image of all elements in non-disrete cells accordingly */
+      for(Partition::Cell* c = p.first_nonsingleton_cell; c;
+          c = c->next_nonsingleton) {
+        for(unsigned int i = c->first; i < c->first+c->length; i++)
+          if(p.get_cell(p.elements[first_path_labeling[p.elements[i]]])->is_unit())
+            first_path_automorphism[p.elements[first_path_labeling[p.elements[i]]]] = p.elements[i];
+          else
+            first_path_automorphism[p.elements[i]] = p.elements[i];
+      }
+    }
 
 #if defined(BLISS_VERIFY_AUTOMORPHISMS)
-      /* Verify that it really is an automorphism */
-      if(!is_automorphism(first_path_automorphism))
-  fatal_error("First path automorphism validation check failed");
+    /* Verify that it really is an automorphism */
+    if(!is_automorphism(first_path_automorphism))
+      fatal_error("First path automorphism validation check failed");
 #endif
 
-      if(opt_use_long_prune)
-  {
-    long_prune_add_automorphism(first_path_automorphism);
-  }
+    if(opt_use_long_prune)
+    {
+      long_prune_add_automorphism(first_path_automorphism);
+    }
 
-      /*
+    /*
        * Update orbit information
        */
-      update_orbit_information(first_path_orbits, first_path_automorphism);
+    update_orbit_information(first_path_orbits, first_path_automorphism);
 
-      /*
+    /*
        * Compute backjumping level
        */
-      for(unsigned int i = 0; i < search_stack.size(); i++) {
-  TreeNode& n = search_stack[i];
-  if(n.fp_on) {
-    ;
-  } else {
-    n.fp_extendable = TreeNode::YES;
-  }
+    for(unsigned int i = 0; i < search_stack.size(); i++) {
+      TreeNode& n = search_stack[i];
+      if(n.fp_on) {
+        ;
+      } else {
+        n.fp_extendable = TreeNode::YES;
       }
+    }
 
-      /* Report automorphism by calling the user defined hook function */
-      if(report_hook)
-  (*report_hook)(report_user_param,
-           get_nof_vertices(),
-           first_path_automorphism);
+    /* Report automorphism by calling the user defined hook function */
+    if(report_hook)
+      (*report_hook)(report_user_param,
+                     get_nof_vertices(),
+                     first_path_automorphism);
 
-      /* Update statistics */
-      stats.nof_generators++;
-      continue;
+    /* Update statistics */
+    stats.nof_generators++;
+    continue;
 
-    } /* while(!search_stack.empty()) */
+  } /* while(!search_stack.empty()) */
 
 
 
@@ -1773,10 +1773,10 @@ AbstractGraph::search(const bool canonical, Stats& stats)
 
 void
 AbstractGraph::find_automorphisms(Stats& stats,
-          void (*hook)(void *user_param,
-                 unsigned int n,
-                 const unsigned int *aut),
-          void *user_param)
+                                  void (*hook)(void *user_param,
+                                               unsigned int n,
+                                               const unsigned int *aut),
+                                  void *user_param)
 {
   report_hook = hook;
   report_user_param = user_param;
@@ -1784,24 +1784,24 @@ AbstractGraph::find_automorphisms(Stats& stats,
   search(false, stats);
 
   if(first_path_labeling)
-    {
-      free(first_path_labeling);
-      first_path_labeling = 0;
-    }
+  {
+    free(first_path_labeling);
+    first_path_labeling = 0;
+  }
   if(best_path_labeling)
-    {
-      free(best_path_labeling);
-      best_path_labeling = 0;
-    }
+  {
+    free(best_path_labeling);
+    best_path_labeling = 0;
+  }
 }
 
 
 const unsigned int *
 AbstractGraph::canonical_form(Stats& stats,
-            void (*hook)(void *user_param,
-             unsigned int n,
-             const unsigned int *aut),
-            void *user_param)
+                              void (*hook)(void *user_param,
+                                           unsigned int n,
+                                           const unsigned int *aut),
+                              void *user_param)
 {
 
   report_hook = hook;
@@ -1856,53 +1856,53 @@ Digraph::Vertex::remove_duplicate_edges(std::vector<bool>& tmp)
 #endif
   for(std::vector<unsigned int>::iterator iter = edges_out.begin();
       iter != edges_out.end(); )
+  {
+    const unsigned int dest_vertex = *iter;
+    if(tmp[dest_vertex] == true)
     {
-      const unsigned int dest_vertex = *iter;
-      if(tmp[dest_vertex] == true)
-  {
-    /* A duplicate edge found! */
-    iter = edges_out.erase(iter);
-  }
-      else
-  {
-    /* Not seen earlier, mark as seen */
-    tmp[dest_vertex] = true;
-    iter++;
-  }
+      /* A duplicate edge found! */
+      iter = edges_out.erase(iter);
     }
+    else
+    {
+      /* Not seen earlier, mark as seen */
+      tmp[dest_vertex] = true;
+      iter++;
+    }
+  }
 
   /* Clear tmp */
   for(std::vector<unsigned int>::iterator iter = edges_out.begin();
       iter != edges_out.end();
       iter++)
-    {
-      tmp[*iter] = false;
-    }
+  {
+    tmp[*iter] = false;
+  }
 
   for(std::vector<unsigned int>::iterator iter = edges_in.begin();
       iter != edges_in.end(); )
+  {
+    const unsigned int dest_vertex = *iter;
+    if(tmp[dest_vertex] == true)
     {
-      const unsigned int dest_vertex = *iter;
-      if(tmp[dest_vertex] == true)
-  {
-    /* A duplicate edge found! */
-    iter = edges_in.erase(iter);
-  }
-      else
-  {
-    /* Not seen earlier, mark as seen */
-    tmp[dest_vertex] = true;
-    iter++;
-  }
+      /* A duplicate edge found! */
+      iter = edges_in.erase(iter);
     }
+    else
+    {
+      /* Not seen earlier, mark as seen */
+      tmp[dest_vertex] = true;
+      iter++;
+    }
+  }
 
   /* Clear tmp */
   for(std::vector<unsigned int>::iterator iter = edges_in.begin();
       iter != edges_in.end();
       iter++)
-    {
-      tmp[*iter] = false;
-    }
+  {
+    tmp[*iter] = false;
+  }
 #if defined(BLISS_CONSISTENCY_CHECKS)
   /* Post-conditions  */
   for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
@@ -1951,7 +1951,7 @@ Digraph::add_vertex(const unsigned int color)
 {
   // Silvan Sievers
   if (time_limit && timer->get_duration() >= time_limit) {
-      throw BlissTimeOut();
+    throw BlissTimeOut();
   }
 
   const unsigned int new_vertex_num = vertices.size();
@@ -1997,56 +1997,56 @@ Digraph::cmp(Digraph& other)
     return 1;
   /* Compare vertex colors */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      if(vertices[i].color < other.vertices[i].color)
-  return -1;
-      if(vertices[i].color > other.vertices[i].color)
-  return 1;
-    }
+  {
+    if(vertices[i].color < other.vertices[i].color)
+      return -1;
+    if(vertices[i].color > other.vertices[i].color)
+      return 1;
+  }
   /* Compare vertex degrees */
   remove_duplicate_edges();
   other.remove_duplicate_edges();
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      if(vertices[i].nof_edges_in() < other.vertices[i].nof_edges_in())
-  return -1;
-      if(vertices[i].nof_edges_in() > other.vertices[i].nof_edges_in())
-  return 1;
-      if(vertices[i].nof_edges_out() < other.vertices[i].nof_edges_out())
-  return -1;
-      if(vertices[i].nof_edges_out() > other.vertices[i].nof_edges_out())
-  return 1;
-    }
+  {
+    if(vertices[i].nof_edges_in() < other.vertices[i].nof_edges_in())
+      return -1;
+    if(vertices[i].nof_edges_in() > other.vertices[i].nof_edges_in())
+      return 1;
+    if(vertices[i].nof_edges_out() < other.vertices[i].nof_edges_out())
+      return -1;
+    if(vertices[i].nof_edges_out() > other.vertices[i].nof_edges_out())
+      return 1;
+  }
   /* Compare edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
+  {
+    Vertex& v1 = vertices[i];
+    Vertex& v2 = other.vertices[i];
+    v1.sort_edges();
+    v2.sort_edges();
+    std::vector<unsigned int>::const_iterator ei1 = v1.edges_in.begin();
+    std::vector<unsigned int>::const_iterator ei2 = v2.edges_in.begin();
+    while(ei1 != v1.edges_in.end())
     {
-      Vertex& v1 = vertices[i];
-      Vertex& v2 = other.vertices[i];
-      v1.sort_edges();
-      v2.sort_edges();
-      std::vector<unsigned int>::const_iterator ei1 = v1.edges_in.begin();
-      std::vector<unsigned int>::const_iterator ei2 = v2.edges_in.begin();
-      while(ei1 != v1.edges_in.end())
-  {
-    if(*ei1 < *ei2)
-      return -1;
-    if(*ei1 > *ei2)
-      return 1;
-    ei1++;
-    ei2++;
-  }
-      ei1 = v1.edges_out.begin();
-      ei2 = v2.edges_out.begin();
-      while(ei1 != v1.edges_out.end())
-  {
-    if(*ei1 < *ei2)
-      return -1;
-    if(*ei1 > *ei2)
-      return 1;
-    ei1++;
-    ei2++;
-  }
+      if(*ei1 < *ei2)
+        return -1;
+      if(*ei1 > *ei2)
+        return 1;
+      ei1++;
+      ei2++;
     }
+    ei1 = v1.edges_out.begin();
+    ei2 = v2.edges_out.begin();
+    while(ei1 != v1.edges_out.end())
+    {
+      if(*ei1 < *ei2)
+        return -1;
+      if(*ei1 > *ei2)
+        return 1;
+      ei1++;
+      ei2++;
+    }
+  }
   return 0;
 }
 
@@ -2058,16 +2058,16 @@ Digraph::permute(const std::vector<unsigned int>& perm) const
 {
   Digraph* const g = new Digraph(get_nof_vertices());
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex& v = vertices[i];
-      g->change_color(perm[i], v.color);
-      for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-    ei != v.edges_out.end();
-    ei++)
   {
-    g->add_edge(perm[i], perm[*ei]);
-  }
+    const Vertex& v = vertices[i];
+    g->change_color(perm[i], v.color);
+    for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+        ei != v.edges_out.end();
+        ei++)
+    {
+      g->add_edge(perm[i], perm[*ei]);
     }
+  }
   g->sort_edges();
   return g;
 }
@@ -2078,16 +2078,16 @@ Digraph::permute(const unsigned int* const perm) const
 {
   Digraph* const g = new Digraph(get_nof_vertices());
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex &v = vertices[i];
-      g->change_color(perm[i], v.color);
-      for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-    ei != v.edges_out.end();
-    ei++)
   {
-    g->add_edge(perm[i], perm[*ei]);
-  }
+    const Vertex &v = vertices[i];
+    g->change_color(perm[i], v.color);
+    for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+        ei != v.edges_out.end();
+        ei++)
+    {
+      g->add_edge(perm[i], perm[*ei]);
     }
+  }
   g->sort_edges();
   return g;
 }
@@ -2108,10 +2108,10 @@ Digraph::write_dot(const char* const filename)
 {
   FILE* const fp = fopen(filename, "w");
   if(fp)
-    {
-      write_dot(fp);
-      fclose(fp);
-    }
+  {
+    write_dot(fp);
+    fclose(fp);
+  }
 }
 
 
@@ -2126,16 +2126,16 @@ Digraph::write_dot(FILE* const fp)
   for(std::vector<Vertex>::const_iterator vi = vertices.begin();
       vi != vertices.end();
       vi++, vnum++)
-    {
-      const Vertex& v = *vi;
-      fprintf(fp, "v%u [label=\"%u:%u\"];\n", vnum, vnum, v.color);
-      for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-    ei != v.edges_out.end();
-    ei++)
   {
-    fprintf(fp, "v%u -> v%u\n", vnum, *ei);
-  }
+    const Vertex& v = *vi;
+    fprintf(fp, "v%u [label=\"%u:%u\"];\n", vnum, vnum, v.color);
+    for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+        ei != v.edges_out.end();
+        ei++)
+    {
+      fprintf(fp, "v%u -> v%u\n", vnum, *ei);
     }
+  }
 
   fprintf(fp, "}\n");
 }
@@ -2149,12 +2149,12 @@ Digraph::remove_duplicate_edges()
   for(std::vector<Vertex>::iterator vi = vertices.begin();
       vi != vertices.end();
       vi++)
-    {
+  {
 #if defined(BLISS_EXPENSIVE_CONSISTENCY_CHECKS)
-      for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
+    for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
 #endif
-      (*vi).remove_duplicate_edges(tmp);
-    }
+    (*vi).remove_duplicate_edges(tmp);
+  }
 }
 
 
@@ -2179,22 +2179,22 @@ Digraph::get_hash()
 
   /* Hash the color of each vertex */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      h.update(vertices[i].color);
-    }
+  {
+    h.update(vertices[i].color);
+  }
 
   /* Hash the edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v = vertices[i];
-      for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-    ei != v.edges_out.end();
-    ei++)
   {
-    h.update(i);
-    h.update(*ei);
-  }
+    Vertex &v = vertices[i];
+    for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+        ei != v.edges_out.end();
+        ei++)
+    {
+      h.update(i);
+      h.update(*ei);
     }
+  }
 
   return h.get_value();
 }
@@ -2221,53 +2221,53 @@ Digraph::read_dimacs(FILE* const fp, FILE* const errstr)
 
   /* Read comments and the problem definition line */
   while(1)
-    {
-      int c = getc(fp);
-      if(c == 'c')
   {
-    /* A comment, ignore the rest of the line */
-    while((c = getc(fp)) != '\n')
+    int c = getc(fp);
+    if(c == 'c')
+    {
+      /* A comment, ignore the rest of the line */
+      while((c = getc(fp)) != '\n')
       {
         if(c == EOF) {
-    if(errstr)
-      fprintf(errstr, "error in line %u: not in DIMACS format\n",
-        line_num);
-    goto error_exit;
+          if(errstr)
+            fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                    line_num);
+          goto error_exit;
         }
       }
-    line_num++;
-    continue;
-  }
-      if(c == 'p')
-  {
-    /* The problem definition line */
-    if(fscanf(fp, " edge %u %u\n", &nof_vertices, &nof_edges) != 2)
+      line_num++;
+      continue;
+    }
+    if(c == 'p')
+    {
+      /* The problem definition line */
+      if(fscanf(fp, " edge %u %u\n", &nof_vertices, &nof_edges) != 2)
       {
         if(errstr)
-    fprintf(errstr, "error in line %u: not in DIMACS format\n",
-      line_num);
+          fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                  line_num);
         goto error_exit;
       }
-    line_num++;
-    break;
-  }
-      if(errstr)
-  fprintf(errstr, "error in line %u: not in DIMACS format\n", line_num);
-      goto error_exit;
+      line_num++;
+      break;
     }
+    if(errstr)
+      fprintf(errstr, "error in line %u: not in DIMACS format\n", line_num);
+    goto error_exit;
+  }
 
   if(nof_vertices <= 0)
-    {
-      if(errstr)
-  fprintf(errstr, "error: no vertices\n");
-      goto error_exit;
-    }
+  {
+    if(errstr)
+      fprintf(errstr, "error: no vertices\n");
+    goto error_exit;
+  }
   if(verbose)
-    {
-      fprintf(verbstr, "Instance has %d vertices and %d edges\n",
-        nof_vertices, nof_edges);
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Instance has %d vertices and %d edges\n",
+            nof_vertices, nof_edges);
+    fflush(verbstr);
+  }
 
   g = new Digraph(nof_vertices);
 
@@ -2275,91 +2275,91 @@ Digraph::read_dimacs(FILE* const fp, FILE* const errstr)
   // Read vertex colors
   //
   if(verbose)
-    {
-      fprintf(verbstr, "Reading vertex colors...\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Reading vertex colors...\n");
+    fflush(verbstr);
+  }
   while(1)
-    {
-      int c = getc(fp);
-      if(c != 'n')
   {
-    ungetc(c, fp);
-    break;
-  }
+    int c = getc(fp);
+    if(c != 'n')
+    {
       ungetc(c, fp);
-      unsigned int vertex;
-      unsigned int color;
-      if(fscanf(fp, "n %u %u\n", &vertex, &color) != 2)
-  {
-    if(errstr)
-      fprintf(errstr, "error in line %u: not in DIMACS format\n",
-        line_num);
-    goto error_exit;
-  }
-      if(!((vertex >= 1) && (vertex <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...%u]\n",
-        line_num, vertex, nof_vertices);
-    goto error_exit;
-  }
-      line_num++;
-      g->change_color(vertex - 1, color);
+      break;
     }
-  if(verbose)
+    ungetc(c, fp);
+    unsigned int vertex;
+    unsigned int color;
+    if(fscanf(fp, "n %u %u\n", &vertex, &color) != 2)
     {
-      fprintf(verbstr, "Done\n");
-      fflush(verbstr);
+      if(errstr)
+        fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                line_num);
+      goto error_exit;
     }
+    if(!((vertex >= 1) && (vertex <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...%u]\n",
+                line_num, vertex, nof_vertices);
+      goto error_exit;
+    }
+    line_num++;
+    g->change_color(vertex - 1, color);
+  }
+  if(verbose)
+  {
+    fprintf(verbstr, "Done\n");
+    fflush(verbstr);
+  }
 
   //
   // Read edges
   //
   if(verbose)
-    {
-      fprintf(verbstr, "Reading edges...\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Reading edges...\n");
+    fflush(verbstr);
+  }
   for(unsigned i = 0; i < nof_edges; i++)
+  {
+    unsigned int from, to;
+    if(fscanf(fp, "e %u %u\n", &from, &to) != 2)
     {
-      unsigned int from, to;
-      if(fscanf(fp, "e %u %u\n", &from, &to) != 2)
-  {
-    if(errstr)
-      fprintf(errstr, "error in line %u: not in DIMACS format\n",
-        line_num);
-    goto error_exit;
-  }
-      if(not((1 <= from) and (from <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...%u]\n",
-        line_num, from, nof_vertices);
-    goto error_exit;
-  }
-      if(not((1 <= to) and (to <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...%u]\n",
-        line_num, to, nof_vertices);
-    goto error_exit;
-  }
-      line_num++;
-      g->add_edge(from-1, to-1);
+      if(errstr)
+        fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                line_num);
+      goto error_exit;
     }
+    if(not((1 <= from) and (from <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...%u]\n",
+                line_num, from, nof_vertices);
+      goto error_exit;
+    }
+    if(not((1 <= to) and (to <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...%u]\n",
+                line_num, to, nof_vertices);
+      goto error_exit;
+    }
+    line_num++;
+    g->add_edge(from-1, to-1);
+  }
   if(verbose)
-    {
-      fprintf(verbstr, "Done\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Done\n");
+    fflush(verbstr);
+  }
 
   return g;
 
- error_exit:
+error_exit:
   if(g)
     delete g;
   return 0;
@@ -2378,37 +2378,37 @@ Digraph::write_dimacs(FILE* const fp)
   /* First count the total number of edges */
   unsigned int nof_edges = 0;
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      nof_edges += vertices[i].edges_out.size();
-    }
+  {
+    nof_edges += vertices[i].edges_out.size();
+  }
 
   /* Output the "header" line */
   fprintf(fp, "p edge %u %u\n", get_nof_vertices(), nof_edges);
 
   /* Print the color of each vertex */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex& v = vertices[i];
-      fprintf(fp, "n %u %u\n", i+1, v.color);
-      /*
+  {
+    Vertex& v = vertices[i];
+    fprintf(fp, "n %u %u\n", i+1, v.color);
+    /*
       if(v.color != 0)
   {
     fprintf(fp, "n %u %u\n", i+1, v.color);
   }
       */
-    }
+  }
 
   /* Print the edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex& v = vertices[i];
-      for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-    ei != v.edges_out.end();
-    ei++)
   {
-    fprintf(fp, "e %u %u\n", i+1, (*ei)+1);
-  }
+    Vertex& v = vertices[i];
+    for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+        ei != v.edges_out.end();
+        ei++)
+    {
+      fprintf(fp, "e %u %u\n", i+1, (*ei)+1);
     }
+  }
 }
 
 
@@ -2450,10 +2450,10 @@ Digraph::selfloop_invariant(const Digraph* const g, const unsigned int vnum)
   for(std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
       ei != v.edges_out.end();
       ei++)
-    {
-      if(*ei == vnum)
-  return 1;
-    }
+  {
+    if(*ei == vnum)
+      return 1;
+  }
   return 0;
 }
 
@@ -2469,31 +2469,31 @@ Digraph::selfloop_invariant(const Digraph* const g, const unsigned int vnum)
 
 bool
 Digraph::refine_according_to_invariant(unsigned int (*inv)(const Digraph* const g,
-                 const unsigned int v))
+                                                           const unsigned int v))
 {
   bool refined = false;
 
   for(Partition::Cell* cell = p.first_nonsingleton_cell; cell; )
-    {
-
-      Partition::Cell* const next_cell = cell->next_nonsingleton;
-      const unsigned int* ep = p.elements + cell->first;
-      for(unsigned int i = cell->length; i > 0; i--, ep++)
   {
-    unsigned int ival = inv(this, *ep);
-    p.invariant_values[*ep] = ival;
-    if(ival > cell->max_ival) {
-      cell->max_ival = ival;
-      cell->max_ival_count = 1;
+
+    Partition::Cell* const next_cell = cell->next_nonsingleton;
+    const unsigned int* ep = p.elements + cell->first;
+    for(unsigned int i = cell->length; i > 0; i--, ep++)
+    {
+      unsigned int ival = inv(this, *ep);
+      p.invariant_values[*ep] = ival;
+      if(ival > cell->max_ival) {
+        cell->max_ival = ival;
+        cell->max_ival_count = 1;
+      }
+      else if(ival == cell->max_ival) {
+        cell->max_ival_count++;
+      }
     }
-    else if(ival == cell->max_ival) {
-      cell->max_ival_count++;
-    }
+    Partition::Cell* const last_new_cell = p.zplit_cell(cell, true);
+    refined |= (last_new_cell != cell);
+    cell = next_cell;
   }
-      Partition::Cell* const last_new_cell = p.zplit_cell(cell, true);
-      refined |= (last_new_cell != cell);
-      cell = next_cell;
-    }
 
   return refined;
 }
@@ -2516,148 +2516,148 @@ Digraph::split_neighbourhood_of_cell(Partition::Cell* const cell)
   const bool was_equal_to_first = refine_equal_to_first;
 
   if(compute_eqref_hash)
-    {
-      eqref_hash.update(cell->first);
-      eqref_hash.update(cell->length);
-    }
+  {
+    eqref_hash.update(cell->first);
+    eqref_hash.update(cell->length);
+  }
 
   const unsigned int* ep = p.elements + cell->first;
   for(unsigned int i = cell->length; i > 0; i--)
-    {
-      const Vertex& v = vertices[*ep++];
-
-      std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j != 0; j--)
   {
-    const unsigned int dest_vertex = *ei++;
-    Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
-    if(neighbour_cell->is_unit())
-      continue;
-    const unsigned int ival = ++p.invariant_values[dest_vertex];
-    if(ival > neighbour_cell->max_ival) {
-      neighbour_cell->max_ival = ival;
-      neighbour_cell->max_ival_count = 1;
-      if(ival == 1)
-        neighbour_heap.insert(neighbour_cell->first);
-    }
-    else if(ival == neighbour_cell->max_ival) {
-      neighbour_cell->max_ival_count++;
+    const Vertex& v = vertices[*ep++];
+
+    std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j != 0; j--)
+    {
+      const unsigned int dest_vertex = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
+      if(neighbour_cell->is_unit())
+        continue;
+      const unsigned int ival = ++p.invariant_values[dest_vertex];
+      if(ival > neighbour_cell->max_ival) {
+        neighbour_cell->max_ival = ival;
+        neighbour_cell->max_ival_count = 1;
+        if(ival == 1)
+          neighbour_heap.insert(neighbour_cell->first);
+      }
+      else if(ival == neighbour_cell->max_ival) {
+        neighbour_cell->max_ival_count++;
+      }
     }
   }
-    }
 
   while(!neighbour_heap.is_empty())
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
+
+    if(compute_eqref_hash)
     {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
-
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
 
 
-      Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
+    Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
 
-      /* Update certificate and hash if needed */
-      const Partition::Cell* c = neighbour_cell;
-      while(1)
-  {
-    if(in_search)
+    /* Update certificate and hash if needed */
+    const Partition::Cell* c = neighbour_cell;
+    while(1)
+    {
+      if(in_search)
       {
         /* Build certificate */
         cert_add_redundant(CERT_SPLIT, c->first, c->length);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-    if(compute_eqref_hash)
+      if(compute_eqref_hash)
       {
         eqref_hash.update(c->first);
         eqref_hash.update(c->length);
       }
-    if(c == last_new_cell)
-      break;
-    c = c->next;
-  }
+      if(c == last_new_cell)
+        break;
+      c = c->next;
     }
+  }
 
   if(cell->is_in_splitting_queue())
-    {
-      return false;
-    }
+  {
+    return false;
+  }
 
 
   ep = p.elements + cell->first;
   for(unsigned int i = cell->length; i > 0; i--)
-    {
-      const Vertex& v = vertices[*ep++];
-
-      std::vector<unsigned int>::const_iterator ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
   {
-    const unsigned int dest_vertex = *ei++;
-    Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
-    if(neighbour_cell->is_unit())
-      continue;
-    const unsigned int ival = ++p.invariant_values[dest_vertex];
-    if(ival > neighbour_cell->max_ival)
+    const Vertex& v = vertices[*ep++];
+
+    std::vector<unsigned int>::const_iterator ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
+    {
+      const unsigned int dest_vertex = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
+      if(neighbour_cell->is_unit())
+        continue;
+      const unsigned int ival = ++p.invariant_values[dest_vertex];
+      if(ival > neighbour_cell->max_ival)
       {
         neighbour_cell->max_ival = ival;
         neighbour_cell->max_ival_count = 1;
         if(ival == 1)
-    neighbour_heap.insert(neighbour_cell->first);
+          neighbour_heap.insert(neighbour_cell->first);
       }
-    else if(ival == neighbour_cell->max_ival) {
-      neighbour_cell->max_ival_count++;
+      else if(ival == neighbour_cell->max_ival) {
+        neighbour_cell->max_ival_count++;
+      }
     }
   }
-    }
 
   while(!neighbour_heap.is_empty())
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
+
+    if(compute_eqref_hash)
     {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
 
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
+    Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
 
-      Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
-
-      /* Update certificate and hash if needed */
-      const Partition::Cell* c = neighbour_cell;
-      while(1)
-  {
-    if(in_search)
+    /* Update certificate and hash if needed */
+    const Partition::Cell* c = neighbour_cell;
+    while(1)
+    {
+      if(in_search)
       {
         /* Build certificate */
         cert_add_redundant(CERT_SPLIT, c->first, c->length);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-    if(compute_eqref_hash)
+      if(compute_eqref_hash)
       {
         eqref_hash.update(c->first);
         eqref_hash.update(c->length);
       }
-    if(c == last_new_cell)
-      break;
-    c = c->next;
-  }
+      if(c == last_new_cell)
+        break;
+      c = c->next;
     }
+  }
 
 
   if(refine_compare_certificate and
@@ -2667,38 +2667,38 @@ Digraph::split_neighbourhood_of_cell(Partition::Cell* const cell)
 
   return false;
 
- worse_exit:
+worse_exit:
   /* Clear neighbour heap */
   UintSeqHash rest;
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
-      if(opt_use_failure_recording and was_equal_to_first)
   {
-    rest.update(neighbour_cell->first);
-    rest.update(neighbour_cell->length);
-    rest.update(neighbour_cell->max_ival);
-    rest.update(neighbour_cell->max_ival_count);
-  }
-      neighbour_cell->max_ival = 0;
-      neighbour_cell->max_ival_count = 0;
-      p.clear_ivs(neighbour_cell);
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
+    if(opt_use_failure_recording and was_equal_to_first)
+    {
+      rest.update(neighbour_cell->first);
+      rest.update(neighbour_cell->length);
+      rest.update(neighbour_cell->max_ival);
+      rest.update(neighbour_cell->max_ival_count);
     }
+    neighbour_cell->max_ival = 0;
+    neighbour_cell->max_ival_count = 0;
+    p.clear_ivs(neighbour_cell);
+  }
   if(opt_use_failure_recording and was_equal_to_first)
-    {
-      for(unsigned int i = p.splitting_queue.size(); i > 0; i--)
   {
-    Partition::Cell* const cell = p.splitting_queue.pop_front();
-    rest.update(cell->first);
-    rest.update(cell->length);
-    p.splitting_queue.push_back(cell);
-  }
-      rest.update(failure_recording_fp_deviation);
-      failure_recording_fp_deviation = rest.get_value();
+    for(unsigned int i = p.splitting_queue.size(); i > 0; i--)
+    {
+      Partition::Cell* const cell = p.splitting_queue.pop_front();
+      rest.update(cell->first);
+      rest.update(cell->length);
+      p.splitting_queue.push_back(cell);
     }
+    rest.update(failure_recording_fp_deviation);
+    failure_recording_fp_deviation = rest.get_value();
+  }
 
-   return true;
+  return true;
 }
 
 
@@ -2710,11 +2710,11 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
   const bool was_equal_to_first = refine_equal_to_first;
 
   if(compute_eqref_hash)
-    {
-      eqref_hash.update(0x87654321);
-      eqref_hash.update(unit_cell->first);
-      eqref_hash.update(1);
-    }
+  {
+    eqref_hash.update(0x87654321);
+    eqref_hash.update(unit_cell->first);
+    eqref_hash.update(1);
+  }
 
   const Vertex& v = vertices[p.elements[unit_cell->first]];
 
@@ -2724,73 +2724,73 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
    */
   std::vector<unsigned int>::const_iterator ei = v.edges_out.begin();
   for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-    {
-      const unsigned int dest_vertex = *ei++;
-      Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
-
-      if(neighbour_cell->is_unit()) {
-  if(in_search) {
-    /* Remember neighbour in order to generate certificate */
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-  continue;
-      }
-      if(neighbour_cell->max_ival_count == 0)
   {
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-      neighbour_cell->max_ival_count++;
+    const unsigned int dest_vertex = *ei++;
+    Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
 
-      unsigned int* const swap_position =
-  p.elements + neighbour_cell->first + neighbour_cell->length -
-  neighbour_cell->max_ival_count;
-      *p.in_pos[dest_vertex] = *swap_position;
-      p.in_pos[*swap_position] = p.in_pos[dest_vertex];
-      *swap_position = dest_vertex;
-      p.in_pos[dest_vertex] = swap_position;
+    if(neighbour_cell->is_unit()) {
+      if(in_search) {
+        /* Remember neighbour in order to generate certificate */
+        neighbour_heap.insert(neighbour_cell->first);
+      }
+      continue;
     }
+    if(neighbour_cell->max_ival_count == 0)
+    {
+      neighbour_heap.insert(neighbour_cell->first);
+    }
+    neighbour_cell->max_ival_count++;
+
+    unsigned int* const swap_position =
+        p.elements + neighbour_cell->first + neighbour_cell->length -
+        neighbour_cell->max_ival_count;
+    *p.in_pos[dest_vertex] = *swap_position;
+    p.in_pos[*swap_position] = p.in_pos[dest_vertex];
+    *swap_position = dest_vertex;
+    p.in_pos[dest_vertex] = swap_position;
+  }
 
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
 
 #if defined(BLISS_CONSISTENCY_CHECKS)
-      assert(neighbour_cell->first == start);
-      if(neighbour_cell->is_unit()) {
-  assert(neighbour_cell->max_ival_count == 0);
-      } else {
-  assert(neighbour_cell->max_ival_count > 0);
-  assert(neighbour_cell->max_ival_count <= neighbour_cell->length);
-      }
+    assert(neighbour_cell->first == start);
+    if(neighbour_cell->is_unit()) {
+      assert(neighbour_cell->max_ival_count == 0);
+    } else {
+      assert(neighbour_cell->max_ival_count > 0);
+      assert(neighbour_cell->max_ival_count <= neighbour_cell->length);
+    }
 #endif
 
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
+    if(compute_eqref_hash)
+    {
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
 
-      if(neighbour_cell->length > 1 and
-   neighbour_cell->max_ival_count != neighbour_cell->length)
-  {
+    if(neighbour_cell->length > 1 and
+       neighbour_cell->max_ival_count != neighbour_cell->length)
+    {
 
-    Partition::Cell* const new_cell =
-      p.aux_split_in_two(neighbour_cell,
-             neighbour_cell->length -
-             neighbour_cell->max_ival_count);
-    unsigned int* ep = p.elements + new_cell->first;
-    unsigned int* const lp = p.elements+new_cell->first+new_cell->length;
-    while(ep < lp)
+      Partition::Cell* const new_cell =
+          p.aux_split_in_two(neighbour_cell,
+                             neighbour_cell->length -
+                             neighbour_cell->max_ival_count);
+      unsigned int* ep = p.elements + new_cell->first;
+      unsigned int* const lp = p.elements+new_cell->first+new_cell->length;
+      while(ep < lp)
       {
         p.element_to_cell_map[*ep] = new_cell;
         ep++;
       }
-    neighbour_cell->max_ival_count = 0;
+      neighbour_cell->max_ival_count = 0;
 
 
-    if(compute_eqref_hash)
+      if(compute_eqref_hash)
       {
         /* Update hash */
         eqref_hash.update(neighbour_cell->first);
@@ -2801,55 +2801,55 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
         eqref_hash.update(1);
       }
 
-    /* Add cells in splitting_queue */
-    if(neighbour_cell->is_in_splitting_queue()) {
-      /* Both cells must be included in splitting_queue in order
+      /* Add cells in splitting_queue */
+      if(neighbour_cell->is_in_splitting_queue()) {
+        /* Both cells must be included in splitting_queue in order
          to have refinement to equitable partition */
-      p.splitting_queue_add(new_cell);
-    } else {
-      Partition::Cell *min_cell, *max_cell;
-    if(neighbour_cell->length <= new_cell->length) {
-      min_cell = neighbour_cell;
-      max_cell = new_cell;
-    } else {
-      min_cell = new_cell;
-      max_cell = neighbour_cell;
-    }
-    /* Put the smaller cell in splitting_queue */
-     p.splitting_queue_add(min_cell);
-    if(max_cell->is_unit()) {
-      /* Put the "larger" cell also in splitting_queue */
-      p.splitting_queue_add(max_cell);
-    }
-  }
-  /* Update pointer for certificate generation */
-  neighbour_cell = new_cell;
+        p.splitting_queue_add(new_cell);
+      } else {
+        Partition::Cell *min_cell, *max_cell;
+        if(neighbour_cell->length <= new_cell->length) {
+          min_cell = neighbour_cell;
+          max_cell = new_cell;
+        } else {
+          min_cell = new_cell;
+          max_cell = neighbour_cell;
+        }
+        /* Put the smaller cell in splitting_queue */
+        p.splitting_queue_add(min_cell);
+        if(max_cell->is_unit()) {
+          /* Put the "larger" cell also in splitting_queue */
+          p.splitting_queue_add(max_cell);
+        }
       }
-      else
-  {
-    neighbour_cell->max_ival_count = 0;
-  }
+      /* Update pointer for certificate generation */
+      neighbour_cell = new_cell;
+    }
+    else
+    {
+      neighbour_cell->max_ival_count = 0;
+    }
 
-      /*
+    /*
        * Build certificate if required
        */
-      if(in_search)
-  {
-    for(unsigned int i = neighbour_cell->first,
-    j = neighbour_cell->length;
-        j > 0;
-        j--, i++)
+    if(in_search)
+    {
+      for(unsigned int i = neighbour_cell->first,
+          j = neighbour_cell->length;
+          j > 0;
+          j--, i++)
       {
         /* Build certificate */
         cert_add(CERT_EDGE, unit_cell->first, i);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-  } /* if(in_search) */
-    } /* while(!neighbour_heap.is_empty()) */
+    } /* if(in_search) */
+  } /* while(!neighbour_heap.is_empty()) */
 
   /*
    * Phase 2
@@ -2857,70 +2857,70 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
    */
   ei = v.edges_in.begin();
   for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-    {
-      const unsigned int dest_vertex = *ei++;
-      Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
-
-      if(neighbour_cell->is_unit()) {
-  if(in_search) {
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-  continue;
-      }
-      if(neighbour_cell->max_ival_count == 0)
   {
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-      neighbour_cell->max_ival_count++;
+    const unsigned int dest_vertex = *ei++;
+    Partition::Cell* const neighbour_cell = p.get_cell(dest_vertex);
 
-      unsigned int* const swap_position =
-  p.elements + neighbour_cell->first + neighbour_cell->length -
-  neighbour_cell->max_ival_count;
-      *p.in_pos[dest_vertex] = *swap_position;
-      p.in_pos[*swap_position] = p.in_pos[dest_vertex];
-      *swap_position = dest_vertex;
-      p.in_pos[dest_vertex] = swap_position;
+    if(neighbour_cell->is_unit()) {
+      if(in_search) {
+        neighbour_heap.insert(neighbour_cell->first);
+      }
+      continue;
     }
+    if(neighbour_cell->max_ival_count == 0)
+    {
+      neighbour_heap.insert(neighbour_cell->first);
+    }
+    neighbour_cell->max_ival_count++;
+
+    unsigned int* const swap_position =
+        p.elements + neighbour_cell->first + neighbour_cell->length -
+        neighbour_cell->max_ival_count;
+    *p.in_pos[dest_vertex] = *swap_position;
+    p.in_pos[*swap_position] = p.in_pos[dest_vertex];
+    *swap_position = dest_vertex;
+    p.in_pos[dest_vertex] = swap_position;
+  }
 
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
 
 #if defined(BLISS_CONSISTENCY_CHECKS)
-      assert(neighbour_cell->first == start);
-      if(neighbour_cell->is_unit()) {
-  assert(neighbour_cell->max_ival_count == 0);
-      } else {
-  assert(neighbour_cell->max_ival_count > 0);
-  assert(neighbour_cell->max_ival_count <= neighbour_cell->length);
-      }
+    assert(neighbour_cell->first == start);
+    if(neighbour_cell->is_unit()) {
+      assert(neighbour_cell->max_ival_count == 0);
+    } else {
+      assert(neighbour_cell->max_ival_count > 0);
+      assert(neighbour_cell->max_ival_count <= neighbour_cell->length);
+    }
 #endif
 
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
-
-      if(neighbour_cell->length > 1 and
-   neighbour_cell->max_ival_count != neighbour_cell->length)
-  {
-    Partition::Cell* const new_cell =
-      p.aux_split_in_two(neighbour_cell,
-             neighbour_cell->length -
-             neighbour_cell->max_ival_count);
-    unsigned int* ep = p.elements + new_cell->first;
-    unsigned int* const lp = p.elements+new_cell->first+new_cell->length;
-    while(ep < lp) {
-      p.element_to_cell_map[*ep] = new_cell;
-      ep++;
-    }
-    neighbour_cell->max_ival_count = 0;
-
-
     if(compute_eqref_hash)
+    {
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
+
+    if(neighbour_cell->length > 1 and
+       neighbour_cell->max_ival_count != neighbour_cell->length)
+    {
+      Partition::Cell* const new_cell =
+          p.aux_split_in_two(neighbour_cell,
+                             neighbour_cell->length -
+                             neighbour_cell->max_ival_count);
+      unsigned int* ep = p.elements + new_cell->first;
+      unsigned int* const lp = p.elements+new_cell->first+new_cell->length;
+      while(ep < lp) {
+        p.element_to_cell_map[*ep] = new_cell;
+        ep++;
+      }
+      neighbour_cell->max_ival_count = 0;
+
+
+      if(compute_eqref_hash)
       {
         eqref_hash.update(neighbour_cell->first);
         eqref_hash.update(neighbour_cell->length);
@@ -2930,55 +2930,55 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
         eqref_hash.update(1);
       }
 
-    /* Add cells in splitting_queue */
-    if(neighbour_cell->is_in_splitting_queue()) {
-      /* Both cells must be included in splitting_queue in order
+      /* Add cells in splitting_queue */
+      if(neighbour_cell->is_in_splitting_queue()) {
+        /* Both cells must be included in splitting_queue in order
          to have refinement to equitable partition */
-      p.splitting_queue_add(new_cell);
-    } else {
-      Partition::Cell *min_cell, *max_cell;
-      if(neighbour_cell->length <= new_cell->length) {
-        min_cell = neighbour_cell;
-        max_cell = new_cell;
+        p.splitting_queue_add(new_cell);
       } else {
-        min_cell = new_cell;
-        max_cell = neighbour_cell;
+        Partition::Cell *min_cell, *max_cell;
+        if(neighbour_cell->length <= new_cell->length) {
+          min_cell = neighbour_cell;
+          max_cell = new_cell;
+        } else {
+          min_cell = new_cell;
+          max_cell = neighbour_cell;
+        }
+        /* Put the smaller cell in splitting_queue */
+        p.splitting_queue_add(min_cell);
+        if(max_cell->is_unit()) {
+          /* Put the "larger" cell also in splitting_queue */
+          p.splitting_queue_add(max_cell);
+        }
       }
-      /* Put the smaller cell in splitting_queue */
-      p.splitting_queue_add(min_cell);
-      if(max_cell->is_unit()) {
-        /* Put the "larger" cell also in splitting_queue */
-        p.splitting_queue_add(max_cell);
-      }
+      /* Update pointer for certificate generation */
+      neighbour_cell = new_cell;
     }
-    /* Update pointer for certificate generation */
-    neighbour_cell = new_cell;
-  }
-      else
-  {
-    neighbour_cell->max_ival_count = 0;
-  }
+    else
+    {
+      neighbour_cell->max_ival_count = 0;
+    }
 
-      /*
+    /*
        * Build certificate if required
        */
-      if(in_search)
-  {
-    for(unsigned int i = neighbour_cell->first,
-    j = neighbour_cell->length;
-        j > 0;
-        j--, i++)
+    if(in_search)
+    {
+      for(unsigned int i = neighbour_cell->first,
+          j = neighbour_cell->length;
+          j > 0;
+          j--, i++)
       {
         /* Build certificate */
         cert_add(CERT_EDGE, i, unit_cell->first);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-  } /* if(in_search) */
-    } /* while(!neighbour_heap.is_empty()) */
+    } /* if(in_search) */
+  } /* while(!neighbour_heap.is_empty()) */
 
   if(refine_compare_certificate and
      (refine_equal_to_first == false) and
@@ -2987,26 +2987,26 @@ Digraph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
 
   return false;
 
- worse_exit:
+worse_exit:
   /* Clear neighbour heap */
   UintSeqHash rest;
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
-      if(opt_use_failure_recording and was_equal_to_first)
   {
-    rest.update(neighbour_cell->first);
-    rest.update(neighbour_cell->length);
-    rest.update(neighbour_cell->max_ival_count);
-  }
-      neighbour_cell->max_ival_count = 0;
-    }
-  if(opt_use_failure_recording and was_equal_to_first)
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* const neighbour_cell = p.get_cell(p.elements[start]);
+    if(opt_use_failure_recording and was_equal_to_first)
     {
-      rest.update(failure_recording_fp_deviation);
-      failure_recording_fp_deviation = rest.get_value();
+      rest.update(neighbour_cell->first);
+      rest.update(neighbour_cell->length);
+      rest.update(neighbour_cell->max_ival_count);
     }
+    neighbour_cell->max_ival_count = 0;
+  }
+  if(opt_use_failure_recording and was_equal_to_first)
+  {
+    rest.update(failure_recording_fp_deviation);
+    failure_recording_fp_deviation = rest.get_value();
+  }
   return true;
 }
 
@@ -3035,98 +3035,98 @@ Digraph::is_equitable() const
    * Check equitabledness w.r.t. outgoing edges
    */
   for(Partition::Cell* cell = p.first_cell; cell; cell = cell->next)
-    {
-      if(cell->is_unit())
-  continue;
-
-      unsigned int* ep = p.elements + cell->first;
-      const Vertex& first_vertex = vertices[*ep++];
-
-      /* Count outgoing edges of the first vertex for cells */
-      for(std::vector<unsigned int>::const_iterator ei =
-      first_vertex.edges_out.begin();
-    ei != first_vertex.edges_out.end();
-    ei++)
   {
-    first_count[p.get_cell(*ei)->first]++;
-  }
+    if(cell->is_unit())
+      continue;
 
-      /* Count and compare outgoing edges of the other vertices */
-      for(unsigned int i = cell->length; i > 1; i--)
-  {
-    const Vertex &vertex = vertices[*ep++];
+    unsigned int* ep = p.elements + cell->first;
+    const Vertex& first_vertex = vertices[*ep++];
+
+    /* Count outgoing edges of the first vertex for cells */
     for(std::vector<unsigned int>::const_iterator ei =
-    vertex.edges_out.begin();
-        ei != vertex.edges_out.end();
+        first_vertex.edges_out.begin();
+        ei != first_vertex.edges_out.end();
         ei++)
+    {
+      first_count[p.get_cell(*ei)->first]++;
+    }
+
+    /* Count and compare outgoing edges of the other vertices */
+    for(unsigned int i = cell->length; i > 1; i--)
+    {
+      const Vertex &vertex = vertices[*ep++];
+      for(std::vector<unsigned int>::const_iterator ei =
+          vertex.edges_out.begin();
+          ei != vertex.edges_out.end();
+          ei++)
       {
         other_count[p.get_cell(*ei)->first]++;
       }
-    for(Partition::Cell *cell2 = p.first_cell;
-        cell2;
-        cell2 = cell2->next)
+      for(Partition::Cell *cell2 = p.first_cell;
+          cell2;
+          cell2 = cell2->next)
       {
         if(first_count[cell2->first] != other_count[cell2->first])
-    {
-      /* Not equitable */
-      return false;
-    }
+        {
+          /* Not equitable */
+          return false;
+        }
         other_count[cell2->first] = 0;
       }
-  }
-      /* Reset first_count */
-      for(unsigned int i = 0; i < N; i++)
-  first_count[i] = 0;
     }
+    /* Reset first_count */
+    for(unsigned int i = 0; i < N; i++)
+      first_count[i] = 0;
+  }
 
 
   /*
    * Check equitabledness w.r.t. incoming edges
    */
   for(Partition::Cell* cell = p.first_cell; cell; cell = cell->next)
-    {
-      if(cell->is_unit())
-  continue;
-
-      unsigned int* ep = p.elements + cell->first;
-      const Vertex& first_vertex = vertices[*ep++];
-
-      /* Count incoming edges of the first vertex for cells */
-      for(std::vector<unsigned int>::const_iterator ei =
-      first_vertex.edges_in.begin();
-    ei != first_vertex.edges_in.end();
-    ei++)
   {
-    first_count[p.get_cell(*ei)->first]++;
-  }
+    if(cell->is_unit())
+      continue;
 
-      /* Count and compare incoming edges of the other vertices */
-      for(unsigned int i = cell->length; i > 1; i--)
-  {
-    const Vertex &vertex = vertices[*ep++];
+    unsigned int* ep = p.elements + cell->first;
+    const Vertex& first_vertex = vertices[*ep++];
+
+    /* Count incoming edges of the first vertex for cells */
     for(std::vector<unsigned int>::const_iterator ei =
-    vertex.edges_in.begin();
-        ei != vertex.edges_in.end();
+        first_vertex.edges_in.begin();
+        ei != first_vertex.edges_in.end();
         ei++)
+    {
+      first_count[p.get_cell(*ei)->first]++;
+    }
+
+    /* Count and compare incoming edges of the other vertices */
+    for(unsigned int i = cell->length; i > 1; i--)
+    {
+      const Vertex &vertex = vertices[*ep++];
+      for(std::vector<unsigned int>::const_iterator ei =
+          vertex.edges_in.begin();
+          ei != vertex.edges_in.end();
+          ei++)
       {
         other_count[p.get_cell(*ei)->first]++;
       }
-    for(Partition::Cell *cell2 = p.first_cell;
-        cell2;
-        cell2 = cell2->next)
+      for(Partition::Cell *cell2 = p.first_cell;
+          cell2;
+          cell2 = cell2->next)
       {
         if(first_count[cell2->first] != other_count[cell2->first])
-    {
-      /* Not equitable */
-      return false;
-    }
+        {
+          /* Not equitable */
+          return false;
+        }
         other_count[cell2->first] = 0;
       }
-  }
-      /* Reset first_count */
-      for(unsigned int i = 0; i < N; i++)
-  first_count[i] = 0;
     }
+    /* Reset first_count */
+    for(unsigned int i = 0; i < N; i++)
+      first_count[i] = 0;
+  }
   return true;
 }
 
@@ -3201,12 +3201,12 @@ Digraph::sh_first()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      best_cell = cell;
-      break;
-    }
+  {
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    best_cell = cell;
+    break;
+  }
   return best_cell;
 }
 
@@ -3223,15 +3223,15 @@ Digraph::sh_first_smallest()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      if(cell->length < best_size)
   {
-    best_size = cell->length;
-    best_cell = cell;
-  }
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    if(cell->length < best_size)
+    {
+      best_size = cell->length;
+      best_cell = cell;
     }
+  }
   return best_cell;
 }
 
@@ -3248,15 +3248,15 @@ Digraph::sh_first_largest()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      if(cell->length > best_size)
   {
-    best_size = cell->length;
-    best_cell = cell;
-  }
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    if(cell->length > best_size)
+    {
+      best_size = cell->length;
+      best_cell = cell;
     }
+  }
   return best_cell;
 }
 
@@ -3277,54 +3277,54 @@ Digraph::sh_first_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
+  {
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    int value = 0;
+    const Vertex &v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei;
+    ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
     {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      int value = 0;
-      const Vertex &v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei;
-      ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-  {
-    Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-  {
-    Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      if(value > best_value)
-  {
-    best_value = value;
-    best_cell = cell;
-  }
+      Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j > 0; j--)
+    {
+      Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
+    }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    if(value > best_value)
+    {
+      best_value = value;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -3346,59 +3346,59 @@ Digraph::sh_first_smallest_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
+  {
+
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+
+    int value = 0;
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei;
+
+    ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
     {
-
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-
-      int value = 0;
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei;
-
-      ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-  {
-    Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell * const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-  {
-    Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell * const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      if((value > best_value) or
-   (value == best_value and cell->length < best_size))
-  {
-    best_value = value;
-    best_size = cell->length;
-    best_cell = cell;
-  }
+      Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell * const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j > 0; j--)
+    {
+      Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
+    }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell * const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    if((value > best_value) or
+       (value == best_value and cell->length < best_size))
+    {
+      best_value = value;
+      best_size = cell->length;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -3420,59 +3420,59 @@ Digraph::sh_first_largest_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
+  {
+
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+
+    int value = 0;
+    const Vertex &v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei;
+
+    ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
     {
-
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-
-      int value = 0;
-      const Vertex &v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei;
-
-      ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-  {
-    Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-  {
-    Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
-      continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-
-      if((value > best_value) ||
-   (value == best_value && cell->length > best_size))
-  {
-    best_value = value;
-    best_size = cell->length;
-    best_cell = cell;
-  }
+      Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j > 0; j--)
+    {
+      Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
+    }
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+
+    if((value > best_value) ||
+       (value == best_value && cell->length > best_size))
+    {
+      best_value = value;
+      best_size = cell->length;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -3514,36 +3514,36 @@ Digraph::is_automorphism(unsigned int* const perm)
 #endif
 
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex& v1 = vertices[i];
-      Vertex& v2 = vertices[perm[i]];
+  {
+    Vertex& v1 = vertices[i];
+    Vertex& v2 = vertices[perm[i]];
 
-      edges1.clear();
-      for(std::vector<unsigned int>::iterator ei = v1.edges_in.begin();
-    ei != v1.edges_in.end();
-    ei++)
-  edges1.insert(perm[*ei]);
-      edges2.clear();
-      for(std::vector<unsigned int>::iterator ei = v2.edges_in.begin();
-    ei != v2.edges_in.end();
-    ei++)
-  edges2.insert(*ei);
-      if(!(edges1 == edges2))
-  return false;
+    edges1.clear();
+    for(std::vector<unsigned int>::iterator ei = v1.edges_in.begin();
+        ei != v1.edges_in.end();
+        ei++)
+      edges1.insert(perm[*ei]);
+    edges2.clear();
+    for(std::vector<unsigned int>::iterator ei = v2.edges_in.begin();
+        ei != v2.edges_in.end();
+        ei++)
+      edges2.insert(*ei);
+    if(!(edges1 == edges2))
+      return false;
 
-      edges1.clear();
-      for(std::vector<unsigned int>::iterator ei = v1.edges_out.begin();
-    ei != v1.edges_out.end();
-    ei++)
-  edges1.insert(perm[*ei]);
-      edges2.clear();
-      for(std::vector<unsigned int>::iterator ei = v2.edges_out.begin();
-    ei != v2.edges_out.end();
-    ei++)
-  edges2.insert(*ei);
-      if(!(edges1 == edges2))
-  return false;
-    }
+    edges1.clear();
+    for(std::vector<unsigned int>::iterator ei = v1.edges_out.begin();
+        ei != v1.edges_out.end();
+        ei++)
+      edges1.insert(perm[*ei]);
+    edges2.clear();
+    for(std::vector<unsigned int>::iterator ei = v2.edges_out.begin();
+        ei != v2.edges_out.end();
+        ei++)
+      edges2.insert(*ei);
+    if(!(edges1 == edges2))
+      return false;
+  }
 
   return true;
 }
@@ -3559,36 +3559,36 @@ Digraph::is_automorphism(const std::vector<unsigned int>& perm) const
   std::set<unsigned int, std::less<unsigned int> > edges2;
 
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex& v1 = vertices[i];
-      const Vertex& v2 = vertices[perm[i]];
+  {
+    const Vertex& v1 = vertices[i];
+    const Vertex& v2 = vertices[perm[i]];
 
-      edges1.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v1.edges_in.begin();
-    ei != v1.edges_in.end();
-    ei++)
-  edges1.insert(perm[*ei]);
-      edges2.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v2.edges_in.begin();
-    ei != v2.edges_in.end();
-    ei++)
-  edges2.insert(*ei);
-      if(!(edges1 == edges2))
-  return false;
+    edges1.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v1.edges_in.begin();
+        ei != v1.edges_in.end();
+        ei++)
+      edges1.insert(perm[*ei]);
+    edges2.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v2.edges_in.begin();
+        ei != v2.edges_in.end();
+        ei++)
+      edges2.insert(*ei);
+    if(!(edges1 == edges2))
+      return false;
 
-      edges1.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v1.edges_out.begin();
-    ei != v1.edges_out.end();
-    ei++)
-  edges1.insert(perm[*ei]);
-      edges2.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v2.edges_out.begin();
-    ei != v2.edges_out.end();
-    ei++)
-  edges2.insert(*ei);
-      if(!(edges1 == edges2))
-  return false;
-    }
+    edges1.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v1.edges_out.begin();
+        ei != v1.edges_out.end();
+        ei++)
+      edges1.insert(perm[*ei]);
+    edges2.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v2.edges_out.begin();
+        ei != v2.edges_out.end();
+        ei++)
+      edges2.insert(*ei);
+    if(!(edges1 == edges2))
+      return false;
+  }
 
   return true;
 }
@@ -3606,11 +3606,11 @@ Digraph::nucr_find_first_component(const unsigned int level)
   /* Find first non-discrete cell in the component level */
   Partition::Cell* first_cell = p.first_nonsingleton_cell;
   while(first_cell)
-    {
-      if(p.cr_get_level(first_cell->first) == level)
-  break;
-      first_cell = first_cell->next_nonsingleton;
-    }
+  {
+    if(p.cr_get_level(first_cell->first) == level)
+      break;
+    first_cell = first_cell->next_nonsingleton;
+  }
 
   /* The component is discrete, return false */
   if(!first_cell)
@@ -3621,99 +3621,99 @@ Digraph::nucr_find_first_component(const unsigned int level)
   component.push_back(first_cell);
 
   for(unsigned int i = 0; i < component.size(); i++)
+  {
+    Partition::Cell* const cell = component[i];
+
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei;
+
+    ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j > 0; j--)
     {
-      Partition::Cell* const cell = component[i];
+      const unsigned int neighbour = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
 
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei;
-
-      ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
-
-    /* Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Already marked to be in the same component? */
-    if(neighbour_cell->max_ival == 1)
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    if(p.cr_get_level(neighbour_cell->first) != level)
-      continue;
-
-    if(neighbour_cell->max_ival_count == 0)
-      neighbour_heap.insert(neighbour_cell->first);
-    neighbour_cell->max_ival_count++;
-  }
-      while(!neighbour_heap.is_empty())
-  {
-    const unsigned int start = neighbour_heap.remove();
-    Partition::Cell* const neighbour_cell =
-      p.get_cell(p.elements[start]);
-
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
-      {
-        neighbour_cell->max_ival_count = 0;
+      /* Skip unit neighbours */
+      if(neighbour_cell->is_unit())
         continue;
-      }
-    neighbour_cell->max_ival_count = 0;
-    neighbour_cell->max_ival = 1;
-    component.push_back(neighbour_cell);
-  }
-
-      ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
-
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
-
-    /* Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Already marked to be in the same component? */
-    if(neighbour_cell->max_ival == 1)
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    if(p.cr_get_level(neighbour_cell->first) != level)
-      continue;
-
-    if(neighbour_cell->max_ival_count == 0)
-      neighbour_heap.insert(neighbour_cell->first);
-    neighbour_cell->max_ival_count++;
-  }
-      while(!neighbour_heap.is_empty())
-  {
-    const unsigned int start = neighbour_heap.remove();
-    Partition::Cell* const neighbour_cell =
-      p.get_cell(p.elements[start]);
-
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
-      {
-        neighbour_cell->max_ival_count = 0;
+      /* Already marked to be in the same component? */
+      if(neighbour_cell->max_ival == 1)
         continue;
-      }
-    neighbour_cell->max_ival_count = 0;
-    neighbour_cell->max_ival = 1;
-    component.push_back(neighbour_cell);
-  }
+      /* Is the neighbour at the same component recursion level? */
+      if(p.cr_get_level(neighbour_cell->first) != level)
+        continue;
+
+      if(neighbour_cell->max_ival_count == 0)
+        neighbour_heap.insert(neighbour_cell->first);
+      neighbour_cell->max_ival_count++;
     }
+    while(!neighbour_heap.is_empty())
+    {
+      const unsigned int start = neighbour_heap.remove();
+      Partition::Cell* const neighbour_cell =
+          p.get_cell(p.elements[start]);
+
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
+      {
+        neighbour_cell->max_ival_count = 0;
+        continue;
+      }
+      neighbour_cell->max_ival_count = 0;
+      neighbour_cell->max_ival = 1;
+      component.push_back(neighbour_cell);
+    }
+
+    ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
+    {
+      const unsigned int neighbour = *ei++;
+
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
+
+      /* Skip unit neighbours */
+      if(neighbour_cell->is_unit())
+        continue;
+      /* Already marked to be in the same component? */
+      if(neighbour_cell->max_ival == 1)
+        continue;
+      /* Is the neighbour at the same component recursion level? */
+      if(p.cr_get_level(neighbour_cell->first) != level)
+        continue;
+
+      if(neighbour_cell->max_ival_count == 0)
+        neighbour_heap.insert(neighbour_cell->first);
+      neighbour_cell->max_ival_count++;
+    }
+    while(!neighbour_heap.is_empty())
+    {
+      const unsigned int start = neighbour_heap.remove();
+      Partition::Cell* const neighbour_cell =
+          p.get_cell(p.elements[start]);
+
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
+      {
+        neighbour_cell->max_ival_count = 0;
+        continue;
+      }
+      neighbour_cell->max_ival_count = 0;
+      neighbour_cell->max_ival = 1;
+      component.push_back(neighbour_cell);
+    }
+  }
 
   for(unsigned int i = 0; i < component.size(); i++)
-    {
-      Partition::Cell* const cell = component[i];
-      cell->max_ival = 0;
-      cr_component.push_back(cell->first);
-      cr_component_elements += cell->length;
-    }
+  {
+    Partition::Cell* const cell = component[i];
+    cell->max_ival = 0;
+    cr_component.push_back(cell->first);
+    cr_component_elements += cell->length;
+  }
 
   if(verbstr and verbose_level > 2) {
     fprintf(verbstr, "NU-component with %lu cells and %u vertices\n",
-      (long unsigned)cr_component.size(), cr_component_elements);
+            (long unsigned)cr_component.size(), cr_component_elements);
     fflush(verbstr);
   }
 
@@ -3726,9 +3726,9 @@ Digraph::nucr_find_first_component(const unsigned int level)
 
 bool
 Digraph::nucr_find_first_component(const unsigned int level,
-         std::vector<unsigned int>& component,
-         unsigned int& component_elements,
-         Partition::Cell*& sh_return)
+                                   std::vector<unsigned int>& component,
+                                   unsigned int& component_elements,
+                                   Partition::Cell*& sh_return)
 {
 
   component.clear();
@@ -3741,11 +3741,11 @@ Digraph::nucr_find_first_component(const unsigned int level,
   /* Find first non-discrete cell in the component level */
   Partition::Cell* first_cell = p.first_nonsingleton_cell;
   while(first_cell)
-    {
-      if(p.cr_get_level(first_cell->first) == level)
-  break;
-      first_cell = first_cell->next_nonsingleton;
-    }
+  {
+    if(p.cr_get_level(first_cell->first) == level)
+      break;
+    first_cell = first_cell->next_nonsingleton;
+  }
 
   /* The component is discrete, return false */
   if(!first_cell)
@@ -3759,155 +3759,155 @@ Digraph::nucr_find_first_component(const unsigned int level,
   comp.push_back(first_cell);
 
   for(unsigned int i = 0; i < comp.size(); i++)
+  {
+    Partition::Cell* const cell = comp[i];
+
+    unsigned int nuconn = 1;
+
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei;
+
+    /*| Phase 1: outgoing edges */
+    ei = v.edges_out.begin();
+    for(unsigned int j = v.nof_edges_out(); j > 0; j--)
     {
-      Partition::Cell* const cell = comp[i];
+      const unsigned int neighbour = *ei++;
 
-      unsigned int nuconn = 1;
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
 
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei;
-
-      /*| Phase 1: outgoing edges */
-      ei = v.edges_out.begin();
-      for(unsigned int j = v.nof_edges_out(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
-
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
-
-    /* Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    //if(p.cr_get_level(neighbour_cell->first) != level)
-    //  continue;
-    if(neighbour_cell->max_ival_count == 0)
-      neighbours.push(neighbour_cell);
-    neighbour_cell->max_ival_count++;
-  }
-      while(!neighbours.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbours.pop();
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
+      /* Skip unit neighbours */
+      if(neighbour_cell->is_unit())
+        continue;
+      /* Is the neighbour at the same component recursion level? */
+      //if(p.cr_get_level(neighbour_cell->first) != level)
+      //  continue;
+      if(neighbour_cell->max_ival_count == 0)
+        neighbours.push(neighbour_cell);
+      neighbour_cell->max_ival_count++;
+    }
+    while(!neighbours.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbours.pop();
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
       {
         neighbour_cell->max_ival_count = 0;
         continue;
       }
-    nuconn++;
-    neighbour_cell->max_ival_count = 0;
-    if(neighbour_cell->max_ival == 0) {
-      comp.push_back(neighbour_cell);
-      neighbour_cell->max_ival = 1;
+      nuconn++;
+      neighbour_cell->max_ival_count = 0;
+      if(neighbour_cell->max_ival == 0) {
+        comp.push_back(neighbour_cell);
+        neighbour_cell->max_ival = 1;
+      }
     }
-  }
 
-      /*| Phase 2: incoming edges */
-      ei = v.edges_in.begin();
-      for(unsigned int j = v.nof_edges_in(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
-    /*| Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    //if(p.cr_get_level(neighbour_cell->first) != level)
-    //  continue;
-    if(neighbour_cell->max_ival_count == 0)
-      neighbours.push(neighbour_cell);
-    neighbour_cell->max_ival_count++;
-  }
-      while(!neighbours.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbours.pop();
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
+    /*| Phase 2: incoming edges */
+    ei = v.edges_in.begin();
+    for(unsigned int j = v.nof_edges_in(); j > 0; j--)
+    {
+      const unsigned int neighbour = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
+      /*| Skip unit neighbours */
+      if(neighbour_cell->is_unit())
+        continue;
+      /* Is the neighbour at the same component recursion level? */
+      //if(p.cr_get_level(neighbour_cell->first) != level)
+      //  continue;
+      if(neighbour_cell->max_ival_count == 0)
+        neighbours.push(neighbour_cell);
+      neighbour_cell->max_ival_count++;
+    }
+    while(!neighbours.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbours.pop();
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
       {
         neighbour_cell->max_ival_count = 0;
         continue;
       }
-    nuconn++;
-    neighbour_cell->max_ival_count = 0;
-    if(neighbour_cell->max_ival == 0) {
-      comp.push_back(neighbour_cell);
-      neighbour_cell->max_ival = 1;
-    }
-  }
-
-      /*| Phase 3: splitting heuristics */
-      switch(sh) {
-      case shs_f:
-  if(cell->first <= sh_first) {
-    sh_return = cell;
-    sh_first = cell->first;
-  }
-  break;
-      case shs_fs:
-  if(cell->length < sh_size or
-     (cell->length == sh_size and cell->first <= sh_first)) {
-      sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-    }
-  break;
-      case shs_fl:
-  if(cell->length > sh_size or
-     (cell->length == sh_size and cell->first <= sh_first)) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-  }
-  break;
-      case shs_fm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and cell->first <= sh_first)) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_nuconn = nuconn;
-  }
-  break;
-      case shs_fsm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and
-      (cell->length < sh_size or
-       (cell->length == sh_size and cell->first <= sh_first)))) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-    sh_nuconn = nuconn;
-  }
-  break;
-      case shs_flm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and
-      (cell->length > sh_size or
-       (cell->length == sh_size and cell->first <= sh_first)))) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-    sh_nuconn = nuconn;
-  }
-  break;
-      default:
-  fatal_error("Internal error - unknown splitting heuristics");
-  return 0;
+      nuconn++;
+      neighbour_cell->max_ival_count = 0;
+      if(neighbour_cell->max_ival == 0) {
+        comp.push_back(neighbour_cell);
+        neighbour_cell->max_ival = 1;
       }
     }
+
+    /*| Phase 3: splitting heuristics */
+    switch(sh) {
+    case shs_f:
+      if(cell->first <= sh_first) {
+        sh_return = cell;
+        sh_first = cell->first;
+      }
+      break;
+    case shs_fs:
+      if(cell->length < sh_size or
+         (cell->length == sh_size and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+      }
+      break;
+    case shs_fl:
+      if(cell->length > sh_size or
+         (cell->length == sh_size and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+      }
+      break;
+    case shs_fm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_nuconn = nuconn;
+      }
+      break;
+    case shs_fsm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and
+          (cell->length < sh_size or
+           (cell->length == sh_size and cell->first <= sh_first)))) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+        sh_nuconn = nuconn;
+      }
+      break;
+    case shs_flm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and
+          (cell->length > sh_size or
+           (cell->length == sh_size and cell->first <= sh_first)))) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+        sh_nuconn = nuconn;
+      }
+      break;
+    default:
+      fatal_error("Internal error - unknown splitting heuristics");
+      return 0;
+    }
+  }
   // TODO: check!
   //assert(sh_return);
 
   for(unsigned int i = 0; i < comp.size(); i++)
-    {
-      Partition::Cell* const cell = comp[i];
-      cell->max_ival = 0;
-      component.push_back(cell->first);
-      component_elements += cell->length;
-    }
+  {
+    Partition::Cell* const cell = comp[i];
+    cell->max_ival = 0;
+    component.push_back(cell->first);
+    component_elements += cell->length;
+  }
 
   if(verbstr and verbose_level > 2) {
     fprintf(verbstr, "NU-component with %lu cells and %u vertices\n",
-      (long unsigned)component.size(), component_elements);
+            (long unsigned)component.size(), component_elements);
     fflush(verbstr);
   }
 
@@ -3951,28 +3951,28 @@ Graph::Vertex::remove_duplicate_edges(std::vector<bool>& tmp)
 #endif
   for(std::vector<unsigned int>::iterator iter = edges.begin();
       iter != edges.end(); )
+  {
+    const unsigned int dest_vertex = *iter;
+    if(tmp[dest_vertex] == true)
     {
-      const unsigned int dest_vertex = *iter;
-      if(tmp[dest_vertex] == true)
-  {
-    /* A duplicate edge found! */
-    iter = edges.erase(iter);
-  }
-      else
-  {
-    /* Not seen earlier, mark as seen */
-    tmp[dest_vertex] = true;
-    iter++;
-  }
+      /* A duplicate edge found! */
+      iter = edges.erase(iter);
     }
+    else
+    {
+      /* Not seen earlier, mark as seen */
+      tmp[dest_vertex] = true;
+      iter++;
+    }
+  }
 
   /* Clear tmp */
   for(std::vector<unsigned int>::iterator iter = edges.begin();
       iter != edges.end();
       iter++)
-    {
-      tmp[*iter] = false;
-    }
+  {
+    tmp[*iter] = false;
+  }
 #if defined(BLISS_CONSISTENCY_CHECKS)
   /* Post-conditions  */
   for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
@@ -4064,55 +4064,55 @@ Graph::read_dimacs(FILE* const fp, FILE* const errstr)
 
   /* Read comments and the problem definition line */
   while(1)
-    {
-      c = getc(fp);
-      if(c == 'c')
   {
-    /* A comment, ignore the rest of the line */
-    while((c = getc(fp)) != '\n')
+    c = getc(fp);
+    if(c == 'c')
+    {
+      /* A comment, ignore the rest of the line */
+      while((c = getc(fp)) != '\n')
       {
         if(c == EOF)
-    {
-      if(errstr)
-        fprintf(errstr,
-          "error in line %u: not in DIMACS format\n",
-          line_num);
-      goto error_exit;
-    }
+        {
+          if(errstr)
+            fprintf(errstr,
+                    "error in line %u: not in DIMACS format\n",
+                    line_num);
+          goto error_exit;
+        }
       }
-    line_num++;
-    continue;
-  }
-      if(c == 'p')
-  {
-    /* The problem definition line */
-    if(fscanf(fp, " edge %u %u\n", &nof_vertices, &nof_edges) != 2)
+      line_num++;
+      continue;
+    }
+    if(c == 'p')
+    {
+      /* The problem definition line */
+      if(fscanf(fp, " edge %u %u\n", &nof_vertices, &nof_edges) != 2)
       {
         if(errstr)
-    fprintf(errstr, "error in line %u: not in DIMACS format\n",
-      line_num);
+          fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                  line_num);
         goto error_exit;
       }
-    line_num++;
-    break;
-  }
-      if(errstr)
-  fprintf(errstr, "error in line %u: not in DIMACS format\n", line_num);
-      goto error_exit;
+      line_num++;
+      break;
     }
+    if(errstr)
+      fprintf(errstr, "error in line %u: not in DIMACS format\n", line_num);
+    goto error_exit;
+  }
 
   if(nof_vertices <= 0)
-    {
-      if(errstr)
-  fprintf(errstr, "error: no vertices\n");
-      goto error_exit;
-    }
+  {
+    if(errstr)
+      fprintf(errstr, "error: no vertices\n");
+    goto error_exit;
+  }
   if(verbose)
-    {
-      fprintf(verbstr, "Instance has %d vertices and %d edges\n",
-        nof_vertices, nof_edges);
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Instance has %d vertices and %d edges\n",
+            nof_vertices, nof_edges);
+    fflush(verbstr);
+  }
 
   g = new Graph(nof_vertices);
 
@@ -4120,91 +4120,91 @@ Graph::read_dimacs(FILE* const fp, FILE* const errstr)
   // Read vertex colors
   //
   if(verbose)
-    {
-      fprintf(verbstr, "Reading vertex colors...\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Reading vertex colors...\n");
+    fflush(verbstr);
+  }
   while(1)
-    {
-      c = getc(fp);
-      if(c != 'n')
   {
-    ungetc(c, fp);
-    break;
-  }
+    c = getc(fp);
+    if(c != 'n')
+    {
       ungetc(c, fp);
-      unsigned int vertex;
-      unsigned int color;
-      if(fscanf(fp, "n %u %u\n", &vertex, &color) != 2)
-  {
-    if(errstr)
-      fprintf(errstr, "error in line %u: not in DIMACS format\n",
-        line_num);
-    goto error_exit;
-  }
-      if(!((vertex >= 1) && (vertex <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...,%u]\n",
-        line_num, vertex, nof_vertices);
-    goto error_exit;
-  }
-      line_num++;
-      g->change_color(vertex - 1, color);
+      break;
     }
-  if(verbose)
+    ungetc(c, fp);
+    unsigned int vertex;
+    unsigned int color;
+    if(fscanf(fp, "n %u %u\n", &vertex, &color) != 2)
     {
-      fprintf(verbstr, "Done\n");
-      fflush(verbstr);
+      if(errstr)
+        fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                line_num);
+      goto error_exit;
     }
+    if(!((vertex >= 1) && (vertex <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...,%u]\n",
+                line_num, vertex, nof_vertices);
+      goto error_exit;
+    }
+    line_num++;
+    g->change_color(vertex - 1, color);
+  }
+  if(verbose)
+  {
+    fprintf(verbstr, "Done\n");
+    fflush(verbstr);
+  }
 
   //
   // Read edges
   //
   if(verbose)
-    {
-      fprintf(verbstr, "Reading edges...\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Reading edges...\n");
+    fflush(verbstr);
+  }
   for(unsigned i = 0; i < nof_edges; i++)
+  {
+    unsigned int from, to;
+    if(fscanf(fp, "e %u %u\n", &from, &to) != 2)
     {
-      unsigned int from, to;
-      if(fscanf(fp, "e %u %u\n", &from, &to) != 2)
-  {
-    if(errstr)
-      fprintf(errstr, "error in line %u: not in DIMACS format\n",
-        line_num);
-    goto error_exit;
-  }
-      if(!((from >= 1) && (from <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...,%u]\n",
-        line_num, from, nof_vertices);
-    goto error_exit;
-  }
-      if(!((to >= 1) && (to <= nof_vertices)))
-  {
-    if(errstr)
-      fprintf(errstr,
-        "error in line %u: vertex %u not in range [1,...,%u]\n",
-        line_num, to, nof_vertices);
-    goto error_exit;
-  }
-      line_num++;
-      g->add_edge(from-1, to-1);
+      if(errstr)
+        fprintf(errstr, "error in line %u: not in DIMACS format\n",
+                line_num);
+      goto error_exit;
     }
+    if(!((from >= 1) && (from <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...,%u]\n",
+                line_num, from, nof_vertices);
+      goto error_exit;
+    }
+    if(!((to >= 1) && (to <= nof_vertices)))
+    {
+      if(errstr)
+        fprintf(errstr,
+                "error in line %u: vertex %u not in range [1,...,%u]\n",
+                line_num, to, nof_vertices);
+      goto error_exit;
+    }
+    line_num++;
+    g->add_edge(from-1, to-1);
+  }
   if(verbose)
-    {
-      fprintf(verbstr, "Done\n");
-      fflush(verbstr);
-    }
+  {
+    fprintf(verbstr, "Done\n");
+    fflush(verbstr);
+  }
 
   return g;
 
- error_exit:
+error_exit:
   if(g)
     delete g;
   return 0;
@@ -4221,49 +4221,49 @@ Graph::write_dimacs(FILE* const fp)
   /* First count the total number of edges */
   unsigned int nof_edges = 0;
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v = vertices[i];
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int dest_i = *ei;
-    if(dest_i < i)
-      continue;
-    nof_edges++;
-  }
+    Vertex &v = vertices[i];
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int dest_i = *ei;
+      if(dest_i < i)
+        continue;
+      nof_edges++;
     }
+  }
 
   /* Output the "header" line */
   fprintf(fp, "p edge %u %u\n", get_nof_vertices(), nof_edges);
 
   /* Print the color of each vertex */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v = vertices[i];
-      fprintf(fp, "n %u %u\n", i+1, v.color);
-      /*
+  {
+    Vertex &v = vertices[i];
+    fprintf(fp, "n %u %u\n", i+1, v.color);
+    /*
       if(v.color != 0)
   {
     fprintf(fp, "n %u %u\n", i+1, v.color);
   }
       */
-    }
+  }
 
   /* Print the edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v = vertices[i];
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int dest_i = *ei;
-    if(dest_i < i)
-      continue;
-    fprintf(fp, "e %u %u\n", i+1, dest_i+1);
-  }
+    Vertex &v = vertices[i];
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int dest_i = *ei;
+      if(dest_i < i)
+        continue;
+      fprintf(fp, "e %u %u\n", i+1, dest_i+1);
     }
+  }
 }
 
 
@@ -4286,41 +4286,41 @@ Graph::cmp(Graph& other)
     return 1;
   /* Compare vertex colors */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      if(vertices[i].color < other.vertices[i].color)
-  return -1;
-      if(vertices[i].color > other.vertices[i].color)
-  return 1;
-    }
+  {
+    if(vertices[i].color < other.vertices[i].color)
+      return -1;
+    if(vertices[i].color > other.vertices[i].color)
+      return 1;
+  }
   /* Compare vertex degrees */
   remove_duplicate_edges();
   other.remove_duplicate_edges();
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      if(vertices[i].nof_edges() < other.vertices[i].nof_edges())
-  return -1;
-      if(vertices[i].nof_edges() > other.vertices[i].nof_edges())
-  return 1;
-    }
+  {
+    if(vertices[i].nof_edges() < other.vertices[i].nof_edges())
+      return -1;
+    if(vertices[i].nof_edges() > other.vertices[i].nof_edges())
+      return 1;
+  }
   /* Compare edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v1 = vertices[i];
-      Vertex &v2 = other.vertices[i];
-      v1.sort_edges();
-      v2.sort_edges();
-      std::vector<unsigned int>::const_iterator ei1 = v1.edges.begin();
-      std::vector<unsigned int>::const_iterator ei2 = v2.edges.begin();
-      while(ei1 != v1.edges.end())
   {
-    if(*ei1 < *ei2)
-      return -1;
-    if(*ei1 > *ei2)
-      return 1;
-    ei1++;
-    ei2++;
-  }
+    Vertex &v1 = vertices[i];
+    Vertex &v2 = other.vertices[i];
+    v1.sort_edges();
+    v2.sort_edges();
+    std::vector<unsigned int>::const_iterator ei1 = v1.edges.begin();
+    std::vector<unsigned int>::const_iterator ei2 = v2.edges.begin();
+    while(ei1 != v1.edges.end())
+    {
+      if(*ei1 < *ei2)
+        return -1;
+      if(*ei1 > *ei2)
+        return 1;
+      ei1++;
+      ei2++;
     }
+  }
   return 0;
 }
 
@@ -4333,19 +4333,19 @@ Graph::permute(const std::vector<unsigned int>& perm) const
 
   Graph* const g = new Graph(get_nof_vertices());
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex& v = vertices[i];
-      Vertex& permuted_v = g->vertices[perm[i]];
-      permuted_v.color = v.color;
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int dest_v = *ei;
-    permuted_v.add_edge(perm[dest_v]);
-  }
-      permuted_v.sort_edges();
+    const Vertex& v = vertices[i];
+    Vertex& permuted_v = g->vertices[perm[i]];
+    permuted_v.color = v.color;
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int dest_v = *ei;
+      permuted_v.add_edge(perm[dest_v]);
     }
+    permuted_v.sort_edges();
+  }
   return g;
 }
 
@@ -4359,19 +4359,19 @@ Graph::permute(const unsigned int* perm) const
 
   Graph* const g = new Graph(get_nof_vertices());
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex& v = vertices[i];
-      Vertex& permuted_v = g->vertices[perm[i]];
-      permuted_v.color = v.color;
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int dest_v = *ei;
-    permuted_v.add_edge(perm[dest_v]);
-  }
-      permuted_v.sort_edges();
+    const Vertex& v = vertices[i];
+    Vertex& permuted_v = g->vertices[perm[i]];
+    permuted_v.color = v.color;
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int dest_v = *ei;
+      permuted_v.add_edge(perm[dest_v]);
     }
+    permuted_v.sort_edges();
+  }
   return g;
 }
 
@@ -4391,10 +4391,10 @@ Graph::write_dot(const char* const filename)
 {
   FILE *fp = fopen(filename, "w");
   if(fp)
-    {
-      write_dot(fp);
-      fclose(fp);
-    }
+  {
+    write_dot(fp);
+    fclose(fp);
+  }
 }
 
 void
@@ -4408,18 +4408,18 @@ Graph::write_dot(FILE* const fp)
   for(std::vector<Vertex>::iterator vi = vertices.begin();
       vi != vertices.end();
       vi++, vnum++)
-    {
-      Vertex& v = *vi;
-      fprintf(fp, "v%u [label=\"%u:%u\"];\n", vnum, vnum, v.color);
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int vnum2 = *ei;
-    if(vnum2 > vnum)
-      fprintf(fp, "v%u -- v%u\n", vnum, vnum2);
-  }
+    Vertex& v = *vi;
+    fprintf(fp, "v%u [label=\"%u:%u\"];\n", vnum, vnum, v.color);
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int vnum2 = *ei;
+      if(vnum2 > vnum)
+        fprintf(fp, "v%u -- v%u\n", vnum, vnum2);
     }
+  }
 
   fprintf(fp, "}\n");
 }
@@ -4449,25 +4449,25 @@ Graph::get_hash()
 
   /* Hash the color of each vertex */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      h.update(vertices[i].color);
-    }
+  {
+    h.update(vertices[i].color);
+  }
 
   /* Hash the edges */
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex &v = vertices[i];
-      for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-    ei != v.edges.end();
-    ei++)
   {
-    const unsigned int dest_i = *ei;
-    if(dest_i < i)
-      continue;
-    h.update(i);
-    h.update(dest_i);
-  }
+    Vertex &v = vertices[i];
+    for(std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+        ei != v.edges.end();
+        ei++)
+    {
+      const unsigned int dest_i = *ei;
+      if(dest_i < i)
+        continue;
+      h.update(i);
+      h.update(dest_i);
     }
+  }
 
   return h.get_value();
 }
@@ -4484,12 +4484,12 @@ Graph::remove_duplicate_edges()
   for(std::vector<Vertex>::iterator vi = vertices.begin();
       vi != vertices.end();
       vi++)
-    {
+  {
 #if defined(BLISS_EXPENSIVE_CONSISTENCY_CHECKS)
-      for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
+    for(unsigned int i = 0; i < tmp.size(); i++) assert(tmp[i] == false);
 #endif
-      (*vi).remove_duplicate_edges(tmp);
-    }
+    (*vi).remove_duplicate_edges(tmp);
+  }
 }
 
 
@@ -4533,10 +4533,10 @@ Graph::selfloop_invariant(const Graph* const g, const unsigned int v)
   for(std::vector<unsigned int>::const_iterator ei = vertex.edges.begin();
       ei != vertex.edges.end();
       ei++)
-    {
-      if(*ei == v)
-  return 1;
-    }
+  {
+    if(*ei == v)
+      return 1;
+  }
   return 0;
 }
 
@@ -4553,34 +4553,34 @@ Graph::selfloop_invariant(const Graph* const g, const unsigned int v)
 
 bool
 Graph::refine_according_to_invariant(unsigned int (*inv)(const Graph* const g,
-               const unsigned int v))
+                                                         const unsigned int v))
 {
   bool refined = false;
 
   for(Partition::Cell* cell = p.first_nonsingleton_cell; cell; )
-    {
-
-      Partition::Cell* const next_cell = cell->next_nonsingleton;
-
-      const unsigned int* ep = p.elements + cell->first;
-      for(unsigned int i = cell->length; i > 0; i--, ep++)
   {
-    const unsigned int ival = inv(this, *ep);
-    p.invariant_values[*ep] = ival;
-    if(ival > cell->max_ival)
+
+    Partition::Cell* const next_cell = cell->next_nonsingleton;
+
+    const unsigned int* ep = p.elements + cell->first;
+    for(unsigned int i = cell->length; i > 0; i--, ep++)
+    {
+      const unsigned int ival = inv(this, *ep);
+      p.invariant_values[*ep] = ival;
+      if(ival > cell->max_ival)
       {
         cell->max_ival = ival;
         cell->max_ival_count = 1;
       }
-    else if(ival == cell->max_ival)
+      else if(ival == cell->max_ival)
       {
         cell->max_ival_count++;
       }
-  }
-      Partition::Cell* const last_new_cell = p.zplit_cell(cell, true);
-      refined |= (last_new_cell != cell);
-      cell = next_cell;
     }
+    Partition::Cell* const last_new_cell = p.zplit_cell(cell, true);
+    refined |= (last_new_cell != cell);
+    cell = next_cell;
+  }
 
   return refined;
 }
@@ -4610,77 +4610,77 @@ Graph::split_neighbourhood_of_cell(Partition::Cell* const cell)
   const bool was_equal_to_first = refine_equal_to_first;
 
   if(compute_eqref_hash)
-    {
-      eqref_hash.update(cell->first);
-      eqref_hash.update(cell->length);
-    }
+  {
+    eqref_hash.update(cell->first);
+    eqref_hash.update(cell->length);
+  }
 
   const unsigned int* ep = p.elements + cell->first;
   for(unsigned int i = cell->length; i > 0; i--)
-    {
-      const Vertex& v = vertices[*ep++];
-
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j != 0; j--)
   {
-    const unsigned int dest_vertex = *ei++;
-    Partition::Cell * const neighbour_cell = p.get_cell(dest_vertex);
-    if(neighbour_cell->is_unit())
-      continue;
-    const unsigned int ival = ++p.invariant_values[dest_vertex];
-    if(ival > neighbour_cell->max_ival)
+    const Vertex& v = vertices[*ep++];
+
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j != 0; j--)
+    {
+      const unsigned int dest_vertex = *ei++;
+      Partition::Cell * const neighbour_cell = p.get_cell(dest_vertex);
+      if(neighbour_cell->is_unit())
+        continue;
+      const unsigned int ival = ++p.invariant_values[dest_vertex];
+      if(ival > neighbour_cell->max_ival)
       {
         neighbour_cell->max_ival = ival;
         neighbour_cell->max_ival_count = 1;
         if(ival == 1)
-    neighbour_heap.insert(neighbour_cell->first);
+          neighbour_heap.insert(neighbour_cell->first);
       }
-    else if(ival == neighbour_cell->max_ival) {
-      neighbour_cell->max_ival_count++;
+      else if(ival == neighbour_cell->max_ival) {
+        neighbour_cell->max_ival_count++;
+      }
     }
   }
-    }
 
   while(!neighbour_heap.is_empty())
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
+
+    if(compute_eqref_hash)
     {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
-
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
 
 
-      Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
+    Partition::Cell* const last_new_cell = p.zplit_cell(neighbour_cell, true);
 
-      /* Update certificate and hash if needed */
-      const Partition::Cell* c = neighbour_cell;
-      while(1)
-  {
-    if(in_search)
+    /* Update certificate and hash if needed */
+    const Partition::Cell* c = neighbour_cell;
+    while(1)
+    {
+      if(in_search)
       {
         /* Build certificate */
         cert_add_redundant(CERT_SPLIT, c->first, c->length);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-    if(compute_eqref_hash)
+      if(compute_eqref_hash)
       {
         eqref_hash.update(c->first);
         eqref_hash.update(c->length);
       }
-    if(c == last_new_cell)
-      break;
-    c = c->next;
-  }
+      if(c == last_new_cell)
+        break;
+      c = c->next;
     }
+  }
 
   if(refine_compare_certificate and
      (refine_equal_to_first == false) and
@@ -4689,36 +4689,36 @@ Graph::split_neighbourhood_of_cell(Partition::Cell* const cell)
 
   return false;
 
- worse_exit:
+worse_exit:
   /* Clear neighbour heap */
   UintSeqHash rest;
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
-      if(opt_use_failure_recording and was_equal_to_first)
   {
-    rest.update(neighbour_cell->first);
-    rest.update(neighbour_cell->length);
-    rest.update(neighbour_cell->max_ival);
-    rest.update(neighbour_cell->max_ival_count);
-  }
-      neighbour_cell->max_ival = 0;
-      neighbour_cell->max_ival_count = 0;
-      p.clear_ivs(neighbour_cell);
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
+    if(opt_use_failure_recording and was_equal_to_first)
+    {
+      rest.update(neighbour_cell->first);
+      rest.update(neighbour_cell->length);
+      rest.update(neighbour_cell->max_ival);
+      rest.update(neighbour_cell->max_ival_count);
     }
+    neighbour_cell->max_ival = 0;
+    neighbour_cell->max_ival_count = 0;
+    p.clear_ivs(neighbour_cell);
+  }
   if(opt_use_failure_recording and was_equal_to_first)
-    {
-      for(unsigned int i = p.splitting_queue.size(); i > 0; i--)
   {
-    Partition::Cell* const cell = p.splitting_queue.pop_front();
-    rest.update(cell->first);
-    rest.update(cell->length);
-    p.splitting_queue.push_back(cell);
-  }
-      rest.update(failure_recording_fp_deviation);
-      failure_recording_fp_deviation = rest.get_value();
+    for(unsigned int i = p.splitting_queue.size(); i > 0; i--)
+    {
+      Partition::Cell* const cell = p.splitting_queue.pop_front();
+      rest.update(cell->first);
+      rest.update(cell->length);
+      p.splitting_queue.push_back(cell);
     }
+    rest.update(failure_recording_fp_deviation);
+    failure_recording_fp_deviation = rest.get_value();
+  }
 
   return true;
 }
@@ -4733,78 +4733,78 @@ Graph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
   const bool was_equal_to_first = refine_equal_to_first;
 
   if(compute_eqref_hash)
-    {
-      eqref_hash.update(0x87654321);
-      eqref_hash.update(unit_cell->first);
-      eqref_hash.update(1);
-    }
+  {
+    eqref_hash.update(0x87654321);
+    eqref_hash.update(unit_cell->first);
+    eqref_hash.update(1);
+  }
 
   const Vertex& v = vertices[p.elements[unit_cell->first]];
 
   std::vector<unsigned int>::const_iterator ei = v.edges.begin();
   for(unsigned int j = v.nof_edges(); j > 0; j--)
-    {
-      const unsigned int dest_vertex = *ei++;
-      Partition::Cell * const neighbour_cell = p.get_cell(dest_vertex);
-
-      if(neighbour_cell->is_unit()) {
-  if(in_search) {
-    /* Remember neighbour in order to generate certificate */
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-  continue;
-      }
-      if(neighbour_cell->max_ival_count == 0)
   {
-    neighbour_heap.insert(neighbour_cell->first);
-  }
-      neighbour_cell->max_ival_count++;
+    const unsigned int dest_vertex = *ei++;
+    Partition::Cell * const neighbour_cell = p.get_cell(dest_vertex);
 
-      unsigned int * const swap_position =
-  p.elements + neighbour_cell->first + neighbour_cell->length -
-  neighbour_cell->max_ival_count;
-      *p.in_pos[dest_vertex] = *swap_position;
-      p.in_pos[*swap_position] = p.in_pos[dest_vertex];
-      *swap_position = dest_vertex;
-      p.in_pos[dest_vertex] = swap_position;
+    if(neighbour_cell->is_unit()) {
+      if(in_search) {
+        /* Remember neighbour in order to generate certificate */
+        neighbour_heap.insert(neighbour_cell->first);
+      }
+      continue;
     }
+    if(neighbour_cell->max_ival_count == 0)
+    {
+      neighbour_heap.insert(neighbour_cell->first);
+    }
+    neighbour_cell->max_ival_count++;
+
+    unsigned int * const swap_position =
+        p.elements + neighbour_cell->first + neighbour_cell->length -
+        neighbour_cell->max_ival_count;
+    *p.in_pos[dest_vertex] = *swap_position;
+    p.in_pos[*swap_position] = p.in_pos[dest_vertex];
+    *swap_position = dest_vertex;
+    p.in_pos[dest_vertex] = swap_position;
+  }
 
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
+  {
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell* neighbour_cell = p.get_cell(p.elements[start]);
 
 #if defined(BLISS_CONSISTENCY_CHECKS)
-      if(neighbour_cell->is_unit()) {
-      } else {
-      }
+    if(neighbour_cell->is_unit()) {
+    } else {
+    }
 #endif
 
-      if(compute_eqref_hash)
-  {
-    eqref_hash.update(neighbour_cell->first);
-    eqref_hash.update(neighbour_cell->length);
-    eqref_hash.update(neighbour_cell->max_ival_count);
-  }
+    if(compute_eqref_hash)
+    {
+      eqref_hash.update(neighbour_cell->first);
+      eqref_hash.update(neighbour_cell->length);
+      eqref_hash.update(neighbour_cell->max_ival_count);
+    }
 
-      if(neighbour_cell->length > 1 and
-   neighbour_cell->max_ival_count != neighbour_cell->length)
-  {
-    Partition::Cell * const new_cell =
-      p.aux_split_in_two(neighbour_cell,
-             neighbour_cell->length -
-             neighbour_cell->max_ival_count);
-    unsigned int *ep = p.elements + new_cell->first;
-    unsigned int * const lp = p.elements+new_cell->first+new_cell->length;
-    while(ep < lp)
+    if(neighbour_cell->length > 1 and
+       neighbour_cell->max_ival_count != neighbour_cell->length)
+    {
+      Partition::Cell * const new_cell =
+          p.aux_split_in_two(neighbour_cell,
+                             neighbour_cell->length -
+                             neighbour_cell->max_ival_count);
+      unsigned int *ep = p.elements + new_cell->first;
+      unsigned int * const lp = p.elements+new_cell->first+new_cell->length;
+      while(ep < lp)
       {
         p.element_to_cell_map[*ep] = new_cell;
         ep++;
       }
-    neighbour_cell->max_ival_count = 0;
+      neighbour_cell->max_ival_count = 0;
 
 
-    if(compute_eqref_hash)
+      if(compute_eqref_hash)
       {
         /* Update hash */
         eqref_hash.update(neighbour_cell->first);
@@ -4815,57 +4815,57 @@ Graph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
         eqref_hash.update(1);
       }
 
-    /* Add cells in splitting_queue */
-    if(neighbour_cell->is_in_splitting_queue()) {
-      /* Both cells must be included in splitting_queue in order
+      /* Add cells in splitting_queue */
+      if(neighbour_cell->is_in_splitting_queue()) {
+        /* Both cells must be included in splitting_queue in order
          to ensure refinement into equitable partition */
-      p.splitting_queue_add(new_cell);
-    } else {
-      Partition::Cell *min_cell, *max_cell;
-      if(neighbour_cell->length <= new_cell->length) {
-        min_cell = neighbour_cell;
-        max_cell = new_cell;
+        p.splitting_queue_add(new_cell);
       } else {
-        min_cell = new_cell;
-        max_cell = neighbour_cell;
+        Partition::Cell *min_cell, *max_cell;
+        if(neighbour_cell->length <= new_cell->length) {
+          min_cell = neighbour_cell;
+          max_cell = new_cell;
+        } else {
+          min_cell = new_cell;
+          max_cell = neighbour_cell;
+        }
+        /* Put the smaller cell in splitting_queue */
+        p.splitting_queue_add(min_cell);
+        if(max_cell->is_unit()) {
+          /* Put the "larger" cell also in splitting_queue */
+          p.splitting_queue_add(max_cell);
+        }
       }
-      /* Put the smaller cell in splitting_queue */
-      p.splitting_queue_add(min_cell);
-      if(max_cell->is_unit()) {
-        /* Put the "larger" cell also in splitting_queue */
-        p.splitting_queue_add(max_cell);
-      }
+      /* Update pointer for certificate generation */
+      neighbour_cell = new_cell;
     }
-    /* Update pointer for certificate generation */
-    neighbour_cell = new_cell;
-  }
-      else
-  {
-    /* neighbour_cell->length == 1 ||
+    else
+    {
+      /* neighbour_cell->length == 1 ||
        neighbour_cell->max_ival_count == neighbour_cell->length */
-    neighbour_cell->max_ival_count = 0;
-  }
+      neighbour_cell->max_ival_count = 0;
+    }
 
-      /*
+    /*
        * Build certificate if required
        */
-      if(in_search)
-  {
-    for(unsigned int i = neighbour_cell->first,
-    j = neighbour_cell->length;
-        j > 0;
-        j--, i++)
+    if(in_search)
+    {
+      for(unsigned int i = neighbour_cell->first,
+          j = neighbour_cell->length;
+          j > 0;
+          j--, i++)
       {
         /* Build certificate */
         cert_add(CERT_EDGE, unit_cell->first, i);
         /* No need to continue? */
         if(refine_compare_certificate and
-     (refine_equal_to_first == false) and
-     (refine_cmp_to_best < 0))
-    goto worse_exit;
+           (refine_equal_to_first == false) and
+           (refine_cmp_to_best < 0))
+          goto worse_exit;
       }
-  } /* if(in_search) */
-    } /* while(!neighbour_heap.is_empty()) */
+    } /* if(in_search) */
+  } /* while(!neighbour_heap.is_empty()) */
 
   if(refine_compare_certificate and
      (refine_equal_to_first == false) and
@@ -4874,26 +4874,26 @@ Graph::split_neighbourhood_of_unit_cell(Partition::Cell* const unit_cell)
 
   return false;
 
- worse_exit:
+worse_exit:
   /* Clear neighbour heap */
   UintSeqHash rest;
   while(!neighbour_heap.is_empty())
-    {
-      const unsigned int start = neighbour_heap.remove();
-      Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
-      if(opt_use_failure_recording and was_equal_to_first)
   {
-    rest.update(neighbour_cell->first);
-    rest.update(neighbour_cell->length);
-    rest.update(neighbour_cell->max_ival_count);
-  }
-      neighbour_cell->max_ival_count = 0;
-    }
-  if(opt_use_failure_recording and was_equal_to_first)
+    const unsigned int start = neighbour_heap.remove();
+    Partition::Cell * const neighbour_cell = p.get_cell(p.elements[start]);
+    if(opt_use_failure_recording and was_equal_to_first)
     {
-      rest.update(failure_recording_fp_deviation);
-      failure_recording_fp_deviation = rest.get_value();
+      rest.update(neighbour_cell->first);
+      rest.update(neighbour_cell->length);
+      rest.update(neighbour_cell->max_ival_count);
     }
+    neighbour_cell->max_ival_count = 0;
+  }
+  if(opt_use_failure_recording and was_equal_to_first)
+  {
+    rest.update(failure_recording_fp_deviation);
+    failure_recording_fp_deviation = rest.get_value();
+  }
   return true;
 }
 
@@ -4922,50 +4922,50 @@ bool Graph::is_equitable() const
   std::vector<unsigned int> other_count = std::vector<unsigned int>(N, 0);
 
   for(Partition::Cell *cell = p.first_cell; cell; cell = cell->next)
-    {
-      if(cell->is_unit())
-  continue;
+  {
+    if(cell->is_unit())
+      continue;
 
-      unsigned int *ep = p.elements + cell->first;
-      const Vertex &first_vertex = vertices[*ep++];
+    unsigned int *ep = p.elements + cell->first;
+    const Vertex &first_vertex = vertices[*ep++];
 
-      /* Count how many edges lead from the first vertex to
+    /* Count how many edges lead from the first vertex to
        * the neighbouring cells */
-      for(std::vector<unsigned int>::const_iterator ei =
-      first_vertex.edges.begin();
-    ei != first_vertex.edges.end();
-    ei++)
-  {
-    first_count[p.get_cell(*ei)->first]++;
-  }
-
-      /* Count and compare to the edges of the other vertices */
-      for(unsigned int i = cell->length; i > 1; i--)
-  {
-    const Vertex &vertex = vertices[*ep++];
     for(std::vector<unsigned int>::const_iterator ei =
-    vertex.edges.begin();
-        ei != vertex.edges.end();
+        first_vertex.edges.begin();
+        ei != first_vertex.edges.end();
         ei++)
+    {
+      first_count[p.get_cell(*ei)->first]++;
+    }
+
+    /* Count and compare to the edges of the other vertices */
+    for(unsigned int i = cell->length; i > 1; i--)
+    {
+      const Vertex &vertex = vertices[*ep++];
+      for(std::vector<unsigned int>::const_iterator ei =
+          vertex.edges.begin();
+          ei != vertex.edges.end();
+          ei++)
       {
         other_count[p.get_cell(*ei)->first]++;
       }
-    for(Partition::Cell *cell2 = p.first_cell;
-        cell2;
-        cell2 = cell2->next)
+      for(Partition::Cell *cell2 = p.first_cell;
+          cell2;
+          cell2 = cell2->next)
       {
         if(first_count[cell2->first] != other_count[cell2->first])
-    {
-      /* Not equitable */
-      return false;
-    }
+        {
+          /* Not equitable */
+          return false;
+        }
         other_count[cell2->first] = 0;
       }
-  }
-      /* Reset first_count */
-      for(unsigned int i = 0; i < N; i++)
-  first_count[i] = 0;
     }
+    /* Reset first_count */
+    for(unsigned int i = 0; i < N; i++)
+      first_count[i] = 0;
+  }
   return true;
 }
 
@@ -5038,12 +5038,12 @@ Graph::sh_first()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      best_cell = cell;
-      break;
-    }
+  {
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    best_cell = cell;
+    break;
+  }
   return best_cell;
 }
 
@@ -5059,15 +5059,15 @@ Graph::sh_first_smallest()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      if(cell->length < best_size)
   {
-    best_size = cell->length;
-    best_cell = cell;
-  }
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    if(cell->length < best_size)
+    {
+      best_size = cell->length;
+      best_cell = cell;
     }
+  }
   return best_cell;
 }
 
@@ -5083,15 +5083,15 @@ Graph::sh_first_largest()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      if(cell->length > best_size)
   {
-    best_size = cell->length;
-    best_cell = cell;
-  }
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
+      continue;
+    if(cell->length > best_size)
+    {
+      best_size = cell->length;
+      best_cell = cell;
     }
+  }
   return best_cell;
 }
 
@@ -5112,34 +5112,34 @@ Graph::sh_first_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j > 0; j--)
   {
-    Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
       continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      int value = 0;
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-      if(value > best_value)
-  {
-    best_value = value;
-    best_cell = cell;
-  }
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j > 0; j--)
+    {
+      Partition::Cell * const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    int value = 0;
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+    if(value > best_value)
+    {
+      best_value = value;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -5161,38 +5161,38 @@ Graph::sh_first_smallest_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
-
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j > 0; j--)
   {
-    Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
+
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
       continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      int value = 0;
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-      if((value > best_value) or
-   (value == best_value and cell->length < best_size))
-  {
-    best_value = value;
-    best_size = cell->length;
-    best_cell = cell;
-  }
+
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j > 0; j--)
+    {
+      Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    int value = 0;
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+    if((value > best_value) or
+       (value == best_value and cell->length < best_size))
+    {
+      best_value = value;
+      best_size = cell->length;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -5214,37 +5214,37 @@ Graph::sh_first_largest_max_neighbours()
   for(Partition::Cell* cell = p.first_nonsingleton_cell;
       cell;
       cell = cell->next_nonsingleton)
-    {
+  {
 
-      if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
-  continue;
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j > 0; j--)
-  {
-    Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
-    if(neighbour_cell->is_unit())
+    if(opt_use_comprec and p.cr_get_level(cell->first) != cr_level)
       continue;
-    neighbour_cell->max_ival++;
-    if(neighbour_cell->max_ival == 1)
-      neighbour_cells_visited.push(neighbour_cell);
-  }
-      int value = 0;
-      while(!neighbour_cells_visited.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
-    if(neighbour_cell->max_ival != neighbour_cell->length)
-      value++;
-    neighbour_cell->max_ival = 0;
-  }
-      if((value > best_value) or
-   (value == best_value and cell->length > best_size))
-  {
-    best_value = value;
-    best_size = cell->length;
-    best_cell = cell;
-  }
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j > 0; j--)
+    {
+      Partition::Cell* const neighbour_cell = p.get_cell(*ei++);
+      if(neighbour_cell->is_unit())
+        continue;
+      neighbour_cell->max_ival++;
+      if(neighbour_cell->max_ival == 1)
+        neighbour_cells_visited.push(neighbour_cell);
     }
+    int value = 0;
+    while(!neighbour_cells_visited.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbour_cells_visited.pop();
+      if(neighbour_cell->max_ival != neighbour_cell->length)
+        value++;
+      neighbour_cell->max_ival = 0;
+    }
+    if((value > best_value) or
+       (value == best_value and cell->length > best_size))
+    {
+      best_value = value;
+      best_size = cell->length;
+      best_cell = cell;
+    }
+  }
   return best_cell;
 }
 
@@ -5305,24 +5305,24 @@ Graph::is_automorphism(unsigned int* const perm)
 #endif
 
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      Vertex& v1 = vertices[i];
-      edges1.clear();
-      for(std::vector<unsigned int>::iterator ei = v1.edges.begin();
-    ei != v1.edges.end();
-    ei++)
-  edges1.insert(perm[*ei]);
+  {
+    Vertex& v1 = vertices[i];
+    edges1.clear();
+    for(std::vector<unsigned int>::iterator ei = v1.edges.begin();
+        ei != v1.edges.end();
+        ei++)
+      edges1.insert(perm[*ei]);
 
-      Vertex& v2 = vertices[perm[i]];
-      edges2.clear();
-      for(std::vector<unsigned int>::iterator ei = v2.edges.begin();
-    ei != v2.edges.end();
-    ei++)
-  edges2.insert(*ei);
+    Vertex& v2 = vertices[perm[i]];
+    edges2.clear();
+    for(std::vector<unsigned int>::iterator ei = v2.edges.begin();
+        ei != v2.edges.end();
+        ei++)
+      edges2.insert(*ei);
 
-      if(!(edges1 == edges2))
-  return false;
-    }
+    if(!(edges1 == edges2))
+      return false;
+  }
 
   return true;
 }
@@ -5341,24 +5341,24 @@ Graph::is_automorphism(const std::vector<unsigned int>& perm) const
   std::set<unsigned int, std::less<unsigned int> > edges2;
 
   for(unsigned int i = 0; i < get_nof_vertices(); i++)
-    {
-      const Vertex& v1 = vertices[i];
-      edges1.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v1.edges.begin();
-    ei != v1.edges.end();
-    ei++)
-  edges1.insert(perm[*ei]);
+  {
+    const Vertex& v1 = vertices[i];
+    edges1.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v1.edges.begin();
+        ei != v1.edges.end();
+        ei++)
+      edges1.insert(perm[*ei]);
 
-      const Vertex& v2 = vertices[perm[i]];
-      edges2.clear();
-      for(std::vector<unsigned int>::const_iterator ei = v2.edges.begin();
-    ei != v2.edges.end();
-    ei++)
-  edges2.insert(*ei);
+    const Vertex& v2 = vertices[perm[i]];
+    edges2.clear();
+    for(std::vector<unsigned int>::const_iterator ei = v2.edges.begin();
+        ei != v2.edges.end();
+        ei++)
+      edges2.insert(*ei);
 
-      if(!(edges1 == edges2))
-  return false;
-    }
+    if(!(edges1 == edges2))
+      return false;
+  }
 
   return true;
 }
@@ -5379,11 +5379,11 @@ Graph::nucr_find_first_component(const unsigned int level)
   /* Find first non-discrete cell in the component level */
   Partition::Cell* first_cell = p.first_nonsingleton_cell;
   while(first_cell)
-    {
-      if(p.cr_get_level(first_cell->first) == level)
-  break;
-      first_cell = first_cell->next_nonsingleton;
-    }
+  {
+    if(p.cr_get_level(first_cell->first) == level)
+      break;
+    first_cell = first_cell->next_nonsingleton;
+  }
 
   /* The component is discrete, return false */
   if(!first_cell)
@@ -5394,60 +5394,60 @@ Graph::nucr_find_first_component(const unsigned int level)
   component.push_back(first_cell);
 
   for(unsigned int i = 0; i < component.size(); i++)
+  {
+    Partition::Cell* const cell = component[i];
+
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j > 0; j--)
     {
-      Partition::Cell* const cell = component[i];
+      const unsigned int neighbour = *ei++;
 
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
 
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
+      /* Skip unit neighbours */
+      if(neighbour_cell->is_unit())
+        continue;
+      /* Already marked to be in the same component? */
+      if(neighbour_cell->max_ival == 1)
+        continue;
+      /* Is the neighbour at the same component recursion level? */
+      if(p.cr_get_level(neighbour_cell->first) != level)
+        continue;
 
-    /* Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Already marked to be in the same component? */
-    if(neighbour_cell->max_ival == 1)
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    if(p.cr_get_level(neighbour_cell->first) != level)
-      continue;
+      if(neighbour_cell->max_ival_count == 0)
+        neighbour_heap.insert(neighbour_cell->first);
+      neighbour_cell->max_ival_count++;
+    }
+    while(!neighbour_heap.is_empty())
+    {
+      const unsigned int start = neighbour_heap.remove();
+      Partition::Cell* const neighbour_cell =
+          p.get_cell(p.elements[start]);
 
-    if(neighbour_cell->max_ival_count == 0)
-      neighbour_heap.insert(neighbour_cell->first);
-    neighbour_cell->max_ival_count++;
-  }
-      while(!neighbour_heap.is_empty())
-  {
-    const unsigned int start = neighbour_heap.remove();
-    Partition::Cell* const neighbour_cell =
-      p.get_cell(p.elements[start]);
-
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
       {
         neighbour_cell->max_ival_count = 0;
         continue;
       }
-    neighbour_cell->max_ival_count = 0;
-    neighbour_cell->max_ival = 1;
-    component.push_back(neighbour_cell);
-  }
+      neighbour_cell->max_ival_count = 0;
+      neighbour_cell->max_ival = 1;
+      component.push_back(neighbour_cell);
     }
+  }
 
   for(unsigned int i = 0; i < component.size(); i++)
-    {
-      Partition::Cell* const cell = component[i];
-      cell->max_ival = 0;
-      cr_component.push_back(cell->first);
-      cr_component_elements += cell->length;
-    }
+  {
+    Partition::Cell* const cell = component[i];
+    cell->max_ival = 0;
+    cr_component.push_back(cell->first);
+    cr_component_elements += cell->length;
+  }
 
   if(verbstr and verbose_level > 2) {
     fprintf(verbstr, "NU-component with %lu cells and %u vertices\n",
-      (long unsigned)cr_component.size(), cr_component_elements);
+            (long unsigned)cr_component.size(), cr_component_elements);
     fflush(verbstr);
   }
 
@@ -5459,9 +5459,9 @@ Graph::nucr_find_first_component(const unsigned int level)
 
 bool
 Graph::nucr_find_first_component(const unsigned int level,
-         std::vector<unsigned int>& component,
-         unsigned int& component_elements,
-         Partition::Cell*& sh_return)
+                                 std::vector<unsigned int>& component,
+                                 unsigned int& component_elements,
+                                 Partition::Cell*& sh_return)
 {
 
   component.clear();
@@ -5474,11 +5474,11 @@ Graph::nucr_find_first_component(const unsigned int level,
   /* Find first non-discrete cell in the component level */
   Partition::Cell* first_cell = p.first_nonsingleton_cell;
   while(first_cell)
-    {
-      if(p.cr_get_level(first_cell->first) == level)
-  break;
-      first_cell = first_cell->next_nonsingleton;
-    }
+  {
+    if(p.cr_get_level(first_cell->first) == level)
+      break;
+    first_cell = first_cell->next_nonsingleton;
+  }
 
   /* The component is discrete, return false */
   if(!first_cell)
@@ -5492,118 +5492,118 @@ Graph::nucr_find_first_component(const unsigned int level,
   comp.push_back(first_cell);
 
   for(unsigned int i = 0; i < comp.size(); i++)
+  {
+    Partition::Cell* const cell = comp[i];
+
+    const Vertex& v = vertices[p.elements[cell->first]];
+    std::vector<unsigned int>::const_iterator ei = v.edges.begin();
+    for(unsigned int j = v.nof_edges(); j > 0; j--)
     {
-      Partition::Cell* const cell = comp[i];
+      const unsigned int neighbour = *ei++;
 
-      const Vertex& v = vertices[p.elements[cell->first]];
-      std::vector<unsigned int>::const_iterator ei = v.edges.begin();
-      for(unsigned int j = v.nof_edges(); j > 0; j--)
-  {
-    const unsigned int neighbour = *ei++;
+      Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
 
-    Partition::Cell* const neighbour_cell = p.get_cell(neighbour);
+      /* Skip unit neighbours */
+      if(neighbour_cell->is_unit())
+        continue;
+      /* Is the neighbour at the same component recursion level? */
+      //if(p.cr_get_level(neighbour_cell->first) != level)
+      //  continue;
+      if(neighbour_cell->max_ival_count == 0)
+        neighbours.push(neighbour_cell);
+      neighbour_cell->max_ival_count++;
+    }
+    unsigned int nuconn = 1;
+    while(!neighbours.is_empty())
+    {
+      Partition::Cell* const neighbour_cell = neighbours.pop();
+      //neighbours.pop_back();
 
-    /* Skip unit neighbours */
-    if(neighbour_cell->is_unit())
-      continue;
-    /* Is the neighbour at the same component recursion level? */
-    //if(p.cr_get_level(neighbour_cell->first) != level)
-    //  continue;
-    if(neighbour_cell->max_ival_count == 0)
-      neighbours.push(neighbour_cell);
-    neighbour_cell->max_ival_count++;
-  }
-      unsigned int nuconn = 1;
-      while(!neighbours.is_empty())
-  {
-    Partition::Cell* const neighbour_cell = neighbours.pop();
-    //neighbours.pop_back();
-
-    /* Skip saturated neighbour cells */
-    if(neighbour_cell->max_ival_count == neighbour_cell->length)
+      /* Skip saturated neighbour cells */
+      if(neighbour_cell->max_ival_count == neighbour_cell->length)
       {
         neighbour_cell->max_ival_count = 0;
         continue;
       }
-    nuconn++;
-    neighbour_cell->max_ival_count = 0;
-    if(neighbour_cell->max_ival == 0) {
-      comp.push_back(neighbour_cell);
-      neighbour_cell->max_ival = 1;
-    }
-  }
-
-      switch(sh) {
-      case shs_f:
-  if(cell->first <= sh_first) {
-    sh_return = cell;
-    sh_first = cell->first;
-  }
-  break;
-      case shs_fs:
-  if(cell->length < sh_size or
-     (cell->length == sh_size and cell->first <= sh_first)) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-  }
-  break;
-      case shs_fl:
-  if(cell->length > sh_size or
-     (cell->length == sh_size and cell->first <= sh_first)) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-  }
-  break;
-      case shs_fm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and cell->first <= sh_first)) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_nuconn = nuconn;
-  }
-  break;
-      case shs_fsm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and
-      (cell->length < sh_size or
-       (cell->length == sh_size and cell->first <= sh_first)))) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-    sh_nuconn = nuconn;
-  }
-  break;
-      case shs_flm:
-  if(nuconn > sh_nuconn or
-     (nuconn == sh_nuconn and
-      (cell->length > sh_size or
-       (cell->length == sh_size and cell->first <= sh_first)))) {
-    sh_return = cell;
-    sh_first = cell->first;
-    sh_size = cell->length;
-    sh_nuconn = nuconn;
-  }
-  break;
-      default:
-  fatal_error("Internal error - unknown splitting heuristics");
-  return 0;
+      nuconn++;
+      neighbour_cell->max_ival_count = 0;
+      if(neighbour_cell->max_ival == 0) {
+        comp.push_back(neighbour_cell);
+        neighbour_cell->max_ival = 1;
       }
     }
+
+    switch(sh) {
+    case shs_f:
+      if(cell->first <= sh_first) {
+        sh_return = cell;
+        sh_first = cell->first;
+      }
+      break;
+    case shs_fs:
+      if(cell->length < sh_size or
+         (cell->length == sh_size and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+      }
+      break;
+    case shs_fl:
+      if(cell->length > sh_size or
+         (cell->length == sh_size and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+      }
+      break;
+    case shs_fm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and cell->first <= sh_first)) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_nuconn = nuconn;
+      }
+      break;
+    case shs_fsm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and
+          (cell->length < sh_size or
+           (cell->length == sh_size and cell->first <= sh_first)))) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+        sh_nuconn = nuconn;
+      }
+      break;
+    case shs_flm:
+      if(nuconn > sh_nuconn or
+         (nuconn == sh_nuconn and
+          (cell->length > sh_size or
+           (cell->length == sh_size and cell->first <= sh_first)))) {
+        sh_return = cell;
+        sh_first = cell->first;
+        sh_size = cell->length;
+        sh_nuconn = nuconn;
+      }
+      break;
+    default:
+      fatal_error("Internal error - unknown splitting heuristics");
+      return 0;
+    }
+  }
   assert(sh_return);
 
   for(unsigned int i = 0; i < comp.size(); i++)
-    {
-      Partition::Cell* const cell = comp[i];
-      cell->max_ival = 0;
-      component.push_back(cell->first);
-      component_elements += cell->length;
-    }
+  {
+    Partition::Cell* const cell = comp[i];
+    cell->max_ival = 0;
+    component.push_back(cell->first);
+    component_elements += cell->length;
+  }
 
   if(verbstr and verbose_level > 2) {
     fprintf(verbstr, "NU-component with %lu cells and %u vertices\n",
-      (long unsigned)component.size(), component_elements);
+            (long unsigned)component.size(), component_elements);
     fflush(verbstr);
   }
 
