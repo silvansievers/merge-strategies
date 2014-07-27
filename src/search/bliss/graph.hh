@@ -27,6 +27,8 @@
  */
 namespace bliss {
   class AbstractGraph;
+  // Silvan Sievers
+  class Timer;
 }
 
 #include <cstdio>
@@ -352,6 +354,7 @@ protected:
 
   // Silvan Sievers
   int time_limit; // time limit for find_automorphism. 0 means no time limit
+  Timer *timer;
 
 public:
   AbstractGraph();

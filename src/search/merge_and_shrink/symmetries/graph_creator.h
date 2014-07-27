@@ -28,7 +28,8 @@ class GraphCreator {
     // Options
     bool debug; //generate dot-readable output
     bool build_stabilized_pdg;
-    int time_limit;
+    int bliss_time_limit;
+    bool stop_after_no_symmetries;
 
     int num_identity_generators;
     //int stop_after_false_generated;

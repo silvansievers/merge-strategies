@@ -7,8 +7,10 @@
 
 class MergeSymmetries : public MergeDFP {
     // options
-    const Options options;
+    Options options;
     int max_bliss_iterations;
+    int bliss_call_time_limit;
+    double bliss_remaining_time_budget;
 
     // statistics
     int iteration_counter;

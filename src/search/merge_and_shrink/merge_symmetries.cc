@@ -13,6 +13,8 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
+      bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
+      bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false) {
@@ -50,6 +52,15 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
     ++iteration_counter;
 
     if (!bliss_limit_reached && iteration_counter <= max_bliss_iterations && merge_order.empty()) {
+        int time_limit = 0;
+        if (bliss_remaining_time_budget) {
+            // we round everything down to the full second
+            time_limit = (int) bliss_remaining_time_budget;
+        } else if (bliss_call_time_limit) {
+            time_limit = bliss_call_time_limit;
+        }
+        cout << "setting bliss time limit to " << time_limit << endl;
+        options.set<int>("bliss_time_limit", time_limit);
         Symmetries symmetries(options);
         bool applied_symmetries =
                 symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
@@ -58,7 +69,20 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
         if (symmetries.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
-        bliss_times.push_back(symmetries.get_bliss_time());
+        double bliss_time = symmetries.get_bliss_time();
+        bliss_times.push_back(bliss_time);
+        if (bliss_remaining_time_budget) {
+            bliss_remaining_time_budget -= bliss_time;
+            if (bliss_remaining_time_budget <= 0) {
+                assert(bliss_limit_reached);
+                // if the remaining time budget is 0 or smaller, which can
+                // happen because bliss is only restricted in running find_
+                // automorphism, whereas we measure the time starting from
+                // creating the bliss graph until its deletion.
+                //bliss_limit_reached = true;
+            }
+            cout << "remaining bliss time budget " << bliss_remaining_time_budget << endl;
+        }
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }
 
@@ -91,9 +115,15 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
                            "which bliss is allowed to run.",
                            "infinity");
-    parser.add_option<int>("bliss_time_limit", "time in seconds one bliss "
+    parser.add_option<int>("bliss_call_time_limit", "time in seconds one bliss "
                            "run is allowed to last at most (0 means no limit)",
                            "0");
+    parser.add_option<int>("bliss_total_time_budget", "time in seconds bliss is "
+                           "allowed to run overall (0 means no limit)",
+                           "0");
+    parser.add_option<bool>("stop_after_no_symmetries", "stop calling bliss "
+                            "after unsuccesfull previous bliss call.",
+                           "False");
     vector<string> symmetries_for_shrinking;
     symmetries_for_shrinking.push_back("NO_SHRINKING");
     symmetries_for_shrinking.push_back("ATOMIC");
@@ -138,6 +168,12 @@ static MergeStrategy *_parse(OptionParser &parser) {
                             "for local symmetries only", "False");
 
     Options options = parser.parse();
+    if (options.get<int>("bliss_call_time_limit")
+            && options.get<int>("bliss_total_time_budget")) {
+        cerr << "Please only specify bliss_call_time_limite or "
+                "bliss_total_time_budget but not both" << endl;
+        exit_with(EXIT_INPUT_ERROR);
+    }
     if (parser.dry_run())
         return 0;
     else

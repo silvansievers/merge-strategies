@@ -26,7 +26,8 @@ void add_automorphism(void* param, unsigned int, const unsigned int * automorphi
 GraphCreator::GraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       build_stabilized_pdg(options.get<bool>("build_stabilized_pdg")),
-      time_limit(options.get<int>("bliss_time_limit")),
+      bliss_time_limit(options.get<int>("bliss_time_limit")),
+      stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
       num_identity_generators(0),
       bliss_limit_reached(false) {
     /*generators_bound(1000), stop_after_false_generated(10000)*/
@@ -78,17 +79,16 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     delete_generators();
 
     Timer timer;
-    cout << "Starting initializing symmetries." << endl;
-
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
-        cout << "Creating the bliss graph object..." << endl;
+        cout << "Creating the bliss graph..." << endl;
         bliss::Digraph bliss_graph = bliss::Digraph();
         create_bliss_graph(abstractions, bliss_graph);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
 
-        bliss_graph.set_time_limit(time_limit);
+        cout << "set bliss limit: " << bliss_time_limit << endl;
+        bliss_graph.set_time_limit(bliss_time_limit);
     //    bliss_graph.set_generators_bound(generators_bound);
 
         bliss::Stats stats1;
@@ -97,7 +97,7 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     //    bliss_graph.set_verbose_file(f);
     //    bliss_graph.set_verbose_level(10);
 
-        cout << "Searching for autmorphisms..." << endl;
+        cout << "Searching for automorphisms... " << timer << endl;
         bliss_graph.find_automorphisms(stats1,&(add_automorphism), this);
   //    stats1.print(stats_file);
   //    fclose(stats_file);
@@ -111,7 +111,11 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     }
     set_new_handler(original_new_handler);
 
-    cout << "Done initializing symmetries: " << timer << endl;
+    if (stop_after_no_symmetries && symmetry_generators.empty()) {
+        bliss_limit_reached = true;
+    }
+
+    cout << "Done computing symmetries: " << timer << endl;
     return timer();
 }
 

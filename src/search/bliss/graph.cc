@@ -73,6 +73,7 @@ AbstractGraph::AbstractGraph()
 
   // Silvan Sievers
   time_limit = 0;
+  timer = new Timer();
 }
 
 
@@ -96,6 +97,8 @@ AbstractGraph::~AbstractGraph()
 
   // Silvan Sievers
   long_prune_deallocate();
+  delete timer;
+  timer = 0;
 }
 
 
@@ -850,7 +853,7 @@ AbstractGraph::search(const bool canonical, Stats& stats)
   while(!search_stack.empty())
     {
       // Silvan Sievers
-      if (time_limit && timer1.get_duration() >= time_limit) {
+      if (time_limit && timer->get_duration() >= time_limit) {
           throw BlissTimeOut();
       }
 
@@ -1946,6 +1949,11 @@ Digraph::~Digraph()
 unsigned int
 Digraph::add_vertex(const unsigned int color)
 {
+  // Silvan Sievers
+  if (time_limit && timer->get_duration() >= time_limit) {
+      throw BlissTimeOut();
+  }
+
   const unsigned int new_vertex_num = vertices.size();
   vertices.resize(new_vertex_num + 1);
   vertices.back().color = color;
