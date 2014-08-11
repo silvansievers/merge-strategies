@@ -22,6 +22,7 @@ Symmetries::Symmetries(const Options &options)
     : gc(options),
       symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
       symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
+      external_merging(ExternalMerging(options.get_enum("external_merging"))),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       bliss_time(0) {
 }
@@ -68,15 +69,20 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         if (number_overall_affected_abstractions == 1) {
             atomic_generators.push_back(generator_index);
         } else {
-            if (symmetries_for_merging == LEAST_OVERALL_AFFECTED
-                    && number_overall_affected_abstractions < smallest_generator_affected_abstrations_size) {
-                smallest_generator_affected_abstrations_size = number_overall_affected_abstractions;
-                chosen_generator_for_merging = generator_index;
-            }
-            if (symmetries_for_merging == MOST_OVERALL_AFFECTED
-                    && number_overall_affected_abstractions > largest_generator_affected_abstrations_size) {
-                largest_generator_affected_abstrations_size = number_overall_affected_abstractions;
-                chosen_generator_for_merging = generator_index;
+            if (external_merging == MERGE_FOR_ATOMIC) {
+                if (symmetries_for_merging == SMALLEST
+                        && number_overall_affected_abstractions
+                        < smallest_generator_affected_abstrations_size) {
+                    smallest_generator_affected_abstrations_size
+                            = number_overall_affected_abstractions;
+                    chosen_generator_for_merging = generator_index;
+                } else if (symmetries_for_merging == LARGEST
+                              && number_overall_affected_abstractions
+                              > largest_generator_affected_abstrations_size) {
+                    largest_generator_affected_abstrations_size
+                            = number_overall_affected_abstractions;
+                    chosen_generator_for_merging = generator_index;
+                }
             }
         }
 
@@ -84,15 +90,21 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         if (number_mapped_abstractions == 0) {
             local_generators.push_back(generator_index);
         } else {
-            if (symmetries_for_merging == LEAST_MAPPED
-                    && number_mapped_abstractions < smallest_generator_mapped_abstractions_size) {
-                smallest_generator_mapped_abstractions_size = number_mapped_abstractions;
-                chosen_generator_for_merging = generator_index;
-            }
-            if (symmetries_for_merging == MOST_MAPPED
-                    && number_mapped_abstractions > largest_generator_mapped_abstractions_size) {
-                largest_generator_mapped_abstractions_size = number_mapped_abstractions;
-                chosen_generator_for_merging = generator_index;
+            if (external_merging == MERGE_FOR_LOCAL) {
+                if (symmetries_for_merging == SMALLEST
+                        && number_mapped_abstractions
+                        < smallest_generator_mapped_abstractions_size) {
+                    smallest_generator_mapped_abstractions_size
+                            = number_mapped_abstractions;
+                    chosen_generator_for_merging = generator_index;
+                }
+                if (symmetries_for_merging == LARGEST
+                        && number_mapped_abstractions
+                        > largest_generator_mapped_abstractions_size) {
+                    largest_generator_mapped_abstractions_size
+                            = number_mapped_abstractions;
+                    chosen_generator_for_merging = generator_index;
+                }
             }
         }
 
@@ -130,17 +142,18 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
     }
 
     if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
-        vector<vector<int> > merge_non_linear_abstractions;
+        vector<vector<int> > cycles;
         vector<int> merge_linear_abstractions;
         const SymmetryGenerator *generator =
                 get_symmetry_generator(chosen_generator_for_merging);
 
         // Always include all mapped abstractions
         if (internal_merging == NON_LINEAR
-                || internal_merging == NON_LINEAR_INCOMPLETE) {
-            // if the internal merge strategy is non linear, we need to
+                || external_merging == MERGE_FOR_LOCAL) {
+            // if the internal merge strategy is non linear or we only want
+            // to merge every cycle (non linearly), we need to
             // compute the actual cycles of abstraction mappings.
-            generator->compute_cycles(merge_non_linear_abstractions);
+            generator->compute_cycles(cycles);
         } else if (internal_merging == LINEAR) {
             // if the internal merge strategy is linear, we simply collect
             // all mapped abstractions (i.e. the same abstractions as above,
@@ -155,8 +168,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         // If merging for least/most number of overall affected abstactions,
         // also include the non-mapped, i.e. internally affected abstractions
         // (always as to be linearly merged abstractions)
-        if (symmetries_for_merging == LEAST_OVERALL_AFFECTED
-                || symmetries_for_merging == MOST_OVERALL_AFFECTED) {
+        if (external_merging == MERGE_FOR_ATOMIC) {
             const vector<int> &internally_affected_abstractions =
                     generator->get_internally_affected_abstractions();
             merge_linear_abstractions.insert(merge_linear_abstractions.end(),
@@ -169,9 +181,9 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         int number_of_abstractions = abstractions.size();
         int number_of_merges = 0;
         vector<int> merge_linear_indices;
-        for (size_t cycle_no = 0; cycle_no < merge_non_linear_abstractions.size(); ++cycle_no) {
+        for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
             // go over the cycles and compute a non-linear merge order.
-            const vector<int> &cycle = merge_non_linear_abstractions[cycle_no];
+            const vector<int> &cycle = cycles[cycle_no];
             size_t abs_index_1 = cycle[0];
             for (size_t i = 1; i < cycle.size(); ++i) {
                 size_t abs_index_2 = cycle[i];
@@ -179,14 +191,16 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
                 abs_index_1 = number_of_abstractions + number_of_merges;
                 ++number_of_merges;
             }
-            // number_of_abstractions + number_of_merges always is the *next*
-            // position where a new merged abstraction will be stored at.
-            // here, we need the *last* position where the abstraction
-            // resulting from merging the cycle was stored, hence the -1.
-            merge_linear_indices.push_back(number_of_abstractions + number_of_merges - 1);
+            if (external_merging == MERGE_FOR_ATOMIC) {
+                // number_of_abstractions + number_of_merges always is the *next*
+                // position where a new merged abstraction will be stored at.
+                // here, we need the *last* position where the abstraction
+                // resulting from merging the cycle was stored, hence the -1.
+                merge_linear_indices.push_back(number_of_abstractions + number_of_merges - 1);
+            }
         }
 
-        if (internal_merging != NON_LINEAR_INCOMPLETE) {
+        if (external_merging == MERGE_FOR_ATOMIC) {
             // merge_linear_indices possibly contains abstractions that have been
             // non-linearly merged from information about cycles.
             // here we add abstractions that need to be merged linearly anyways

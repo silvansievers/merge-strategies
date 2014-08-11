@@ -22,7 +22,7 @@ class MergeSymmetries : public MergeDFP {
 
     void dump_statistics();
 protected:
-    virtual void dump_strategy_specific_options() const {}
+    virtual void dump_strategy_specific_options() const;
 public:
     explicit MergeSymmetries(const Options &options);
     virtual ~MergeSymmetries() {}

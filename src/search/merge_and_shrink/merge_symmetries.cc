@@ -47,6 +47,80 @@ void MergeSymmetries::dump_statistics() {
     }
 }
 
+void MergeSymmetries::dump_strategy_specific_options() const {
+    cout << "Options for merge symmetries:" << endl;
+    cout << "    symmetries for shrinking: ";
+    int symmetries_for_shrinking = options.get_enum("symmetries_for_shrinking");
+    switch (symmetries_for_shrinking) {
+        case 0: {
+            cout << "none";
+            break;
+        }
+        case 1: {
+            cout << "atomic";
+            break;
+        }
+        case 2: {
+            cout << "local";
+            break;
+        }
+    }
+    cout << endl;
+    cout << "    symmetries for merging: ";
+    int symmetries_for_merging = options.get_enum("symmetries_for_merging");
+    switch (symmetries_for_merging) {
+        case 0: {
+            cout << "none";
+            break;
+        }
+        case 1: {
+            cout << "smallest";
+            break;
+        }
+        case 2: {
+            cout << "largest";
+            break;
+        }
+    }
+    cout << endl;
+    if (symmetries_for_merging) {
+        cout << "    external merging: ";
+        switch (options.get_enum("external_merging")) {
+            case 0: {
+                cout << "merge for atomic symmetry";
+                break;
+            }
+            case 1: {
+                cout << "merge for local symmetry";
+                break;
+            }
+        }
+        cout << endl;
+        cout << "    internal merging: ";
+        switch (options.get_enum("internal_merging")) {
+            case 0: {
+                cout << "linear";
+                break;
+            }
+            case 1: {
+                cout << "non linear";
+                break;
+            }
+        }
+        cout << endl;
+    }
+    cout << "    maxium number of m&s iterations with bliss: "
+         << max_bliss_iterations << endl;
+    cout << "    time limit for single bliss calls (0 means unlimited): "
+         << bliss_call_time_limit << endl;
+    cout << "    total time budget for bliss (0 means unlimited): "
+         << options.get<int>("bliss_total_time_budget") << endl;
+    cout << "    stop searching for symmetries once no symmetry was found: "
+         << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
+    cout << "    build stabilized pdg: "
+         << (options.get<bool>("build_stabilized_pdg") ? "yes" : "no") << endl;
+}
+
 pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
@@ -108,8 +182,6 @@ string MergeSymmetries::name() const {
 }
 
 static MergeStrategy *_parse(OptionParser &parser) {
-    parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
-                            "from the graph generating methods", "false");
     parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
                            "which bliss is allowed to run.",
                            "infinity");
@@ -135,38 +207,57 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            "NO_SHRINKING");
     vector<string> symmetries_for_merging;
     symmetries_for_merging.push_back("NO_MERGING");
-    symmetries_for_merging.push_back("LEAST_OVERALL_AFFECTED");
-    symmetries_for_merging.push_back("MOST_OVERALL_AFFECTED");
-    symmetries_for_merging.push_back("LEAST_MAPPED");
-    symmetries_for_merging.push_back("MOST_MAPPED");
+    symmetries_for_merging.push_back("SMALLEST");
+    symmetries_for_merging.push_back("LARGEST");
     parser.add_enum_option("symmetries_for_merging",
                            symmetries_for_merging,
-                           "choose the type of symmetries used for merging: "
-                           "the smallest or the largest in number of abstractions "
-                           "that are affected or mapped.",
-                           "LEAST_OVERALL_AFFECTED");
+                           "choose the type of symmetries that should determine "
+                           "the set of abstractions to be merged: "
+                           "the smallest or the largest",
+                           "SMALLEST");
+    vector<string> external_merging;
+    external_merging.push_back("MERGE_FOR_ATOMIC");
+    external_merging.push_back("MERGE_FOR_LOCAL");
+    parser.add_enum_option("external_merging",
+                           external_merging,
+                           "choose the set of abstractions to be merged: "
+                           "merge for atomic: merge all abstractions affected "
+                           "by the chosen symmetry, or "
+                           "merge for local: merge only the abstractions "
+                           "mapped (in cycles) to others. only merge every "
+                           "cycle separately.",
+                           "MERGE_FOR_ATOMIC");
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
-    internal_merging.push_back("NON_LINEAR_INCOMPLETE");
     parser.add_enum_option("internal_merging",
                            internal_merging,
-                           "choose how the set of abstractions that must be "
-                           "merged for symmetries is merged: "
-                           "linearly, over the entire set of abstractions, "
-                           "non linearly, which means merging every cycle, "
-                           "then linearly all remaining and resultin "
-                           "abstractions.",
+                           "choose the order in which to merge the set of "
+                           "abstractions to be merged (only useful with "
+                           "MERGE_FOR_ATOMIC): "
+                           "linear (obvious), "
+                           "non linear, which means to first merge every cycle, "
+                           "and then the resulting intermediate abstractions.",
                            "LINEAR");
+
+    // Options for GraphCreator
     parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
                             "stabilized pdb, which results in bliss searching "
                             "for local symmetries only", "False");
+    parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
+                            "from the graph generating methods", "false");
 
     Options options = parser.parse();
     if (options.get<int>("bliss_call_time_limit")
             && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limite or "
                 "bliss_total_time_budget but not both" << endl;
+        exit_with(EXIT_INPUT_ERROR);
+    }
+    if (options.get_enum("symmetries_for_shrinking") == 0
+            && options.get_enum("symmetries_for_merging") == 0) {
+        cerr << "Please use symmetries at least for shrinking or merging, "
+                "otherwise use merge_dfp instead." << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
     if (parser.dry_run())
