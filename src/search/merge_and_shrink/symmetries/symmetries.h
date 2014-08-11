@@ -20,10 +20,7 @@ class Symmetries {
     enum SymmetriesForShrinking {
         NO_SHRINKING,
         ATOMIC,
-        LOCAL,
-        LOCAL_ONE_ABS,
-        LOCAL_ONE_SYM,
-        LOCAL_ONE_ABS_SYM
+        LOCAL
     };
     SymmetriesForShrinking symmetries_for_shrinking;
 

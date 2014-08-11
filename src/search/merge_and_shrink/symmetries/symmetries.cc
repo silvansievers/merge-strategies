@@ -7,14 +7,12 @@
 
 #include "../../globals.h"
 #include "../../option_parser.h"
-#include "../../rng.h"
 #include "../../timer.h"
 #include "../../utilities.h"
 
 #include <cassert>
 #include <iostream>
 #include <limits>
-#include <set>
 
 // TODO: copied and renamed from shrink_strategy.h
 typedef __gnu_cxx::slist<AbstractStateRef> EquivClass;
@@ -123,22 +121,11 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         cout << "Applying all atomic symmetries" << endl;
         apply_symmetries(abstractions, atomic_generators);
         applied_symmetries = true;
-    } else if ((symmetries_for_shrinking == LOCAL
-                || symmetries_for_shrinking == LOCAL_ONE_ABS)
+    } else if ((symmetries_for_shrinking == LOCAL)
                && !local_generators.empty()) {
         // apply local symmetries
         cout << "Applying all local symmetries" << endl;
         apply_symmetries(abstractions, local_generators);
-        applied_symmetries = true;
-    } else if ((symmetries_for_shrinking == LOCAL_ONE_SYM
-                || symmetries_for_shrinking == LOCAL_ONE_ABS_SYM)
-               && !local_generators.empty()) {
-        // apply one local symmetry
-        cout << "Applying random local symmetry" << endl;
-        int random = g_rng.next(local_generators.size());
-        vector<int> symmetry;
-        symmetry.push_back(local_generators[random]);
-        apply_symmetries(abstractions, symmetry);
         applied_symmetries = true;
     }
 
@@ -235,31 +222,6 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     }
     cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
 
-    int chosen_abstraction = -1;
-    if (symmetries_for_shrinking == LOCAL_ONE_ABS
-            || symmetries_for_shrinking == LOCAL_ONE_ABS_SYM) {
-        set<int> affected_abstractions;
-        for (size_t i = 0; i < generator_indices.size(); ++i) {
-            const vector<int> &overall_affected_abstractions
-                    = get_symmetry_generator(generator_indices[i])
-                    ->get_overall_affected_abstractions();
-            affected_abstractions.insert(overall_affected_abstractions.begin(),
-                                         overall_affected_abstractions.end());
-        }
-        int random = g_rng.next(affected_abstractions.size());
-        set<int>::iterator it = affected_abstractions.begin();
-        //for (; it != affected_abstractions.end(); ++it) {
-        //    cout << *it << endl;
-        //}
-        //cout << "size: " << affected_abstractions.size() << " random: " << random << endl;
-        //it = affected_abstractions.begin();
-        for (int counter = 0; counter < random; ++counter) {
-            ++it;
-        }
-        chosen_abstraction = *it;
-        assert(abstractions[chosen_abstraction]);
-    }
-
     // Abstracting by the generators as follows:
     // Creating a graph with nodes being the abstract states and the edges represent the connections as given by the generators.
     // It seems like this process should better be done in all abstractions in parallel,
@@ -272,9 +234,6 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     for (unsigned int index = num_abstractions; index < get_sym_gen_info().num_abs_and_states; ++index) {
         int abs_index = get_sym_gen_info().get_var_by_index(index);
         if (abstractions[abs_index]) {
-            if (chosen_abstraction != -1 && abs_index != chosen_abstraction) {
-                continue;
-            }
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 // Going over the generators, for each just add the edges.
                 if (get_symmetry_generator(generator_indices[i])->get_value(abs_index) == abs_index) {
