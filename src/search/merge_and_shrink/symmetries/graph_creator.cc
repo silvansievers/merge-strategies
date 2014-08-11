@@ -30,7 +30,6 @@ GraphCreator::GraphCreator(const Options &options)
       stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
       num_identity_generators(0),
       bliss_limit_reached(false) {
-    /*generators_bound(1000), stop_after_false_generated(10000)*/
 }
 
 GraphCreator::~GraphCreator() {
@@ -74,10 +73,6 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     cout << "Computing generators for " << (build_stabilized_pdg? "" : "non ")
          << "abstraction stabilized symmetries" << endl;
 
-    // Deleting previously computed generators
-    // TODO: we never need to do this, do we?
-    delete_generators();
-
     Timer timer;
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
@@ -88,8 +83,6 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
         create_bliss_graph(abstractions, bliss_graph);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
-
-    //    bliss_graph.set_generators_bound(generators_bound);
 
         bliss::Stats stats1;
     //    FILE *f = fopen("bliss.log", "w");
@@ -142,7 +135,7 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
             node_color_added_val++;
             // NOTE: we need to add an abstraction vertex for every abstraction, even the unused ones,
             // because we want to use the abstraction indices as vertex-IDs and vertex IDs in a bliss graph
-            // are numbered from 0 to n-1. TODO: get rid of this fact!
+            // are numbered from 0 to n-1.
             // We further add an extra color for each empty abstraction even when
             // when not stabilizing abstractions in order to ensure that no trivial
             // symmetries that map two empty abstractions to each other are found.
@@ -160,7 +153,7 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
         symmetry_generator_info.dom_sum_by_var.push_back(num_of_nodes);
 
         int abs_states = 0;
-        if (abstractions[abs_ind]) //In case the abstraction is not empty
+        if (abstractions[abs_ind])
             abs_states = abstractions[abs_ind]->size();
         num_of_nodes += abs_states;
         for(int num_of_value = 0; num_of_value < abs_states; num_of_value++){
@@ -170,9 +163,6 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
     }
     // Setting the total number of abstract states and abstractions
     symmetry_generator_info.num_abs_and_states = num_of_nodes;
-
-    // TODO: Validate that this is what we want here - no connection between actions (probably not!).
-    symmetry_generator_info.length = num_of_nodes;
 
     // We need an arbitrary valid abstraction to get access to the number of
     // labels and their costs (we do not have access to the labels object).
@@ -204,7 +194,6 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
 
     // Now we add vertices for operators
     int num_labels = some_abs->get_num_labels();
-    // TODO: we probably should skip reduced labels
     for (int label_no = 0; label_no < num_labels; ++label_no){
         if (some_abs->is_label_reduced(label_no))
             continue;

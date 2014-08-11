@@ -19,7 +19,6 @@ SymmetryGeneratorInfo::SymmetryGeneratorInfo() {
 void SymmetryGeneratorInfo::reset() {
     num_abstractions = -1;
     num_abs_and_states = -1;
-    length = -1;
     var_by_val.clear();
     dom_sum_by_var.clear();
 }
@@ -27,7 +26,6 @@ void SymmetryGeneratorInfo::reset() {
 bool SymmetryGeneratorInfo::initialized() const {
     return num_abstractions != -1
             && num_abs_and_states != -1
-            && length != -1
             && !var_by_val.empty()
             && !dom_sum_by_var.empty();
 }
@@ -68,7 +66,6 @@ unsigned int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, AbstractS
 void SymmetryGeneratorInfo::dump() const {
     cout << "num abstractions: " << num_abstractions << endl;
     cout << "num abs and states: " << num_abs_and_states << endl;
-    cout << "length: " << length << endl;
     cout << "var by val" << endl;
     cout << var_by_val << endl;
     cout << "dom sum by var" << endl;
@@ -99,7 +96,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
     internally_affected.resize(num_abstractions, false);
     mapped.resize(num_abstractions, false);
     overall_affected.resize(num_abstractions, false);
-    for (unsigned int from_index = 0; from_index < sym_gen_info.length; from_index++){
+    for (unsigned int from_index = 0; from_index < sym_gen_info.num_abs_and_states; from_index++){
         if (from_index > sym_gen_info.num_abs_and_states) {
             cerr << "Symmetry generator index out of range" << endl;
             exit_with(EXIT_CRITICAL_ERROR);
@@ -169,7 +166,7 @@ SymmetryGenerator::~SymmetryGenerator(){
 
 void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
-    value = new unsigned int[sym_gen_info.length];
+    value = new unsigned int[sym_gen_info.num_abs_and_states];
 }
 
 void SymmetryGenerator::_deallocate() {
@@ -279,17 +276,16 @@ bool SymmetryGenerator::identity() const{
 }
 
 unsigned int SymmetryGenerator::get_value(unsigned int ind) const {
-//  check_index_range(ind);
     return value[ind];
 }
 
 void SymmetryGenerator::dump() const {
-    for(unsigned int i = 0; i < sym_gen_info.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << i;
     }
     cout << endl;
-    for(unsigned int i = 0; i < sym_gen_info.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << get_value(i);
     }
@@ -297,9 +293,9 @@ void SymmetryGenerator::dump() const {
 }
 
 void SymmetryGenerator::dump_value() const {
-    for (size_t i = 0; i < sym_gen_info.length; ++i) {
+    for (size_t i = 0; i < sym_gen_info.num_abs_and_states; ++i) {
         cout << i << " -> " << value[i];
-        if (i != sym_gen_info.length - 1)
+        if (i != sym_gen_info.num_abs_and_states - 1)
             cout << ", ";
     }
     cout << endl;
@@ -307,7 +303,7 @@ void SymmetryGenerator::dump_value() const {
 
 void SymmetryGenerator::dump_all() const {
     cout << "values:" << endl;
-    for(unsigned int i = 0; i < sym_gen_info.length; i++){
+    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         cout << value[i] << ", ";
     }
     cout << endl;

@@ -10,7 +10,6 @@ typedef int AbstractStateRef; // TODO: duplicated from shrink_strategy.h
 struct SymmetryGeneratorInfo {
     int num_abstractions;
     unsigned int num_abs_and_states;
-    unsigned int length;
     // Silvan: this vector ranges over the number of abstract states of this generator.
     // for every node it contains the number of the abstraction this node
     // belongs to.
