@@ -88,6 +88,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
 
         int number_mapped_abstractions = mapped_abstractions.size();
         if (number_mapped_abstractions == 0) {
+            // note that this also includes atomic generators
             local_generators.push_back(generator_index);
         } else {
             if (external_merging == MERGE_FOR_LOCAL) {
