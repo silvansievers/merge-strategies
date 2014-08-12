@@ -97,7 +97,6 @@ void ShrinkFH::ordered_buckets_use_map(
         }
     }
 
-    cout << "reserve: " << bucket_count << endl;
     buckets.reserve(bucket_count);
     if (f_start == HIGH) {
         collect_f_h_buckets(
@@ -133,7 +132,6 @@ void ShrinkFH::ordered_buckets_use_vector(
         }
     }
 
-    cout << "reserve: " << bucket_count << endl;
     buckets.reserve(bucket_count);
     int f_init = (f_start == HIGH ? abs.get_max_f() : 0);
     int f_end = (f_start == HIGH ? 0 : abs.get_max_f());
