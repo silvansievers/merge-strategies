@@ -17,7 +17,8 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
       iteration_counter(0),
       number_of_applied_symmetries(0),
-      bliss_limit_reached(false) {
+      bliss_limit_reached(false),
+      only_applied_dfp(true) {
 }
 
 void MergeSymmetries::dump_statistics() {
@@ -45,6 +46,8 @@ void MergeSymmetries::dump_statistics() {
         }
         cout << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
+    if (only_applied_dfp)
+        cout << "Merge strategy corresponded to pure DFP" << endl;
 }
 
 void MergeSymmetries::dump_strategy_specific_options() const {
@@ -138,10 +141,14 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
         Symmetries symmetries(options);
         bool applied_symmetries =
                 symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
-        if (applied_symmetries)
+        if (applied_symmetries) {
             ++number_of_applied_symmetries;
+        }
         if (symmetries.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
+        }
+        if (only_applied_dfp && (applied_symmetries || !merge_order.empty())) {
+            only_applied_dfp = false;
         }
         double bliss_time = symmetries.get_bliss_time();
         bliss_times.push_back(bliss_time);

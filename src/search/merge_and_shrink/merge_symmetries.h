@@ -17,6 +17,7 @@ class MergeSymmetries : public MergeDFP {
     int number_of_applied_symmetries;
     bool bliss_limit_reached;
     std::vector<double> bliss_times;
+    bool only_applied_dfp;
 
     std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
 
