@@ -46,8 +46,6 @@ void MergeSymmetries::dump_statistics() {
         }
         cout << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
-    if (only_applied_dfp)
-        cout << "Merge strategy corresponded to pure DFP" << endl;
 }
 
 void MergeSymmetries::dump_strategy_specific_options() const {
@@ -149,6 +147,7 @@ pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions
         }
         if (only_applied_dfp && (applied_symmetries || !merge_order.empty())) {
             only_applied_dfp = false;
+            cout << "not pure DFP anymore" << endl;
         }
         double bliss_time = symmetries.get_bliss_time();
         bliss_times.push_back(bliss_time);
