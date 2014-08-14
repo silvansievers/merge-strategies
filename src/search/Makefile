@@ -1,5 +1,5 @@
-## Variables prefixed with "DOWNWARD_" are used to configure the 
-## build. They can be changed on the command line or set as 
+## Variables prefixed with "DOWNWARD_" are used to configure the
+## build. They can be changed on the command line or set as
 ## environment variables.
 
 ## By default, build in 32-bit mode. Use DOWNWARD_BITWIDTH=64
@@ -17,7 +17,7 @@ DOWNWARD_COIN_ROOT ?= /opt/coin
 
 ## If you want to use the CPLEX and/or Gurobi LP solvers, set the
 ## following variables to paths for the "include" and "lib"
-## directories of the solvers. 
+## directories of the solvers.
 DOWNWARD_CPLEX_INCDIR ?= /opt/ibm/ILOG/CPLEX_Studio1251/cplex/include/ilcplex
 DOWNWARD_CPLEX_LIBDIR ?= /opt/ibm/ILOG/CPLEX_Studio1251/cplex/lib/x86_sles10_4.1/static_pic
 DOWNWARD_GUROBI_INCDIR ?=
@@ -111,6 +111,7 @@ HEADERS += merge_and_shrink/abstraction.h \
            merge_and_shrink/merge_linear.h \
            merge_and_shrink/merge_strategy.h \
            merge_and_shrink/merge_symmetries.h \
+           merge_and_shrink/merge_symmetries_linear.h \
            merge_and_shrink/shrink_bisimulation.h \
            merge_and_shrink/shrink_bucket_based.h \
            merge_and_shrink/shrink_fh.h \
