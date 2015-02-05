@@ -3,14 +3,13 @@
 
 #include "graph_creator.h"
 
-#include "../abstraction.h"
-
 #include <vector>
 
 class Labels;
 class Options;
 class SymmetryGenerator;
 class SymmetryGeneratorInfo;
+class TransitionSystem;
 
 class Symmetries {
     // TODO: get rid of gc and have the permutations wrapper object instead?
@@ -45,7 +44,7 @@ class Symmetries {
 
     double bliss_time; // elapsed bliss time
 
-    void apply_symmetries(const std::vector<Abstraction *> &abstractions,
+    void apply_symmetries(const std::vector<TransitionSystem *> &abstractions,
                           const std::vector<int> &generator_indices) const;
 
     // TODO: replace by permutations wrapper object
@@ -56,7 +55,7 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    bool find_and_apply_symmetries(std::vector<Abstraction *> &abstractions,
+    bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &abstractions,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {return gc.is_bliss_limit_reached(); }
     double get_bliss_time() const {return bliss_time; }

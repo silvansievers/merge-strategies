@@ -15,9 +15,10 @@ DOWNWARD_USE_LP ?= 0
 ## to a path where OSI is installed.
 DOWNWARD_COIN_ROOT ?= /opt/coin
 
-## If you want to use the CPLEX and/or Gurobi LP solvers, set the
-## following variables to paths for the "include" and "lib"
-## directories of the solvers.
+## To use an LP solver through OSI, set the following variables
+## to paths for the solver's "include" and "lib" directories.
+DOWNWARD_CLP_INCDIR ?= $(DOWNWARD_COIN_ROOT)/include/coin
+DOWNWARD_CLP_LIBDIR ?= $(DOWNWARD_COIN_ROOT)/lib
 DOWNWARD_CPLEX_INCDIR ?= /opt/ibm/ILOG/CPLEX_Studio1251/cplex/include/ilcplex
 DOWNWARD_CPLEX_LIBDIR ?= /opt/ibm/ILOG/CPLEX_Studio1251/cplex/lib/x86_sles10_4.1/static_pic
 DOWNWARD_GUROBI_INCDIR ?=
@@ -40,21 +41,22 @@ HEADERS = \
           axioms.h \
           causal_graph.h \
           combining_evaluator.h \
+          countdown_timer.h \
           domain_transition_graph.h \
           eager_search.h \
           enforced_hill_climbing_search.h \
           equivalence_relation.h \
           exact_timer.h \
           g_evaluator.h \
+          global_operator.h \
+          global_state.h \
           globals.h \
           heuristic.h \
           int_packer.h \
           ipc_max_heuristic.h \
           iterated_search.h \
           lazy_search.h \
-          legacy_causal_graph.h \
           max_evaluator.h \
-          operator.h \
           operator_cost.h \
           option_parser.h \
           option_parser_util.h \
@@ -67,13 +69,13 @@ HEADERS = \
           search_node_info.h \
           search_progress.h \
           search_space.h \
-          state.h \
           state_id.h \
           state_registry.h \
           successor_generator.h \
           sum_evaluator.h \
           timer.h \
           utilities.h \
+          variable_order_finder.h \
           weighted_evaluator.h \
           \
           open_lists/alternation_open_list.h \
@@ -102,10 +104,7 @@ HEADERS += hm_heuristic.h
 HEADERS += lm_cut_heuristic.h
 HEADERS += max_heuristic.h
 
-HEADERS += merge_and_shrink/abstraction.h \
-           merge_and_shrink/label.h \
-           merge_and_shrink/labels.h \
-           merge_and_shrink/label_reducer.h \
+HEADERS += merge_and_shrink/labels.h \
            merge_and_shrink/merge_and_shrink_heuristic.h \
            merge_and_shrink/merge_dfp.h \
            merge_and_shrink/merge_linear.h \
@@ -117,7 +116,7 @@ HEADERS += merge_and_shrink/abstraction.h \
            merge_and_shrink/shrink_fh.h \
            merge_and_shrink/shrink_random.h \
            merge_and_shrink/shrink_strategy.h \
-           merge_and_shrink/variable_order_finder.h \
+           merge_and_shrink/transition_system.h \
 
 HEADERS += merge_and_shrink/symmetries/graph_creator.h \
            merge_and_shrink/symmetries/scc.h \
@@ -193,10 +192,10 @@ ifeq ($(DOWNWARD_OS), auto)
     endif
 
     ifeq ($(UNAME_O), Cygwin)
-        ## For now, we treat Linux and Cygwin equally in this
-        ## Makefile, so we just call Cygwin "linux".
-        DOWNWARD_OS=linux
-    else ifeq ($(OS), auto)
+        DOWNWARD_OS=windows
+    else ifeq ($(UNAME_O), Msys)
+        DOWNWARD_OS=windows
+    else ifeq ($(DOWNWARD_OS), auto)
         $(warning OS detection failed -- setting to Linux and hoping for the best!)
         DOWNWARD_OS=linux
     endif
@@ -235,37 +234,18 @@ ifeq ($(DOWNWARD_BITWIDTH), 32)
 else ifeq ($(DOWNWARD_BITWIDTH), 64)
     BITWIDTHOPT = -m64
 else ifneq ($(DOWNWARD_BITWIDTH), native)
-    $(error Bad value for BITWIDTH)
+    $(error Bad value for DOWNWARD_BITWIDTH)
 endif
 
 CXXFLAGS =
 CXXFLAGS += -g
 CXXFLAGS += $(BITWIDTHOPT)
-CXXFLAGS += -Wall -W -Wno-sign-compare -Wno-deprecated -ansi -pedantic -Werror
+CXXFLAGS += -std=c++11 -Wall -Wextra -pedantic -Wno-deprecated -Werror
 
 CXXFLAGS += -Iext
 ifeq ($(DOWNWARD_OS), osx)
     ## If you have Mac OS, you may be getting tree.hh from /opt/local/include.
     CXXFLAGS += -I/opt/local/include/
-endif
-
-
-## The following lines contain workarounds for bugs when
-## cross-compiling to 64 bit on 32-bit systems using gcc 4.4 or gcc
-## 4.5 in some Ubuntu releases. (We don't usually cross-compile to
-## 64-bit, but in some cases we do; e.g. we did for the IPC.) See
-## http://stackoverflow.com/questions/4643197/missing-include-bits-cconfig-h-when-cross-compiling-64-bit-program-on-32-bit.
-ifeq ($(DOWNWARD_OS), linux) # workarounds only valid for Linux...
-    HAVE_GCC_4_4 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.4\.\\\))
-    HAVE_GCC_4_5 := $(shell expr "$$(gcc -dumpversion)" : \\\(4\.5\.\\\))
-
-    ifdef HAVE_GCC_4_4
-        CXXFLAGS += -I/usr/include/c++/4.4/i686-linux-gnu
-    endif
-
-    ifdef HAVE_GCC_4_5
-        CXXFLAGS += -I/usr/include/c++/4.5/i686-linux-gnu
-    endif
 endif
 
 LDFLAGS =
@@ -306,6 +286,10 @@ ifeq ($(DOWNWARD_OS), linux)
     endif
     POSTLINKOPT_DEBUG  += -lrt
     POSTLINKOPT_PROFILE += -lrt
+else ifeq ($(DOWNWARD_OS), windows)
+    POSTLINKOPT_RELEASE += -lpsapi
+    POSTLINKOPT_DEBUG += -lpsapi
+    POSTLINKOPT_PROFILE += -lpsapi
 endif
 
 
@@ -347,9 +331,12 @@ COIN_CXXFLAGS += -D COIN_HAS_GRB
 COIN_LDFLAGS += -L$(DOWNWARD_GUROBI_LIBDIR) -pthread
 endif
 
-## CLP is part of coin and can always be enabled
-COIN_CXXFLAGS += -D COIN_HAS_CLP
+COIN_HAS_CLP := $(shell test -d $(DOWNWARD_CLP_INCDIR) && test -f $(DOWNWARD_CLP_LIBDIR)/libClp.a && test -f $(DOWNWARD_COIN_ROOT)/lib/libOsiClp.a && echo 1)
+ifeq ($(COIN_HAS_CLP),1)
 COIN_LIBS += OsiClp Clp
+COIN_CXXFLAGS += -D COIN_HAS_CLP
+COIN_LDFLAGS += -L$(DOWNWARD_CLP_LIBDIR)
+endif
 
 ## Basic Osi libs must be added after (!) all osi solver libs
 COIN_LIBS += Osi CoinUtils

@@ -10,7 +10,7 @@
   where graph[i] is the vector of successors of vertex i.
 
   Method get_result() returns a vector of strongly connected components,
-  each of which is a vector of vertices (unsigned ints).
+  each of which is a vector of vertices (ints).
   This is a partitioning of all vertices where each SCC is a maximal subset
   such that each node in an SCC is reachable from all other nodes in the SCC.
   Note that the derived graph where each SCC is a single "supernode" is
@@ -22,21 +22,21 @@
 using namespace std;
 
 class SCC {
-    const vector<vector<unsigned int> > &graph;
+    const vector<vector<int> > &graph;
 
     // The following three are indexed by vertex number.
-    vector<unsigned int> dfs_numbers;
-    vector<unsigned int> dfs_minima;
-    vector<unsigned int> stack_indices;
+    vector<int> dfs_numbers;
+    vector<int> dfs_minima;
+    vector<int> stack_indices;
 
-    vector<unsigned int> stack; // This is indexed by the level of recursion.
-    vector<vector<unsigned int> > sccs;
+    vector<int> stack; // This is indexed by the level of recursion.
+    vector<vector<int> > sccs;
 
-    unsigned int current_dfs_number;
+    int current_dfs_number;
 
-    void dfs(unsigned int vertex);
+    void dfs(int vertex);
 public:
-    SCC(const vector<vector<unsigned int> > &theGraph) : graph(theGraph) {}
-    vector<vector<unsigned int> > get_result();
+    SCC(const vector<vector<int> > &theGraph) : graph(theGraph) {}
+    vector<vector<int> > get_result();
 };
 #endif

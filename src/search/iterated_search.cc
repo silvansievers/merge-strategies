@@ -13,7 +13,6 @@ IteratedSearch::IteratedSearch(const Options &opts)
     last_phase_found_solution = false;
     best_bound = bound;
     iterated_found_solution = false;
-    plan_counter = opts.get<int>("plan_counter");
 }
 
 IteratedSearch::~IteratedSearch() {
@@ -36,7 +35,8 @@ SearchEngine *IteratedSearch::get_search_engine(
 }
 
 SearchEngine *IteratedSearch::create_phase(int p) {
-    if (p >= engine_configs.size()) {
+    int num_phases = engine_configs.size();
+    if (p >= num_phases) {
         /* We've gone through all searches. We continue if
            repeat_last_phase is true, but *not* if we didn't find a
            solution the last time around, since then this search would
@@ -54,7 +54,7 @@ SearchEngine *IteratedSearch::create_phase(int p) {
     return get_search_engine(p);
 }
 
-int IteratedSearch::step() {
+SearchStatus IteratedSearch::step() {
     current_search = create_phase(phase);
     if (current_search == NULL) {
         return found_solution() ? SOLVED : FAILED;
@@ -62,7 +62,7 @@ int IteratedSearch::step() {
     if (pass_bound) {
         current_search->set_bound(best_bound);
     }
-    phase++;
+    ++phase;
 
     current_search->search();
 
@@ -74,8 +74,7 @@ int IteratedSearch::step() {
         found_plan = current_search->get_plan();
         plan_cost = calculate_plan_cost(found_plan);
         if (plan_cost < best_bound) {
-            ++plan_counter;
-            save_plan(found_plan, plan_counter);
+            save_plan(found_plan, true);
             best_bound = plan_cost;
             set_plan(found_plan);
         }
@@ -97,7 +96,7 @@ int IteratedSearch::step() {
     return step_return_value();
 }
 
-int IteratedSearch::step_return_value() {
+SearchStatus IteratedSearch::step_return_value() {
     if (iterated_found_solution)
         cout << "Best solution cost so far: " << best_bound << endl;
 
@@ -140,15 +139,15 @@ static SearchEngine *_parse(OptionParser &parser) {
         "Adding heuristic caching is [issue108 http://issues.fast-downward.org/issue108].");
     parser.document_note(
         "Note 2",
-        "Running this\n```\n"
-        "./downward --search \"iterated([lazy_wastar(merge_and_shrink(),w=10), "
+        "The configuration\n```\n"
+        "--search \"iterated([lazy_wastar(merge_and_shrink(),w=10), "
         "lazy_wastar(merge_and_shrink(),w=5), lazy_wastar(merge_and_shrink(),w=3), "
         "lazy_wastar(merge_and_shrink(),w=2), lazy_wastar(merge_and_shrink(),w=1)])\"\n"
         "```\nwould perform the preprocessing phase of the merge and shrink heuristic "
         "5 times (once before each iteration).\n\n"
         "To avoid this, use heuristic predefinition, which avoids duplicate "
         "preprocessing, as follows:\n```\n"
-        "./downward --heuristic \"h=merge_and_shrink()\" --search "
+        "--heuristic \"h=merge_and_shrink()\" --search "
         "\"iterated([lazy_wastar(h,w=10), lazy_wastar(h,w=5), lazy_wastar(h,w=3), "
         "lazy_wastar(h,w=2), lazy_wastar(h,w=1)])\"\n"
         "```");
@@ -174,9 +173,6 @@ static SearchEngine *_parse(OptionParser &parser) {
     parser.add_option<bool>("continue_on_solve",
                             "continue search after solution found",
                             "true");
-    parser.add_option<int>("plan_counter",
-                           "start enumerating plans with plan_counter + 1",
-                           "0");
     SearchEngine::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -187,7 +183,7 @@ static SearchEngine *_parse(OptionParser &parser) {
     } else if (parser.dry_run()) {
         //check if the supplied search engines can be parsed
         vector<ParseTree> configs = opts.get_list<ParseTree>("engine_configs");
-        for (size_t i(0); i != configs.size(); ++i) {
+        for (size_t i = 0; i < configs.size(); ++i) {
             OptionParser test_parser(configs[i], true);
             test_parser.start_parsing<SearchEngine *>();
         }

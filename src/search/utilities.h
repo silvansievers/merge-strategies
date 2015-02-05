@@ -10,11 +10,12 @@
 #define LINUX 0
 #define OSX 1
 #define CYGWIN 2
+#define WINDOWS 3
 
 #if defined(__CYGWIN32__)
 #define OPERATING_SYSTEM CYGWIN
 #elif defined(__WINNT__)
-#define OPERATING_SYSTEM CYGWIN
+#define OPERATING_SYSTEM WINDOWS
 #elif defined(__APPLE__)
 #define OPERATING_SYSTEM OSX
 #else
@@ -24,7 +25,7 @@
 #define ABORT(msg) \
     ( \
         (std::cerr << "Critical error in file " << __FILE__ \
-              << ", line " << __LINE__ << ": " << msg << std::endl), \
+                   << ", line " << __LINE__ << ": " << msg << std::endl), \
         (abort()), \
         (void)0 \
     )
@@ -38,17 +39,20 @@ enum ExitCode {
     EXIT_UNSOLVABLE = 4,
     // Search ended without finding a solution.
     EXIT_UNSOLVED_INCOMPLETE = 5,
-    EXIT_OUT_OF_MEMORY = 6,
-    // Currently unused.
-    EXIT_TIMEOUT = 7
+    EXIT_OUT_OF_MEMORY = 6
 };
 
 extern void exit_with(ExitCode returncode) __attribute__((noreturn));
 
 extern void register_event_handlers();
 
-extern int get_peak_memory_in_kb();
-extern void print_peak_memory();
+extern int get_peak_memory_in_kb(bool use_buffered_input = true);
+extern void print_peak_memory(bool use_buffered_input = true);
+
+/* Test if the product of two numbers is bounded by a third number.
+   Safe against overflow. The caller must guarantee
+   0 <= factor1, factor2 <= limit; failing this is an error. */
+extern bool is_product_within_limit(int factor1, int factor2, int limit);
 
 template<class T>
 extern bool is_sorted_unique(const std::vector<T> &values) {
@@ -106,5 +110,19 @@ public:
         return my_hash_class(p);
     }
 };
+
+template<class T>
+bool in_bounds(int index, const T &container) {
+    return index >= 0 && static_cast<size_t>(index) < container.size();
+}
+
+template<class T>
+bool in_bounds(size_t index, const T &container) {
+    return index < container.size();
+}
+
+template<typename T>
+void unused_parameter(const T &) {
+}
 
 #endif

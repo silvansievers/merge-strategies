@@ -3,7 +3,7 @@
 #include "scc.h"
 #include "symmetry_generator.h"
 
-#include "../abstraction.h"
+#include "../transition_system.h"
 
 #include "../../globals.h"
 #include "../../option_parser.h"
@@ -27,16 +27,16 @@ Symmetries::Symmetries(const Options &options)
       bliss_time(0) {
 }
 
-bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
+bool Symmetries::find_and_apply_symmetries(const vector<TransitionSystem *> &abstractions,
                                            vector<pair<int, int> > &merge_order) {
     // We must make sure that all abstractions distances have been computed
     // because of the nasty possible side effect of pruning irrelevant
     // states and because the application of an equivalence realtion to an
     // abstraction requires distances to be computed.
-    for (size_t i = 0; i < abstractions.size(); ++i) {
-        if (abstractions[i])
-            abstractions[i]->compute_distances();
-    }
+//    for (size_t i = 0; i < abstractions.size(); ++i) {
+//        if (abstractions[i])
+//            abstractions[i]->compute_distances();
+//    }
     bliss_time = gc.compute_generators(abstractions);
     if (get_num_generators() == 0 || is_bliss_limit_reached()) {
         return false;
@@ -55,7 +55,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
     // ones. also store information about the smallest/largest generator
     // with respect to overall affected abstractions or mapped abstractions,
     // depending on the chosen setting.
-    for (size_t generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
+    for (int generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
         const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
         const vector<int> &internally_affected_abstractions = generator->get_internally_affected_abstractions();
         const vector<int> &mapped_abstractions = generator->get_mapped_abstractions();
@@ -114,8 +114,8 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         for (size_t i = 0; i < mapped_abstractions.size(); ++i) {
             int abs_index = mapped_abstractions[i];
             int to_index = generator->get_value(abs_index);
-            cout << abstractions[abs_index]->description() << " mapped to " <<
-                    abstractions[to_index]->description();
+            cout << abstractions[abs_index]->tag() << " mapped to " <<
+                    abstractions[to_index]->tag();
             if (generator->internally_affects(abs_index))
                 cout << " (and also internally affected)";
             cout << endl;
@@ -123,7 +123,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
         for (size_t i = 0; i < internally_affected_abstractions.size(); ++i) {
             int abs_index = internally_affected_abstractions[i];
             assert(!generator->maps(abs_index));
-            cout << abstractions[abs_index]->description() << " internally affected" << endl;
+            cout << abstractions[abs_index]->tag() << " internally affected" << endl;
         }
     }
 
@@ -229,7 +229,7 @@ bool Symmetries::find_and_apply_symmetries(vector<Abstraction *> &abstractions,
     return applied_symmetries;
 }
 
-void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
+void Symmetries::apply_symmetries(const vector<TransitionSystem *> &abstractions,
                                   const vector<int> &generator_indices) const {
     if (get_num_generators() == 0) {
         cerr << "You first have to find symmetries before you can apply one of them!" << endl;
@@ -242,11 +242,11 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
     // It seems like this process should better be done in all abstractions in parallel,
     // since we could exploit all the compositions of these abstractions this way as well.
     // Later we can reduce the first part - the abstraction vars and save some space/time
-    unsigned int num_states = get_sym_gen_info().num_abs_and_states;
-    unsigned int num_abstractions = get_sym_gen_info().num_abstractions;
+    int num_states = get_sym_gen_info().num_abs_and_states;
+    int num_abstractions = get_sym_gen_info().num_abstractions;
     // The graph is represented by vector of to_nodes for each node. (Change to sets?)
-    vector<vector<unsigned int> > graph(num_states, vector<unsigned int>());
-    for (unsigned int index = num_abstractions; index < get_sym_gen_info().num_abs_and_states; ++index) {
+    vector<vector<int> > graph(num_states, vector<int>());
+    for (int index = num_abstractions; index < get_sym_gen_info().num_abs_and_states; ++index) {
         int abs_index = get_sym_gen_info().get_var_by_index(index);
         if (abstractions[abs_index]) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
@@ -256,7 +256,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
                     // the same abstractions. in other words, we do not compute
                     // equivalence relations for mappings of abstractions, as
                     // these are not applied anyways.
-                    unsigned int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
+                    int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
                     if (index != to_index)
                         graph[index].push_back(to_index);
                 }
@@ -264,7 +264,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         }
     }
     SCC scc(graph);
-    const vector<vector<unsigned int> >& result = scc.get_result();
+    const vector<vector<int> >& result = scc.get_result();
 
     // Generate final result. Going over the result, putting the nodes to their respective places.
     vector<EquivRel> equivalence_relations(abstractions.size(), EquivRel());
@@ -272,9 +272,9 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         if (abstractions[abs_index])
             equivalence_relations[abs_index].resize(result.size());
     }
-    for (unsigned int eqiv=0; eqiv < result.size(); eqiv++) {
-        for (unsigned int i=0; i < result[eqiv].size(); i++) {
-            unsigned int idx = result[eqiv][i];
+    for (size_t eqiv=0; eqiv < result.size(); eqiv++) {
+        for (size_t i=0; i < result[eqiv].size(); i++) {
+            int idx = result[eqiv][i];
             if (idx < get_sym_gen_info().num_abstractions)
                 continue;
             pair<int, AbstractStateRef> vals = get_sym_gen_info().get_var_val_by_index(idx);
@@ -282,7 +282,7 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
         }
     }
     // Then, going over the outcome, removing empty equivalence classes.
-    for (unsigned int eqiv=result.size(); eqiv > 0; --eqiv) {
+    for (int eqiv=result.size(); eqiv > 0; --eqiv) {
         for (size_t i = 0; i < abstractions.size(); ++i) {
             if (abstractions[i] == 0)  //In case the abstraction is empty
                 continue;
@@ -300,16 +300,17 @@ void Symmetries::apply_symmetries(const vector<Abstraction *> &abstractions,
             continue;
 
         // Abstracting by the computed equivalence relation
-        if (equivalence_relations[i].size() > abstractions[i]->size()) {
+        int equivalence_relation_size = equivalence_relations[i].size();
+        if (equivalence_relation_size > abstractions[i]->get_size()) {
             cerr << "Something is seriously wrong here!!" << endl;
             exit_with(EXIT_CRITICAL_ERROR);
         }
-        if (equivalence_relations[i].size() == abstractions[i]->size()) {
+        if (equivalence_relation_size == abstractions[i]->get_size()) {
             cout << abstractions[i]->tag() << " not abstracted due to symmetries." << endl;
             continue;
         }
 //      cout << "Abstracting from " << abstractions[i]->size() << " to " << equivalence_relations[i].size() << " states!" << endl;
-        cout << "Abstracting " << abstractions[i]->description() << endl;
+        cout << "Abstracting " << abstractions[i]->tag() << endl;
         /*abstractions[i]->dump();
         abstractions[i]->dump_state();
         const EquivRel &equiv_rel = equivalence_relations[i];

@@ -34,11 +34,11 @@ private:
     void compute_abstraction(
         const std::vector<Bucket> &buckets,
         int target_size,
-        EquivalenceRelation &equivalence_relation) const;
+        StateEquivalenceRelation &equivalence_relation) const;
 
 protected:
     virtual void partition_into_buckets(
-        const Abstraction &abs, std::vector<Bucket> &buckets) const = 0;
+        const TransitionSystem &ts, std::vector<Bucket> &buckets) const = 0;
 
 public:
     ShrinkBucketBased(const Options &opts);
@@ -46,8 +46,7 @@ public:
 
     virtual bool reduce_labels_before_shrinking() const;
 
-    virtual void shrink(Abstraction &abs, int threshold,
-                        bool force = false);
+    virtual void shrink(TransitionSystem &ts, int threshold);
 };
 
 #endif

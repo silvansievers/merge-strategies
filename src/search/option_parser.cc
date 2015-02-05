@@ -5,6 +5,7 @@
 #include "rng.h"
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -75,7 +76,7 @@ static void get_full_help_templ() {
     DocStore::instance()->set_synopsis(TypeNamer<T>::name(), "",
                                        TypeDocumenter<T>::synopsis());
     vector<string> keys = Registry<T>::instance()->get_keys();
-    for (size_t i(0); i != keys.size(); ++i) {
+    for (size_t i = 0; i < keys.size(); ++i) {
         ParseTree pt;
         pt.insert(pt.begin(), ParseNode(keys[i]));
         get_help_templ<T>(pt);
@@ -104,7 +105,7 @@ Predefining landmarks and heuristics:
 static std::vector<std::string> to_list(std::string s) {
     std::vector<std::string> result;
     std::string buffer;
-    for (size_t i(0); i != s.size(); ++i) {
+    for (size_t i = 0; i < s.size(); ++i) {
         if (s[i] == ',') {
             result.push_back(buffer);
             buffer.clear();
@@ -136,12 +137,12 @@ static void predefine_heuristic(std::string s, bool dry_run) {
         if (!dry_run) {
             std::vector<Heuristic *> heur =
                 op.start_parsing<Synergy *>()->heuristics;
-            for (size_t i(0); i != definees.size(); ++i) {
+            for (size_t i = 0; i < definees.size(); ++i) {
                 Predefinitions<Heuristic *>::instance()->predefine(
                     definees[i], heur[i]);
             }
         } else {
-            for (size_t i(0); i != definees.size(); ++i) {
+            for (size_t i = 0; i < definees.size(); ++i) {
                 Predefinitions<Heuristic *>::instance()->predefine(
                     definees[i], 0);
             }
@@ -193,9 +194,21 @@ SearchEngine *OptionParser::parse_cmd_line(
 }
 
 
+int OptionParser::parse_int_arg(const string &name, const string &value) {
+    try {
+        return stoi(value);
+    } catch (invalid_argument &) {
+        throw ArgError("argument for " + name + " must be an integer");
+    } catch (out_of_range &) {
+        throw ArgError("argument for " + name + " is out of range");
+    }
+}
+
+
 SearchEngine *OptionParser::parse_cmd_line_aux(
     const vector<string> &args, bool dry_run) {
     SearchEngine *engine(0);
+    // TODO: Remove code duplication.
     for (size_t i = 0; i < args.size(); ++i) {
         string arg = args[i];
         bool is_last = (i == args.size() - 1);
@@ -219,15 +232,15 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
             if (is_last)
                 throw ArgError("missing argument after --random-seed");
             ++i;
-            srand(atoi(args[i].c_str()));
-            g_rng.seed(atoi(args[i].c_str()));
-            cout << "random seed " << args[i] << endl;
+            int seed = parse_int_arg(arg, args[i]);
+            g_rng.seed(seed);
+            cout << "random seed: " << seed << endl;
         } else if ((arg.compare("--help") == 0) && dry_run) {
             cout << "Help:" << endl;
             bool txt2tags = false;
             vector<string> helpiands;
             if (i + 1 < args.size()) {
-                for (int j = i + 1; j < args.size(); ++j) {
+                for (size_t j = i + 1; j < args.size(); ++j) {
                     if (args[j] == "--txt2tags") {
                         txt2tags = true;
                     } else {
@@ -238,8 +251,8 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
             if (helpiands.empty()) {
                 get_full_help();
             } else {
-                for (size_t i = 0; i != helpiands.size(); ++i) {
-                    get_help(helpiands[i]);
+                for (size_t j = 0; j != helpiands.size(); ++j) {
+                    get_help(helpiands[j]);
                 }
             }
             DocPrinter *dp;
@@ -251,11 +264,19 @@ SearchEngine *OptionParser::parse_cmd_line_aux(
             dp->print_all();
             cout << "Help output finished." << endl;
             exit(0);
-        } else if (arg.compare("--plan-file") == 0) {
+        } else if (arg.compare("--internal-plan-file") == 0) {
             if (is_last)
-                throw ArgError("missing argument after --plan-file");
+                throw ArgError("missing argument after --internal-plan-file");
             ++i;
             g_plan_filename = args[i];
+        } else if (arg.compare("--internal-previous-portfolio-plans") == 0) {
+            if (is_last)
+                throw ArgError("missing argument after --internal-previous-portfolio-plans");
+            ++i;
+            g_is_part_of_anytime_portfolio = true;
+            g_num_previously_generated_plans = parse_int_arg(arg, args[i]);
+            if (g_num_previously_generated_plans < 0)
+                throw ArgError("argument for --internal-previous-portfolio-plans must be positive");
         } else {
             throw ArgError("unknown option " + arg);
         }
@@ -281,8 +302,12 @@ string OptionParser::usage(string progname) {
         "    by the name that is specified in the definition.\n"
         "--random-seed SEED\n"
         "    Use random seed SEED\n\n"
-        "--plan-file FILENAME\n"
+        "--internal-plan-file FILENAME\n"
         "    Plan will be output to a file called FILENAME\n\n"
+        "--internal-previous-portfolio-plans COUNTER\n"
+        "    This planner call is part of a portfolio which already created\n"
+        "    plan files FILENAME.1 up to FILENAME.COUNTER.\n"
+        "    Start enumerating plan files with COUNTER+1, i.e. FILENAME.COUNTER+1\n\n"
         "See http://www.fast-downward.org/ for details.";
     return usage;
 }
@@ -299,7 +324,7 @@ static ParseTree generate_parse_tree(string config) {
     ParseTree::sibling_iterator cur_node = pseudoroot;
     string buffer(""), key("");
     char next = ' ';
-    for (size_t i(0); i != config.size(); ++i) {
+    for (size_t i = 0; i < config.size(); ++i) {
         next = config.at(i);
         if ((next == '(' || next == ')' || next == ',') && buffer.size() > 0) {
             tr.append_child(cur_node, ParseNode(buffer, key));
@@ -393,7 +418,7 @@ void OptionParser::add_enum_option(string k,
     if (help_mode_) {
         ValueExplanations value_explanations;
         string enum_descr = "{";
-        for (size_t i(0); i != enumeration.size(); ++i) {
+        for (size_t i = 0; i < enumeration.size(); ++i) {
             enum_descr += enumeration[i];
             if (i != enumeration.size() - 1) {
                 enum_descr += ", ";
@@ -425,7 +450,8 @@ void OptionParser::add_enum_option(string k,
     stringstream str_stream(name);
     int x;
     if (!(str_stream >> x).fail()) {
-        if (x > enumeration.size()) {
+        int max_choice = enumeration.size();
+        if (x > max_choice) {
             error("invalid enum argument " + name
                   + " for option " + k);
         }
@@ -452,7 +478,7 @@ Options OptionParser::parse() {
          pti != end_of_roots_children(parse_tree); ++pti) {
         if (pti->key.compare("") != 0) {
             bool valid_key = false;
-            for (size_t i(0); i != valid_keys.size(); ++i) {
+            for (size_t i = 0; i < valid_keys.size(); ++i) {
                 if (valid_keys[i].compare(pti->key) == 0) {
                     valid_key = true;
                     break;

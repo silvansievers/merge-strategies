@@ -1,11 +1,10 @@
 #include "merge_symmetries_linear.h"
 
-#include "variable_order_finder.h"
-
 #include "symmetries/symmetries.h"
 
 #include "../globals.h"
 #include "../plugin.h"
+#include "../variable_order_finder.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -131,7 +130,7 @@ void MergeSymmetriesLinear::dump_strategy_specific_options() const {
          << (options.get<bool>("build_stabilized_pdg") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetriesLinear::get_next(vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSystem *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
 

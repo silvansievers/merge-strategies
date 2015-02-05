@@ -1,7 +1,9 @@
 // HACK! Ignore this if used as a top-level compile target.
 #ifdef OPEN_LISTS_PARETO_OPEN_LIST_H
 
+#include "../globals.h"
 #include "../option_parser.h"
+#include "../rng.h"
 
 #include <iostream>
 #include <cassert>
@@ -38,7 +40,7 @@ template<class Entry>
 bool ParetoOpenList<Entry>::dominates(const KeyType &v1, const KeyType &v2) {
     assert(v1.size() == v2.size());
     bool unequal = false;
-    for (unsigned int i = 0; i < v1.size(); i++) {
+    for (size_t i = 0; i < v1.size(); ++i) {
         if (v1[i] > v2[i])
             return false;
         else if (v1[i] < v2[i])
@@ -141,7 +143,7 @@ Entry ParetoOpenList<Entry>::remove_min(vector<int> *key) {
         else
             numerator = 1;
         seen += numerator;
-        if ((rand() % seen) < numerator)
+        if (g_rng(seen) < numerator)
             selected = it;
     }
     if (key) {
@@ -167,7 +169,7 @@ template<class Entry>
 void ParetoOpenList<Entry>::evaluate(int g, bool preferred) {
     dead_end = false;
     dead_end_reliable = false;
-    for (unsigned int i = 0; i < evaluators.size(); i++) {
+    for (size_t i = 0; i < evaluators.size(); ++i) {
         evaluators[i]->evaluate(g, preferred);
 
         // check for dead end
@@ -196,7 +198,7 @@ bool ParetoOpenList<Entry>::dead_end_is_reliable() const {
 
 template<class Entry>
 void ParetoOpenList<Entry>::get_involved_heuristics(std::set<Heuristic *> &hset) {
-    for (unsigned int i = 0; i < evaluators.size(); i++)
+    for (size_t i = 0; i < evaluators.size(); ++i)
         evaluators[i]->get_involved_heuristics(hset);
 }
 #endif

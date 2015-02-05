@@ -9,7 +9,7 @@ typedef int AbstractStateRef; // TODO: duplicated from shrink_strategy.h
 
 struct SymmetryGeneratorInfo {
     int num_abstractions;
-    unsigned int num_abs_and_states;
+    int num_abs_and_states;
     // Silvan: this vector ranges over the number of abstract states of this generator.
     // for every node it contains the number of the abstraction this node
     // belongs to.
@@ -20,22 +20,22 @@ struct SymmetryGeneratorInfo {
     // index 1 contains the highest number (i.e. the last node) that is related to abstraction 1.
     // index 2 etc.
     // size: number of abstractions
-    std::vector<unsigned int> dom_sum_by_var;
+    std::vector<int> dom_sum_by_var;
 
     SymmetryGeneratorInfo();
     void reset();
     bool initialized() const;
     // Returns the abstraction variable corresponding to the abstract state
-    int get_var_by_index(const unsigned int val) const;
-    std::pair<int, AbstractStateRef> get_var_val_by_index(const unsigned int ind) const;
-    unsigned int get_index_by_var_val_pair(const int var, const AbstractStateRef val) const;
+    int get_var_by_index(const int val) const;
+    std::pair<int, AbstractStateRef> get_var_val_by_index(const int ind) const;
+    int get_index_by_var_val_pair(const int var, const AbstractStateRef val) const;
     void dump() const;
     void dump_var_by_val() const;
 };
 
 class SymmetryGenerator {
     const SymmetryGeneratorInfo &sym_gen_info;
-    unsigned int* value;
+    int* value;
 
     bool borrowed_buffer;
     bool identity_generator;
@@ -59,7 +59,7 @@ public:
     ~SymmetryGenerator();
 
     bool identity() const;
-    unsigned int get_value(unsigned int ind) const;
+    int get_value(int ind) const;
 
     const std::vector<int> &get_internally_affected_abstractions() const {
         return internally_affected_abstractions;

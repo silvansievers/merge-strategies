@@ -122,7 +122,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
          << (options.get<bool>("build_stabilized_pdg") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetries::get_next(vector<Abstraction *> &all_abstractions) {
+pair<int, int> MergeSymmetries::get_next(std::vector<TransitionSystem *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
 

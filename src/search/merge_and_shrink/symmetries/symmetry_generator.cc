@@ -30,7 +30,7 @@ bool SymmetryGeneratorInfo::initialized() const {
             && !dom_sum_by_var.empty();
 }
 
-int SymmetryGeneratorInfo::get_var_by_index(const unsigned int ind) const {
+int SymmetryGeneratorInfo::get_var_by_index(const int ind) const {
     assert(initialized());
     if (ind < num_abstractions) {
         cout << "=====> WARNING!!!! Check that this is done on purpose!" << endl;
@@ -39,7 +39,7 @@ int SymmetryGeneratorInfo::get_var_by_index(const unsigned int ind) const {
     return var_by_val[ind-num_abstractions];
 }
 
-pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(unsigned int ind) const {
+pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(int ind) const {
     assert(initialized());
     if (ind < num_abstractions) {
         cout << "=====> Error!!!! index too low, in the variable part!" << endl;
@@ -58,7 +58,7 @@ pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(unsigned
     return make_pair(var, val);
 }
 
-unsigned int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, AbstractStateRef val) const {
+int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, AbstractStateRef val) const {
     assert(initialized());
     return dom_sum_by_var[var] + val;
 }
@@ -74,7 +74,7 @@ void SymmetryGeneratorInfo::dump() const {
 
 void SymmetryGeneratorInfo::dump_var_by_val() const {
     int size = num_abs_and_states - num_abstractions;
-    for (size_t i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         cout << i << ": " << var_by_val[i];
         if (i != size - 1)
             cout << ", ";
@@ -86,7 +86,7 @@ void SymmetryGeneratorInfo::dump_var_by_val() const {
 
 
 SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
-                                     const unsigned int* automorphism,
+                                     const unsigned int *automorphism,
                                      bool)
     : sym_gen_info(sym_gen_info_),
       identity_generator(true) {
@@ -96,7 +96,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
     internally_affected.resize(num_abstractions, false);
     mapped.resize(num_abstractions, false);
     overall_affected.resize(num_abstractions, false);
-    for (unsigned int from_index = 0; from_index < sym_gen_info.num_abs_and_states; from_index++){
+    for (int from_index = 0; from_index < sym_gen_info.num_abs_and_states; from_index++){
         if (from_index > sym_gen_info.num_abs_and_states) {
             cerr << "Symmetry generator index out of range" << endl;
             exit_with(EXIT_CRITICAL_ERROR);
@@ -142,7 +142,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
                         exit_with(EXIT_CRITICAL_ERROR);
                     }
                 } else {
-                    if (automorphism[from_abs_index] != to_abs_index) {
+                    if (static_cast<int>(automorphism[from_abs_index]) != to_abs_index) {
                         cerr << "State of abstraction mapped to state of another"
                              << " abstraction which differs from the abstractions'"
                              << " nodes mapping." << endl;
@@ -166,7 +166,7 @@ SymmetryGenerator::~SymmetryGenerator(){
 
 void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
-    value = new unsigned int[sym_gen_info.num_abs_and_states];
+    value = new int[sym_gen_info.num_abs_and_states];
 }
 
 void SymmetryGenerator::_deallocate() {
@@ -181,7 +181,7 @@ void SymmetryGenerator::_deallocate() {
 //    for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {
 //        if (mapped[abs_index] && !marked[abs_index]) {
 //            marked[abs_index] = true;
-//            unsigned int to_index = get_value(abs_index);
+//            int to_index = get_value(abs_index);
 //            assert(to_index != abs_index);
 //            int from_index = abs_index;
 //            vector<int> cycle;
@@ -200,10 +200,10 @@ void SymmetryGenerator::_deallocate() {
 void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) const {
     int num_abstractions = sym_gen_info.num_abstractions;
     vector<bool> marked(num_abstractions, false);
-    for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {
+    for (int abs_index = 0; abs_index < num_abstractions; ++abs_index) {
         if (mapped[abs_index] && !marked[abs_index]) {
             marked[abs_index] = true;
-            unsigned int to_index = get_value(abs_index);
+            int to_index = get_value(abs_index);
             assert(to_index != abs_index);
             int from_index = abs_index;
             vector<int> cycle;
@@ -275,17 +275,17 @@ bool SymmetryGenerator::identity() const{
     return identity_generator;
 }
 
-unsigned int SymmetryGenerator::get_value(unsigned int ind) const {
+int SymmetryGenerator::get_value(int ind) const {
     return value[ind];
 }
 
 void SymmetryGenerator::dump() const {
-    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << i;
     }
     cout << endl;
-    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << get_value(i);
     }
@@ -293,7 +293,7 @@ void SymmetryGenerator::dump() const {
 }
 
 void SymmetryGenerator::dump_value() const {
-    for (size_t i = 0; i < sym_gen_info.num_abs_and_states; ++i) {
+    for (int i = 0; i < sym_gen_info.num_abs_and_states; ++i) {
         cout << i << " -> " << value[i];
         if (i != sym_gen_info.num_abs_and_states - 1)
             cout << ", ";
@@ -303,7 +303,7 @@ void SymmetryGenerator::dump_value() const {
 
 void SymmetryGenerator::dump_all() const {
     cout << "values:" << endl;
-    for(unsigned int i = 0; i < sym_gen_info.num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info.num_abs_and_states; i++){
         cout << value[i] << ", ";
     }
     cout << endl;

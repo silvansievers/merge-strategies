@@ -7,8 +7,8 @@
 
 #include <vector>
 
-class Abstraction;
 class Options;
+class TransitionSystem;
 
 void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
 
@@ -38,7 +38,7 @@ class GraphCreator {
     std::vector<const SymmetryGenerator*> symmetry_generators;
     SymmetryGeneratorInfo symmetry_generator_info;
 
-    void create_bliss_graph(const std::vector<Abstraction *>& abstractions,
+    void create_bliss_graph(const std::vector<TransitionSystem *>& abstractions,
                             bliss::Digraph &bliss_graph);
 
     void delete_generators();
@@ -49,7 +49,7 @@ public:
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
 
-    double compute_generators(const std::vector<Abstraction *>& abstractions);
+    double compute_generators(const std::vector<TransitionSystem *>& abstractions);
     const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const {
         return symmetry_generators;
     }

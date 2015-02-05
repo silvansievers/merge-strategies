@@ -1,6 +1,7 @@
 #include "graph_creator.h"
 
-#include "../abstraction.h"
+#include "../labels.h"
+#include "../transition_system.h"
 
 #include "../../bliss/defs.hh"
 
@@ -37,7 +38,7 @@ GraphCreator::~GraphCreator() {
 }
 
 void GraphCreator::delete_generators() {
-    for (int i = 0; i < symmetry_generators.size(); i++){
+    for (size_t i = 0; i < symmetry_generators.size(); i++){
         if (symmetry_generators[i]) {
             delete symmetry_generators[i];
             symmetry_generators[i] = 0;
@@ -66,7 +67,7 @@ void GraphCreator::create_symmetry_generator(const unsigned int *automorphism) {
     }
 }
 
-double GraphCreator::compute_generators(const vector<Abstraction *>& abstractions) {
+double GraphCreator::compute_generators(const vector<TransitionSystem *>& abstractions) {
     // Find (non) abstraction stabilized symmetries for abstractions depending
     // on the chosen option.
 
@@ -112,7 +113,7 @@ double GraphCreator::compute_generators(const vector<Abstraction *>& abstraction
     return timer();
 }
 
-void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
+void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &abstractions,
                                       bliss::Digraph &bliss_graph) {
     int idx = 0;
 
@@ -128,7 +129,7 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
         cout << "    node [shape = none] start;" << endl;
     }
 
-    for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
+    for (int abs_ind = 0; abs_ind < num_of_nodes; abs_ind++){
         // Add vertex for each abstraction
         if (build_stabilized_pdg|| abstractions[abs_ind] == 0) {
             // Either the abstraction is empty or all abstractions are stabilized.
@@ -154,7 +155,7 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
 
         int abs_states = 0;
         if (abstractions[abs_ind])
-            abs_states = abstractions[abs_ind]->size();
+            abs_states = abstractions[abs_ind]->get_size();
         num_of_nodes += abs_states;
         for(int num_of_value = 0; num_of_value < abs_states; num_of_value++){
             symmetry_generator_info.var_by_val.push_back(abs_ind);
@@ -166,15 +167,15 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
 
     // We need an arbitrary valid abstraction to get access to the number of
     // labels and their costs (we do not have access to the labels object).
-    const Abstraction *some_abs = 0;
+    const TransitionSystem *some_abs = 0;
 
-    for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
+    for (size_t abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
         if (abstractions[abs_ind] == 0)  //In case the abstraction is empty
             continue;
         if (!some_abs)
             some_abs = abstractions[abs_ind];
 
-        int abs_states = abstractions[abs_ind]->size();
+        int abs_states = abstractions[abs_ind]->get_size();
 
         // Now add abs states for each abstraction
         for(AbstractStateRef state = 0; state < abs_states; state++){
@@ -193,13 +194,14 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
     }
 
     // Now we add vertices for operators
-    int num_labels = some_abs->get_num_labels();
+    const Labels *labels = some_abs->get_labels();
+    int num_labels = labels->get_size();
     for (int label_no = 0; label_no < num_labels; ++label_no){
-        if (some_abs->is_label_reduced(label_no))
+        if (!labels->is_current_label(label_no))
             continue;
 //      int label_op_by_cost = 3 * g_operators[op_no].get_cost();
         // Changed to one node per transition - two colors per operator
-        unsigned int label_cost = 2 * some_abs->get_label_cost_by_index(label_no); // was label_op_by_cost
+        int label_cost = 2 * labels->get_label_cost(label_no); // was label_op_by_cost
 
         // For each operator we have one label node
         int label_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
@@ -209,13 +211,13 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
             cout << "    node" << label_idx << " [shape=circle, label=label_no" << label_no /*<< "_" << g_operators[label_no].get_name()*/ << "];" << endl;
         }
 
-        for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
+        for (size_t abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
             if (abstractions[abs_ind] == 0)  //In case the abstraction is empty
                 continue;
 
-            const std::vector<AbstractTransition>& transitions = abstractions[abs_ind]->get_transitions_for_label(label_no);
+            const std::vector<Transition>& transitions = abstractions[abs_ind]->get_const_transitions_for_label(label_no);
             for (size_t i = 0; i < transitions.size(); ++i) {
-                const AbstractTransition &trans = transitions[i];
+                const Transition &trans = transitions[i];
 
                 // For each abstract transition we have a pair of nodes - pre and eff, both connected to their label node
                 int pre_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
@@ -225,8 +227,8 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
                 int eff_idx = pre_idx;
 //              cout << "Added eff vertex: " << eff_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 2 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
 
-                unsigned int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
-                unsigned int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
+                int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
+                int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
                 // Edges from abstract state source over pre=eff=transition-node to target
                 bliss_graph.add_edge(src_idx, pre_idx);
                 bliss_graph.add_edge(eff_idx, target_idx);
@@ -257,17 +259,17 @@ void GraphCreator::create_bliss_graph(const vector<Abstraction *>& abstractions,
 
 //  cout << "Added goal vertex: " << idx << " with color " << GOAL_VERTEX << endl;
 
-    for (int abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
+    for (size_t abs_ind = 0; abs_ind < abstractions.size(); abs_ind++){
         if (abstractions[abs_ind] == 0)  //In case the abstraction is empty
             continue;
 
-        int abs_states = abstractions[abs_ind]->size();
+        int abs_states = abstractions[abs_ind]->get_size();
 
         for(AbstractStateRef state = 0; state < abs_states; state++){
             if (!abstractions[abs_ind]->is_goal_state(state))
                 continue;
 
-            unsigned int val_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, state);
+            int val_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, state);
 
             // Edges from goal states to the goal node
             bliss_graph.add_edge(val_idx, idx);

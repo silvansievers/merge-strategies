@@ -13,7 +13,6 @@ class IteratedSearch : public SearchEngine {
     bool last_phase_found_solution;
     int best_bound;
     bool iterated_found_solution;
-    int plan_counter;
 
     SearchEngine *current_search;
     std::string current_search_name;
@@ -26,10 +25,10 @@ class IteratedSearch : public SearchEngine {
 
     SearchEngine *get_search_engine(int engine_config_start_index);
     SearchEngine *create_phase(int p);
-    int step_return_value();
+    SearchStatus step_return_value();
 
     virtual void initialize();
-    virtual int step();
+    virtual SearchStatus step();
 public:
     IteratedSearch(const Options &opts);
     virtual ~IteratedSearch();
