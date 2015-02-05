@@ -20,7 +20,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       merge_strategy(opts.get<MergeStrategy *>("merge_strategy")),
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
       use_expensive_statistics(opts.get<bool>("expensive_statistics")),
-      ms_only(opts.get<bool>("ms_only")),
+      terminate(opts.get<bool>("terminate")),
       debug_abstractions(opts.get<bool>("debug_abstractions")) {
     labels = new Labels(opts);
 }
@@ -180,7 +180,7 @@ void MergeAndShrinkHeuristic::initialize() {
 }
 
 int MergeAndShrinkHeuristic::compute_heuristic(const GlobalState &state) {
-    if (ms_only) {
+    if (terminate) {
         return DEAD_END;
     }
     int cost = final_transition_system->get_cost(state);
@@ -298,16 +298,19 @@ static Heuristic *_parse(OptionParser &parser) {
                            "RANDOM",
                            label_reduction_system_order_doc);
 
-    parser.add_option<bool>("expensive_statistics",
-                            "show statistics on \"unique unlabeled edges\" (WARNING: "
-                            "these are *very* slow, i.e. too expensive to show by default "
-                            "(in terms of time and memory). When this is used, the planner "
-                            "prints a big warning on stderr with information on the performance impact. "
-                            "Don't use when benchmarking!)",
-                            "false");
-    parser.add_option<bool>("ms_only",
-                            "terminate planner after merge-and-shrink finished",
-                            "false");
+    parser.add_option<bool>(
+        "expensive_statistics",
+        "show statistics on \"unique unlabeled edges\" (WARNING: "
+        "these are *very* slow, i.e. too expensive to show by default "
+        "(in terms of time and memory). When this is used, the planner "
+        "prints a big warning on stderr with information on the performance "
+        "impact. Don't use when benchmarking!)",
+        "false");
+    parser.add_option<bool>(
+        "terminate",
+        "terminate planner after heuristic computation finished (by reporting "
+        "all states as dead ends)",
+        "false");
     parser.add_option<bool>("debug_abstractions", "store additional information "
                             "in abstractions for debug output.", "False");
     Heuristic::add_options_to_parser(parser);
