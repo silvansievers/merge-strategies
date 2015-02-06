@@ -122,7 +122,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
          << (options.get<bool>("build_stabilized_pdg") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetries::get_next(std::vector<TransitionSystem *> &all_abstractions) {
+pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &all_abstractions) {
     assert(!done());
     ++iteration_counter;
 
@@ -138,7 +138,7 @@ pair<int, int> MergeSymmetries::get_next(std::vector<TransitionSystem *> &all_ab
         options.set<double>("bliss_time_limit", time_limit);
         Symmetries symmetries(options);
         bool applied_symmetries =
-                symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
+            symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
         if (applied_symmetries) {
             ++number_of_applied_symmetries;
         }

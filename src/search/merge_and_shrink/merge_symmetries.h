@@ -28,7 +28,7 @@ public:
     explicit MergeSymmetries(const Options &options);
     virtual ~MergeSymmetries() {}
 
-    virtual std::pair<int, int> get_next(std::vector<TransitionSystem *> &all_abstractions);
+    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_abstractions);
     virtual std::string name() const;
 };
 

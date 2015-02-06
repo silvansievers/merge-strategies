@@ -117,10 +117,8 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &abstract
                                       bliss::Digraph &bliss_graph) {
     int idx = 0;
 
-    int num_of_nodes = abstractions.size();
-
     // Setting the number of abstractions
-    symmetry_generator_info.num_abstractions = num_of_nodes;
+    symmetry_generator_info.num_abstractions = abstractions.size();;
     int node_color_added_val = 0;
 
     if (debug) {
@@ -129,7 +127,11 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &abstract
         cout << "    node [shape = none] start;" << endl;
     }
 
-    for (int abs_ind = 0; abs_ind < num_of_nodes; abs_ind++){
+    // We start with one node for every transition system, later adding more nodes
+    // for states and labels.
+    int num_of_nodes = abstractions.size();
+
+    for (int abs_ind = 0; abs_ind < static_cast<int>(abstractions.size()); ++abs_ind){
         // Add vertex for each abstraction
         if (build_stabilized_pdg|| abstractions[abs_ind] == 0) {
             // Either the abstraction is empty or all abstractions are stabilized.
