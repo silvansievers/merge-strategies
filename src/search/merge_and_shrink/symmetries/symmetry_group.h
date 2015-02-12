@@ -11,10 +11,17 @@ class SymmetryGenerator;
 class SymmetryGeneratorInfo;
 class TransitionSystem;
 
+//void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
+
 class SymmetryGroup {
-    // TODO: get rid of gc and have the permutations wrapper object instead?
-    // This would store the actual generators as well.
-    GraphCreator gc;
+    GraphCreator *gc;
+    SymmetryGeneratorInfo *symmetry_generator_info;
+    std::vector<const SymmetryGenerator*> symmetry_generators;
+
+    int num_identity_generators;
+    //int stop_after_false_generated;
+    bool bliss_limit_reached;
+    bool stop_after_no_symmetries;
 
     enum SymmetriesForShrinking {
         NO_SHRINKING,
@@ -46,19 +53,30 @@ class SymmetryGroup {
 
     void apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                           const std::vector<int> &generator_indices) const;
-
-    // TODO: replace by permutations wrapper object
     const SymmetryGenerator* get_symmetry_generator(int ind) const;
-    const SymmetryGeneratorInfo &get_sym_gen_info() const { return gc.get_symmetry_generator_info(); }
-    int get_num_generators() const { return gc.get_symmetry_generators().size(); }
 public:
     explicit SymmetryGroup(const Options &options);
-    ~SymmetryGroup() {}
+    ~SymmetryGroup();
 
+    // method used by add_automorphism
+    void create_symmetry_generator(const unsigned int *automorphism);
     bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                                    std::vector<std::pair<int, int> > &merge_order);
-    bool is_bliss_limit_reached() const {return gc.is_bliss_limit_reached(); }
-    double get_bliss_time() const {return bliss_time; }
+    bool is_bliss_limit_reached() const {
+        return bliss_limit_reached;
+    }
+    int get_num_generators() const {
+        return symmetry_generators.size();
+    }
+    int get_num_identity_generators() const {
+        return num_identity_generators;
+    }
+    double get_bliss_time() const {
+        return bliss_time;
+    }
+    void set_bliss_limit_reached() {
+        bliss_limit_reached = true;
+    }
 };
 
 #endif

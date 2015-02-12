@@ -1,16 +1,16 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 #define MERGE_AND_SHRINK_SYMMETRIES_GRAPH_CREATOR_H
 
-#include "symmetry_generator.h"
-
-#include "../../bliss/graph.hh"
-
 #include <vector>
 
+namespace bliss {
+    class Digraph;
+}
 class Options;
+class SymmetryGenerator;
+class SymmetryGeneratorInfo;
+class SymmetryGroup;
 class TransitionSystem;
-
-void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
 
 /**
  * This class is using bliss for finding symmetries of the given set of transition systems.
@@ -29,36 +29,17 @@ class GraphCreator {
     bool debug; //generate dot-readable output
     bool stabilize_transition_systems;
     double bliss_time_limit;
-    bool stop_after_no_symmetries;
-
-    int num_identity_generators;
-    //int stop_after_false_generated;
-    bool bliss_limit_reached;
-
-    std::vector<const SymmetryGenerator*> symmetry_generators;
-    SymmetryGeneratorInfo symmetry_generator_info;
 
     void create_bliss_graph(const std::vector<TransitionSystem *>& transition_systems,
-                            bliss::Digraph &bliss_graph);
-
-    void delete_generators();
+                            bliss::Digraph &bliss_graph,
+                            SymmetryGeneratorInfo *symmetry_generator_info);
 public:
     explicit GraphCreator(const Options &options);
     ~GraphCreator();
 
-    // method used by add_automorphism
-    void create_symmetry_generator(const unsigned int *automorphism);
-
-    double compute_generators(const std::vector<TransitionSystem *>& transition_systems);
-    const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const {
-        return symmetry_generators;
-    }
-    const SymmetryGeneratorInfo &get_symmetry_generator_info() const {
-        return symmetry_generator_info;
-    }
-    bool is_bliss_limit_reached() const {
-        return bliss_limit_reached;
-    }
+    double compute_symmetries(const std::vector<TransitionSystem *>& transition_systems,
+                              SymmetryGroup *symmetry_group,
+                              SymmetryGeneratorInfo *symmetry_generator_info);
 };
 
 #endif

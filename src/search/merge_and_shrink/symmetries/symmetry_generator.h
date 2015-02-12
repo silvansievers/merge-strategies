@@ -30,7 +30,7 @@ struct SymmetryGeneratorInfo {
 };
 
 class SymmetryGenerator {
-    const SymmetryGeneratorInfo &sym_gen_info;
+    const SymmetryGeneratorInfo *sym_gen_info;
     int* value;
 
     bool borrowed_buffer;
@@ -49,7 +49,7 @@ class SymmetryGenerator {
 
     //void compute_cycles();
 public:
-    SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info,
+    SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info,
                       const unsigned int* automorphism);
     ~SymmetryGenerator();
 

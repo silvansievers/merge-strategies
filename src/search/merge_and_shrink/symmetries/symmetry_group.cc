@@ -17,18 +17,52 @@
 using namespace std;
 
 SymmetryGroup::SymmetryGroup(const Options &options)
-    : gc(options),
+    : num_identity_generators(0),
+      bliss_limit_reached(false),
+      stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
       symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
       symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
       external_merging(ExternalMerging(options.get_enum("external_merging"))),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       bliss_time(0) {
+    gc = new GraphCreator(options);
+    symmetry_generator_info = new SymmetryGeneratorInfo();
+}
+
+SymmetryGroup::~SymmetryGroup() {
+    for (size_t i = 0; i < symmetry_generators.size(); i++){
+        delete symmetry_generators[i];
+    }
+    delete symmetry_generator_info;
+    delete gc;
+}
+
+void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) {
+    SymmetryGenerator* symmetry_generator = new SymmetryGenerator(symmetry_generator_info, automorphism);
+    //Only if we have non-identity generator we need to save it into the list of generators
+//  cout << "Checking for identity" << endl;
+    if(!symmetry_generator->identity()) {
+        symmetry_generators.push_back(symmetry_generator);
+    } else {
+        delete symmetry_generator;
+        ++num_identity_generators;
+//        if (num_identity_generators > stop_after_false_generated) {
+//            cout << endl << "Problems with generating symmetry group! Too many false generators." << endl;
+//            cout<<"Number of generators: 0"<<endl;
+//            exit_with(EXIT_CRITICAL_ERROR);
+//        }
+    }
 }
 
 bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &transition_systems,
                                            vector<pair<int, int> > &merge_order) {
-    bliss_time = gc.compute_generators(transition_systems);
-    if (get_num_generators() == 0 || is_bliss_limit_reached()) {
+    bliss_time = gc->compute_symmetries(transition_systems, this, symmetry_generator_info);
+    delete gc;
+    gc = 0;
+    if (stop_after_no_symmetries && symmetry_generators.empty()) {
+        bliss_limit_reached = true;
+    }
+    if (get_num_generators() == 0 || bliss_limit_reached) {
         return false;
     }
 
@@ -232,12 +266,12 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
     // It seems like this process should better be done in all transition systems in parallel,
     // since we could exploit all the compositions of these transition systems this way as well.
     // Later we can reduce the first part - the transition system vars and save some space/time
-    int num_states = get_sym_gen_info().num_abs_and_states;
-    int num_transition_systems = get_sym_gen_info().num_transition_systems;
+    int num_states = symmetry_generator_info->num_abs_and_states;
+    int num_transition_systems = symmetry_generator_info->num_transition_systems;
     // The graph is represented by vector of to_nodes for each node. (Change to sets?)
     vector<vector<int> > graph(num_states, vector<int>());
-    for (int index = num_transition_systems; index < get_sym_gen_info().num_abs_and_states; ++index) {
-        int abs_index = get_sym_gen_info().get_var_by_index(index);
+    for (int index = num_transition_systems; index < symmetry_generator_info->num_abs_and_states; ++index) {
+        int abs_index = symmetry_generator_info->get_var_by_index(index);
         if (transition_systems[abs_index]) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 // Going over the generators, for each just add the edges.
@@ -265,9 +299,9 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
     for (size_t eqiv=0; eqiv < result.size(); eqiv++) {
         for (size_t i=0; i < result[eqiv].size(); i++) {
             int idx = result[eqiv][i];
-            if (idx < get_sym_gen_info().num_transition_systems)
+            if (idx < symmetry_generator_info->num_transition_systems)
                 continue;
-            pair<int, AbstractStateRef> vals = get_sym_gen_info().get_var_val_by_index(idx);
+            pair<int, AbstractStateRef> vals = symmetry_generator_info->get_var_val_by_index(idx);
             equivalence_relations[vals.first][eqiv].push_front(vals.second);
         }
     }
@@ -321,5 +355,5 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
 
 const SymmetryGenerator* SymmetryGroup::get_symmetry_generator(int ind) const {
     assert(ind >= 0 && ind < get_num_generators());
-    return gc.get_symmetry_generators()[ind];
+    return symmetry_generators[ind];
 }

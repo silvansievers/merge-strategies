@@ -1,8 +1,12 @@
 #include "graph_creator.h"
 
+#include "symmetry_generator.h"
+#include "symmetry_group.h"
+
 #include "../labels.h"
 #include "../transition_system.h"
 
+#include "../../bliss/graph.hh"
 #include "../../bliss/defs.hh"
 
 #include "../../globals.h"
@@ -20,54 +24,22 @@ static void out_of_memory_handler() {
 }
 
 void add_automorphism(void* param, unsigned int, const unsigned int * automorphism) {
-    GraphCreator *gc = (GraphCreator*) param;
-    gc->create_symmetry_generator(automorphism);
+    SymmetryGroup *symmetry_group = (SymmetryGroup*) param;
+    symmetry_group->create_symmetry_generator(automorphism);
 }
 
 GraphCreator::GraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       stabilize_transition_systems(options.get<bool>("stabilize_transition_systems")),
-      bliss_time_limit(options.get<double>("bliss_time_limit")),
-      stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
-      num_identity_generators(0),
-      bliss_limit_reached(false) {
+      bliss_time_limit(options.get<double>("bliss_time_limit")) {
 }
 
 GraphCreator::~GraphCreator() {
-    delete_generators();
 }
 
-void GraphCreator::delete_generators() {
-    for (size_t i = 0; i < symmetry_generators.size(); i++){
-        if (symmetry_generators[i]) {
-            delete symmetry_generators[i];
-            symmetry_generators[i] = 0;
-        }
-    }
-
-    symmetry_generators.clear();
-    symmetry_generator_info.reset();
-    num_identity_generators = 0;
-}
-
-void GraphCreator::create_symmetry_generator(const unsigned int *automorphism) {
-    SymmetryGenerator* symmetry_generator = new SymmetryGenerator(symmetry_generator_info, automorphism);
-    //Only if we have non-identity generator we need to save it into the list of generators
-//  cout << "Checking for identity" << endl;
-    if(!symmetry_generator->identity()) {
-        symmetry_generators.push_back(symmetry_generator);
-    } else {
-        delete symmetry_generator;
-        ++num_identity_generators;
-//        if (num_identity_generators > stop_after_false_generated) {
-//            cout << endl << "Problems with generating symmetry group! Too many false generators." << endl;
-//            cout<<"Number of generators: 0"<<endl;
-//            exit_with(EXIT_CRITICAL_ERROR);
-//        }
-    }
-}
-
-double GraphCreator::compute_generators(const vector<TransitionSystem *>& transition_systems) {
+double GraphCreator::compute_symmetries(const vector<TransitionSystem *>& transition_systems,
+                                        SymmetryGroup *symmetry_group,
+                                        SymmetryGeneratorInfo *symmetry_generator_info) {
     // Find (non) transition system stabilized symmetries depending on the chosen option.
 
     cout << "Computing generators for " << (stabilize_transition_systems? "" : "non ")
@@ -80,7 +52,7 @@ double GraphCreator::compute_generators(const vector<TransitionSystem *>& transi
         bliss::Digraph bliss_graph = bliss::Digraph();
         bliss_graph.set_time_limit(bliss_time_limit);
 
-        create_bliss_graph(transition_systems, bliss_graph);
+        create_bliss_graph(transition_systems, bliss_graph, symmetry_generator_info);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
 
@@ -91,33 +63,32 @@ double GraphCreator::compute_generators(const vector<TransitionSystem *>& transi
     //    bliss_graph.set_verbose_level(10);
 
         cout << "Searching for automorphisms... " << timer << endl;
-        bliss_graph.find_automorphisms(stats1,&(add_automorphism), this);
+        bliss_graph.find_automorphisms(stats1,&(add_automorphism), symmetry_group);
   //    stats1.print(stats_file);
   //    fclose(stats_file);
   //    fclose(f);
 
-        cout << "Got " << symmetry_generators.size() << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
-        cout << "Got " << num_identity_generators << " identity generators" << endl;
+        cout << "Got " << symmetry_group->get_num_generators()
+             << " group generators" << endl; //, time step: [t=" << g_timer << "]" << endl;
+        cout << "Got " << symmetry_group->get_num_identity_generators()
+             << " identity generators" << endl;
     } catch (bliss::BlissException &e) {
         e.dump();
-        bliss_limit_reached = true;
+        symmetry_group->set_bliss_limit_reached();
     }
     set_new_handler(original_new_handler);
-
-    if (stop_after_no_symmetries && symmetry_generators.empty()) {
-        bliss_limit_reached = true;
-    }
 
     cout << "Done computing symmetries: " << timer << endl;
     return timer();
 }
 
 void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &transition_systems,
-                                      bliss::Digraph &bliss_graph) {
+                                      bliss::Digraph &bliss_graph,
+                                      SymmetryGeneratorInfo *symmetry_generator_info) {
     int idx = 0;
 
     // Setting the number of transition systems
-    symmetry_generator_info.num_transition_systems = transition_systems.size();;
+    symmetry_generator_info->num_transition_systems = transition_systems.size();;
     int node_color_added_val = 0;
 
     if (debug) {
@@ -152,19 +123,19 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &transiti
         }
 
         // Setting the indices for connections between abstract states and their transition systems
-        symmetry_generator_info.dom_sum_by_var.push_back(num_of_nodes);
+        symmetry_generator_info->dom_sum_by_var.push_back(num_of_nodes);
 
         int abs_states = 0;
         if (transition_systems[abs_ind])
             abs_states = transition_systems[abs_ind]->get_size();
         num_of_nodes += abs_states;
         for(int num_of_value = 0; num_of_value < abs_states; num_of_value++){
-            symmetry_generator_info.var_by_val.push_back(abs_ind);
+            symmetry_generator_info->var_by_val.push_back(abs_ind);
         }
 
     }
     // Setting the total number of abstract states and transition systems
-    symmetry_generator_info.num_abs_and_states = num_of_nodes;
+    symmetry_generator_info->num_abs_and_states = num_of_nodes;
 
     // We need an arbitrary valid transition system to get access to the number of
     // labels and their costs (we do not have access to the labels object).
@@ -228,8 +199,8 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &transiti
                 int eff_idx = pre_idx;
 //              cout << "Added eff vertex: " << eff_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 2 <<" for operator " << op_no << " in transition system " << abs_ind << endl;
 
-                int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
-                int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
+                int src_idx = symmetry_generator_info->get_index_by_var_val_pair(abs_ind, trans.src);
+                int target_idx = symmetry_generator_info->get_index_by_var_val_pair(abs_ind, trans.target);
                 // Edges from abstract state source over pre=eff=transition-node to target
                 bliss_graph.add_edge(src_idx, pre_idx);
                 bliss_graph.add_edge(eff_idx, target_idx);
@@ -270,7 +241,7 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &transiti
             if (!transition_systems[abs_ind]->is_goal_state(state))
                 continue;
 
-            int val_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, state);
+            int val_idx = symmetry_generator_info->get_index_by_var_val_pair(abs_ind, state);
 
             // Edges from goal states to the goal node
             bliss_graph.add_edge(val_idx, idx);
