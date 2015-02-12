@@ -120,8 +120,8 @@ HEADERS += merge_and_shrink/labels.h \
 
 HEADERS += merge_and_shrink/symmetries/graph_creator.h \
            merge_and_shrink/symmetries/scc.h \
-           merge_and_shrink/symmetries/symmetries.h \
            merge_and_shrink/symmetries/symmetry_generator.h \
+           merge_and_shrink/symmetries/symmetry_group.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \

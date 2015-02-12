@@ -1,4 +1,4 @@
-#include "symmetries.h"
+#include "symmetry_group.h"
 
 #include "scc.h"
 #include "symmetry_generator.h"
@@ -16,7 +16,7 @@
 
 using namespace std;
 
-Symmetries::Symmetries(const Options &options)
+SymmetryGroup::SymmetryGroup(const Options &options)
     : gc(options),
       symmetries_for_shrinking(SymmetriesForShrinking(options.get_enum("symmetries_for_shrinking"))),
       symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
@@ -25,7 +25,7 @@ Symmetries::Symmetries(const Options &options)
       bliss_time(0) {
 }
 
-bool Symmetries::find_and_apply_symmetries(const vector<TransitionSystem *> &transition_systems,
+bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &transition_systems,
                                            vector<pair<int, int> > &merge_order) {
     bliss_time = gc.compute_generators(transition_systems);
     if (get_num_generators() == 0 || is_bliss_limit_reached()) {
@@ -219,7 +219,7 @@ bool Symmetries::find_and_apply_symmetries(const vector<TransitionSystem *> &tra
     return applied_symmetries;
 }
 
-void Symmetries::apply_symmetries(const vector<TransitionSystem *> &transition_systems,
+void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transition_systems,
                                   const vector<int> &generator_indices) const {
     if (get_num_generators() == 0) {
         cerr << "You first have to find symmetries before you can apply one of them!" << endl;
@@ -319,7 +319,7 @@ void Symmetries::apply_symmetries(const vector<TransitionSystem *> &transition_s
     cout << "==========================================================================================" << endl;
 }
 
-const SymmetryGenerator* Symmetries::get_symmetry_generator(int ind) const {
+const SymmetryGenerator* SymmetryGroup::get_symmetry_generator(int ind) const {
     assert(ind >= 0 && ind < get_num_generators());
     return gc.get_symmetry_generators()[ind];
 }

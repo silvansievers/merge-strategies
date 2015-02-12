@@ -1,6 +1,6 @@
 #include "merge_symmetries_linear.h"
 
-#include "symmetries/symmetries.h"
+#include "symmetries/symmetry_group.h"
 
 #include "../globals.h"
 #include "../plugin.h"
@@ -144,20 +144,20 @@ pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSyste
         }
         cout << "Setting bliss time limit to " << time_limit << endl;
         options.set<double>("bliss_time_limit", time_limit);
-        Symmetries symmetries(options);
+        SymmetryGroup symmetry_group(options);
         bool applied_symmetries =
-                symmetries.find_and_apply_symmetries(all_transition_sysmtes, merge_order);
+                symmetry_group.find_and_apply_symmetries(all_transition_sysmtes, merge_order);
         if (applied_symmetries) {
             ++number_of_applied_symmetries;
         }
-        if (symmetries.is_bliss_limit_reached()) {
+        if (symmetry_group.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
         if (only_applied_dfp && (applied_symmetries || !merge_order.empty())) {
             only_applied_dfp = false;
             cout << "not pure DFP anymore" << endl;
         }
-        double bliss_time = symmetries.get_bliss_time();
+        double bliss_time = symmetry_group.get_bliss_time();
         bliss_times.push_back(bliss_time);
         if (bliss_remaining_time_budget) {
             bliss_remaining_time_budget -= bliss_time;

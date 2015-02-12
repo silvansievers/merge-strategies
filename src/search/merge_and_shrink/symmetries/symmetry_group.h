@@ -1,5 +1,5 @@
-#ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRIES_H
-#define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRIES_H
+#ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
+#define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
 
 #include "graph_creator.h"
 
@@ -11,7 +11,7 @@ class SymmetryGenerator;
 class SymmetryGeneratorInfo;
 class TransitionSystem;
 
-class Symmetries {
+class SymmetryGroup {
     // TODO: get rid of gc and have the permutations wrapper object instead?
     // This would store the actual generators as well.
     GraphCreator gc;
@@ -52,8 +52,8 @@ class Symmetries {
     const SymmetryGeneratorInfo &get_sym_gen_info() const { return gc.get_symmetry_generator_info(); }
     int get_num_generators() const { return gc.get_symmetry_generators().size(); }
 public:
-    explicit Symmetries(const Options &options);
-    ~Symmetries() {}
+    explicit SymmetryGroup(const Options &options);
+    ~SymmetryGroup() {}
 
     bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                                    std::vector<std::pair<int, int> > &merge_order);
