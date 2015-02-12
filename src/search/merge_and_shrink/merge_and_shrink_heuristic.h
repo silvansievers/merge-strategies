@@ -13,7 +13,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     ShrinkStrategy *const shrink_strategy;
     const bool use_expensive_statistics;
     bool terminate;
-    bool debug_abstractions;
+    bool debug_transition_systems;
     Labels *labels;
 
     TransitionSystem *final_transition_system;

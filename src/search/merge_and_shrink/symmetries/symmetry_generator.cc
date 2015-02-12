@@ -17,14 +17,14 @@ SymmetryGeneratorInfo::SymmetryGeneratorInfo() {
 }
 
 void SymmetryGeneratorInfo::reset() {
-    num_abstractions = -1;
+    num_transition_systems = -1;
     num_abs_and_states = -1;
     var_by_val.clear();
     dom_sum_by_var.clear();
 }
 
 bool SymmetryGeneratorInfo::initialized() const {
-    return num_abstractions != -1
+    return num_transition_systems != -1
             && num_abs_and_states != -1
             && !var_by_val.empty()
             && !dom_sum_by_var.empty();
@@ -32,21 +32,21 @@ bool SymmetryGeneratorInfo::initialized() const {
 
 int SymmetryGeneratorInfo::get_var_by_index(const int ind) const {
     assert(initialized());
-    if (ind < num_abstractions) {
+    if (ind < num_transition_systems) {
         cout << "=====> WARNING!!!! Check that this is done on purpose!" << endl;
         return ind;
     }
-    return var_by_val[ind-num_abstractions];
+    return var_by_val[ind-num_transition_systems];
 }
 
-pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(int ind) const {
+pair<int, int> SymmetryGeneratorInfo::get_var_val_by_index(int ind) const {
     assert(initialized());
-    if (ind < num_abstractions) {
+    if (ind < num_transition_systems) {
         cout << "=====> Error!!!! index too low, in the variable part!" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
 
-    int var =  var_by_val[ind-num_abstractions];
+    int var =  var_by_val[ind-num_transition_systems];
     int val = ind - dom_sum_by_var[var];
 
     if (val < 0) {
@@ -58,13 +58,13 @@ pair<int, AbstractStateRef> SymmetryGeneratorInfo::get_var_val_by_index(int ind)
     return make_pair(var, val);
 }
 
-int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, AbstractStateRef val) const {
+int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, int val) const {
     assert(initialized());
     return dom_sum_by_var[var] + val;
 }
 
 void SymmetryGeneratorInfo::dump() const {
-    cout << "num abstractions: " << num_abstractions << endl;
+    cout << "num transition systems: " << num_transition_systems << endl;
     cout << "num abs and states: " << num_abs_and_states << endl;
     cout << "var by val" << endl;
     cout << var_by_val << endl;
@@ -73,7 +73,7 @@ void SymmetryGeneratorInfo::dump() const {
 }
 
 void SymmetryGeneratorInfo::dump_var_by_val() const {
-    int size = num_abs_and_states - num_abstractions;
+    int size = num_abs_and_states - num_transition_systems;
     for (int i = 0; i < size; ++i) {
         cout << i << ": " << var_by_val[i];
         if (i != size - 1)
@@ -86,16 +86,15 @@ void SymmetryGeneratorInfo::dump_var_by_val() const {
 
 
 SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
-                                     const unsigned int *automorphism,
-                                     bool)
+                                     const unsigned int *automorphism)
     : sym_gen_info(sym_gen_info_),
       identity_generator(true) {
     _allocate();
 
-    int num_abstractions = sym_gen_info.num_abstractions;
-    internally_affected.resize(num_abstractions, false);
-    mapped.resize(num_abstractions, false);
-    overall_affected.resize(num_abstractions, false);
+    int num_transition_systems = sym_gen_info.num_transition_systems;
+    internally_affected.resize(num_transition_systems, false);
+    mapped.resize(num_transition_systems, false);
+    overall_affected.resize(num_transition_systems, false);
     for (int from_index = 0; from_index < sym_gen_info.num_abs_and_states; from_index++){
         if (from_index > sym_gen_info.num_abs_and_states) {
             cerr << "Symmetry generator index out of range" << endl;
@@ -107,44 +106,44 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
 
         if (from_index != to_index) {
             identity_generator = false;
-            if (from_index < num_abstractions) {
-                // abstraction is mapped
-                assert(to_index < num_abstractions);
+            if (from_index < num_transition_systems) {
+                // transition system is mapped
+                assert(to_index < num_transition_systems);
                 if (!mapped[from_index]) {
                     mapped[from_index] = true;
-                    mapped_abstractions.push_back(from_index);
+                    mapped_transition_systems.push_back(from_index);
                 }
                 if (mapped[from_index] && internally_affected[from_index]) {
-                    cerr << "Abstraction " << from_index << "both internally "
-                         << "affected and mapped to another abstraction" << endl;
+                    cerr << "Transition system " << from_index << "both internally "
+                         << "affected and mapped to another transition system" << endl;
                     exit_with(EXIT_CRITICAL_ERROR);
                 }
                 if (!overall_affected[from_index]) {
                     overall_affected[from_index] = true;
-                    overall_affected_abstractions.push_back(from_index);
+                    overall_affected_transition_systems.push_back(from_index);
                 }
             } else {
                 int from_abs_index = sym_gen_info.get_var_by_index(from_index);
                 int to_abs_index = sym_gen_info_.get_var_by_index(to_index);
                 if (!overall_affected[from_abs_index]) {
                     overall_affected[from_abs_index] = true;
-                    overall_affected_abstractions.push_back(from_abs_index);
+                    overall_affected_transition_systems.push_back(from_abs_index);
                 }
                 if (from_abs_index == to_abs_index) {
-                    // abstraction affected internally
+                    // transition system affected internally
                     if (!internally_affected[from_abs_index]) {
-                        internally_affected_abstractions.push_back(from_abs_index);
+                        internally_affected_transition_systems.push_back(from_abs_index);
                         internally_affected[from_abs_index] = true;
                     }
                     if (mapped[from_abs_index] && internally_affected[from_abs_index]) {
-                        cerr << "Abstraction " << from_abs_index << "both internally "
-                             << "affected and mapped to another abstraction" << endl;
+                        cerr << "Transition system " << from_abs_index << "both internally "
+                             << "affected and mapped to another transition system" << endl;
                         exit_with(EXIT_CRITICAL_ERROR);
                     }
                 } else {
                     if (static_cast<int>(automorphism[from_abs_index]) != to_abs_index) {
-                        cerr << "State of abstraction mapped to state of another"
-                             << " abstraction which differs from the abstractions'"
+                        cerr << "State of transition system mapped to state of another"
+                             << " transition system which differs from the transition systems'"
                              << " nodes mapping." << endl;
                         exit_with(EXIT_CRITICAL_ERROR);
                     }
@@ -153,10 +152,10 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo &sym_gen_info_,
         }
     }
 
-    sort(internally_affected_abstractions.begin(), internally_affected_abstractions.end());
-    sort(mapped_abstractions.begin(), mapped_abstractions.end());
+    sort(internally_affected_transition_systems.begin(), internally_affected_transition_systems.end());
+    sort(mapped_transition_systems.begin(), mapped_transition_systems.end());
 
-    //if (!abstraction_stabilized_symmetry)
+    //if (!stabilize_transition_systems)
     //    compute_cycles();
 }
 
@@ -176,9 +175,9 @@ void SymmetryGenerator::_deallocate() {
 }
 
 //void SymmetryGenerator::compute_cycles() {
-//    int num_abstractions = sym_gen_info.num_abstractions;
-//    vector<bool> marked(num_abstractions, false);
-//    for (size_t abs_index = 0; abs_index < num_abstractions; ++abs_index) {
+//    int num_transition_systems = sym_gen_info.num_transition_systems;
+//    vector<bool> marked(num_transition_systems, false);
+//    for (size_t abs_index = 0; abs_index < num_transition_systems; ++abs_index) {
 //        if (mapped[abs_index] && !marked[abs_index]) {
 //            marked[abs_index] = true;
 //            int to_index = get_value(abs_index);
@@ -198,9 +197,9 @@ void SymmetryGenerator::_deallocate() {
 //}
 
 void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) const {
-    int num_abstractions = sym_gen_info.num_abstractions;
-    vector<bool> marked(num_abstractions, false);
-    for (int abs_index = 0; abs_index < num_abstractions; ++abs_index) {
+    int num_transition_systems = sym_gen_info.num_transition_systems;
+    vector<bool> marked(num_transition_systems, false);
+    for (int abs_index = 0; abs_index < num_transition_systems; ++abs_index) {
         if (mapped[abs_index] && !marked[abs_index]) {
             marked[abs_index] = true;
             int to_index = get_value(abs_index);
@@ -236,18 +235,18 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 //                to_abs_index = cycle[i + 1];
 //            else
 //                to_abs_index = cycle[0];
-//            cout << "abstraction " << from_abs_index << " -> " << to_abs_index << endl;
+//            cout << "transition system " << from_abs_index << " -> " << to_abs_index << endl;
 //            vector<int> internal_abs_mapping;
 //            size_t value_index = 0;
 //            while (sym_gen_info.var_by_val[value_index] != from_abs_index) {
-//                // find starting index in value[] for abstraction from_abs_index
+//                // find starting index in value[] for transition system from_abs_index
 //                ++value_index;
 //            }
-//            while (value_index < sym_gen_info.num_abs_and_states - sym_gen_info.num_abstractions && sym_gen_info.var_by_val[value_index] == from_abs_index) {
+//            while (value_index < sym_gen_info.num_abs_and_states - sym_gen_info.num_transition_systems && sym_gen_info.var_by_val[value_index] == from_abs_index) {
 //                // the entry x in var_by_val corresponds to the index
-//                // x + num_abstractions in value[]
+//                // x + num_transition_systems in value[]
 //                //cout << "value_index " << value_index << endl;
-//                int from_index = value_index + sym_gen_info.num_abstractions;
+//                int from_index = value_index + sym_gen_info.num_transition_systems;
 //                //cout << "from_index " << from_index << endl;
 //                int to_index = value[from_index];
 //                //cout << "to_index " << to_index << endl;
@@ -271,7 +270,7 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 
 bool SymmetryGenerator::identity() const{
     if (identity_generator)
-        assert(internally_affected_abstractions.empty());
+        assert(internally_affected_transition_systems.empty());
     return identity_generator;
 }
 

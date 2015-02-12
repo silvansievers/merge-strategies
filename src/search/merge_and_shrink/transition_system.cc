@@ -972,7 +972,7 @@ AtomicTransitionSystem::AtomicTransitionSystem(Labels *labels, int variable_, bo
             for (int var = 0; var < static_cast<int>(g_variable_domain.size()); ++var) {
                 set<int> multi_vals;
                 if (var == variable) {
-                    // if var is the abstrations variable, its value can only be the
+                    // if var is the variable of the transition system, its value can only be the
                     // value of the abstract state
                     multi_vals.insert(abs_state);
                 } else {
@@ -1083,7 +1083,7 @@ CompositeTransitionSystem::CompositeTransitionSystem(Labels *labels,
                 assert(abs1_var_multi_vals.size() == abs2_var_multi_vals.size());
                 assert(abs1_var_multi_vals.size() == g_variable_domain.size());
                 vector<set<int> > new_var_multi_vals;
-                // this assumes that the two abstractions do no share any variables. otherwise,
+                // this assumes that the two transition system do no share any variables. otherwise,
                 // a more complex double-union should be computed, as in apply_abstraction()
                 for (size_t i = 0; i < abs1_var_multi_vals.size(); ++i) {
                     const set<int> &abs1_multi_vals = abs1_var_multi_vals[i];

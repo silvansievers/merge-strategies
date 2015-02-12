@@ -13,13 +13,13 @@ class TransitionSystem;
 void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
 
 /**
- * This class is using bliss for finding symmetries of the given set of abstractions.
+ * This class is using bliss for finding symmetries of the given set of transition systems.
  */
 
 class GraphCreator {
     enum color_t {
-        ABSTRACTION_VERTEX,
-        ABS_STATE_VERTEX,
+        TRANSITION_SYSTEM_VERTEX,
+        ABSTRACT_STATE_VERTEX,
         GOAL_VERTEX,
         LABEL_VERTEX,
         INITIAL_VERTEX
@@ -27,7 +27,7 @@ class GraphCreator {
 
     // Options
     bool debug; //generate dot-readable output
-    bool build_stabilized_pdg;
+    bool stabilize_transition_systems;
     double bliss_time_limit;
     bool stop_after_no_symmetries;
 
@@ -38,7 +38,7 @@ class GraphCreator {
     std::vector<const SymmetryGenerator*> symmetry_generators;
     SymmetryGeneratorInfo symmetry_generator_info;
 
-    void create_bliss_graph(const std::vector<TransitionSystem *>& abstractions,
+    void create_bliss_graph(const std::vector<TransitionSystem *>& transition_systems,
                             bliss::Digraph &bliss_graph);
 
     void delete_generators();
@@ -49,7 +49,7 @@ public:
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
 
-    double compute_generators(const std::vector<TransitionSystem *>& abstractions);
+    double compute_generators(const std::vector<TransitionSystem *>& transition_systems);
     const std::vector<const SymmetryGenerator*>& get_symmetry_generators () const {
         return symmetry_generators;
     }

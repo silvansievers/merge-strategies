@@ -21,7 +21,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
       use_expensive_statistics(opts.get<bool>("expensive_statistics")),
       terminate(opts.get<bool>("terminate")),
-      debug_abstractions(opts.get<bool>("debug_abstractions")) {
+      debug_transition_systems(opts.get<bool>("debug_transition_systems")) {
     labels = new Labels(opts);
 }
 
@@ -65,7 +65,7 @@ TransitionSystem *MergeAndShrinkHeuristic::build_transition_system() {
     if (g_variable_domain.size() * 2 - 1 > all_transition_systems.max_size())
         exit_with(EXIT_OUT_OF_MEMORY);
     all_transition_systems.reserve(g_variable_domain.size() * 2 - 1);
-    TransitionSystem::build_atomic_transition_systems(all_transition_systems, labels, cost_type, debug_abstractions);
+    TransitionSystem::build_atomic_transition_systems(all_transition_systems, labels, cost_type, debug_transition_systems);
 
     cout << "Merging transition systems..." << endl;
 
@@ -118,7 +118,7 @@ TransitionSystem *MergeAndShrinkHeuristic::build_transition_system() {
         }
 
         TransitionSystem *new_transition_system = new CompositeTransitionSystem(
-            labels, transition_system, other_transition_system, debug_abstractions);
+            labels, transition_system, other_transition_system, debug_transition_systems);
 
         transition_system->release_memory();
         other_transition_system->release_memory();
@@ -311,8 +311,8 @@ static Heuristic *_parse(OptionParser &parser) {
         "terminate planner after heuristic computation finished (by reporting "
         "all states as dead ends)",
         "false");
-    parser.add_option<bool>("debug_abstractions", "store additional information "
-                            "in abstractions for debug output.", "False");
+    parser.add_option<bool>("debug_transition_systems", "store additional information "
+                            "in transition systems for debug output.", "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 

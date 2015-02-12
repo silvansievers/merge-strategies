@@ -44,7 +44,7 @@ class Symmetries {
 
     double bliss_time; // elapsed bliss time
 
-    void apply_symmetries(const std::vector<TransitionSystem *> &abstractions,
+    void apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                           const std::vector<int> &generator_indices) const;
 
     // TODO: replace by permutations wrapper object
@@ -55,7 +55,7 @@ public:
     explicit Symmetries(const Options &options);
     ~Symmetries() {}
 
-    bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &abstractions,
+    bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {return gc.is_bliss_limit_reached(); }
     double get_bliss_time() const {return bliss_time; }
