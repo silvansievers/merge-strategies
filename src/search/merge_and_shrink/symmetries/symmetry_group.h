@@ -53,7 +53,6 @@ class SymmetryGroup {
 
     void apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
                           const std::vector<int> &generator_indices) const;
-    const SymmetryGenerator* get_symmetry_generator(int ind) const;
 public:
     explicit SymmetryGroup(const Options &options);
     ~SymmetryGroup();

@@ -30,9 +30,9 @@ class GraphCreator {
     bool stabilize_transition_systems;
     double bliss_time_limit;
 
-    void create_bliss_graph(const std::vector<TransitionSystem *>& transition_systems,
-                            bliss::Digraph &bliss_graph,
-                            SymmetryGeneratorInfo *symmetry_generator_info);
+    void create_bliss_directed_graph(const std::vector<TransitionSystem *>& transition_systems,
+                                     bliss::Digraph &bliss_graph,
+                                     SymmetryGeneratorInfo *symmetry_generator_info);
 public:
     explicit GraphCreator(const Options &options);
     ~GraphCreator();

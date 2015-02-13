@@ -62,7 +62,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     if (stop_after_no_symmetries && symmetry_generators.empty()) {
         bliss_limit_reached = true;
     }
-    if (get_num_generators() == 0 || bliss_limit_reached) {
+    if (symmetry_generators.empty() || bliss_limit_reached) {
         return false;
     }
 
@@ -80,7 +80,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     // with respect to overall affected transition systems or mapped transition systems,
     // depending on the chosen setting.
     for (int generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
-        const SymmetryGenerator *generator = get_symmetry_generator(generator_index);
+        const SymmetryGenerator *generator = symmetry_generators[generator_index];
         const vector<int> &internally_affected_transition_systems = generator->get_internally_affected_transition_systems();
         const vector<int> &mapped_transition_systems = generator->get_mapped_transition_systems();
         const vector<int> &overall_affected_transition_systems = generator->get_overall_affected_transition_systems();
@@ -169,8 +169,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
         vector<vector<int> > cycles;
         vector<int> merge_linear_transition_systems;
-        const SymmetryGenerator *generator =
-                get_symmetry_generator(chosen_generator_for_merging);
+        const SymmetryGenerator *generator = symmetry_generators[chosen_generator_for_merging];
 
         // Always include all mapped transition systems
         if (internal_merging == NON_LINEAR
@@ -254,11 +253,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
 }
 
 void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transition_systems,
-                                  const vector<int> &generator_indices) const {
-    if (get_num_generators() == 0) {
-        cerr << "You first have to find symmetries before you can apply one of them!" << endl;
-        exit_with(EXIT_CRITICAL_ERROR);
-    }
+                                     const vector<int> &generator_indices) const {
     cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
 
     // Abstracting by the generators as follows:
@@ -275,12 +270,12 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
         if (transition_systems[abs_index]) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 // Going over the generators, for each just add the edges.
-                if (get_symmetry_generator(generator_indices[i])->get_value(abs_index) == abs_index) {
+                if (symmetry_generators[generator_indices[i]]->get_value(abs_index) == abs_index) {
                     // we only add an edge if the corresponding states belong to
                     // the same transition systems. in other words, we do not compute
                     // equivalence relations for mappings of transition systems, as
                     // these are not applied anyways.
-                    int to_index = get_symmetry_generator(generator_indices[i])->get_value(index);
+                    int to_index = symmetry_generators[generator_indices[i]]->get_value(index);
                     if (index != to_index)
                         graph[index].push_back(to_index);
                 }
@@ -351,9 +346,4 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
     }
     cout << "Done abstracting. [t=" << g_timer << "]" << endl;
     cout << "==========================================================================================" << endl;
-}
-
-const SymmetryGenerator* SymmetryGroup::get_symmetry_generator(int ind) const {
-    assert(ind >= 0 && ind < get_num_generators());
-    return symmetry_generators[ind];
 }

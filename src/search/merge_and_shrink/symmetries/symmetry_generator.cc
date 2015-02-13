@@ -96,11 +96,6 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
     mapped.resize(num_transition_systems, false);
     overall_affected.resize(num_transition_systems, false);
     for (int from_index = 0; from_index < sym_gen_info->num_abs_and_states; from_index++){
-        if (from_index > sym_gen_info->num_abs_and_states) {
-            cerr << "Symmetry generator index out of range" << endl;
-            exit_with(EXIT_CRITICAL_ERROR);
-        }
-
         int to_index = automorphism[from_index];
         value[from_index] = to_index;
 
