@@ -120,15 +120,16 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
     */
     int num_of_nodes = transition_systems.size();
     symmetry_generator_info->num_transition_systems = num_of_nodes;
+    symmetry_generator_info->starting_index_by_ts_index.reserve(num_of_nodes);
     for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index) {
-        symmetry_generator_info->dom_sum_by_var.push_back(num_of_nodes);
+        symmetry_generator_info->starting_index_by_ts_index.push_back(num_of_nodes);
         if (transition_systems[ts_index]) {
             if (!some_transition_sytem)
                 some_transition_sytem = transition_systems[ts_index];
             int num_states = transition_systems[ts_index]->get_size();
             num_of_nodes += num_states;
             for (int state = 0; state < num_states; ++state) {
-                symmetry_generator_info->var_by_val.push_back(ts_index);
+                symmetry_generator_info->ts_index_by_index.push_back(ts_index);
                 if (transition_systems[ts_index]->is_goal_state(state)) {
                     vertex = bliss_graph.add_vertex(GOAL_VERTEX + node_color_added_val);
                 } else {
@@ -146,7 +147,7 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
             }
         }
     }
-    symmetry_generator_info->num_abs_and_states = num_of_nodes;
+    symmetry_generator_info->num_ts_and_states = num_of_nodes;
 
     /*
       In a third step, go over all labels and add a vertex for every active
@@ -182,9 +183,9 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
                 int transition_vertex = bliss_graph.add_vertex(
                     LABEL_VERTEX + label_cost + 1 + node_color_added_val);
                 int source_vertex =
-                    symmetry_generator_info->get_index_by_var_val_pair(ts_index, trans.src);
+                    symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
                 int target_vertex =
-                    symmetry_generator_info->get_index_by_var_val_pair(ts_index, trans.target);
+                    symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.target);
                 bliss_graph.add_edge(label_vertex, transition_vertex);
                 bliss_graph.add_edge(source_vertex, transition_vertex);
                 bliss_graph.add_edge(transition_vertex, target_vertex);

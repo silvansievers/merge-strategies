@@ -13,69 +13,54 @@
 using namespace std;
 
 SymmetryGeneratorInfo::SymmetryGeneratorInfo() {
-    reset();
-}
-
-void SymmetryGeneratorInfo::reset() {
     num_transition_systems = -1;
-    num_abs_and_states = -1;
-    var_by_val.clear();
-    dom_sum_by_var.clear();
+    num_ts_and_states = -1;
 }
 
 bool SymmetryGeneratorInfo::initialized() const {
     return num_transition_systems != -1
-            && num_abs_and_states != -1
-            && !var_by_val.empty()
-            && !dom_sum_by_var.empty();
+            && num_ts_and_states != -1
+            && !ts_index_by_index.empty()
+            && !starting_index_by_ts_index.empty();
 }
 
-int SymmetryGeneratorInfo::get_var_by_index(const int ind) const {
+int SymmetryGeneratorInfo::get_ts_index_by_index(const int index) const {
     assert(initialized());
-    if (ind < num_transition_systems) {
+    if (index < num_transition_systems) {
         cout << "=====> WARNING!!!! Check that this is done on purpose!" << endl;
-        return ind;
+        return index;
     }
-    return var_by_val[ind-num_transition_systems];
+    return ts_index_by_index[index - num_transition_systems];
 }
 
-pair<int, int> SymmetryGeneratorInfo::get_var_val_by_index(int ind) const {
+int SymmetryGeneratorInfo::get_abs_state_by_index(const int index) const {
     assert(initialized());
-    if (ind < num_transition_systems) {
-        cout << "=====> Error!!!! index too low, in the variable part!" << endl;
+    if (index < num_transition_systems) {
+        cerr << "=====> Error!!!! index too low, in the ts index part!" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
-
-    int var =  var_by_val[ind-num_transition_systems];
-    int val = ind - dom_sum_by_var[var];
-
-    if (val < 0) {
-        cout << "=====> Error!!!! Problem with the index" << endl;
-        exit_with(EXIT_CRITICAL_ERROR);
-    }
-//  cout << "=====================>" << var << " = " << val << endl;
-
-    return make_pair(var, val);
+    int ts_index = get_ts_index_by_index(index);
+    return index - starting_index_by_ts_index[ts_index];
 }
 
-int SymmetryGeneratorInfo::get_index_by_var_val_pair(int var, int val) const {
+int SymmetryGeneratorInfo::get_index_by_ts_index_and_abs_state(int ts_index, int abs_state) const {
     assert(initialized());
-    return dom_sum_by_var[var] + val;
+    return starting_index_by_ts_index[ts_index] + abs_state;
 }
 
 void SymmetryGeneratorInfo::dump() const {
     cout << "num transition systems: " << num_transition_systems << endl;
-    cout << "num abs and states: " << num_abs_and_states << endl;
-    cout << "var by val" << endl;
-    cout << var_by_val << endl;
-    cout << "dom sum by var" << endl;
-    cout << dom_sum_by_var << endl;
+    cout << "num abs and states: " << num_ts_and_states << endl;
+    cout << "ts_index_by_index" << endl;
+    cout << ts_index_by_index << endl;
+    cout << "starting_index_by_ts_index" << endl;
+    cout << starting_index_by_ts_index << endl;
 }
 
 void SymmetryGeneratorInfo::dump_var_by_val() const {
-    int size = num_abs_and_states - num_transition_systems;
+    int size = num_ts_and_states - num_transition_systems;
     for (int i = 0; i < size; ++i) {
-        cout << i << ": " << var_by_val[i];
+        cout << i << ": " << ts_index_by_index[i];
         if (i != size - 1)
             cout << ", ";
     }
@@ -95,7 +80,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
     internally_affected.resize(num_transition_systems, false);
     mapped.resize(num_transition_systems, false);
     overall_affected.resize(num_transition_systems, false);
-    for (int from_index = 0; from_index < sym_gen_info->num_abs_and_states; from_index++){
+    for (int from_index = 0; from_index < sym_gen_info->num_ts_and_states; from_index++){
         int to_index = automorphism[from_index];
         value[from_index] = to_index;
 
@@ -118,8 +103,8 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
                     overall_affected_transition_systems.push_back(from_index);
                 }
             } else {
-                int from_abs_index = sym_gen_info->get_var_by_index(from_index);
-                int to_abs_index = sym_gen_info->get_var_by_index(to_index);
+                int from_abs_index = sym_gen_info->get_ts_index_by_index(from_index);
+                int to_abs_index = sym_gen_info->get_ts_index_by_index(to_index);
                 if (!overall_affected[from_abs_index]) {
                     overall_affected[from_abs_index] = true;
                     overall_affected_transition_systems.push_back(from_abs_index);
@@ -160,7 +145,7 @@ SymmetryGenerator::~SymmetryGenerator(){
 
 void SymmetryGenerator::_allocate() {
     borrowed_buffer = false;
-    value = new int[sym_gen_info->num_abs_and_states];
+    value = new int[sym_gen_info->num_ts_and_states];
 }
 
 void SymmetryGenerator::_deallocate() {
@@ -274,12 +259,12 @@ int SymmetryGenerator::get_value(int ind) const {
 }
 
 void SymmetryGenerator::dump() const {
-    for(int i = 0; i < sym_gen_info->num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << i;
     }
     cout << endl;
-    for(int i = 0; i < sym_gen_info->num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
         if (get_value(i) != i)
             cout << setw(4) << get_value(i);
     }
@@ -287,9 +272,9 @@ void SymmetryGenerator::dump() const {
 }
 
 void SymmetryGenerator::dump_value() const {
-    for (int i = 0; i < sym_gen_info->num_abs_and_states; ++i) {
+    for (int i = 0; i < sym_gen_info->num_ts_and_states; ++i) {
         cout << i << " -> " << value[i];
-        if (i != sym_gen_info->num_abs_and_states - 1)
+        if (i != sym_gen_info->num_ts_and_states - 1)
             cout << ", ";
     }
     cout << endl;
@@ -297,7 +282,7 @@ void SymmetryGenerator::dump_value() const {
 
 void SymmetryGenerator::dump_all() const {
     cout << "values:" << endl;
-    for(int i = 0; i < sym_gen_info->num_abs_and_states; i++){
+    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
         cout << value[i] << ", ";
     }
     cout << endl;

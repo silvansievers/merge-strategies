@@ -11,15 +11,11 @@ class SymmetryGenerator;
 class SymmetryGeneratorInfo;
 class TransitionSystem;
 
-//void add_automorphism(void*, unsigned int, const unsigned int *automorphism);
-
 class SymmetryGroup {
     GraphCreator *gc;
     SymmetryGeneratorInfo *symmetry_generator_info;
     std::vector<const SymmetryGenerator*> symmetry_generators;
 
-    int num_identity_generators;
-    //int stop_after_false_generated;
     bool bliss_limit_reached;
     bool stop_after_no_symmetries;
 
@@ -66,9 +62,6 @@ public:
     }
     int get_num_generators() const {
         return symmetry_generators.size();
-    }
-    int get_num_identity_generators() const {
-        return num_identity_generators;
     }
     double get_bliss_time() const {
         return bliss_time;

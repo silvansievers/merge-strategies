@@ -3,28 +3,46 @@
 
 #include <vector>
 
+/*
+  This struct stores information about how to convert indices as used in the
+  bliss graph and hence as used by symmetry generators into transition systems
+  indices and abstract states and vice versa.
+  The range of all indices looks as follows:
+  0, ..., #ts - 1, abs-state-0 of ts0, ..., #abs-states of ts0 - 1, abs-state-0 of ts1, ...
+  The total range goes from 0 to num_ts_and_states - 1.
+*/
 struct SymmetryGeneratorInfo {
     int num_transition_systems;
-    int num_abs_and_states;
-    // Silvan: this vector ranges over the number of abstract states of this generator.
-    // for every node it contains the number of the transition system this node
-    // belongs to.
-    std::vector<int> var_by_val;
-    // Silvan:
-    // index 0 contains the number of transition systems, i.e. the starting point in this
-    // vector where the states of transition system 1 start.
-    // index 1 contains the highest number (i.e. the last node) that is related to transition system 1.
-    // index 2 etc.
-    // size: number of transition systems
-    std::vector<int> dom_sum_by_var;
+    int num_ts_and_states;
+    /*
+      This vector is accessed by an "abstract state - number of transition
+      systems". It stores the corresponding transition system index for such
+      an abstract state.
+    */
+    std::vector<int> ts_index_by_index;
+    /*
+      This vector stores for every transition system index the starting index
+      of abstract states in the range of all indices:
+      - index 0 contains the number of transition systems (because the first
+      abstract state of transition system 0 corresponds to the index "number of
+      transition systems" in the range of all indices.
+      - index 1 contains the number of transition systems plus the size of the
+      0th transition system (which is the first index corresponding to an
+      abstract state of transition system 1)
+      - etc.
+    */
+    std::vector<int> starting_index_by_ts_index;
 
     SymmetryGeneratorInfo();
-    void reset();
     bool initialized() const;
-    // Returns the transition system variable corresponding to the abstract state
-    int get_var_by_index(const int val) const;
-    std::pair<int, int> get_var_val_by_index(const int ind) const;
-    int get_index_by_var_val_pair(const int var, const int val) const;
+    // Returns the transition system index corresponding to the given index
+    int get_ts_index_by_index(const int index) const;
+    // Returns the abstract state (of the transition system get_ts_index_by_index())
+    // corresponding to the given index
+    int get_abs_state_by_index(const int index) const;
+    // Returns the index given the transition system index and an abstract state
+    // of that transition system.
+    int get_index_by_ts_index_and_abs_state(const int var, const int val) const;
     void dump() const;
     void dump_var_by_val() const;
 };
