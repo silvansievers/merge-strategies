@@ -54,8 +54,6 @@ double GraphCreator::compute_symmetries(const vector<TransitionSystem *>& transi
         bliss_graph.find_automorphisms(stats1, &(add_automorphism), symmetry_group);
         cout << "Got " << symmetry_group->get_num_generators()
              << " group generators" << endl;
-        cout << "Got " << symmetry_group->get_num_identity_generators()
-             << " identity generators" << endl;
         cout << "Done computing symmetries: " << timer << endl;
     } catch (bliss::BlissException &e) {
         e.dump();
@@ -81,7 +79,8 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
       In a first step, go over all tranisition systems and add a vertex
       for each. We cannot simultaneously add abstract state vertices as we
       first need to see how many different colors we need for the transition
-      system vertices.
+      system vertices, which depends on the chosen setting and how many active
+      transition systems there are.
     */
     for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
         if (stabilize_transition_systems || transition_systems[ts_index] == 0) {
@@ -103,7 +102,8 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
 
         if (debug) {
             cout << "    node" << vertex << " [shape=circle, label=ts"
-                 << ts_index << "]; // color: " << node_color_added_val << endl;
+                 << ts_index << "]; // color: "
+                 << TRANSITION_SYSTEM_VERTEX + node_color_added_val << endl;
         }
     }
 
@@ -113,7 +113,9 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
     /*
       In a second step, go over all transition systems again and add a vertex
       for every abstract state of every transition system, connecting them from
-      their transition system's vertex.
+      their transition system's vertex. Abstract state vertices all receive
+      the same color with the exception of goal vertices, which have their
+      own color.
       Also setup symmetry generator information data structures.
     */
     int num_of_nodes = transition_systems.size();
@@ -127,12 +129,18 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
             num_of_nodes += num_states;
             for (int state = 0; state < num_states; ++state) {
                 symmetry_generator_info->var_by_val.push_back(ts_index);
-                vertex = bliss_graph.add_vertex(ABSTRACT_STATE_VERTEX + node_color_added_val);
+                if (transition_systems[ts_index]->is_goal_state(state)) {
+                    vertex = bliss_graph.add_vertex(GOAL_VERTEX + node_color_added_val);
+                } else {
+                    vertex = bliss_graph.add_vertex(ABSTRACT_STATE_VERTEX + node_color_added_val);
+                }
                 bliss_graph.add_edge(ts_index, vertex);
 
                 if (debug) {
                     cout << "    node" << vertex << " [shape=circle, label=ts"
-                         << ts_index << "_state" << state << "];" << endl;
+                         << ts_index << "_state" << state << "]; // color: "
+                         << (transition_systems[ts_index]->is_goal_state(state) ? GOAL_VERTEX : ABSTRACT_STATE_VERTEX) + node_color_added_val
+                         << endl;
                     cout << "    node" << ts_index << " -> node" << vertex << ";" << endl;
                 }
             }
@@ -190,35 +198,5 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
                 }
             }
         }
-    }
-
-    /*
-      Last, add a goal vertex and connect it from all abstract goal states of
-      all transition systems.
-    */
-    vertex = bliss_graph.add_vertex(GOAL_VERTEX + node_color_added_val);
-
-    if (debug) {
-        cout << "    node [shape = doublecircle] node" << vertex << " [label = goal];" << endl;
-    }
-
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
-        if (transition_systems[ts_index] == 0)
-            continue;
-        int num_states = transition_systems[ts_index]->get_size();
-        for (int state = 0; state < num_states; state++) {
-            if (transition_systems[ts_index]->is_goal_state(state)) {
-                int state_vertex = symmetry_generator_info->get_index_by_var_val_pair(ts_index, state);
-                bliss_graph.add_edge(state_vertex, vertex);
-
-                if (debug) {
-                    cout << "    node" << state_vertex << " -> node" << vertex << ";" << endl;
-                }
-            }
-        }
-    }
-
-    if (debug) {
-        cout << "}" << endl;
     }
 }
