@@ -46,7 +46,7 @@ void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) 
 }
 
 bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &transition_systems,
-                                           vector<pair<int, int> > &merge_order) {
+                                              vector<pair<int, int> > &merge_order) {
     bliss_time = gc->compute_symmetries(transition_systems, this, symmetry_generator_info);
     delete gc;
     gc = 0;
@@ -66,10 +66,11 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     vector<int> atomic_generators;
     vector<int> local_generators;
 
-    // go over the generators and classify them into atomic, local or general
-    // ones. also store information about the smallest/largest generator
-    // with respect to overall affected transition systems or mapped transition systems,
-    // depending on the chosen setting.
+    /*
+      Go over the generators and classify them into atomic, local or general
+      ones. Also compute the generator that affects or maps the smallest or
+      largest number of transition systems (depending on the chosen options).
+    */
     for (int generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
         const SymmetryGenerator *generator = symmetry_generators[generator_index];
         const vector<int> &mapped_transition_systems =
@@ -104,7 +105,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
 
         int number_mapped_transition_systems = mapped_transition_systems.size();
         if (number_mapped_transition_systems == 0) {
-            // note that this also includes atomic generators
+            // Note that this also includes atomic generators
             local_generators.push_back(generator_index);
         } else {
             if (external_merging == MERGE_FOR_LOCAL) {
@@ -145,21 +146,31 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
 //        }
     }
 
-    // apply symmetries if possible
+    // Apply symmetries for shrinking if applicable
     bool applied_symmetries = false;
     if (symmetries_for_shrinking == ATOMIC && !atomic_generators.empty()) {
-        // apply atomic symmetries
         cout << "Applying all atomic symmetries" << endl;
         apply_symmetries(transition_systems, atomic_generators);
         applied_symmetries = true;
     } else if ((symmetries_for_shrinking == LOCAL)
                && !local_generators.empty()) {
-        // apply local symmetries
         cout << "Applying all local symmetries" << endl;
         apply_symmetries(transition_systems, local_generators);
         applied_symmetries = true;
     }
 
+    /*
+      Determine a merge strategy as follows:
+      If we merge towards local symmetries, we only need to merge all mapped
+      transition systems. They are always merged according to the cycle(s)
+      of those mapped transition systems. If we merge towards atomic symmetries,
+      it depends on whether we want to merge all the affected transition systems
+      linearly or non-linearly: if linearly, we put them in the order given by
+      fast downward. If non-linearly, we first merge all cycles (as when merging
+      for local symmetries), and then linearly the products of these merges
+      and the remaining other (internally) affected transition systems, again
+      as given by fast downward.
+    */
     if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
         vector<vector<int> > cycles;
         vector<int> merge_linear_transition_systems;
@@ -168,39 +179,50 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
         // Always include all mapped transition systems
         if (internal_merging == NON_LINEAR
                 || external_merging == MERGE_FOR_LOCAL) {
-            // if the internal merge strategy is non linear or we only want
-            // to merge every cycle (non linearly), we need to
-            // compute the actual cycles of transition system mappings.
+            /*
+              If the internal merge strategy is non linear or we only want
+              to merge every cycle (non linearly), we need to
+              compute the actual cycles of transition system mappings.
+            */
             generator->compute_cycles(cycles);
         } else if (internal_merging == LINEAR) {
-            // if the internal merge strategy is linear, we simply collect
-            // all mapped transition systems (i.e. the same transition systems as above,
-            // but we do not compute cycle information)
+            /*
+              If the internal merge strategy is linear, we simply collect
+              all mapped transition systems (i.e. the same transition systems
+              as above, but we do not compute cycle information)
+            */
             const vector<int> &mapped_transition_systems =
-                    generator->get_mapped_transition_systems();
+                generator->get_mapped_transition_systems();
             merge_linear_transition_systems.insert(merge_linear_transition_systems.end(),
-                                             mapped_transition_systems.begin(),
-                                             mapped_transition_systems.end());
+                                                   mapped_transition_systems.begin(),
+                                                   mapped_transition_systems.end());
         }
 
-        // If merging for least/most number of overall affected abstactions,
-        // also include the non-mapped, i.e. internally affected transition systems
-        // (always as to be linearly merged transition systems)
+        /*
+          If merging for atomic symmetries, we need to include the internally
+          affected transition systems (to be merge linearly after the mapped
+          ones).
+        */
         if (external_merging == MERGE_FOR_ATOMIC) {
             const vector<int> &internally_affected_transition_systems =
-                    generator->get_internally_affected_transition_systems();
+                 generator->get_internally_affected_transition_systems();
             merge_linear_transition_systems.insert(merge_linear_transition_systems.end(),
-                                             internally_affected_transition_systems.begin(),
-                                             internally_affected_transition_systems.end());
+                                                   internally_affected_transition_systems.begin(),
+                                                   internally_affected_transition_systems.end());
         }
 
-        // compute a merge tree
+        /*
+          Here we compute the actual merge tree: if cycles is non-empty, we
+          start by merging all mapped transition systems cycle-wise. At the
+          same time, we need to remember the indices of the transition systems
+          resulting from those merges in case we want to merge those afterwards
+          (when merging for atomic symmetries).
+        */
         assert(merge_order.empty());
         int number_of_transition_systems = transition_systems.size();
         int number_of_merges = 0;
         vector<int> merge_linear_indices;
         for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
-            // go over the cycles and compute a non-linear merge order.
             const vector<int> &cycle = cycles[cycle_no];
             size_t abs_index_1 = cycle[0];
             for (size_t i = 1; i < cycle.size(); ++i) {
@@ -210,23 +232,27 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
                 ++number_of_merges;
             }
             if (external_merging == MERGE_FOR_ATOMIC) {
-                // number_of_transition_systems + number_of_merges always is the *next*
-                // position where a new merged transition system will be stored at.
-                // here, we need the *last* position where the transition system
-                // resulting from merging the cycle was stored, hence the -1.
+                /*
+                  number_of_transition_systems + number_of_merges always is the *next*
+                  position where a new merged transition system will be stored at.
+                  here, we need the *last* position where the transition system
+                  resulting from merging the cycle was stored, hence the -1.
+                */
                 merge_linear_indices.push_back(number_of_transition_systems + number_of_merges - 1);
             }
         }
 
+        /*
+          Here we include the transition systems that need to be merge linearly
+          in the merge tree. Those are the internally affected ones if they
+          need to be merged, and the products of the merged cycles if
+          applicable (merge_linear_transition_systems).
+        */
         if (external_merging == MERGE_FOR_ATOMIC) {
-            // merge_linear_indices possibly contains transition systems that have been
-            // non-linearly merged from information about cycles.
-            // here we add transition systems that need to be merged linearly anyways
             merge_linear_indices.insert(merge_linear_indices.end(),
                                         merge_linear_transition_systems.begin(),
                                         merge_linear_transition_systems.end());
 
-            // go over all transition systems that (now) need to be merged linearly
             size_t abs_index_1 = merge_linear_indices[0];
             for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
                 size_t abs_index_2 = merge_linear_indices[i];
