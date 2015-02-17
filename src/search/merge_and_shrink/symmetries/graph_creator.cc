@@ -158,6 +158,11 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
       Every label vertex has an edge to all of its transition vertices, which
       in turn have an incoming edge from their source vertex and an outoing
       edge to their target vertex.
+      TODO: consider moving the inner loop over transition systems out and
+      iterating over label groups, with the benefit of iterating over
+      transitions only once for every group rather than repeatedly copmuting
+      the same information on transitions of labels of the same equivalence
+      group.
     */
     const Labels *labels = some_transition_sytem->get_labels();
     int num_labels = labels->get_size();
