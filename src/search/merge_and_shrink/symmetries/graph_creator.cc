@@ -218,35 +218,52 @@ void GraphCreator::create_bliss_graph(const vector<TransitionSystem *> &abstract
                 continue;
 
             const std::vector<Transition>& transitions = abstractions[abs_ind]->get_const_transitions_for_label(label_no);
-            for (size_t i = 0; i < transitions.size(); ++i) {
-                const Transition &trans = transitions[i];
+            bool relevant = false;
+            if (static_cast<int>(transitions.size()) == abstractions[abs_ind]->get_size()) {
+                /*
+                  A label group is irrelevant in the earlier notion if it has
+                  exactly a self loop transition for every state.
+                */
+                for (size_t i = 0; i < transitions.size(); ++i) {
+                    if (transitions[i].target != transitions[i].src) {
+                        relevant = true;
+                        break;
+                    }
+                }
+            } else {
+                relevant = true;
+            }
+            if (relevant) {
+                for (size_t i = 0; i < transitions.size(); ++i) {
+                    const Transition &trans = transitions[i];
 
-                // For each abstract transition we have a pair of nodes - pre and eff, both connected to their label node
-                int pre_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
+                    // For each abstract transition we have a pair of nodes - pre and eff, both connected to their label node
+                    int pre_idx = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + 1 + node_color_added_val);
 
-//              cout << "Added pre vertex: " << pre_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 1 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
-//                int eff_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + 2);
-                int eff_idx = pre_idx;
-//              cout << "Added eff vertex: " << eff_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 2 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
+    //              cout << "Added pre vertex: " << pre_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 1 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
+    //                int eff_idx = g->add_vertex(LABEL_VERTEX + label_op_by_cost + 2);
+                    int eff_idx = pre_idx;
+    //              cout << "Added eff vertex: " << eff_idx << " with color " << LABEL_VERTEX + label_op_by_cost + 2 <<" for operator " << op_no << " in abstraction " << abs_ind << endl;
 
-                int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
-                int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
-                // Edges from abstract state source over pre=eff=transition-node to target
-                bliss_graph.add_edge(src_idx, pre_idx);
-                bliss_graph.add_edge(eff_idx, target_idx);
+                    int src_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.src);
+                    int target_idx = symmetry_generator_info.get_index_by_var_val_pair(abs_ind, trans.target);
+                    // Edges from abstract state source over pre=eff=transition-node to target
+                    bliss_graph.add_edge(src_idx, pre_idx);
+                    bliss_graph.add_edge(eff_idx, target_idx);
 
-//                g->add_edge(pre_idx, eff_idx);
+    //                g->add_edge(pre_idx, eff_idx);
 
-                // Edge from operator-label to transitions (pre=eff=transition-node) induced by that operator
-                bliss_graph.add_edge(label_idx, pre_idx);
+                    // Edge from operator-label to transitions (pre=eff=transition-node) induced by that operator
+                    bliss_graph.add_edge(label_idx, pre_idx);
 
-//                g->add_edge(label_idx, eff_idx);
+    //                g->add_edge(label_idx, eff_idx);
 
-                if (debug) {
-                    cout << "    node" << pre_idx << " [shape=circle, label=transition];" << endl;
-                    cout << "    node" << src_idx << " -> node" << pre_idx << ";" << endl;
-                    cout << "    node" << eff_idx << " -> node" << target_idx << ";" << endl;
-                    cout << "    node" << label_idx << " -> node" << pre_idx << ";" << endl;
+                    if (debug) {
+                        cout << "    node" << pre_idx << " [shape=circle, label=transition];" << endl;
+                        cout << "    node" << src_idx << " -> node" << pre_idx << ";" << endl;
+                        cout << "    node" << eff_idx << " -> node" << target_idx << ";" << endl;
+                        cout << "    node" << label_idx << " -> node" << pre_idx << ";" << endl;
+                    }
                 }
             }
         }
