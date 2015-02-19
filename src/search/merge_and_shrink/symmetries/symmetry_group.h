@@ -12,7 +12,7 @@ class SymmetryGeneratorInfo;
 class TransitionSystem;
 
 class SymmetryGroup {
-    GraphCreator *gc;
+    MSGraphCreator *gc;
     SymmetryGeneratorInfo *symmetry_generator_info;
     std::vector<const SymmetryGenerator*> symmetry_generators;
 

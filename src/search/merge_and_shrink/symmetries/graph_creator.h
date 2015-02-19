@@ -16,7 +16,7 @@ class TransitionSystem;
  * This class is using bliss for finding symmetries of the given set of transition systems.
  */
 
-class GraphCreator {
+class MSGraphCreator {
     enum color_t {
         TRANSITION_SYSTEM_VERTEX,
         ABSTRACT_STATE_VERTEX,
@@ -34,8 +34,8 @@ class GraphCreator {
                                      bliss::Digraph &bliss_graph,
                                      SymmetryGeneratorInfo *symmetry_generator_info);
 public:
-    explicit GraphCreator(const Options &options);
-    ~GraphCreator();
+    explicit MSGraphCreator(const Options &options);
+    ~MSGraphCreator();
 
     double compute_symmetries(const std::vector<TransitionSystem *>& transition_systems,
                               SymmetryGroup *symmetry_group,

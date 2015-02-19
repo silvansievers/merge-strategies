@@ -28,16 +28,16 @@ void add_automorphism(void* param, unsigned int, const unsigned int *automorphis
     symmetry_group->create_symmetry_generator(automorphism);
 }
 
-GraphCreator::GraphCreator(const Options &options)
+MSGraphCreator::MSGraphCreator(const Options &options)
     : debug(options.get<bool>("debug_graph_creator")),
       stabilize_transition_systems(options.get<bool>("stabilize_transition_systems")),
       bliss_time_limit(options.get<double>("bliss_time_limit")) {
 }
 
-GraphCreator::~GraphCreator() {
+MSGraphCreator::~MSGraphCreator() {
 }
 
-double GraphCreator::compute_symmetries(const vector<TransitionSystem *>& transition_systems,
+double MSGraphCreator::compute_symmetries(const vector<TransitionSystem *>& transition_systems,
                                         SymmetryGroup *symmetry_group,
                                         SymmetryGeneratorInfo *symmetry_generator_info) {
     Timer timer;
@@ -63,7 +63,7 @@ double GraphCreator::compute_symmetries(const vector<TransitionSystem *>& transi
     return timer();
 }
 
-void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> &transition_systems,
+void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> &transition_systems,
                                                bliss::Digraph &bliss_graph,
                                                SymmetryGeneratorInfo *symmetry_generator_info) {
     if (debug) {

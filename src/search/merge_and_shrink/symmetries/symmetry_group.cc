@@ -24,7 +24,7 @@ SymmetryGroup::SymmetryGroup(const Options &options)
       external_merging(ExternalMerging(options.get_enum("external_merging"))),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       bliss_time(0) {
-    gc = new GraphCreator(options);
+    gc = new MSGraphCreator(options);
     symmetry_generator_info = new SymmetryGeneratorInfo();
 }
 
