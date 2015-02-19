@@ -160,7 +160,7 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
       edge to their target vertex.
       TODO: consider moving the inner loop over transition systems out and
       iterating over label groups, with the benefit of iterating over
-      transitions only once for every group rather than repeatedly copmuting
+      transitions only once for every group rather than repeatedly computing
       the same information on transitions of labels of the same equivalence
       group.
     */
