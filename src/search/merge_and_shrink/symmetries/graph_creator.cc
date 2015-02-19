@@ -158,22 +158,33 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
       Every label vertex has an edge to all of its transition vertices, which
       in turn have an incoming edge from their source vertex and an outoing
       edge to their target vertex.
+      TODO: consider moving the inner loop over transition systems out and
+      iterating over label groups, with the benefit of iterating over
+      transitions only once for every group rather than repeatedly computing
+      the same information on transitions of labels of the same equivalence
+      group.
     */
     const Labels *labels = some_transition_sytem->get_labels();
     int num_labels = labels->get_size();
-    vector<int> label_to_vertex(num_labels, -1);
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
-        if (!transition_systems[ts_index])
+    for (int label_no = 0; label_no < num_labels; ++label_no){
+        if (!labels->is_current_label(label_no))
             continue;
 
-        const TransitionSystem *transition_system = transition_systems[ts_index];
-        const list<list<int> > &grouped_labels = transition_system->get_grouped_labels();
-        for (LabelGroupConstIter group_it = grouped_labels.begin();
-             group_it != grouped_labels.end(); ++group_it) {
-            const vector<Transition> &transitions =
-                transition_system->get_const_transitions_for_group(*group_it);
+        int label_cost = 2 * labels->get_label_cost(label_no);
+        int label_vertex = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
+
+        if (debug) {
+            cout << "    node" << label_vertex << " [shape=circle, label=label_no"
+                 << label_no  << "];" << endl;
+        }
+
+        for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
+            if (transition_systems[ts_index] == 0)
+                continue;
+            const std::vector<Transition>& transitions =
+                transition_systems[ts_index]->get_const_transitions_for_label(label_no);
             bool relevant = false;
-            if (static_cast<int>(transitions.size()) == transition_system->get_size()) {
+            if (static_cast<int>(transitions.size()) == transition_systems[ts_index]->get_size()) {
                 /*
                   A label group is irrelevant in the earlier notion if it has
                   exactly a self loop transition for every state.
@@ -188,15 +199,15 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
                 relevant = true;
             }
             if (relevant) {
-                int label_group_cost = transition_system->get_cost_for_label_group(*group_it);
-                for (size_t j = 0; j < transitions.size(); ++j) {
-                    const Transition &trans = transitions[j];
+                for (size_t i = 0; i < transitions.size(); ++i) {
+                    const Transition &trans = transitions[i];
                     int transition_vertex = bliss_graph.add_vertex(
-                        LABEL_VERTEX + 2 * label_group_cost + 1 + node_color_added_val);
+                        LABEL_VERTEX + label_cost + 1 + node_color_added_val);
                     int source_vertex =
                         symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
                     int target_vertex =
                         symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.target);
+                    bliss_graph.add_edge(label_vertex, transition_vertex);
                     bliss_graph.add_edge(source_vertex, transition_vertex);
                     bliss_graph.add_edge(transition_vertex, target_vertex);
 
@@ -205,28 +216,7 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
                              << " [shape=circle, label=transition];" << endl;
                         cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
                         cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
-                    }
-
-                    for (LabelConstIter label_it = group_it->begin();
-                         label_it != group_it->end(); ++label_it) {
-                        int label_no = *label_it;
-                        int label_vertex = label_to_vertex[label_no];
-                        if (label_vertex == -1) {
-                            assert(label_group_cost == labels->get_label_cost(label_no));
-                            label_vertex = bliss_graph.add_vertex(LABEL_VERTEX + 2 * label_group_cost + node_color_added_val);
-                            label_to_vertex[label_no] = label_vertex;
-
-                            if (debug) {
-                                cout << "    node" << label_vertex << " [shape=circle, label=label_no"
-                                     << label_no  << "];" << endl;
-                            }
-                        }
-
-                        bliss_graph.add_edge(label_vertex, transition_vertex);
-
-                        if (debug) {
-                            cout << "    node" << label_vertex << " -> node" << transition_vertex << ";" << endl;
-                        }
+                        cout << "    node" << label_vertex << " -> node" << transition_vertex << ";" << endl;
                     }
                 }
             }
