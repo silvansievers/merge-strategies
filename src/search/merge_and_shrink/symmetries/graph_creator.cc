@@ -163,6 +163,14 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
       transitions only once for every group rather than repeatedly computing
       the same information on transitions of labels of the same equivalence
       group.
+      NOTE: we tested this in revision b573d5225784, but while in the most
+      cases, it decreased both bliss graph creation and bliss automorphism
+      search, it decreased coverage for dfp and rl merge strategies, which is
+      why we reverted the change for the time being. (What happened in blocks
+      problem 14-0 is that the slow version with a budget of 60s for bliss
+      does not discover any symmetries, why the much faster version can search
+      for symmetries in later m&s iterations, eventually finding symmetries,
+      which apparently hurt the previously followed dfp merge strategy.
     */
     const Labels *labels = some_transition_sytem->get_labels();
     int num_labels = labels->get_size();
@@ -221,5 +229,9 @@ void GraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> 
                 }
             }
         }
+    }
+
+    if (debug) {
+        cout << "}" << endl;
     }
 }
