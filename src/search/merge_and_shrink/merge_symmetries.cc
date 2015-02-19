@@ -1,6 +1,6 @@
 #include "merge_symmetries.h"
 
-#include "symmetries/symmetries.h"
+#include "symmetries/symmetry_group.h"
 
 #include "../plugin.h"
 
@@ -118,11 +118,11 @@ void MergeSymmetries::dump_strategy_specific_options() const {
          << options.get<int>("bliss_total_time_budget") << endl;
     cout << "    stop searching for symmetries once no symmetry was found: "
          << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
-    cout << "    build stabilized pdg: "
-         << (options.get<bool>("build_stabilized_pdg") ? "yes" : "no") << endl;
+    cout << "    stabilize transition systems: "
+         << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &all_abstractions) {
+pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &all_transition_systems) {
     assert(!done());
     ++iteration_counter;
 
@@ -136,20 +136,20 @@ pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &
         }
         cout << "Setting bliss time limit to " << time_limit << endl;
         options.set<double>("bliss_time_limit", time_limit);
-        Symmetries symmetries(options);
+        SymmetryGroup symmetry_group(options);
         bool applied_symmetries =
-            symmetries.find_and_apply_symmetries(all_abstractions, merge_order);
+            symmetry_group.find_and_apply_symmetries(all_transition_systems, merge_order);
         if (applied_symmetries) {
             ++number_of_applied_symmetries;
         }
-        if (symmetries.is_bliss_limit_reached()) {
+        if (symmetry_group.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
         if (only_applied_dfp && (applied_symmetries || !merge_order.empty())) {
             only_applied_dfp = false;
             cout << "not pure DFP anymore" << endl;
         }
-        double bliss_time = symmetries.get_bliss_time();
+        double bliss_time = symmetry_group.get_bliss_time();
         bliss_times.push_back(bliss_time);
         if (bliss_remaining_time_budget) {
             bliss_remaining_time_budget -= bliss_time;
@@ -169,11 +169,11 @@ pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &
     }
 
     if (merge_order.empty()) {
-        return MergeDFP::get_next(all_abstractions);
+        return MergeDFP::get_next(all_transition_systems);
     }
 
     pair<int, int> next_merge = merge_order.front();
-    if (!all_abstractions[next_merge.first] || !all_abstractions[next_merge.second]) {
+    if (!all_transition_systems[next_merge.first] || !all_transition_systems[next_merge.second]) {
         cerr << "Problem with the merge strategy: invalid indices" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
@@ -218,7 +218,7 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_enum_option("symmetries_for_merging",
                            symmetries_for_merging,
                            "choose the type of symmetries that should determine "
-                           "the set of abstractions to be merged: "
+                           "the set of transition systems to be merged: "
                            "the smallest or the largest",
                            "SMALLEST");
     vector<string> external_merging;
@@ -226,10 +226,10 @@ static MergeStrategy *_parse(OptionParser &parser) {
     external_merging.push_back("MERGE_FOR_LOCAL");
     parser.add_enum_option("external_merging",
                            external_merging,
-                           "choose the set of abstractions to be merged: "
-                           "merge for atomic: merge all abstractions affected "
+                           "choose the set of transition systems to be merged: "
+                           "merge for atomic: merge all transition systems affected "
                            "by the chosen symmetry, or "
-                           "merge for local: merge only the abstractions "
+                           "merge for local: merge only the transition systems "
                            "mapped (in cycles) to others. only merge every "
                            "cycle separately.",
                            "MERGE_FOR_ATOMIC");
@@ -239,17 +239,16 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_enum_option("internal_merging",
                            internal_merging,
                            "choose the order in which to merge the set of "
-                           "abstractions to be merged (only useful with "
+                           "transition systems to be merged (only useful with "
                            "MERGE_FOR_ATOMIC): "
                            "linear (obvious), "
                            "non linear, which means to first merge every cycle, "
-                           "and then the resulting intermediate abstractions.",
+                           "and then the resulting intermediate transition systems.",
                            "LINEAR");
 
     // Options for GraphCreator
-    parser.add_option<bool>("build_stabilized_pdg", "build an abstraction "
-                            "stabilized pdb, which results in bliss searching "
-                            "for local symmetries only", "False");
+    parser.add_option<bool>("stabilize_transition_systems", "compute symmetries that "
+                            "stabilize transition systems, i.e. that are local.", "false");
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
 
