@@ -1,4 +1,4 @@
-#include "graph_creator.h"
+#include "ms_graph_creator.h"
 
 #include "symmetry_generator.h"
 #include "symmetry_group.h"

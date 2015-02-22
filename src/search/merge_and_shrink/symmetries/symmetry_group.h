@@ -1,11 +1,10 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
 #define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
 
-#include "graph_creator.h"
-
 #include <vector>
 
 class Labels;
+class MSGraphCreator;
 class Options;
 class SymmetryGenerator;
 class SymmetryGeneratorInfo;

@@ -1,5 +1,6 @@
 #include "symmetry_group.h"
 
+#include "ms_graph_creator.h"
 #include "scc.h"
 #include "symmetry_generator.h"
 

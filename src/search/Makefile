@@ -118,7 +118,7 @@ HEADERS += merge_and_shrink/labels.h \
            merge_and_shrink/shrink_strategy.h \
            merge_and_shrink/transition_system.h \
 
-HEADERS += merge_and_shrink/symmetries/graph_creator.h \
+HEADERS += merge_and_shrink/symmetries/ms_graph_creator.h \
            merge_and_shrink/symmetries/scc.h \
            merge_and_shrink/symmetries/symmetry_generator.h \
            merge_and_shrink/symmetries/symmetry_group.h \
