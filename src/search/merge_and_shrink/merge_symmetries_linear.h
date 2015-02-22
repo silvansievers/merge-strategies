@@ -30,7 +30,7 @@ public:
     explicit MergeSymmetriesLinear(const Options &options);
     virtual ~MergeSymmetriesLinear() {}
 
-    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_sysmtes);
+    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems);
     virtual std::string name() const;
 };
 

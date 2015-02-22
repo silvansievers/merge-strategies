@@ -130,7 +130,7 @@ void MergeSymmetriesLinear::dump_strategy_specific_options() const {
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSystem *> &all_transition_sysmtes) {
+pair<int, int> MergeSymmetriesLinear::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     assert(!done());
     ++iteration_counter;
 
@@ -146,7 +146,7 @@ pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSyste
         options.set<double>("bliss_time_limit", time_limit);
         SymmetryGroup symmetry_group(options);
         bool applied_symmetries =
-                symmetry_group.find_and_apply_symmetries(all_transition_sysmtes, merge_order);
+                symmetry_group.find_and_apply_symmetries(all_transition_systems, merge_order);
         if (applied_symmetries) {
             ++number_of_applied_symmetries;
         }
@@ -181,14 +181,14 @@ pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSyste
         int first = linear_merge_order[0];
         linear_merge_order.erase(linear_merge_order.begin());
         int second = linear_merge_order[0];
-        linear_merge_order[0] = all_transition_sysmtes.size();
+        linear_merge_order[0] = all_transition_systems.size();
         cout << "Next pair (linear strategy): " << first << ", " << second << endl;
         --remaining_merges;
         return make_pair(first, second);
     }
 
     pair<int, int> next_merge = merge_order.front();
-    if (!all_transition_sysmtes[next_merge.first] || !all_transition_sysmtes[next_merge.second]) {
+    if (!all_transition_systems[next_merge.first] || !all_transition_systems[next_merge.second]) {
         cerr << "Problem with the merge strategy: invalid indices" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
@@ -202,7 +202,7 @@ pair<int, int> MergeSymmetriesLinear::get_next(const std::vector<TransitionSyste
                              *it == next_merge.second)) {
             //cout << "updating entry " << counter << " (" << *it << ")to " << all_transition_systems.size() << endl;
             found_entry = true;
-            linear_merge_order[counter] = all_transition_sysmtes.size();
+            linear_merge_order[counter] = all_transition_systems.size();
         } else if (found_entry && (*it == next_merge.first ||
                                    *it == next_merge.second)) {
             //cout << "erasing entry " << counter << " (" << *it << ")" << endl;

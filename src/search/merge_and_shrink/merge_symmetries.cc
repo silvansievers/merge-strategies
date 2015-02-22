@@ -122,7 +122,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
 }
 
-pair<int, int> MergeSymmetries::get_next(const std::vector<TransitionSystem *> &all_transition_systems) {
+pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     assert(!done());
     ++iteration_counter;
 
