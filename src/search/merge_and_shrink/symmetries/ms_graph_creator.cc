@@ -151,48 +151,42 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
 
     /*
       In a third step, go over all labels and add a vertex for every active
-      label and a vertex for every of its transitions. Label vertices are
-      colored as 2*cost, and their transition vertices are colored as 2*cost+1
-      (giving rise to unique colors for labels with different costs and their
-      transitions).
-      Every label vertex has an edge to all of its transition vertices, which
-      in turn have an incoming edge from their source vertex and an outoing
-      edge to their target vertex.
-      TODO: consider moving the inner loop over transition systems out and
-      iterating over label groups, with the benefit of iterating over
-      transitions only once for every group rather than repeatedly computing
-      the same information on transitions of labels of the same equivalence
-      group.
-      NOTE: we tested this in revision b573d5225784, but while in the most
-      cases, it decreased both bliss graph creation and bliss automorphism
-      search, it decreased coverage for dfp and rl merge strategies, which is
-      why we reverted the change for the time being. (What happened in blocks
-      problem 14-0 is that the slow version with a budget of 60s for bliss
-      does not discover any symmetries, why the much faster version can search
-      for symmetries in later m&s iterations, eventually finding symmetries,
-      which apparently hurt the previously followed dfp merge strategy.
+      label, with color of 3 times its cost. Then, go over all transition
+      systems and add a vertex for every label group, with color of 3 times
+      the group's cost + 1. Finally, add a transition vertex for
+      every induced transition of the label group, with color 3 times the
+      group's cost + 2.
+      Every label vertex has an edge to all label group vertices where the
+      label is part of. Every label group vertex has an edge to all of its
+      transition vertices, which in turn have an incoming edge from their
+      source state vertex and an outoing edge to their target state vertex.
     */
     const Labels *labels = some_transition_sytem->get_labels();
     int num_labels = labels->get_size();
+    vector<int> label_to_vertex(num_labels, -1);
     for (int label_no = 0; label_no < num_labels; ++label_no){
         if (!labels->is_current_label(label_no))
             continue;
 
-        int label_cost = 2 * labels->get_label_cost(label_no);
-        int label_vertex = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
+        int label_cost = 3 * labels->get_label_cost(label_no);
+        label_to_vertex[label_no] = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 
         if (debug) {
-            cout << "    node" << label_vertex << " [shape=circle, label=label_no"
-                 << label_no  << "];" << endl;
+            cout << "    node" << label_to_vertex[label_no]
+                 << " [shape=circle, label=label_no" << label_no  << "];" << endl;
         }
-
-        for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
-            if (transition_systems[ts_index] == 0)
-                continue;
+    }
+    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
+        if (!transition_systems[ts_index])
+            continue;
+        const TransitionSystem *transition_system = transition_systems[ts_index];
+        const list<list<int> > &grouped_labels = transition_system->get_grouped_labels();
+        for (LabelGroupConstIter group_it = grouped_labels.begin();
+             group_it != grouped_labels.end(); ++group_it) {
             const std::vector<Transition>& transitions =
-                transition_systems[ts_index]->get_const_transitions_for_label(label_no);
+                transition_system->get_const_transitions_for_group(*group_it);
             bool relevant = false;
-            if (static_cast<int>(transitions.size()) == transition_systems[ts_index]->get_size()) {
+            if (static_cast<int>(transitions.size()) == transition_system->get_size()) {
                 /*
                   A label group is irrelevant in the earlier notion if it has
                   exactly a self loop transition for every state.
@@ -207,24 +201,40 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 relevant = true;
             }
             if (relevant) {
+                int group_cost = 3 * transition_system->get_cost_for_label_group(*group_it);
+                vertex = bliss_graph.add_vertex(LABEL_VERTEX + group_cost + 1 + node_color_added_val);
+
+                if (debug) {
+                    cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
+                         << ts_index << "];" << endl;
+                }
+
+                for (LabelConstIter label_it = group_it->begin();
+                     label_it != group_it->end(); ++label_it) {
+                    bliss_graph.add_edge(label_to_vertex[*label_it], vertex);
+
+                    if (debug) {
+                        cout << "    node" << label_to_vertex[*label_it] << " -> node" << vertex << ";" << endl;
+                    }
+                }
                 for (size_t i = 0; i < transitions.size(); ++i) {
                     const Transition &trans = transitions[i];
                     int transition_vertex = bliss_graph.add_vertex(
-                        LABEL_VERTEX + label_cost + 1 + node_color_added_val);
+                        LABEL_VERTEX + group_cost + 2 + node_color_added_val);
                     int source_vertex =
                         symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
                     int target_vertex =
                         symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.target);
-                    bliss_graph.add_edge(label_vertex, transition_vertex);
+                    bliss_graph.add_edge(vertex, transition_vertex);
                     bliss_graph.add_edge(source_vertex, transition_vertex);
                     bliss_graph.add_edge(transition_vertex, target_vertex);
 
                     if (debug) {
-                        cout << "    node" << transition_vertex
-                             << " [shape=circle, label=transition];" << endl;
+                        cout << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
+                             << ts_index << "];" << endl;
                         cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
                         cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
-                        cout << "    node" << label_vertex << " -> node" << transition_vertex << ";" << endl;
+                        cout << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
                     }
                 }
             }

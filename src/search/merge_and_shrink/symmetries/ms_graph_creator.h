@@ -21,6 +21,8 @@ class MSGraphCreator {
         TRANSITION_SYSTEM_VERTEX,
         ABSTRACT_STATE_VERTEX,
         GOAL_VERTEX,
+        TRANSITION_VERTEX,
+        GROUP_VERTEX,
         LABEL_VERTEX,
         INITIAL_VERTEX
     };
