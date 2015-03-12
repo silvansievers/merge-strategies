@@ -173,7 +173,9 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
 
         if (debug) {
             cout << "    node" << label_to_vertex[label_no]
-                 << " [shape=circle, label=label_no" << label_no  << "];" << endl;
+                 << " [shape=circle, label=label_no" << label_no  << "]; // color: "
+                 << LABEL_VERTEX + label_cost + node_color_added_val
+                 << endl;
         }
     }
     for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
@@ -206,7 +208,9 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
 
                 if (debug) {
                     cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
-                         << ts_index << "];" << endl;
+                         << ts_index << "]; // color: "
+                         << LABEL_VERTEX + group_cost + 1 + node_color_added_val
+                         << endl;
                 }
 
                 for (LabelConstIter label_it = group_it->begin();
@@ -231,7 +235,9 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
 
                     if (debug) {
                         cout << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
-                             << ts_index << "];" << endl;
+                             << ts_index << "]; // color: "
+                             << LABEL_VERTEX + group_cost + 2 + node_color_added_val
+                             << endl;
                         cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
                         cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
                         cout << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
