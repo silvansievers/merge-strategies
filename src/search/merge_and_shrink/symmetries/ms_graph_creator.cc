@@ -189,12 +189,14 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 transition_system->get_const_transitions_for_group(*group_it);
             int group_cost = 3 * transition_system->get_cost_for_label_group(*group_it);
             vertex = bliss_graph.add_vertex(LABEL_VERTEX + group_cost + 1 + node_color_added_val);
+            bliss_graph.add_edge(ts_index, vertex);
 
             if (debug) {
                 cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
                      << ts_index << "]; // color: "
                      << LABEL_VERTEX + group_cost + 1 + node_color_added_val
                      << endl;
+                cout << "    node" << ts_index << " -> node" << vertex << endl;
             }
 
             for (LabelConstIter label_it = group_it->begin();
