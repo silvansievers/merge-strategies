@@ -187,61 +187,44 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
              group_it != grouped_labels.end(); ++group_it) {
             const std::vector<Transition>& transitions =
                 transition_system->get_const_transitions_for_group(*group_it);
-            bool relevant = false;
-            if (static_cast<int>(transitions.size()) == transition_system->get_size()) {
-                /*
-                  A label group is irrelevant in the earlier notion if it has
-                  exactly a self loop transition for every state.
-                */
-                for (size_t i = 0; i < transitions.size(); ++i) {
-                    if (transitions[i].target != transitions[i].src) {
-                        relevant = true;
-                        break;
-                    }
-                }
-            } else {
-                relevant = true;
+            int group_cost = 3 * transition_system->get_cost_for_label_group(*group_it);
+            vertex = bliss_graph.add_vertex(LABEL_VERTEX + group_cost + 1 + node_color_added_val);
+
+            if (debug) {
+                cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
+                     << ts_index << "]; // color: "
+                     << LABEL_VERTEX + group_cost + 1 + node_color_added_val
+                     << endl;
             }
-            if (relevant) {
-                int group_cost = 3 * transition_system->get_cost_for_label_group(*group_it);
-                vertex = bliss_graph.add_vertex(LABEL_VERTEX + group_cost + 1 + node_color_added_val);
+
+            for (LabelConstIter label_it = group_it->begin();
+                 label_it != group_it->end(); ++label_it) {
+                bliss_graph.add_edge(label_to_vertex[*label_it], vertex);
 
                 if (debug) {
-                    cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
+                    cout << "    node" << label_to_vertex[*label_it] << " -> node" << vertex << ";" << endl;
+                }
+            }
+            for (size_t i = 0; i < transitions.size(); ++i) {
+                const Transition &trans = transitions[i];
+                int transition_vertex = bliss_graph.add_vertex(
+                    LABEL_VERTEX + group_cost + 2 + node_color_added_val);
+                int source_vertex =
+                    symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
+                int target_vertex =
+                    symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.target);
+                bliss_graph.add_edge(vertex, transition_vertex);
+                bliss_graph.add_edge(source_vertex, transition_vertex);
+                bliss_graph.add_edge(transition_vertex, target_vertex);
+
+                if (debug) {
+                    cout << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
                          << ts_index << "]; // color: "
-                         << LABEL_VERTEX + group_cost + 1 + node_color_added_val
+                         << LABEL_VERTEX + group_cost + 2 + node_color_added_val
                          << endl;
-                }
-
-                for (LabelConstIter label_it = group_it->begin();
-                     label_it != group_it->end(); ++label_it) {
-                    bliss_graph.add_edge(label_to_vertex[*label_it], vertex);
-
-                    if (debug) {
-                        cout << "    node" << label_to_vertex[*label_it] << " -> node" << vertex << ";" << endl;
-                    }
-                }
-                for (size_t i = 0; i < transitions.size(); ++i) {
-                    const Transition &trans = transitions[i];
-                    int transition_vertex = bliss_graph.add_vertex(
-                        LABEL_VERTEX + group_cost + 2 + node_color_added_val);
-                    int source_vertex =
-                        symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
-                    int target_vertex =
-                        symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.target);
-                    bliss_graph.add_edge(vertex, transition_vertex);
-                    bliss_graph.add_edge(source_vertex, transition_vertex);
-                    bliss_graph.add_edge(transition_vertex, target_vertex);
-
-                    if (debug) {
-                        cout << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
-                             << ts_index << "]; // color: "
-                             << LABEL_VERTEX + group_cost + 2 + node_color_added_val
-                             << endl;
-                        cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
-                        cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
-                        cout << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
-                    }
+                    cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
+                    cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
+                    cout << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
                 }
             }
         }
