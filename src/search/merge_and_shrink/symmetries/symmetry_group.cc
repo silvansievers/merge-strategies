@@ -327,7 +327,7 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
       inclusion of all indices in the graph. They will be skipped when
       shrinking.
     */
-    vector<vector<__gnu_cxx::slist<AbstractStateRef> > > equivalence_relations(transition_systems.size());
+    vector<vector<forward_list<AbstractStateRef> > > equivalence_relations(transition_systems.size());
     for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index) {
         if (transition_systems[ts_index])
             equivalence_relations[ts_index].resize(sccs.size());
@@ -341,7 +341,7 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
             continue;
         }
         int affected_ts_index = symmetry_generator_info->get_ts_index_by_index(any_index);
-        __gnu_cxx::slist<AbstractStateRef> &equivalence_class =
+        forward_list<AbstractStateRef> &equivalence_class =
             equivalence_relations[affected_ts_index][i];
         for (size_t j = 0; j < scc.size(); ++j) {
             int index = scc[j];

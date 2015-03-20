@@ -22,7 +22,7 @@ class MSGraphCreator {
         ABSTRACT_STATE_VERTEX,
         GOAL_VERTEX,
         TRANSITION_VERTEX,
-        GROUP_VERTEX,
+        LABEL_GROUP_VERTEX,
         LABEL_VERTEX,
         INITIAL_VERTEX
     };

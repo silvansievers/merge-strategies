@@ -151,15 +151,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
 
     /*
       In a third step, go over all labels and add a vertex for every active
-      label, with color of 3 times its cost. Then, go over all transition
-      systems and add a vertex for every label group, with color of 3 times
-      the group's cost + 1. Finally, add a transition vertex for
-      every induced transition of the label group, with color 3 times the
-      group's cost + 2.
-      Every label vertex has an edge to all label group vertices where the
-      label is part of. Every label group vertex has an edge to all of its
-      transition vertices, which in turn have an incoming edge from their
-      source state vertex and an outoing edge to their target state vertex.
+      label, with a fixed "label color" plus its cost.
     */
     const Labels *labels = some_transition_sytem->get_labels();
     int num_labels = labels->get_size();
@@ -168,7 +160,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
         if (!labels->is_current_label(label_no))
             continue;
 
-        int label_cost = 3 * labels->get_label_cost(label_no);
+        int label_cost = labels->get_label_cost(label_no);
         label_to_vertex[label_no] = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 
         if (debug) {
@@ -178,6 +170,18 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                  << endl;
         }
     }
+
+    /*
+      In a fourth step, go over all transition systems and add a vertex for
+      every label group, with the same color for all such groups. Finally,
+      add a transition vertex for every induced transition of the label group,
+      with the same color for every such transition.
+      Every label group vertex has an incoming edge from all of its
+      participating labels. It further has an outgoing edge to all the
+      transitions it incudes in the transition system. Transition vertices
+      have an incoming edge from their source state vertex and an outoing
+      edge to their target state vertex.
+    */
     for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
         if (!transition_systems[ts_index])
             continue;
@@ -185,16 +189,13 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
         const list<list<int> > &grouped_labels = transition_system->get_grouped_labels();
         for (LabelGroupConstIter group_it = grouped_labels.begin();
              group_it != grouped_labels.end(); ++group_it) {
-            const std::vector<Transition>& transitions =
-                transition_system->get_const_transitions_for_group(*group_it);
-            int group_cost = 3 * transition_system->get_cost_for_label_group(*group_it);
-            vertex = bliss_graph.add_vertex(LABEL_VERTEX + group_cost + 1 + node_color_added_val);
+            vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
             bliss_graph.add_edge(ts_index, vertex);
 
             if (debug) {
                 cout << "    node" << vertex << " [shape=circle, label=label_group_ts"
                      << ts_index << "]; // color: "
-                     << LABEL_VERTEX + group_cost + 1 + node_color_added_val
+                     << LABEL_GROUP_VERTEX + node_color_added_val
                      << endl;
                 cout << "    node" << ts_index << " -> node" << vertex << endl;
             }
@@ -207,10 +208,13 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                     cout << "    node" << label_to_vertex[*label_it] << " -> node" << vertex << ";" << endl;
                 }
             }
+
+            const std::vector<Transition>& transitions =
+                transition_system->get_const_transitions_for_group(*group_it);
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(
-                    LABEL_VERTEX + group_cost + 2 + node_color_added_val);
+                    TRANSITION_VERTEX + node_color_added_val);
                 int source_vertex =
                     symmetry_generator_info->get_index_by_ts_index_and_abs_state(ts_index, trans.src);
                 int target_vertex =
@@ -222,7 +226,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 if (debug) {
                     cout << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
                          << ts_index << "]; // color: "
-                         << LABEL_VERTEX + group_cost + 2 + node_color_added_val
+                         << TRANSITION_VERTEX + node_color_added_val
                          << endl;
                     cout << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
                     cout << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
