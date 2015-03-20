@@ -3,7 +3,7 @@
 
 #include "../operator_cost.h"
 
-#include <ext/slist>
+#include <forward_list>
 #include <iostream>
 #include <list>
 #include <set>
@@ -70,6 +70,7 @@ class TransitionSystem {
     const Labels *labels;
     std::list<std::list<int> > grouped_labels;
     std::vector<std::vector<Transition> > transitions_by_group_index;
+    std::vector<int> cost_by_group_index;
     std::vector<std::tuple<int, LabelGroupIter, LabelIter> > label_to_positions;
     /*
       num_labels is always equal to labels->size(), with the exception during
@@ -149,7 +150,7 @@ public:
                                                 Labels *labels,
                                                 OperatorCost cost_type,
                                                 bool debug);
-    void apply_abstraction(std::vector<__gnu_cxx::slist<AbstractStateRef> > &collapsed_groups);
+    void apply_abstraction(std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups);
     void apply_label_reduction(const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
                                bool only_equivalent_labels);
     void release_memory();
