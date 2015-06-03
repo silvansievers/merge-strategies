@@ -12,8 +12,12 @@
 
 using namespace std;
 
-bool compare_sccs(const set<int> &lhs, const set<int> &rhs) {
+bool compare_sccs_increasing(const set<int> &lhs, const set<int> &rhs) {
     return lhs.size() < rhs.size();
+}
+
+bool compare_sccs_decreasing(const set<int> &lhs, const set<int> &rhs) {
+    return lhs.size() > rhs.size();
 }
 
 MergeSCCs::MergeSCCs(const Options &options)
@@ -42,10 +46,19 @@ MergeSCCs::MergeSCCs(const Options &options)
         }
         switch (SCCOrder(options.get_enum("scc_order"))) {
         case TOPOLOGICAL:
-            //
+            // sccs are computed in topological order
             break;
         case DECREASING:
-            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs);
+            /*
+              We merge starting with the *last* scc, hence sorting
+              according to increasing size gives the desires decreasing
+              order.
+            */
+            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs_increasing);
+            break;
+        case INCREASING:
+            // see DECREASING
+            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs_decreasing);
             break;
         }
 
@@ -145,10 +158,11 @@ static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> orders;
     orders.push_back("topological");
     orders.push_back("decreasing");
+    orders.push_back("increasing");
     parser.add_enum_option("scc_order",
                            orders,
                            "choose an ordering of the sccs",
-                           "decreasing");
+                           "topological");
     Options options = parser.parse();
 
     if (parser.dry_run())

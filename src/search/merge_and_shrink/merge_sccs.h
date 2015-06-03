@@ -10,7 +10,8 @@ class Options;
 class MergeSCCs : public MergeDFP {
     enum SCCOrder {
         TOPOLOGICAL,
-        DECREASING
+        DECREASING,
+        INCREASING
     };
 
     std::vector<std::set<int> > cg_sccs;
