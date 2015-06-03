@@ -91,7 +91,6 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
     }
 
     if (number_of_merges_for_scc == 1) {
-        cout << "last merge of current scc merging" << endl;
         current_transition_systems.push_back(all_transition_systems.back());
         pair<int, int> next_pair;
         bool looking_for_first = true;
@@ -116,9 +115,6 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
         current_transition_systems[next_pair.first] = 0;
         current_transition_systems[next_pair.second] = 0;
         for (size_t i = 0; i < current_transition_systems.size(); ++i) {
-            if (current_transition_systems[i]) {
-                cout << "at index " << i << " there still is a ts!" << endl;
-            }
             assert(!current_transition_systems[i]);
         }
         current_transition_systems.clear();
