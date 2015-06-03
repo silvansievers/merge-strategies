@@ -69,6 +69,17 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
         assert(current_scc.size() > 1);
         assert(current_transition_systems.empty());
 
+        number_of_merges_for_scc = current_scc.size() - 1;
+        if (number_of_merges_for_scc == 1) {
+            --remaining_merges;
+            --number_of_merges_for_scc;
+            assert(!number_of_merges_for_scc);
+            int first = *current_scc.begin();
+            int second = *(++current_scc.begin());
+            cg_sccs.erase(cg_sccs.end());
+            return make_pair(first, second);
+        }
+
         // Initialize current transition systems with all those contained in the scc
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
             if (current_scc.count(i)) {
@@ -79,8 +90,6 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
                 current_transition_systems.push_back(0);
             }
         }
-
-        number_of_merges_for_scc = current_scc.size() - 1;
         return get_next_current_scc();
     }
 
