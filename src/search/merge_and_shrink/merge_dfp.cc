@@ -175,15 +175,13 @@ pair<int, int> MergeDFP::get_next(const std::vector<TransitionSystem *> &all_tra
         assert(first == -1 && second == -1);
         assert(minimum_weight == INF);
         size_t ts_index = 0;
-        TransitionSystem *transition_system = sorted_transition_systems[ts_index];
-        assert(transition_system);
         size_t other_ts_index = 1;
-        TransitionSystem *other_transition_system = sorted_transition_systems[other_ts_index];
-        assert(other_transition_system);
+        assert(sorted_transition_systems[ts_index]);
+        assert(sorted_transition_systems[other_ts_index]);
         first = indices_mapping[ts_index];
         second = indices_mapping[other_ts_index];
-        assert(all_transition_systems[first] == transition_system);
-        assert(all_transition_systems[second] == other_transition_system);
+        assert(all_transition_systems[first] == sorted_transition_systems[ts_index]);
+        assert(all_transition_systems[second] == sorted_transition_systems[other_ts_index]);
     }
     assert(first != -1);
     assert(second != -1);
