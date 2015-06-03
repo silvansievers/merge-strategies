@@ -16,7 +16,7 @@ bool compare_sccs(const set<int> &lhs, const set<int> &rhs) {
     return lhs.size() < rhs.size();
 }
 
-MergeSCCs::MergeSCCs()
+MergeSCCs::MergeSCCs(const Options &options)
     : MergeDFP(),
       number_of_merges_for_scc(0) {
     vector<vector<int> > cg;
@@ -40,7 +40,15 @@ MergeSCCs::MergeSCCs()
                 cg_sccs.push_back(set<int>(single_scc.begin(), single_scc.end()));
             }
         }
-        sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs);
+        switch (SCCOrder(options.get_enum("scc_order"))) {
+        case TOPOLOGICAL:
+            //
+            break;
+        case DECREASING:
+            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs);
+            break;
+        }
+
         current_transition_systems.reserve(g_variable_domain.size() * 2 - 1);
     }
 }
@@ -134,10 +142,19 @@ string MergeSCCs::name() const {
 }
 
 static MergeStrategy *_parse(OptionParser &parser) {
+    vector<string> orders;
+    orders.push_back("topological");
+    orders.push_back("decreasing");
+    parser.add_enum_option("scc_order",
+                           orders,
+                           "choose an ordering of the sccs",
+                           "decreasing");
+    Options options = parser.parse();
+
     if (parser.dry_run())
         return 0;
     else
-        return new MergeSCCs();
+        return new MergeSCCs(options);
 }
 
 static Plugin<MergeStrategy> _plugin("merge_sccs", _parse);

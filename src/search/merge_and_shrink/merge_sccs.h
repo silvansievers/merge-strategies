@@ -8,6 +8,11 @@
 class Options;
 
 class MergeSCCs : public MergeDFP {
+    enum SCCOrder {
+        TOPOLOGICAL,
+        DECREASING
+    };
+
     std::vector<std::set<int> > cg_sccs;
     int number_of_merges_for_scc;
     std::vector<TransitionSystem *> current_transition_systems;
@@ -16,7 +21,7 @@ class MergeSCCs : public MergeDFP {
 protected:
     virtual void dump_strategy_specific_options() const {}
 public:
-    MergeSCCs();
+    MergeSCCs(const Options &options);
     virtual ~MergeSCCs() {}
 
     virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems);

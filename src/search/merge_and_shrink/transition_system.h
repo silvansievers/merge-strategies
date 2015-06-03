@@ -11,7 +11,6 @@
 #include <vector>
 
 class GlobalState;
-class Label;
 class Labels;
 
 typedef int AbstractStateRef;
