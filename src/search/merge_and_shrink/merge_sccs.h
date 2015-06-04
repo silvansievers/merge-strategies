@@ -10,6 +10,7 @@ class Options;
 class MergeSCCs : public MergeDFP {
     enum SCCOrder {
         TOPOLOGICAL,
+        REVERSE_TOPOLOGICAL,
         DECREASING,
         INCREASING
     };

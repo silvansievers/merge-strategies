@@ -48,6 +48,9 @@ MergeSCCs::MergeSCCs(const Options &options)
         case TOPOLOGICAL:
             // sccs are computed in topological order
             break;
+        case REVERSE_TOPOLOGICAL:
+            reverse(cg_sccs.begin(), cg_sccs.end());
+            break;
         case DECREASING:
             /*
               We merge starting with the *last* scc, hence sorting
@@ -173,6 +176,7 @@ string MergeSCCs::name() const {
 static MergeStrategy *_parse(OptionParser &parser) {
     vector<string> orders;
     orders.push_back("topological");
+    orders.push_back("reverse_topological");
     orders.push_back("decreasing");
     orders.push_back("increasing");
     parser.add_enum_option("scc_order",
