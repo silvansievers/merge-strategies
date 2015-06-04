@@ -82,6 +82,13 @@ pair<int, int> MergeSCCs::get_next_current_scc() {
     return next_pair;
 }
 
+// TODO: split get next into linear/dfp, inherit from both base classes,
+// and use according methods. merging linearly should also not be too
+// complicated because we only need to merge atomic transition systems.
+// as soon as all sccs have been merged, we can again choose to use further
+// dfp or linear shrinking, i.e. we could have two separate options giving
+// rise to four possibilities.
+
 pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_transition_systems) {
     assert(!done());
 
