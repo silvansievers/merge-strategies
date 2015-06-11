@@ -77,16 +77,19 @@ MergeSCCs::MergeSCCs(const Options &options)
 
     // Second step: if the merge order is linear, compute the order.
     if (merge_order == LINEAR) {
+        // Compute the variable order from VariableOrderFinder
         VariableOrderFinder order(VariableOrderType(options.get_enum("variable_order")));
         vector<int> variable_order;
         variable_order.reserve(g_variable_domain.size());
         while (!order.done()) {
             variable_order.push_back(order.next());
         }
+//        cout << "variable order finder: " << variable_order << endl;
+
         linear_order.reserve(g_variable_domain.size() - 1);
-        int next_ts_index = g_variable_domain.size();
+        int next_ts_index = g_variable_domain.size() - 1;
         unordered_map<int, int> var_to_ts_index;
-        // compute the merge order within sccs.
+        // Compute the merge order within sccs.
         while (!cg_sccs.empty()) {
             unordered_set<int> &scc = cg_sccs.back();
             int first = -1;
@@ -115,31 +118,42 @@ MergeSCCs::MergeSCCs(const Options &options)
             }
             cg_sccs.erase(cg_sccs.end());
         }
-        cout << "precomputed internal scc merge order: ";
-        for (size_t i = 0; i < linear_order.size(); ++i) {
-            cout << linear_order[i].first << ", "
-                 << linear_order[i].second << endl;
-        }
+//        cout << "precomputed internal scc merge order: " << endl;
+//        for (size_t i = 0; i < linear_order.size(); ++i) {
+//            cout << linear_order[i].first << ", "
+//                 << linear_order[i].second << endl;
+//        }
+//        int debug_size = linear_order.size();
 
-        // compute linear merge order after having merged the sccs.
+        // Compute linear merge order after having merged the sccs.
+        unordered_set<int> used_indices;
         int first = variable_order[0];
         if (var_to_ts_index.count(first)) {
             first = var_to_ts_index[first];
         }
-        int second = variable_order[1];
-        if (var_to_ts_index.count(second)) {
-            second = var_to_ts_index[second];
-        }
-        linear_order.push_back(make_pair(first, second));
-        ++next_ts_index;
-        for (size_t i = 2; i < variable_order.size(); ++i) {
+        used_indices.insert(first);
+        bool use_first = true;
+        for (size_t i = 1; i < variable_order.size(); ++i) {
             int var = variable_order[i];
             if (var_to_ts_index.count(var)) {
                 var = var_to_ts_index[var];
             }
-            linear_order.push_back(make_pair(next_ts_index, var));
-            ++next_ts_index;
+            if (!used_indices.count(var)) {
+                used_indices.insert(var);
+                if (use_first) {
+                    linear_order.push_back(make_pair(first, var));
+                    use_first = false;
+                } else {
+                    linear_order.push_back(make_pair(next_ts_index, var));
+                }
+                ++next_ts_index;
+            }
         }
+//        cout << "precomputed composite scc merge order: " << endl;
+//        for (size_t i = debug_size; i < linear_order.size(); ++i) {
+//            cout << linear_order[i].first << ", "
+//                 << linear_order[i].second << endl;
+//        }
         assert(linear_order.size() == g_variable_domain.size() - 1);
     }
 }
