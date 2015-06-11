@@ -13,11 +13,11 @@
 
 using namespace std;
 
-bool compare_sccs_increasing(const set<int> &lhs, const set<int> &rhs) {
+bool compare_sccs_increasing(const unordered_set<int> &lhs, const unordered_set<int> &rhs) {
     return lhs.size() < rhs.size();
 }
 
-bool compare_sccs_decreasing(const set<int> &lhs, const set<int> &rhs) {
+bool compare_sccs_decreasing(const unordered_set<int> &lhs, const unordered_set<int> &rhs) {
     return lhs.size() > rhs.size();
 }
 
@@ -46,7 +46,7 @@ MergeSCCs::MergeSCCs(const Options &options)
                 cout << "skipping scc of size 1" << endl;
             } else {
                 cout << single_scc << endl;
-                cg_sccs.push_back(set<int>(single_scc.begin(), single_scc.end()));
+                cg_sccs.push_back(unordered_set<int>(single_scc.begin(), single_scc.end()));
             }
         }
         switch (SCCOrder(options.get_enum("scc_order"))) {
@@ -88,7 +88,7 @@ MergeSCCs::MergeSCCs(const Options &options)
         unordered_map<int, int> var_to_ts_index;
         // compute the merge order within sccs.
         while (!cg_sccs.empty()) {
-            set<int> &scc = cg_sccs.back();
+            unordered_set<int> &scc = cg_sccs.back();
             int first = -1;
             int second = -1;
             int ts_index_after_scc = next_ts_index + scc.size() - 1;
@@ -145,7 +145,7 @@ MergeSCCs::MergeSCCs(const Options &options)
 }
 
 pair<int, int> MergeSCCs::get_next_dfp() {
-    set<int> &current_scc = cg_sccs.back();
+    unordered_set<int> &current_scc = cg_sccs.back();
     pair<int, int> next_pair = MergeDFP::get_next(current_transition_systems);
     /*
       Try to remove both indices from the current scc. If we merge one or two
@@ -171,7 +171,7 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
         return next_pair;
     } else if (merge_order == DFP) {
         if (!number_of_merges_for_scc && !cg_sccs.empty()) {
-            set<int> &current_scc = cg_sccs.back();
+            unordered_set<int> &current_scc = cg_sccs.back();
             assert(current_scc.size() > 1);
             assert(current_transition_systems.empty());
 
@@ -223,7 +223,7 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
             cout << "Next pair of indices: (" << next_pair.first << ", " << next_pair.second << ")" << endl;
 
             // Assert that we merged all transition systems that we expected to merge.
-            set<int> &current_scc = cg_sccs.back();
+            unordered_set<int> &current_scc = cg_sccs.back();
             current_scc.erase(next_pair.first);
             current_scc.erase(next_pair.second);
             assert(current_scc.empty());

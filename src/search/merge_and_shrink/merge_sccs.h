@@ -3,7 +3,7 @@
 
 #include "merge_dfp.h"
 
-#include <set>
+#include <unordered_set>
 
 class Options;
 
@@ -20,9 +20,8 @@ class MergeSCCs : public MergeDFP {
     };
     MergeOrder merge_order;
 
-    // TODO: use unordered_set?
     // cg_sccs contain the sccs in order to be merged, from last to first.
-    std::vector<std::set<int> > cg_sccs;
+    std::vector<std::unordered_set<int> > cg_sccs;
     int number_of_merges_for_scc;
     std::vector<TransitionSystem *> current_transition_systems;
     std::vector<std::pair<int, int> > linear_order;
