@@ -186,7 +186,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
         if (!transition_systems[ts_index])
             continue;
         const TransitionSystem *transition_system = transition_systems[ts_index];
-        const list<list<int> > &grouped_labels = transition_system->get_grouped_labels();
+        const std::list<LabelGroup> &grouped_labels = transition_system->get_grouped_labels();
         for (LabelGroupConstIter group_it = grouped_labels.begin();
              group_it != grouped_labels.end(); ++group_it) {
             vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
@@ -209,8 +209,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 }
             }
 
-            const std::vector<Transition>& transitions =
-                transition_system->get_const_transitions_for_group(*group_it);
+            const std::vector<Transition>& transitions = group_it->get_const_transitions();
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(

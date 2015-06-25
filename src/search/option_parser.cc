@@ -3,6 +3,7 @@
 #include "ext/tree_util.hh"
 #include "plugin.h"
 #include "rng.h"
+
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -40,8 +41,6 @@ void OptionParser::warning(string msg) {
 Functions for printing help:
 */
 
-DocStore *DocStore::instance_ = 0;
-
 void OptionParser::set_help_mode(bool m) {
     dry_run_ = dry_run_ && m;
     help_mode_ = m;
@@ -62,7 +61,7 @@ static void get_help(string k) {
     pt.insert(pt.begin(), ParseNode(k));
     get_help_templ<SearchEngine *>(pt);
     get_help_templ<Heuristic *>(pt);
-    get_help_templ<AbstractTask *>(pt);
+    get_help_templ<shared_ptr<AbstractTask> >(pt);
     get_help_templ<ScalarEvaluator *>(pt);
     get_help_templ<Synergy *>(pt);
     get_help_templ<LandmarkGraph *>(pt);
@@ -70,6 +69,7 @@ static void get_help(string k) {
     get_help_templ<OpenList<int> *>(pt);
     get_help_templ<MergeStrategy *>(pt);
     get_help_templ<ShrinkStrategy *>(pt);
+    get_help_templ<Labels *>(pt);
 }
 
 template <class T>
@@ -87,7 +87,7 @@ static void get_full_help_templ() {
 static void get_full_help() {
     get_full_help_templ<SearchEngine *>();
     get_full_help_templ<Heuristic *>();
-    get_full_help_templ<AbstractTask *>();
+    get_full_help_templ<shared_ptr<AbstractTask> >();
     get_full_help_templ<ScalarEvaluator *>();
     get_full_help_templ<Synergy *>();
     get_full_help_templ<LandmarkGraph *>();
@@ -95,6 +95,7 @@ static void get_full_help() {
     get_full_help_templ<OpenList<int> *>();
     get_full_help_templ<MergeStrategy *>();
     get_full_help_templ<ShrinkStrategy *>();
+    get_full_help_templ<Labels *>();
 }
 
 
@@ -133,7 +134,7 @@ static void predefine_heuristic(std::string s, bool dry_run) {
     std::string rs = s.substr(split + 1);
     OptionParser op(rs, dry_run);
     if (definees.size() == 1) { //normal predefinition
-        Predefinitions<Heuristic * >::instance()->predefine(
+        Predefinitions<Heuristic *>::instance()->predefine(
             definees[0], op.start_parsing<Heuristic *>());
     } else if (definees.size() > 1) { //synergy
         if (!dry_run) {
@@ -144,9 +145,9 @@ static void predefine_heuristic(std::string s, bool dry_run) {
                     definees[i], heur[i]);
             }
         } else {
-            for (size_t i = 0; i < definees.size(); ++i) {
+            for (const string &definee : definees) {
                 Predefinitions<Heuristic *>::instance()->predefine(
-                    definees[i], 0);
+                    definee, nullptr);
             }
         }
     } else {
@@ -395,6 +396,7 @@ OptionParser::OptionParser(const string config, bool dr)
       dry_run_(dr),
       help_mode_(false),
       next_unparsed_argument(first_child_of_root(parse_tree)) {
+    set_unparsed_config();
 }
 
 
@@ -404,8 +406,14 @@ OptionParser::OptionParser(ParseTree pt, bool dr)
       dry_run_(dr),
       help_mode_(false),
       next_unparsed_argument(first_child_of_root(parse_tree)) {
+    set_unparsed_config();
 }
 
+void OptionParser::set_unparsed_config() {
+    ostringstream stream;
+    kptree::print_tree_bracketed<ParseNode>(parse_tree, stream);
+    unparsed_config = stream.str();
+}
 
 string str_to_lower(string s) {
     transform(s.begin(), s.end(), s.begin(), ::tolower);
@@ -498,6 +506,7 @@ Options OptionParser::parse() {
         }
         last_key = pti->key;
     }
+    opts.set_unparsed_config(unparsed_config);
     return opts;
 }
 
@@ -542,10 +551,6 @@ bool OptionParser::help_mode() const {
     return help_mode_;
 }
 
-void OptionParser::set_parse_tree(const ParseTree &pt) {
-    parse_tree = pt;
-}
-
-ParseTree *OptionParser::get_parse_tree() {
+const ParseTree *OptionParser::get_parse_tree() {
     return &parse_tree;
 }
