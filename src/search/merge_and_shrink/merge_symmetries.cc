@@ -2,7 +2,9 @@
 
 #include "symmetries/symmetry_group.h"
 
+#include "../globals.h"
 #include "../plugin.h"
+#include "../variable_order_finder.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -15,10 +17,18 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
+      fallback_strategy(FallbackStrategy(options.get_enum("fallback_strategy"))),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
-      only_applied_dfp(true) {
+      pure_fallback_strategy(true) {
+    if (fallback_strategy == LINEAR) {
+        VariableOrderFinder order(VariableOrderType(options.get_enum("variable_order")));
+        linear_merge_order.reserve(g_variable_domain.size());
+        while (!order.done()) {
+            linear_merge_order.push_back(order.next());
+        }
+    }
 }
 
 void MergeSymmetries::dump_statistics() {
@@ -120,6 +130,16 @@ void MergeSymmetries::dump_strategy_specific_options() const {
          << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
     cout << "    stabilize transition systems: "
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
+    cout << "    fallback merge strategy: ";
+    switch (fallback_strategy) {
+    case LINEAR:
+        cout << "linear";
+        break;
+    case DFP:
+        cout << "dfp";
+        break;
+    }
+    cout << endl;
 }
 
 pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_transition_systems) {
@@ -145,9 +165,9 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
         if (symmetry_group.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
-        if (only_applied_dfp && (applied_symmetries || !merge_order.empty())) {
-            only_applied_dfp = false;
-            cout << "not pure DFP anymore" << endl;
+        if (pure_fallback_strategy && (applied_symmetries || !merge_order.empty())) {
+            pure_fallback_strategy = false;
+            cout << "not pure fallback strategy anymore" << endl;
         }
         double bliss_time = symmetry_group.get_bliss_time();
         bliss_times.push_back(bliss_time);
@@ -169,7 +189,20 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
     }
 
     if (merge_order.empty()) {
-        return MergeDFP::get_next(all_transition_systems);
+        if (fallback_strategy == LINEAR) {
+            // Linear Strategy
+            int first = linear_merge_order[0];
+            linear_merge_order.erase(linear_merge_order.begin());
+            int second = linear_merge_order[0];
+            linear_merge_order[0] = all_transition_systems.size();
+            cout << "Next pair (linear strategy): " << first << ", " << second << endl;
+            --remaining_merges;
+            return make_pair(first, second);
+        } else if (fallback_strategy == DFP) {
+            return MergeDFP::get_next(all_transition_systems);
+        } else {
+            ABORT("unknown fallback merge strategy");
+        }
     }
 
     pair<int, int> next_merge = merge_order.front();
@@ -178,6 +211,28 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
         exit_with(EXIT_CRITICAL_ERROR);
     }
     merge_order.erase(merge_order.begin());
+
+    if (fallback_strategy == LINEAR) {
+        // Update linear merge order in case we need to fallback on it
+        bool found_entry = false;
+        size_t counter = 0;
+        for (vector<int>::iterator it = linear_merge_order.begin();
+             it != linear_merge_order.end(); ++it) {
+            if (!found_entry && (*it == next_merge.first ||
+                                 *it == next_merge.second)) {
+                //cout << "updating entry " << counter << " (" << *it << ")to " << all_transition_systems.size() << endl;
+                found_entry = true;
+                linear_merge_order[counter] = all_transition_systems.size();
+            } else if (found_entry && (*it == next_merge.first ||
+                                       *it == next_merge.second)) {
+                //cout << "erasing entry " << counter << " (" << *it << ")" << endl;
+                linear_merge_order.erase(it);
+                break;
+            }
+            ++counter;
+        }
+        assert(found_entry);
+    }
 
     --remaining_merges;
     return next_merge;
@@ -188,6 +243,7 @@ string MergeSymmetries::name() const {
 }
 
 static MergeStrategy *_parse(OptionParser &parser) {
+    // Options for symmetries computation
     parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
                            "which bliss is allowed to run.",
                            "infinity");
@@ -252,17 +308,38 @@ static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
 
+    // Options for fallback merge strategy
+    vector<string> fallback_strategy;
+    fallback_strategy.push_back("linear");
+    fallback_strategy.push_back("dfp");
+    parser.add_enum_option("fallback_strategy",
+                           fallback_strategy,
+                           "choose a merge strategy: linear (specify "
+                           "variable_order) or dfp.",
+                           "dfp");
+    vector<string> variable_order;
+    variable_order.push_back("CG_GOAL_LEVEL");
+    variable_order.push_back("CG_GOAL_RANDOM");
+    variable_order.push_back("GOAL_CG_LEVEL");
+    variable_order.push_back("RANDOM");
+    variable_order.push_back("LEVEL");
+    variable_order.push_back("REVERSE_LEVEL");
+    parser.add_enum_option("variable_order",
+                           variable_order,
+                           "option useful if merge_order = linear. "
+                           "see VariableOrderFinder",
+                           "reverse_level");
+
     Options options = parser.parse();
     if (options.get<int>("bliss_call_time_limit")
             && options.get<int>("bliss_total_time_budget")) {
-        cerr << "Please only specify bliss_call_time_limite or "
+        cerr << "Please only specify bliss_call_time_limit or "
                 "bliss_total_time_budget but not both" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
     if (options.get_enum("symmetries_for_shrinking") == 0
             && options.get_enum("symmetries_for_merging") == 0) {
-        cerr << "Please use symmetries at least for shrinking or merging, "
-                "otherwise use merge_dfp instead." << endl;
+        cerr << "Please use symmetries at least for shrinking or merging." << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
     if (parser.dry_run())

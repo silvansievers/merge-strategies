@@ -12,14 +12,22 @@ class MergeSymmetries : public MergeDFP {
     int bliss_call_time_limit;
     double bliss_remaining_time_budget;
 
+    enum FallbackStrategy {
+        LINEAR,
+        DFP
+    };
+    FallbackStrategy fallback_strategy;
+
     // statistics
     int iteration_counter;
     int number_of_applied_symmetries;
     bool bliss_limit_reached;
     std::vector<double> bliss_times;
-    bool only_applied_dfp;
+    bool pure_fallback_strategy;
 
     std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
+
+    std::vector<int> linear_merge_order;
 
     void dump_statistics();
 protected:

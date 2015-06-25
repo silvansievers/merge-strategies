@@ -244,7 +244,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
         }
 
         /*
-          Here we include the transition systems that need to be merge linearly
+          Here we include the transition systems that need to be merged linearly
           in the merge tree. Those are the internally affected ones if they
           need to be merged, and the products of the merged cycles if
           applicable (merge_linear_transition_systems).
