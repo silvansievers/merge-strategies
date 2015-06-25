@@ -165,7 +165,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
         if (symmetry_group.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
-        if (pure_fallback_strategy && (applied_symmetries || !merge_order.empty())) {
+        if (pure_fallback_strategy && (!merge_order.empty())) {
             pure_fallback_strategy = false;
             cout << "not pure fallback strategy anymore" << endl;
         }
