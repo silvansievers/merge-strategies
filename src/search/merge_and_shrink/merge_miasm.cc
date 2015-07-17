@@ -1,14 +1,12 @@
 #include "merge_miasm.h"
 
-#include "labels.h"
-#include "transition_system.h"
-#include "merge_and_shrink_heuristic.h"
+//#include "labels.h"
+//#include "transition_system.h"
+//#include "merge_and_shrink_heuristic.h"
 #include "sink_set_search.h"
 #include "miasm_mas.h"
+#include "merge_tree.h"
 
-#include "../globals.h"
-#include "../global_operator.h"
-#include "../operator_cost.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -80,11 +78,7 @@ void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
     sink_set_search->search();
     sink_set_search->get_sink_set(sink_sets);
 
-    cerr << "before release_cache, current rss: " << getCurrentRSS() << endl;
-    sleep(5);
     sink_set_search->miasm_abstraction->release_cache();
-    cerr << "the end, current rss: " << getCurrentRSS() << endl;
-    sleep(5);
 
 //    sink_set_search->reset();
 

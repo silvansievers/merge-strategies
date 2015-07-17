@@ -48,6 +48,8 @@ class OptionParser;
 class SearchEngine;
 class ShrinkStrategy;
 class Labels;
+class MiasmAbstraction;
+class SinkSetSearch;
 
 /*
 The TokenParser<T> wraps functions to parse supported types T.
@@ -136,6 +138,18 @@ template <>
 class TokenParser<Labels *> {
 public:
     static inline Labels *parse(OptionParser &p);
+};
+
+template <>
+class TokenParser<MiasmAbstraction *> {
+public:
+    static inline MiasmAbstraction *parse(OptionParser &p);
+};
+
+template <>
+class TokenParser<SinkSetSearch *> {
+public:
+    static inline SinkSetSearch *parse(OptionParser &p);
 };
 
 template <>
@@ -439,6 +453,14 @@ ShrinkStrategy *TokenParser<ShrinkStrategy *>::parse(OptionParser &p) {
 
 Labels *TokenParser<Labels *>::parse(OptionParser &p) {
     return lookup_in_registry<Labels>(p);
+}
+
+MiasmAbstraction *TokenParser<MiasmAbstraction *>::parse(OptionParser &p) {
+    return lookup_in_registry<MiasmAbstraction>(p);
+}
+
+SinkSetSearch *TokenParser<SinkSetSearch *>::parse(OptionParser &p) {
+    return lookup_in_registry<SinkSetSearch>(p);
 }
 
 

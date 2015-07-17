@@ -70,6 +70,8 @@ static void get_help(string k) {
     get_help_templ<MergeStrategy *>(pt);
     get_help_templ<ShrinkStrategy *>(pt);
     get_help_templ<Labels *>(pt);
+    get_help_templ<MiasmAbstraction *>(pt);
+    get_help_templ<SinkSetSearch *>(pt);
 }
 
 template <class T>
@@ -96,6 +98,8 @@ static void get_full_help() {
     get_full_help_templ<MergeStrategy *>();
     get_full_help_templ<ShrinkStrategy *>();
     get_full_help_templ<Labels *>();
+    get_full_help_templ<MiasmAbstraction *>();
+    get_full_help_templ<SinkSetSearch *>();
 }
 
 

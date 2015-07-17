@@ -18,6 +18,8 @@
 class MergeStrategy;
 class ShrinkStrategy;
 class Labels;
+class MiasmAbstraction;
+class SinkSetSearch;
 class LandmarkGraph;
 class Heuristic;
 class ScalarEvaluator;
@@ -252,6 +254,21 @@ template <>
 struct TypeNamer<Labels *> {
     static std::string name() {
         return "Labels";
+    }
+};
+
+template <>
+struct TypeNamer<MiasmAbstraction *> {
+    static std::string name() {
+        return "MiasmAbstraction";
+    }
+};
+
+
+template <>
+struct TypeNamer<SinkSetSearch *> {
+    static std::string name() {
+        return "SinkSetSearchSearch";
     }
 };
 

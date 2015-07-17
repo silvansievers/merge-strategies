@@ -13,6 +13,7 @@
 #include <set>
 
 class AbstractTask;
+class CausalGraph;
 
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
@@ -51,6 +52,7 @@ private:
     const MiasmInternal internal;
     const MiasmExternal external;
     const std::shared_ptr<AbstractTask> task;
+    const CausalGraph &causal_graph;
 private:
     void get_internal_tree(const std::set<int> &varset,
                            tree<std::set<int> > &internal_tree);

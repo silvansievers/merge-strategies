@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -83,6 +84,20 @@ ostream &operator<<(ostream &stream, const vector<T> &vec) {
     stream << "]";
     return stream;
 }
+
+template<class T>
+ostream &operator<<(ostream &stream, const set<T> &s) {
+    stream << "{";
+    for (typename set<T>::iterator i = s.begin(); i != s.end(); ++i) {
+        if (i != s.begin()) {
+            stream << ", ";
+        }
+        stream << *i;
+    }
+    stream << "}";
+    return stream;
+}
+
 }
 
 template<class T>

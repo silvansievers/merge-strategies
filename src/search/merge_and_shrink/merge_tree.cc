@@ -3,6 +3,7 @@
 #include "../utilities.h"
 #include "../globals.h"
 #include "../causal_graph.h"
+#include "../task_proxy.h"
 
 #include "../ext/tree_util.hh"
 
@@ -97,7 +98,8 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
     : packing(packing_),
       internal(internal_),
       external(external_),
-      task(task) {
+      task(task),
+      causal_graph(TaskProxy(*task).get_causal_graph()) {
     if (p_si) {
         assert(p_si);
     }
