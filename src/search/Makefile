@@ -121,14 +121,22 @@ HEADERS += max_heuristic.h
 HEADERS += merge_and_shrink/labels.h \
            merge_and_shrink/merge_and_shrink_heuristic.h \
            merge_and_shrink/merge_dfp.h \
+           merge_and_shrink/merge_miasm.h \
+           merge_and_shrink/merge_miasm_parameters.h \
            merge_and_shrink/merge_linear.h \
            merge_and_shrink/merge_strategy.h \
+           merge_and_shrink/merge_tree.h \
            merge_and_shrink/shrink_bisimulation.h \
            merge_and_shrink/shrink_bucket_based.h \
            merge_and_shrink/shrink_fh.h \
            merge_and_shrink/shrink_random.h \
            merge_and_shrink/shrink_strategy.h \
            merge_and_shrink/transition_system.h \
+           merge_and_shrink/sink_set_search.h \
+           merge_and_shrink/subset_info.h \
+           merge_and_shrink/scc.h \
+           merge_and_shrink/types.h \
+           merge_and_shrink/miasm_mas.h \
 
 HEADERS += landmarks/exploration.h \
            landmarks/h_m_landmarks.h \
