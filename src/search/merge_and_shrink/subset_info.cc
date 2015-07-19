@@ -14,7 +14,7 @@ using namespace mst;
 VarSetInfo::VarSetInfo(
     const var_set_t &variables_,
     double ratio_, double gain_,
-    const size_t AI, const size_t BI)
+    size_t AI, size_t BI)
     : variables(variables_),
       ratio(ratio_),
       gain(gain_),

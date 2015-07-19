@@ -11,8 +11,6 @@
 
 #include <limits>
 
-#define INVALID
-
 /**
  * A collection of information relevant to
  * a merge-and-shrink abstraction on the variable subset.
@@ -24,8 +22,8 @@ struct VarSetInfo {
     std::pair<std::size_t, std::size_t> parent;
     VarSetInfo(const mst::var_set_t &variables_,
                double ratio_ = 1, double gain_ = 0,
-               const std::size_t AI = std::numeric_limits<std::size_t>::max(),
-               const std::size_t BI = std::numeric_limits<std::size_t>::max());
+               size_t AI = std::numeric_limits<std::size_t>::max(),
+               size_t BI = std::numeric_limits<std::size_t>::max());
 };
 
 /**

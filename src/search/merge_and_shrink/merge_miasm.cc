@@ -7,7 +7,6 @@
 #include "miasm_mas.h"
 #include "merge_tree.h"
 
-#include "../option_parser.h"
 #include "../plugin.h"
 
 #include <iostream>
@@ -16,12 +15,24 @@
 
 using namespace std;
 
-static MergeStrategy *_parse(OptionParser &parser) {
-    parser.add_option<SinkSetSearch *>(
-        SinkSetSearch::option_key(),
-        "search priority subsets",
-        SinkSetSearch::plugin_key());
+DEFINE_OPT(double, OptTimeLimit, "time_limit", "30.00")
+DEFINE_OPT(size_t, OptMemoryLimit, "memory_limit", "1500000000")
+DEFINE_OPT(int, OptSizeLimit, "size_limit", "50000")
+DEFINE_OPT(int, OptCliqueLimit, "clique_limit", "infinity")
 
+#define X(a) # a
+
+DEFINE_ENUM_OPT(EnumPriority, "priority", GAIN)
+
+DEFINE_ENUM_OPT(EnumExpand, "expand", SINGLE)
+
+DEFINE_ENUM_OPT(EnumGain, "gain", ALL_ACCUR)
+
+DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
+
+#undef X
+
+static MergeStrategy *_parse(OptionParser &parser) {
     parser.add_enum_option(MiasmInternal::option_key(),
                            MiasmInternal::S(),
                            "",
@@ -31,6 +42,46 @@ static MergeStrategy *_parse(OptionParser &parser) {
                            MiasmExternal::S(),
                            "",
                            MiasmExternal::default_value());
+
+    //SinkSetSearch options
+    parser.add_option<MiasmAbstraction *>(MiasmAbstraction::option_key(),
+                                          "",
+                                          MiasmAbstraction::plugin_key());
+
+    parser.add_option<double>(OptTimeLimit::opt_key(),
+                              "",
+                              OptTimeLimit::def_val());
+
+    parser.add_option<int>(OptMemoryLimit::opt_key(),
+                           "",
+                           OptMemoryLimit::def_val());
+
+    parser.add_option<int>(OptSizeLimit::opt_key(),
+                           "",
+                           OptSizeLimit::def_val());
+
+    parser.add_option<int>(OptCliqueLimit::opt_key(),
+                           "",
+                           OptCliqueLimit::def_val());
+
+    parser.add_enum_option(EnumPriority::option_key(), EnumPriority::S(),
+                           "the order in which the subsets "
+                           "are dequeued in the priority queue",
+                           EnumPriority::default_value());
+
+    parser.add_enum_option(EnumExpand::option_key(), EnumExpand::S(),
+                           "which new subsets should be added into the search"
+                           "priority queue",
+                           EnumExpand::default_value());
+
+
+    parser.add_enum_option(EnumGain::option_key(), EnumGain::S(),
+                           "",
+                           EnumGain::default_value());
+
+    parser.add_enum_option(EnumPrune::option_key(), EnumPrune::S(),
+                           "",
+                           EnumPrune::default_value());
 
     Options opts = parser.parse();
 
@@ -44,7 +95,7 @@ static Plugin<MergeStrategy> _plugin("merge_miasm", _parse);
 
 MergeMiasm::MergeMiasm(const Options &opts)
     : MergeStrategy(),
-      sink_set_search(opts.get<SinkSetSearch *>(SinkSetSearch::option_key())),
+      options(opts),
       miasm_internal(opts.get_enum(MiasmInternal::option_key())),
       miasm_external(opts.get_enum(MiasmExternal::option_key())) {
     merge_count = 0;
@@ -75,22 +126,11 @@ pair<int, int> MergeMiasm::get_next(
 
 void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
     /* search for sink sets */
-    sink_set_search->search();
-    sink_set_search->get_sink_set(sink_sets);
+    SinkSetSearch sink_set_search(options, task);
+    sink_set_search.search();
+    sink_set_search.get_sink_set(sink_sets);
 
-    sink_set_search->miasm_abstraction->release_cache();
-
-//    sink_set_search->reset();
-
-//    sink_set_search->search();
-//    sink_set_search->get_sink_set(sink_sets);
-
-//    cerr << "2 before release_cache, current rss: " << getCurrentRSS() << endl;
-//    sleep(5);
-//    sink_set_search->miasm_abstraction->release_cache();
-//    cerr << "2 the end, current rss: " << getCurrentRSS() << endl;
-//    sleep(5);
-
+    sink_set_search.miasm_abstraction->release_cache();
 
     /* find the maximal weighted set packing of the priority sets */
     greedy_max_set_packing();
@@ -100,18 +140,12 @@ void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
      * specified in the options for the current MIASM */
     MiasmMergeTree miasm_tree(
         max_packing, miasm_internal, miasm_external,
-        sink_set_search->get_vsir(),
+        sink_set_search.get_vsir(),
         task);
     /* convert the merge tree into the merge order
      * for the convenience of of the generic MergeStrategy::get_next
      * function */
-    miasm_tree.get_order(miasm_next);
-
-
-
-//    vector<size_t> check_bounds;
-//    mutex_control->get_check_bounds(miasm_next, check_bounds);
-//    cerr << check_bounds << endl;
+    miasm_tree.get_order(miasm_next, TaskProxy(*task).get_variables().size());
 }
 
 string MergeMiasm::name() const {

@@ -281,6 +281,10 @@ public:
     bool is_goal_relevant() const {
         return goal_relevant;
     }
+
+    const std::vector<int> &get_var_id_set() const {
+        return var_id_set;
+    }
 };
 
 

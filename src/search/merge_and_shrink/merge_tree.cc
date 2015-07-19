@@ -1,7 +1,6 @@
 #include "merge_tree.h"
 
 #include "../utilities.h"
-#include "../globals.h"
 #include "../causal_graph.h"
 #include "../task_proxy.h"
 
@@ -83,8 +82,9 @@ int MergeTree::get_slot(const tree<set<int> >::iterator ti) {
     return slot_count++;
 }
 
-void MergeTree::get_order(vector<pair<int, int> > &merge_next_) {
-    slot_count = g_variable_domain.size();
+void MergeTree::get_order(vector<pair<int, int> > &merge_next_, int num_vars) {
+    // TODO: slot_count? num_vars? what?
+    slot_count = num_vars;
     get_slot(merge_tree.begin());
     merge_next_ = merge_next;
 }
@@ -110,8 +110,10 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
 
 //    cerr << "\n\n" << packing << "\n\n";
 
-    for (size_t i = 0; i < g_goal.size(); ++i) {
-        goal.insert(g_goal[i].first);
+    TaskProxy task_proxy(*task);
+    GoalsProxy goals_proxy = task_proxy.get_goals();
+    for (size_t i = 0; i < goals_proxy.size(); ++i) {
+        goal.insert(goals_proxy[i].get_variable().get_id());
     }
 
     set<size_t> selected;
@@ -175,7 +177,7 @@ void MiasmMergeTree::update_pred(const size_t i) {
     for (set<int>::iterator ii = packing[i].begin();
          ii != packing[i].end(); ++ii) {
         pred.insert(*ii);
-        vector<int> pred_ii = g_causal_graph->get_predecessors(*ii);
+        vector<int> pred_ii = causal_graph.get_predecessors(*ii);
 
         for (size_t j = 0; j < pred_ii.size(); ++j) {
             pred.insert(pred_ii[j]);

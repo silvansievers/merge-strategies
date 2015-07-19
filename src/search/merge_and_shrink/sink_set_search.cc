@@ -6,12 +6,14 @@
 #include "merge_miasm.h"
 #include "scc.h"
 
-#include "../globals.h"
+//#include "../globals.h"
 #include "../causal_graph.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
 #include "../domain_transition_graph.h"
+
+#include "../ext/get_rss.h"
 
 #include <cassert>
 #include <cmath>
@@ -25,78 +27,12 @@
 using namespace std;
 using namespace mst;
 
-DEFINE_OPT(double, OptTimeLimit, "time_limit", "30.00")
-DEFINE_OPT(size_t, OptMemoryLimit, "memory_limit", "1500000000")
-DEFINE_OPT(int, OptSizeLimit, "size_limit", "50000")
-DEFINE_OPT(int, OptCliqueLimit, "clique_limit", "infinity")
-
-#define X(a) # a
-
-DEFINE_ENUM_OPT(EnumPriority, "priority", GAIN)
-
-DEFINE_ENUM_OPT(EnumExpand, "expand", SINGLE)
-
-DEFINE_ENUM_OPT(EnumGain, "gain", ALL_ACCUR)
-
-DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
-
-#undef X
-
-
-static SinkSetSearch * _parse(OptionParser & parser) {
-    parser.add_option<MiasmAbstraction *>(MiasmAbstraction::option_key(),
-                                          "",
-                                          MiasmAbstraction::plugin_key());
-
-    parser.add_option<double>(OptTimeLimit::opt_key(),
-                              "",
-                              OptTimeLimit::def_val());
-
-    parser.add_option<int>(OptMemoryLimit::opt_key(),
-                           "",
-                           OptMemoryLimit::def_val());
-
-    parser.add_option<int>(OptSizeLimit::opt_key(),
-                           "",
-                           OptSizeLimit::def_val());
-
-    parser.add_option<int>(OptCliqueLimit::opt_key(),
-                           "",
-                           OptCliqueLimit::def_val());
-
-    parser.add_enum_option(EnumPriority::option_key(), EnumPriority::S(),
-                           "the order in which the subsets "
-                           "are dequeued in the priority queue",
-                           EnumPriority::default_value());
-
-    parser.add_enum_option(EnumExpand::option_key(), EnumExpand::S(),
-                           "which new subsets should be added into the search"
-                           "priority queue",
-                           EnumExpand::default_value());
-
-
-    parser.add_enum_option(EnumGain::option_key(), EnumGain::S(),
-                           "",
-                           EnumGain::default_value());
-
-    parser.add_enum_option(EnumPrune::option_key(), EnumPrune::S(),
-                           "",
-                           EnumPrune::default_value());
-
-
-    Options opts = parser.parse();
-
-    if (parser.dry_run())
-        return 0;
-
-    return new SinkSetSearch(opts);
-}
-
-static Plugin<SinkSetSearch> _plugin(SinkSetSearch::plugin_key(), _parse);
-
-SinkSetSearch::SinkSetSearch(const Options &opts)
+SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> task)
     : miasm_abstraction(
           opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key())),
+      task(task),
+      task_proxy(*task),
+      causal_graph(task_proxy.get_causal_graph()),
       time_limit(opts.get<double>(OptTimeLimit::opt_key())),
       memory_limit(opts.get<int>(OptMemoryLimit::opt_key())),
       size_limit(opts.get<int>(OptSizeLimit::opt_key())),
@@ -176,7 +112,7 @@ void SinkSetSearch::search() {
 
 void SinkSetSearch::kickstart() {
     /* put singleton sets into the priority queue */
-    for (int i = 0; i < (int)g_variable_domain.size(); i++) {
+    for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
         enqueue(mst::singleton(i));
     }
 
@@ -210,8 +146,8 @@ void SinkSetSearch::kickstart() {
     /* put CG strongly connected componets into the priority queue */
 //    cerr << "strongly connected components :" << endl;
     vector<vector<int> > cg_succ;
-    for (int i = 0; i < (int)g_variable_domain.size(); i++) {
-        cg_succ.push_back(g_causal_graph->get_successors(i));
+    for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
+        cg_succ.push_back(causal_graph.get_successors(i));
     }
     vector<vector<int> > sccs = SCC(cg_succ).get_result();
 
@@ -221,14 +157,14 @@ void SinkSetSearch::kickstart() {
     }
 }
 
-bool SinkSetSearch::prune(const var_set_t &S, const var_set_t &A) {
+bool SinkSetSearch::prune(const var_set_t &, const var_set_t &) {
     if (opt_prune == EnumPrune::CGWC_MUTEX) {
         assert(false);
-        if (is_cg_weakly_connected(S, A))
-            return false;
-        if (miasm_abstraction->mutex_control->get_bound() &&
-            is_mutex_pair_connected(S, A))
-            return false;
+//        if (is_cg_weakly_connected(S, A))
+//            return false;
+//        if (miasm_abstraction->mutex_control->get_bound() &&
+//            is_mutex_pair_connected(S, A))
+//            return false;
     }
     return true;
 }
@@ -321,12 +257,12 @@ bool SinkSetSearch::enqueue(const var_set_t &S, pair<size_t, size_t> P) {
         P.second != numeric_limits<size_t>::max()) {
         const VarSetInfo &L = vsir[P.first];
         const VarSetInfo &R = vsir[P.second];
-        estimated_size += TransitionSystem::combinatorial_size(L.variables) *
+        estimated_size += combinatorial_size(L.variables) *
                           L.ratio;
-        estimated_size += TransitionSystem::combinatorial_size(R.variables) *
+        estimated_size += combinatorial_size(R.variables) *
                           R.ratio;
     } else {
-        estimated_size = TransitionSystem::combinatorial_size(S);
+        estimated_size = combinatorial_size(S);
     }
 
     /* if the abstraction is too large, then skip it */
@@ -358,7 +294,7 @@ void SinkSetSearch::dequeue() {
 
 void SinkSetSearch::expand(const var_set_t S) {
     if (opt_expa == EnumExpand::SINGLE) {
-        for (int v = 0; v < (int)g_variable_domain.size(); ++v) {
+        for (int v = 0; v < static_cast<int>(task_proxy.get_variables().size()); ++v) {
             /* must be a new variable */
             if (S.count(v))
                 continue;
@@ -395,7 +331,7 @@ bool SinkSetSearch::get_larger_mutex_pair_cliques(
     for (set<var_set_t>::iterator ia = current.begin();
          ia != current.end(); ++ia) {
         const var_set_t &old_set = *ia;
-        for (int i = 0; i < (int)g_variable_domain.size(); i++) {
+        for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
             if (old_set.count(i)) {
                 continue;
             }
@@ -421,7 +357,7 @@ bool SinkSetSearch::get_larger_mutex_pair_cliques(
 
 bool SinkSetSearch::has_cg_predecessor(
     const int v, const var_set_t &a) const {
-    vector<int> pred = g_causal_graph->get_predecessors(v);
+    vector<int> pred = causal_graph.get_predecessors(v);
 
     for (size_t i = 0; i < pred.size(); ++i) {
         if (a.count(i))
@@ -478,8 +414,9 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
         miasm_abstraction->build_transition_system(S, newly_built, vsir);
 
     /* initialize the ratio and gain */
-    vsi.ratio = (double)transition_system->size() /
-                transition_system->combinatorial_size();
+    const vector<int> &var_id_set = transition_system->get_var_id_set();
+    vsi.ratio = (double)transition_system->get_size() /
+                combinatorial_size(set<int>(var_id_set.begin(), var_id_set.end()));
     /* defaul gain */
     vsi.gain = 1.0 - vsi.ratio;
 
@@ -554,14 +491,6 @@ vector<vector<int> > SinkSetSearch::generate_combinations(
     return ac;
 }
 
-string SinkSetSearch::plugin_key() {
-    return "best_first";
-}
-
-string SinkSetSearch::option_key() {
-    return "subset_search";
-}
-
 const VarSetInfoRegistry *SinkSetSearch::get_vsir() {
     return &vsir;
 }
@@ -588,4 +517,19 @@ bool ComparatorSTLPriorityQueue::operator()(const size_t i,
                                             const size_t j) const {
     assert(vsir && priority);
     return !(ComparatorVarSet::operator ()(i, j));
+}
+
+size_t SinkSetSearch::combinatorial_size(const set<int> &varset) {
+    size_t comb_size = 1;
+    size_t type_max = numeric_limits<size_t>::max();
+    for (set<int>::const_iterator i = varset.begin();
+         i != varset.end(); ++i) {
+        if (comb_size > type_max / task_proxy.get_variables()[*i].get_domain_size()) {
+            /* too large, return the type max */
+            return type_max;
+        }
+        comb_size *= task_proxy.get_variables()[*i].get_domain_size();
+    }
+
+    return comb_size;
 }

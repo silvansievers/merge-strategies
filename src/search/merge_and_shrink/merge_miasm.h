@@ -6,17 +6,16 @@
 //#include "merge_tree.h"
 //#include "../operator_cost.h"
 
-#include <cstdlib>
+#include "../option_parser.h"
 
-#include <vector>
+//#include <cstdlib>
+
+//#include <vector>
 #include <set>
-#include <queue>
+//#include <queue>
 
 class Options;
-class TransitionSystem;
-class Labels;
-class MutexControl;
-class SinkSetSearch;
+//class SinkSetSearch;
 
 /**
  * @brief The MIASM merging strategy
@@ -29,21 +28,18 @@ public:
     virtual ~MergeMiasm();
 protected:
     /** @name Protected: Options */
+    const Options options;
     //@{
-    /** @brief The option for sink set searching */
-    SinkSetSearch *const sink_set_search;
     /** @brief The enum option that specifies the internal merging strategy */
     const MiasmInternal miasm_internal;
     /** @brief The enum option that specifies the external merging strategy */
     const MiasmExternal miasm_external;
     //@}
-protected:
     /** @name Protected: Local Computation  */
     //@{
     /** @brief The counter of how many merges have been done */
     std::size_t merge_count;
     //@}
-protected:
     /** @name Protected: Result Data */
     //@{
     /** @brief the sink sets */
@@ -55,14 +51,12 @@ protected:
      * in the order they are merged in */
     std::vector<std::pair<int, int> > miasm_next;
     //@}
-protected:
     virtual void dump_strategy_specific_options() const;
 public:
     virtual std::string name() const;
     virtual std::pair<int, int> get_next(
         const std::vector<TransitionSystem *> &all_transition_systems);
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
-public:
     /**
      * The function that builds a merge-and-shrink abstraction
      * on a subset of variables. It use the merging strategy,

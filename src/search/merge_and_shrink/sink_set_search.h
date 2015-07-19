@@ -5,6 +5,7 @@
 #include "option_struct.h"
 #include "subset_info.h"
 
+#include "../task_proxy.h"
 #include "../timer.h"
 
 #include <cstdlib>
@@ -17,6 +18,7 @@
 #include <limits>
 #include <string>
 
+class CausalGraph;
 class MergeMiasm;
 class Options;
 class MiasmAbstraction;
@@ -126,15 +128,16 @@ protected:
  */
 class SinkSetSearch {
 public:
-    SinkSetSearch(const Options &opts);
-    static std::string option_key();
-    static std::string plugin_key();
+    SinkSetSearch(const Options &opts, const std::shared_ptr<AbstractTask> task);
 public:
     /** @brief used to build the abstraction on a subset */
     MiasmAbstraction *const miasm_abstraction;
     /** @name Search Limit Options */
     //@{
 protected:
+    const std::shared_ptr<AbstractTask> task;
+    TaskProxy task_proxy;
+    const CausalGraph &causal_graph;
     /** @brief the time limit for sink-set search */
     const OptTimeLimit time_limit;
     /** @brief the memory limit for the process,
@@ -268,6 +271,8 @@ public:
      */
     const VarSetInfoRegistry *get_vsir();
     //@}
+private:
+    std::size_t combinatorial_size(const std::set<int> &varset);
 };
 
 
