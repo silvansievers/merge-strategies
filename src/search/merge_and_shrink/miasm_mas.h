@@ -3,33 +3,34 @@
 
 #include "types.h"
 
-#include "../operator_cost.h"
+#include "../task_proxy.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <map>
 
-class Options;
-class MergeStrategy;
-class ShrinkStrategy;
 class Labels;
+class MergeStrategy;
+class Options;
+class ShrinkStrategy;
 class TransitionSystem;
 class VarSetInfoRegistry;
 
-
 class MiasmAbstraction {
+    const std::shared_ptr<AbstractTask> task;
+    TaskProxy task_proxy;
+    MergeStrategy *const merge_strategy;
+    ShrinkStrategy *const shrink_strategy;
+    /** @brief the transition labels */
+    Labels *labels;
 public:
     MiasmAbstraction(const Options &opts);
     virtual ~MiasmAbstraction();
     static std::string option_key();
     static std::string plugin_key();
 
-    MergeStrategy *const merge_strategy;
-    ShrinkStrategy *const shrink_strategy;
-    /** @brief the enum option for cost type */
-    OperatorCost cost_type;
-    /** @brief the transition labels */
-    Labels *labels;
+
 
     std::map<mst::var_set_t, TransitionSystem *> cache;
     void release_cache();

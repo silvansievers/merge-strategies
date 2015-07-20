@@ -2,6 +2,7 @@
 
 #include "../globals.h"
 
+#include <limits>
 #include <utility>
 
 using namespace std;

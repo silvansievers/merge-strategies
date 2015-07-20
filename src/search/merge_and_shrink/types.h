@@ -2,10 +2,7 @@
 #define TYPES_H
 
 #include <set>
-#include <map>
 #include <vector>
-
-#include <limits>
 
 /** Merge-and-Shrink Types */
 namespace mst {
