@@ -24,6 +24,7 @@ class MiasmAbstraction {
     ShrinkStrategy *const shrink_strategy;
     /** @brief the transition labels */
     Labels *labels;
+    bool built_atomics;
 public:
     MiasmAbstraction(const Options &opts);
     virtual ~MiasmAbstraction();

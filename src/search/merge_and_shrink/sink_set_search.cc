@@ -430,6 +430,11 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
      * real current usage of memory */
     if (memory_limit_exceeded()) {
         for (size_t i = 0; i < newly_built.size(); ++i) {
+            if (newly_built[i].size() == 1) {
+                // Do not delete cached atomic abstractions, as we cannot
+                // recompute single atomic abstractions.
+                continue;
+            }
             miasm_abstraction->release_cache(newly_built[i]);
         }
     }

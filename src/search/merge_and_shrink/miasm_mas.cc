@@ -25,7 +25,8 @@ MiasmAbstraction::MiasmAbstraction(const Options &opts)
       task_proxy(*task),
       merge_strategy(opts.get<MergeStrategy *>("merge_strategy")),
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
-      labels(opts.get<Labels *>("label_reduction")) {
+      labels(opts.get<Labels *>("label_reduction")),
+      built_atomics(false) {
     merge_strategy->initialize(task);
     labels->initialize(task_proxy);
 }
@@ -71,6 +72,10 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
     assert(!G.empty());
     /* will do once only */
     if (G.size() == 1) {
+        if (built_atomics) {
+            ABORT("Cannot recompute atomic abstractions");
+        }
+        built_atomics = true;
         vector<TransitionSystem *> atomic;
         TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels, true);
 
