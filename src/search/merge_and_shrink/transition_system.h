@@ -165,6 +165,7 @@ class TransitionSystem {
     int max_h;
 
     bool goal_relevant;
+    bool silence;
 
     /*
       Invariant of this class:
@@ -220,12 +221,14 @@ protected:
         const std::vector<AbstractStateRef> &abstraction_mapping) = 0;
 public:
     TransitionSystem(const TaskProxy &task_proxy,
-                     const Labels *labels);
+                     const Labels *labels,
+                     bool silence = false);
     virtual ~TransitionSystem();
 
     static void build_atomic_transition_systems(const TaskProxy &task_proxy,
                                                 std::vector<TransitionSystem *> &result,
-                                                Labels *labels);
+                                                Labels *labels,
+                                                bool silence = false);
     bool apply_abstraction(const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups);
     void apply_label_reduction(const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
                                bool only_equivalent_labels);
@@ -282,6 +285,7 @@ public:
         return goal_relevant;
     }
 
+    // Method only used by MergeMiasm
     const std::vector<int> &get_var_id_set() const {
         return var_id_set;
     }
@@ -299,7 +303,8 @@ protected:
 public:
     AtomicTransitionSystem(const TaskProxy &task_proxy,
                            const Labels *labels,
-                           int var_id);
+                           int var_id,
+                           bool silence = false);
     virtual ~AtomicTransitionSystem();
 };
 
@@ -316,7 +321,8 @@ public:
     CompositeTransitionSystem(const TaskProxy &task_proxy,
                               const Labels *labels,
                               TransitionSystem *ts1,
-                              TransitionSystem *ts2);
+                              TransitionSystem *ts2,
+                              bool silence = false);
     virtual ~CompositeTransitionSystem();
 };
 

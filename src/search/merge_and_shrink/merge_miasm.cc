@@ -117,7 +117,7 @@ pair<int, int> MergeMiasm::get_next(
 
     if (miasm_next[merge_count].first >= bound ||
         miasm_next[merge_count].second >= bound ) {
-        cerr << "impossible!" << endl;
+        ABORT("Invalid next merge index");
     }
 
     remaining_merges--;
@@ -135,7 +135,7 @@ void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
 
     /* find the maximal weighted set packing of the priority sets */
     greedy_max_set_packing();
-    cerr << "max packing" << max_packing << endl;
+//    cerr << "max packing" << max_packing << endl;
     /* construct the merge tree based on the max packing
      * using the internal and external merging strategy
      * specified in the options for the current MIASM */

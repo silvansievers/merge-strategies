@@ -43,10 +43,12 @@ const int TransitionSystem::DISTANCE_UNKNOWN;
 
 
 TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
-                                   const Labels *labels)
+                                   const Labels *labels,
+                                   bool silence)
     : labels(labels),
       num_labels(labels->get_size()),
-      num_variables(task_proxy.get_variables().size()) {
+      num_variables(task_proxy.get_variables().size()),
+      silence(silence) {
     clear_distances();
     size_t num_ops = task_proxy.get_operators().size();
     if (num_ops > 0) {
@@ -110,7 +112,8 @@ void TransitionSystem::compute_distances_and_prune() {
        and max_h.
     */
 
-    cout << tag() << flush;
+    if (!silence)
+        cout << tag() << flush;
     assert(!are_distances_computed());
     assert(are_transitions_sorted_unique());
     assert(init_distances.empty() && goal_distances.empty());
@@ -136,11 +139,13 @@ void TransitionSystem::compute_distances_and_prune() {
     init_distances.resize(num_states, INF);
     goal_distances.resize(num_states, INF);
     if (is_unit_cost) {
-        cout << "computing distances using unit-cost algorithm" << endl;
+        if (!silence)
+            cout << "computing distances using unit-cost algorithm" << endl;
         compute_init_distances_unit_cost();
         compute_goal_distances_unit_cost();
     } else {
-        cout << "computing distances using general-cost algorithm" << endl;
+        if (!silence)
+            cout << "computing distances using general-cost algorithm" << endl;
         compute_init_distances_general_cost();
         compute_goal_distances_general_cost();
     }
@@ -170,9 +175,10 @@ void TransitionSystem::compute_distances_and_prune() {
         }
     }
     if (unreachable_count || irrelevant_count) {
-        cout << tag()
-             << "unreachable: " << unreachable_count << " states, "
-             << "irrelevant: " << irrelevant_count << " states" << endl;
+        if (!silence)
+            cout << tag()
+                 << "unreachable: " << unreachable_count << " states, "
+                 << "irrelevant: " << irrelevant_count << " states" << endl;
         discard_states(to_be_pruned_states);
     }
     assert(are_distances_computed());
@@ -383,15 +389,17 @@ void TransitionSystem::compute_locally_equivalent_labels() {
 
 void TransitionSystem::build_atomic_transition_systems(const TaskProxy &task_proxy,
                                                        vector<TransitionSystem *> &result,
-                                                       Labels *labels) {
+                                                       Labels *labels,
+                                                       bool silence) {
     assert(result.empty());
-    cout << "Building atomic transition systems... " << endl;
+    if (!silence)
+        cout << "Building atomic transition systems... " << endl;
     VariablesProxy variables = task_proxy.get_variables();
     OperatorsProxy operators = task_proxy.get_operators();
 
     // Step 1: Create the transition system objects without transitions.
     for (VariableProxy var : variables)
-        result.push_back(new AtomicTransitionSystem(task_proxy, labels, var.get_id()));
+        result.push_back(new AtomicTransitionSystem(task_proxy, labels, var.get_id(), silence));
 
     // Step 2: Add transitions.
     vector<vector<bool> > relevant_labels(result.size(), vector<bool>(operators.size(), false));
@@ -517,8 +525,9 @@ bool TransitionSystem::apply_abstraction(
         return false;
     }
 
-    cout << tag() << "applying abstraction (" << get_size()
-         << " to " << collapsed_groups.size() << " states)" << endl;
+    if (!silence)
+        cout << tag() << "applying abstraction (" << get_size()
+             << " to " << collapsed_groups.size() << " states)" << endl;
 
     typedef forward_list<AbstractStateRef> Group;
 
@@ -845,8 +854,9 @@ void TransitionSystem::dump_labels_and_transitions() const {
 
 AtomicTransitionSystem::AtomicTransitionSystem(const TaskProxy &task_proxy,
                                                const Labels *labels,
-                                               int var_id)
-    : TransitionSystem(task_proxy, labels), var_id(var_id) {
+                                               int var_id,
+                                               bool silence)
+    : TransitionSystem(task_proxy, labels, silence), var_id(var_id) {
     var_id_set.push_back(var_id);
     /*
       This generates the states of the atomic transition system, but not the
@@ -898,7 +908,8 @@ AtomicTransitionSystem::~AtomicTransitionSystem() {
 
 void AtomicTransitionSystem::apply_abstraction_to_lookup_table(
     const vector<AbstractStateRef> &abstraction_mapping) {
-    cout << tag() << "applying abstraction to lookup table" << endl;
+    if (!silence)
+        cout << tag() << "applying abstraction to lookup table" << endl;
     for (size_t i = 0; i < lookup_table.size(); ++i) {
         AbstractStateRef old_state = lookup_table[i];
         if (old_state != PRUNED_STATE)
@@ -922,10 +933,12 @@ AbstractStateRef AtomicTransitionSystem::get_abstract_state(const State &state) 
 CompositeTransitionSystem::CompositeTransitionSystem(const TaskProxy &task_proxy,
                                                      const Labels *labels,
                                                      TransitionSystem *ts1,
-                                                     TransitionSystem *ts2)
-    : TransitionSystem(task_proxy, labels) {
-    cout << "Merging " << ts1->description() << " and "
-         << ts2->description() << endl;
+                                                     TransitionSystem *ts2,
+                                                     bool silence)
+    : TransitionSystem(task_proxy, labels, silence) {
+    if (!silence)
+        cout << "Merging " << ts1->description() << " and "
+             << ts2->description() << endl;
 
     assert(ts1->is_solvable() && ts2->is_solvable());
     assert(ts1->is_valid() && ts2->is_valid());
@@ -1036,7 +1049,8 @@ CompositeTransitionSystem::~CompositeTransitionSystem() {
 
 void CompositeTransitionSystem::apply_abstraction_to_lookup_table(
     const vector<AbstractStateRef> &abstraction_mapping) {
-    cout << tag() << "applying abstraction to lookup table" << endl;
+    if (!silence)
+        cout << tag() << "applying abstraction to lookup table" << endl;
     for (int i = 0; i < components[0]->get_size(); ++i) {
         for (int j = 0; j < components[1]->get_size(); ++j) {
             AbstractStateRef old_state = lookup_table[i][j];

@@ -42,8 +42,8 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
       opt_gain(opts.get_enum(EnumGain::option_key())),
       opt_prune(opts.get_enum(EnumPrune::option_key())),
       pq(ComparatorSTLPriorityQueue(task, &vsir, &opt_prior)) {
-    cerr << __PRETTY_FUNCTION__ << endl;
-    dump_options(cerr, "\n    ");
+//    cerr << __PRETTY_FUNCTION__ << endl;
+//    dump_options(cerr, "\n    ");
 }
 
 bool SinkSetSearch::time_limit_exceeded() {
@@ -74,11 +74,11 @@ void SinkSetSearch::get_sink_set(vector<var_set_t> &sink_set) {
     std::sort(sink_set_idx.begin(), sink_set_idx.end(),
               ComparatorVarSet(task, &vsir, VarSetCmpType::BY_RATIO));
 
-    for (size_t i = 0; i < sink_set_idx.size(); i++) {
-        cerr << vsir[sink_set_idx[i]].variables << ": "
-             << vsir[sink_set_idx[i]].ratio << " "
-             << vsir[sink_set_idx[i]].gain << endl;
-    }
+//    for (size_t i = 0; i < sink_set_idx.size(); i++) {
+//        cerr << vsir[sink_set_idx[i]].variables << ": "
+//             << vsir[sink_set_idx[i]].ratio << " "
+//             << vsir[sink_set_idx[i]].gain << endl;
+//    }
 
     for (size_t i = 0; i < sink_set_idx.size(); i++) {
         sink_set.push_back(vsir[sink_set_idx[i]].variables);
@@ -104,9 +104,9 @@ void SinkSetSearch::search() {
         expand(vsir[t].variables);
     }
 
-    cerr << __PRETTY_FUNCTION__ << endl;
-    cerr << "# enqueued sets: " << counter << endl;
-    cerr << "# registered sets: " << vsir.size() << endl;
+//    cerr << __PRETTY_FUNCTION__ << endl;
+//    cerr << "# enqueued sets: " << counter << endl;
+//    cerr << "# registered sets: " << vsir.size() << endl;
 }
 
 void SinkSetSearch::kickstart() {
@@ -189,7 +189,7 @@ void SinkSetSearch::update_gain(const var_set_t &S, const size_t Si) {
 //        double min_K_r[2];
 //        cerr << S << " = " << endl;
 
-    cerr << "gain update for" << S << endl;
+//    cerr << "gain update for" << S << endl;
     for (size_t i = 0; i < check_sets.size(); ++i) {
         var_set_t K[2];
         double K_r[2];
@@ -406,7 +406,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
 
     vsi.parent = P;
 
-    cerr << "compute the abstraction on " << S << endl;
+//    cerr << "compute the abstraction on " << S << endl;
 
     vector<var_set_t> newly_built;
     TransitionSystem *transition_system =

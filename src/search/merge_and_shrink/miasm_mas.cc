@@ -45,14 +45,14 @@ string MiasmAbstraction::plugin_key() {
 }
 
 void MiasmAbstraction::release_cache(const var_set_t &var_set) {
-    cerr << __PRETTY_FUNCTION__ << endl;
+//    cerr << __PRETTY_FUNCTION__ << endl;
     assert(cache.count(var_set));
     delete cache[var_set];
     cache.erase(var_set);
 }
 
 void MiasmAbstraction::release_cache() {
-    cerr << __PRETTY_FUNCTION__ << endl;
+//    cerr << __PRETTY_FUNCTION__ << endl;
     for (map<var_set_t, TransitionSystem *>::iterator i = cache.begin();
          i != cache.end(); ++i) {
 //        cerr << i->first << endl;
@@ -65,21 +65,21 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
     const var_set_t &G, vector<var_set_t> &newly_built,
     const VarSetInfoRegistry &vsir) {
     if (cache.count(G)) {
-        cerr << "old: " << G << endl;
+//        cerr << "old: " << G << endl;
         return cache[G];
     }
     assert(!G.empty());
     /* will do once only */
     if (G.size() == 1) {
         vector<TransitionSystem *> atomic;
-        TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels);
+        TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels, true);
 
         /* remove the atomic abstraction if its variable is not involved */
         for (var_t i = 0; (size_t)i < atomic.size(); ++i) {
             var_set_t s = mst::singleton(i);
             assert(!cache.count(s));
             newly_built.push_back(s);
-            cerr << "new: " << s << endl;
+//            cerr << "new: " << s << endl;
             cache.insert(pair<var_set_t, TransitionSystem *>(s, atomic[i]));
         }
 
@@ -120,7 +120,7 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
 //        }
     }
 
-    cerr << left_set << ", " << right_set << endl;
+//    cerr << left_set << ", " << right_set << endl;
 
 
     TransitionSystem *left = build_transition_system(left_set,
@@ -128,12 +128,12 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
     TransitionSystem *right = build_transition_system(right_set,
                                                       newly_built, vsir);
 
-    TransitionSystem *root = new CompositeTransitionSystem(task_proxy, labels, left, right);
+    TransitionSystem *root = new CompositeTransitionSystem(task_proxy, labels, left, right, true);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, TransitionSystem *>(G, root));
     assert(cache.count(G));
-    cerr << "new: " << G << endl;
+//    cerr << "new: " << G << endl;
     return cache[G];
 }
 
