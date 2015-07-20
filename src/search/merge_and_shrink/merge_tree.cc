@@ -13,9 +13,10 @@
 
 using namespace std;
 
-ComparatorSortPacking::ComparatorSortPacking(const MiasmExternal &ext_,
+ComparatorSortPacking::ComparatorSortPacking(const shared_ptr<AbstractTask> task,
+                                             const MiasmExternal &ext_,
                                              const VarSetInfoRegistry *p_si_)
-    : ComparatorVarSet(p_si_),
+    : ComparatorVarSet(task, p_si_),
       ext(ext_) {
     if (ext == MiasmExternal::NUM_VAR_CGL) {
         cmp_type.e = VarSetCmpType::BY_NUM_VAR;
@@ -106,7 +107,7 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
 
 //    cerr << "\n\n" << packing << "\n\n";
 
-    sort(packing.begin(), packing.end(), ComparatorSortPacking(external, p_si));
+    sort(packing.begin(), packing.end(), ComparatorSortPacking(task, external, p_si));
 
 //    cerr << "\n\n" << packing << "\n\n";
 

@@ -5,20 +5,37 @@
 #include <cfloat>
 #include <iostream>
 
+#include "sink_set_search.h"
+
 #include "../utilities.h"
 #include "transition_system.h"
 
 using namespace std;
 using namespace mst;
 
+size_t combinatorial_size(const set<int> &varset, const TaskProxy &task_proxy) {
+    size_t comb_size = 1;
+    size_t type_max = numeric_limits<size_t>::max();
+    for (set<int>::const_iterator i = varset.begin();
+         i != varset.end(); ++i) {
+        if (comb_size > type_max / task_proxy.get_variables()[*i].get_domain_size()) {
+            /* too large, return the type max */
+            return type_max;
+        }
+        comb_size *= task_proxy.get_variables()[*i].get_domain_size();
+    }
+
+    return comb_size;
+}
+
 VarSetInfo::VarSetInfo(
     const var_set_t &variables_,
     double ratio_, double gain_,
-    size_t AI, size_t BI)
+    const size_t AI, const size_t BI)
     : variables(variables_),
       ratio(ratio_),
       gain(gain_),
-      parent(make_pair<size_t, size_t>(AI, BI)) {
+      parent(make_pair<int, int>(AI, BI)) {
 }
 
 void VarSetInfoRegistry::clear() {
@@ -87,9 +104,11 @@ VarSetCmpType::operator E() const {
     return e;
 }
 
-ComparatorVarSet::ComparatorVarSet(const VarSetInfoRegistry *vsir_,
+ComparatorVarSet::ComparatorVarSet(const shared_ptr<AbstractTask> task,
+                                   const VarSetInfoRegistry *vsir_,
                                    const VarSetCmpType cmp_type_)
-    : vsir(vsir_),
+    : task(task),
+      vsir(vsir_),
       cmp_type(cmp_type_) {
 }
 
@@ -127,8 +146,9 @@ bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
     if (cmp_type_temp == VarSetCmpType::BY_COMB_SIZE) {
         /* TODO seems expensive to compute */
         /* TransitionSystem::combinatorial_size */
-        size_t size_i = TransitionSystem::combinatorial_size(SIi.variables);
-        size_t size_j = TransitionSystem::combinatorial_size(SIj.variables);
+        TaskProxy task_proxy(*task);
+        size_t size_i = combinatorial_size(SIi.variables, task_proxy);
+        size_t size_j = combinatorial_size(SIj.variables, task_proxy);
         if (size_i != size_j) {
             return size_i < size_j;
         } else {

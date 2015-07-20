@@ -112,7 +112,8 @@ public:
      * @param vsir_ - the variable subset registry
      * @param priority_ - the priority type
      */
-    ComparatorSTLPriorityQueue(const VarSetInfoRegistry *vsir_ = 0,
+    ComparatorSTLPriorityQueue(const std::shared_ptr<AbstractTask> task,
+                               const VarSetInfoRegistry *vsir_ = 0,
                                const EnumPriority *priority_ = 0);
     virtual ~ComparatorSTLPriorityQueue();
     virtual bool operator()(const std::size_t i, const std::size_t j) const;
@@ -271,8 +272,6 @@ public:
      */
     const VarSetInfoRegistry *get_vsir();
     //@}
-private:
-    std::size_t combinatorial_size(const std::set<int> &varset);
 };
 
 

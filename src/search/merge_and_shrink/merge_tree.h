@@ -17,7 +17,8 @@ class CausalGraph;
 
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
-    ComparatorSortPacking(const MiasmExternal &ext_,
+    ComparatorSortPacking(const std::shared_ptr<AbstractTask> task,
+                          const MiasmExternal &ext_,
                           const VarSetInfoRegistry *p_si_ = 0);
     virtual ~ComparatorSortPacking();
     virtual bool operator()(

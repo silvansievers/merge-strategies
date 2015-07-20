@@ -8,10 +8,10 @@
 
 //#include "../globals.h"
 #include "../causal_graph.h"
-#include "../option_parser.h"
-#include "../plugin.h"
+//#include "../option_parser.h"
+//#include "../plugin.h"
 
-#include "../domain_transition_graph.h"
+//#include "../domain_transition_graph.h"
 
 #include "../ext/get_rss.h"
 
@@ -40,9 +40,8 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
       opt_prior(opts.get_enum(EnumPriority::option_key())),
       opt_expa(opts.get_enum(EnumExpand::option_key())),
       opt_gain(opts.get_enum(EnumGain::option_key())),
-      opt_prune(opts.get_enum(EnumPrune::option_key())) {
-    pq = pq_type(ComparatorSTLPriorityQueue(&vsir, &opt_prior));
-
+      opt_prune(opts.get_enum(EnumPrune::option_key())),
+      pq(ComparatorSTLPriorityQueue(task, &vsir, &opt_prior)) {
     cerr << __PRETTY_FUNCTION__ << endl;
     dump_options(cerr, "\n    ");
 }
@@ -73,7 +72,7 @@ void SinkSetSearch::dump_options(ostream &os, const string sep) const {
 
 void SinkSetSearch::get_sink_set(vector<var_set_t> &sink_set) {
     std::sort(sink_set_idx.begin(), sink_set_idx.end(),
-              ComparatorVarSet(&vsir, VarSetCmpType::BY_RATIO));
+              ComparatorVarSet(task, &vsir, VarSetCmpType::BY_RATIO));
 
     for (size_t i = 0; i < sink_set_idx.size(); i++) {
         cerr << vsir[sink_set_idx[i]].variables << ": "
@@ -257,12 +256,12 @@ bool SinkSetSearch::enqueue(const var_set_t &S, pair<size_t, size_t> P) {
         P.second != numeric_limits<size_t>::max()) {
         const VarSetInfo &L = vsir[P.first];
         const VarSetInfo &R = vsir[P.second];
-        estimated_size += combinatorial_size(L.variables) *
+        estimated_size += combinatorial_size(L.variables, task_proxy) *
                           L.ratio;
-        estimated_size += combinatorial_size(R.variables) *
+        estimated_size += combinatorial_size(R.variables, task_proxy) *
                           R.ratio;
     } else {
-        estimated_size = combinatorial_size(S);
+        estimated_size = combinatorial_size(S, task_proxy);
     }
 
     /* if the abstraction is too large, then skip it */
@@ -416,7 +415,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
     /* initialize the ratio and gain */
     const vector<int> &var_id_set = transition_system->get_var_id_set();
     vsi.ratio = (double)transition_system->get_size() /
-                combinatorial_size(set<int>(var_id_set.begin(), var_id_set.end()));
+                combinatorial_size(set<int>(var_id_set.begin(), var_id_set.end()), task_proxy);
     /* defaul gain */
     vsi.gain = 1.0 - vsi.ratio;
 
@@ -496,8 +495,9 @@ const VarSetInfoRegistry *SinkSetSearch::get_vsir() {
 }
 
 ComparatorSTLPriorityQueue::ComparatorSTLPriorityQueue(
+    const shared_ptr<AbstractTask> task,
     const VarSetInfoRegistry *vsir_, const EnumPriority *priority_)
-    : ComparatorVarSet(vsir_),
+    : ComparatorVarSet(task, vsir_),
       priority(priority_) {
     /* TODO: can we specify cmp_type.e in the initilization list
      * after knowing p_order? */
@@ -517,19 +517,4 @@ bool ComparatorSTLPriorityQueue::operator()(const size_t i,
                                             const size_t j) const {
     assert(vsir && priority);
     return !(ComparatorVarSet::operator ()(i, j));
-}
-
-size_t SinkSetSearch::combinatorial_size(const set<int> &varset) {
-    size_t comb_size = 1;
-    size_t type_max = numeric_limits<size_t>::max();
-    for (set<int>::const_iterator i = varset.begin();
-         i != varset.end(); ++i) {
-        if (comb_size > type_max / task_proxy.get_variables()[*i].get_domain_size()) {
-            /* too large, return the type max */
-            return type_max;
-        }
-        comb_size *= task_proxy.get_variables()[*i].get_domain_size();
-    }
-
-    return comb_size;
 }

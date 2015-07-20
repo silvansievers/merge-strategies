@@ -8,8 +8,15 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <memory>
 
 #include <limits>
+
+class AbstractTask;
+class TaskProxy;
+
+extern std::size_t combinatorial_size(const std::set<int> &varset,
+                                      const TaskProxy &task_proxy);
 
 /**
  * A collection of information relevant to
@@ -19,11 +26,11 @@ struct VarSetInfo {
     mst::var_set_t variables;
     double ratio;
     double gain;
-    std::pair<std::size_t, std::size_t> parent;
+    std::pair<int, int> parent;
     VarSetInfo(const mst::var_set_t &variables_,
                double ratio_ = 1, double gain_ = 0,
-               size_t AI = std::numeric_limits<std::size_t>::max(),
-               size_t BI = std::numeric_limits<std::size_t>::max());
+               const std::size_t AI = std::numeric_limits<std::size_t>::max(),
+               const std::size_t BI = std::numeric_limits<std::size_t>::max());
 };
 
 /**
@@ -92,6 +99,7 @@ struct VarSetCmpType {
 class ComparatorVarSet {
 protected:
     /** @brief the subset information */
+    const std::shared_ptr<AbstractTask> task;
     const VarSetInfoRegistry *vsir;
 public:
     /** @brief the comparison type */
@@ -103,7 +111,8 @@ public:
      * @param vsir_ - the variable subset registry
      * @param cmp_type_ - the comparison type
      */
-    ComparatorVarSet(const VarSetInfoRegistry *vsir_ = 0,
+    ComparatorVarSet(const std::shared_ptr<AbstractTask> task,
+                     const VarSetInfoRegistry *vsir_ = 0,
                      const VarSetCmpType cmp_type_ = VarSetCmpType::E(0));
     virtual ~ComparatorVarSet();
     virtual bool operator()(const std::size_t i, const std::size_t j) const;
