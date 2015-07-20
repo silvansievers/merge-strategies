@@ -116,8 +116,8 @@ pair<int, int> MergeMiasm::get_next(
     int bound = (int)all_transition_systems.size();
 
     if (miasm_next[merge_count].first >= bound ||
-        miasm_next[merge_count].second >= bound) {
-        cerr << "impossible!";
+        miasm_next[merge_count].second >= bound ) {
+        cerr << "impossible!" << endl;
     }
 
     remaining_merges--;
@@ -125,6 +125,7 @@ pair<int, int> MergeMiasm::get_next(
 }
 
 void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
+    MergeStrategy::initialize(task);
     /* search for sink sets */
     SinkSetSearch sink_set_search(options, task);
     sink_set_search.search();
