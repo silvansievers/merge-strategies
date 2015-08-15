@@ -248,6 +248,9 @@ public:
     bool is_goal_relevant() const {  // used by merge_dfp
         return goal_relevant;
     }
+    const std::vector<int> &get_incorporated_variables() const { // used by DynamicMergeStrategies
+        return incorporated_variables;
+    }
 };
 
 #endif

@@ -126,6 +126,7 @@ HEADERS += merge_and_shrink/distances.h \
            merge_and_shrink/labels.h \
            merge_and_shrink/merge_and_shrink_heuristic.h \
            merge_and_shrink/merge_dfp.h \
+           merge_and_shrink/merge_dynamic_weighted.h \
            merge_and_shrink/merge_linear.h \
            merge_and_shrink/merge_strategy.h \
            merge_and_shrink/shrink_bisimulation.h \
