@@ -115,8 +115,17 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
     }
 
     if (max_weight == -1) {
-        // TODO: return something useful
-        assert(false);
+        // Return the first pair
+        ts_index1 = 0;
+        while (!all_transition_systems[ts_index1]) {
+            ++ts_index1;
+        }
+        assert(in_bounds(ts_index1, all_transition_systems));
+        ts_index2 = ts_index1 + 1;
+        while (!all_transition_systems[ts_index2]) {
+            ++ts_index2;
+        }
+        assert(in_bounds(ts_index2, all_transition_systems));
     }
 
     int new_ts_index = all_transition_systems.size();
