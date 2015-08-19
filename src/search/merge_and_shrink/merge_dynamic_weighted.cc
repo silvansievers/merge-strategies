@@ -2,6 +2,7 @@
 
 #include "transition_system.h"
 
+#include "../causal_graph.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../task_proxy.h"
@@ -16,7 +17,12 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       w_high_initial_h_value(opts.get<int>("w_high_initial_h_value")),
       w_high_average_h_value(opts.get<int>("w_high_average_h_value")),
       w_prefer_ts_large_num_states(opts.get<int>("w_prefer_ts_large_num_states")),
-      w_prefer_ts_large_num_edges(opts.get<int>("w_prefer_ts_large_num_edges")) {
+      w_prefer_ts_large_num_edges(opts.get<int>("w_prefer_ts_large_num_edges")),
+      causal_graph(0) {
+}
+
+MergeDynamicWeighted::~MergeDynamicWeighted() {
+    delete causal_graph;
 }
 
 void MergeDynamicWeighted::dump_strategy_specific_options() const {
@@ -47,15 +53,71 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
             }
         }
     }
+    if (w_prefer_causally_connected_vars) {
+        // TODO: do not recreate causal graph. This is a solution for
+        // circumventing of assigning a const reference to a non-const member.
+        causal_graph = new CausalGraph(task_proxy.get_causal_graph());
+    }
+}
+
+int MergeDynamicWeighted::compute_pair_weight(
+    TransitionSystem *ts1, TransitionSystem *ts2) const {
+    int weight = -1;
+    if (w_prefer_causally_connected_vars) {
+        const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
+        vector<int> ts1_cg_neighbors;
+        for (int var_no : ts1_var_nos) {
+            const vector<int> &ts1_cg_successors = causal_graph->get_successors(var_no);
+            ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_successors.begin(), ts1_cg_successors.end());
+            const vector<int> &ts1_cg_predecessors = causal_graph->get_predecessors(var_no);
+            ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_predecessors.begin(), ts1_cg_predecessors.end());
+        }
+        sort(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end());
+        ts1_cg_neighbors.erase(unique(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end()),
+                               ts1_cg_neighbors.end());
+
+        const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
+        bool causally_connected = false;
+        for (int ts1_cg_neighbor : ts1_cg_neighbors) {
+            for (int ts2_var_no : ts2_var_nos) {
+                if (ts2_var_no == ts1_cg_neighbor) {
+                    causally_connected = true;
+                    break;
+                }
+            }
+        }
+        if (causally_connected) {
+            weight += w_prefer_causally_connected_vars;
+        }
+    }
+    return weight;
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     int ts_index1 = -1;
     int ts_index2 = -1;
+    int max_weight = -1;
+    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+        TransitionSystem *ts1 = all_transition_systems[i];
+        if (ts1) {
+            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                TransitionSystem *ts2 = all_transition_systems[j];
+                if (ts2) {
+                    int pair_weight = compute_pair_weight(all_transition_systems[i], all_transition_systems[j]);
+                    if (pair_weight > max_weight) {
+                        max_weight = pair_weight;
+                        ts_index1 = i;
+                        ts_index2 = j;
+                    }
+                }
+            }
+        }
+    }
 
-    cerr << "not implemented" << endl;
-    exit_with(EXIT_CRITICAL_ERROR);
-    // TODO compute pair
+    if (max_weight == -1) {
+        // TODO: return something useful
+        assert(false);
+    }
 
     int new_ts_index = all_transition_systems.size();
     TransitionSystem *ts1 = all_transition_systems[ts_index1];

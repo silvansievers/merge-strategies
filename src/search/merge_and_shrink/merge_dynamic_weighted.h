@@ -3,6 +3,7 @@
 
 #include "merge_strategy.h"
 
+class CausalGraph;
 class Options;
 
 class MergeDynamicWeighted : public MergeStrategy {
@@ -13,14 +14,18 @@ class MergeDynamicWeighted : public MergeStrategy {
     int w_prefer_ts_large_num_states;
     int w_prefer_ts_large_num_edges;
     std::shared_ptr<AbstractTask> task;
+    CausalGraph *causal_graph;
 
     std::vector<int> var_no_to_ts_index;
     std::vector<std::vector<bool> > additive_var_pairs;
 
+    int compute_pair_weight(
+        TransitionSystem *ts1, TransitionSystem *ts2) const;
+
     virtual void dump_strategy_specific_options() const override;
 public:
     MergeDynamicWeighted(const Options opts);
-    virtual ~MergeDynamicWeighted() = default;
+    virtual ~MergeDynamicWeighted();
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
     virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems) override;
     virtual std::string name() const override;
