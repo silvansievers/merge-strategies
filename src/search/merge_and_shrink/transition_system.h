@@ -223,6 +223,9 @@ public:
     int get_init_state() const {
         return init_state;
     }
+    int get_init_state_goal_distance() const {
+        return get_goal_distance(init_state);
+    }
 
     bool is_goal_state(int state) const {
         return goal_states[state];

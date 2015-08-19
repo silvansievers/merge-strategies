@@ -19,6 +19,8 @@ class MergeDynamicWeighted : public MergeStrategy {
     std::vector<int> var_no_to_ts_index;
     std::vector<std::vector<bool> > additive_var_pairs;
 
+    int get_num_transitions(TransitionSystem *ts) const;
+    double get_average_h_value(TransitionSystem *ts) const;
     int compute_pair_weight(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
 

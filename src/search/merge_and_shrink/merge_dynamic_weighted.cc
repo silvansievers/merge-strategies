@@ -60,8 +60,41 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
     }
 }
 
+int MergeDynamicWeighted::get_num_transitions(TransitionSystem *ts) const {
+    int num_transitions = 0;
+    for (TSConstIterator it = ts->begin(); it != ts->end(); ++it) {
+        int group_size = 0;
+        for (LabelConstIter label_it = it.begin();
+             label_it != it.end(); ++label_it) {
+            ++group_size;
+        }
+        num_transitions += (group_size * it.get_transitions().size());
+    }
+    return num_transitions;
+}
+
+double MergeDynamicWeighted::get_average_h_value(TransitionSystem *ts) const {
+    int num_states = ts->get_size();
+    int sum_distances = 0;
+    for (int state = 0; state < num_states; ++state) {
+        sum_distances += ts->get_goal_distance(state);
+    }
+    return static_cast<double>(sum_distances) / static_cast<double>(num_states);
+}
+
 int MergeDynamicWeighted::compute_pair_weight(
     TransitionSystem *ts1, TransitionSystem *ts2) const {
+    /*
+      TODO: cache results for all transition systems? only two of the
+      transition systems disappear each merge, and only one new arises.
+      However, we would need to remove all pairs that the merge transition
+      systems were part of, and compute all the pairs with the new one.
+
+      Also, we would need to make sure that at the time that the
+      merge strategy is asked for the next pair, the cached results are
+      correct, i.e. the transition systems cannot have been shrunk in
+      the meantime.
+    */
     int weight = -1;
     if (w_prefer_causally_connected_vars) {
         const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
@@ -87,9 +120,51 @@ int MergeDynamicWeighted::compute_pair_weight(
             }
         }
         if (causally_connected) {
-            weight += w_prefer_causally_connected_vars;
+            weight += w_prefer_causally_connected_vars * 100;
         }
     }
+
+    if (w_avoid_additive_vars) {
+        const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
+        const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
+        bool are_additive = true;
+        for (int ts1_var_no : ts1_var_nos) {
+            for (int ts2_var_no : ts2_var_nos) {
+                if (!additive_var_pairs[ts1_var_no][ts2_var_no]) {
+                    are_additive = false;
+                    break;
+                }
+            }
+        }
+        if (!are_additive) {
+            weight += w_avoid_additive_vars * 100;
+        }
+    }
+
+    if (w_high_initial_h_value) {
+        weight += w_high_initial_h_value *
+                (ts1->get_init_state_goal_distance() + ts2->get_init_state_goal_distance());
+        // TODO: precompute and normalize the sum
+    }
+
+    if (w_high_average_h_value) {
+        weight += w_high_average_h_value *
+                (get_average_h_value(ts1) + get_average_h_value(ts1));
+        // TODO: precompute and normalize the sum
+    }
+
+    if (w_prefer_ts_large_num_states) {
+        weight += w_prefer_ts_large_num_states *
+                (ts1->get_size() + ts2->get_size());
+        // TODO: precompute and normalize the sum
+    }
+
+    if (w_prefer_ts_large_num_edges) {
+        weight += w_prefer_ts_large_num_edges *
+                (get_num_transitions(ts1) + get_num_transitions(ts2));
+        // TODO: precompute and normalize the sum
+    }
+
     return weight;
 }
 
