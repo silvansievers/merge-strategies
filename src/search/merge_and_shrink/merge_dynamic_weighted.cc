@@ -59,9 +59,19 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
         // circumventing of assigning a const reference to a non-const member.
         causal_graph = new CausalGraph(task_proxy.get_causal_graph());
         cg_edges_count = 0;
-        for (VariableProxy var : task_proxy.get_variables()) {
-            cg_edges_count += causal_graph->get_successors(var.get_id()).size();
+        if (debug) {
+            cout << "causal graph:" << endl;
         }
+        for (VariableProxy var : task_proxy.get_variables()) {
+//            cg_edges_count += causal_graph->get_successors(var.get_id()).size();
+            if (debug) {
+                cout << "successors for var " << var.get_id() << ": "
+                     << causal_graph->get_successors(var.get_id()) << endl;
+            }
+        }
+//        if (debug) {
+//            cout << "cg edge count: " << cg_edges_count << endl;
+//        }
     }
 }
 
@@ -77,22 +87,23 @@ double MergeDynamicWeighted::compute_feature_causal_connection(
             const vector<int> &ts1_cg_predecessors = causal_graph->get_predecessors(var_no);
             ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_predecessors.begin(), ts1_cg_predecessors.end());
         }
+        // NOTE: we want to count directed edges, to take into account if there
+        // is a connection between variables in both directions or not.
 //        sort(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end());
 //        ts1_cg_neighbors.erase(unique(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end()),
 //                               ts1_cg_neighbors.end());
 
         const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
-//        bool causally_connected = false;
-        int connection_count = 0;
+        int edge_count = 0;
         for (int ts1_cg_neighbor : ts1_cg_neighbors) {
             for (int ts2_var_no : ts2_var_nos) {
                 if (ts2_var_no == ts1_cg_neighbor) {
-//                    causally_connected = true;
-                    ++connection_count;
+                    ++edge_count;
                 }
             }
         }
-        feature_value = static_cast<double>(connection_count) / static_cast<double>(cg_edges_count);
+        double max_possible_edges = ts1_var_nos.size() * ts2_var_nos.size() * 2;
+        feature_value = static_cast<double>(edge_count) / max_possible_edges;
     }
     if (debug) {
         cout << "causal connection percentage: " << feature_value << endl;
