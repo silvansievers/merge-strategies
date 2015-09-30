@@ -44,6 +44,7 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
     for (VariableProxy var : task_proxy.get_variables()) {
         var_no_to_ts_index.push_back(var.get_id());
     }
+    merge_order.reserve(num_variables * 2 - 1);
 
     if (w_prefer_causally_connected_vars) {
         // TODO: do not recreate causal graph. This is a solution for
@@ -223,25 +224,8 @@ int MergeDynamicWeighted::compute_weighted_sum(
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     int ts_index1 = -1;
     int ts_index2 = -1;
-    int max_weight = -1;
-    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-        TransitionSystem *ts1 = all_transition_systems[i];
-        if (ts1) {
-            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
-                TransitionSystem *ts2 = all_transition_systems[j];
-                if (ts2) {
-                    int pair_weight = compute_weighted_sum(all_transition_systems[i], all_transition_systems[j]);
-                    if (pair_weight > max_weight) {
-                        max_weight = pair_weight;
-                        ts_index1 = i;
-                        ts_index2 = j;
-                    }
-                }
-            }
-        }
-    }
 
-    if (max_weight == -1) {
+    if (remaining_merges == 1) {
         // Return the first pair
         ts_index1 = 0;
         while (!all_transition_systems[ts_index1]) {
@@ -253,8 +237,29 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
             ++ts_index2;
         }
         assert(in_bounds(ts_index2, all_transition_systems));
+    } else {
+        int max_weight = -1;
+        for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+            TransitionSystem *ts1 = all_transition_systems[i];
+            if (ts1) {
+                for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                    TransitionSystem *ts2 = all_transition_systems[j];
+                    if (ts2) {
+                        int pair_weight = compute_weighted_sum(all_transition_systems[i], all_transition_systems[j]);
+                        if (pair_weight > max_weight) {
+                            max_weight = pair_weight;
+                            ts_index1 = i;
+                            ts_index2 = j;
+                        }
+                    }
+                }
+            }
+        }
+        assert(max_weight != -1);
     }
 
+    assert(ts_index1 != -1);
+    assert(ts_index2 != -1);
     int new_ts_index = all_transition_systems.size();
     TransitionSystem *ts1 = all_transition_systems[ts_index1];
     TransitionSystem *ts2 = all_transition_systems[ts_index2];
@@ -265,6 +270,14 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
         var_no_to_ts_index[var_no] = new_ts_index;
     }
     --remaining_merges;
+    merge_order.push_back(make_pair(ts_index1, ts_index2));
+    if (!remaining_merges) {
+        cout << "merge order: ";
+        for (auto merge : merge_order) {
+            cout << "(" << merge.first << ", " << merge.second << "), ";
+        }
+        cout << endl;
+    }
     return make_pair(ts_index1, ts_index2);
 }
 

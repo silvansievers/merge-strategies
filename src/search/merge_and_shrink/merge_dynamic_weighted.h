@@ -7,6 +7,7 @@ class CausalGraph;
 class Options;
 
 class MergeDynamicWeighted : public MergeStrategy {
+    // Options
     bool debug;
     int w_prefer_causally_connected_vars;
     int w_avoid_additive_vars;
@@ -14,11 +15,15 @@ class MergeDynamicWeighted : public MergeStrategy {
     int w_high_average_h_value;
     int w_prefer_ts_large_num_states;
     int w_prefer_ts_large_num_edges;
+
+    // Precomputed stuff
     std::shared_ptr<AbstractTask> task;
     CausalGraph *causal_graph;
-
     std::vector<int> var_no_to_ts_index;
     std::vector<std::vector<bool> > additive_var_pairs;
+
+    // Statistics
+    std::vector<std::pair<int, int> > merge_order;
 
     double compute_feature_causal_connection(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
