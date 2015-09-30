@@ -500,6 +500,10 @@ void TransitionSystem::release_memory() {
     release_vector_memory(transitions_by_group_id);
 }
 
+int TransitionSystem::get_group_id_for_label(int label_no) const {
+    return label_equivalence_relation->get_group_id(label_no);
+}
+
 string TransitionSystem::tag() const {
     string desc(description());
     desc[0] = toupper(desc[0]);

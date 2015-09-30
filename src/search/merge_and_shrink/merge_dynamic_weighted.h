@@ -31,6 +31,8 @@ class MergeDynamicWeighted : public MergeStrategy {
         TransitionSystem *ts1, TransitionSystem *ts2) const;
     int get_num_transitions(TransitionSystem *ts) const;
     double get_average_h_value(TransitionSystem *ts) const;
+    int compute_number_of_product_transitions(
+        const TransitionSystem *ts1, const TransitionSystem *ts2) const;
     int compute_weighted_sum(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
 

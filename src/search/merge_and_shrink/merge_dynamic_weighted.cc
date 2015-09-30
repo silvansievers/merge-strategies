@@ -166,6 +166,41 @@ double MergeDynamicWeighted::get_average_h_value(TransitionSystem *ts) const {
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
+int MergeDynamicWeighted::compute_number_of_product_transitions(
+    const TransitionSystem *ts1, const TransitionSystem *ts2) const {
+    /*
+      Note that this computes the number of tranistions in the product
+      without considering possible shrinking due to unreachable or
+      irrelevant states, which hence may reduce the actual number of
+      transitions in the product.
+    */
+    int number_of_transitions = 0;
+    for (TSConstIterator group1_it = ts1->begin();
+         group1_it != ts1->end(); ++group1_it) {
+        // Distribute the labels of this group among the "buckets"
+        // corresponding to the groups of ts2.
+        unordered_map<int, vector<int> > buckets;
+        for (LabelConstIter label_it = group1_it.begin();
+             label_it != group1_it.end(); ++label_it) {
+            int label_no = *label_it;
+            int group2_id = ts2->get_group_id_for_label(label_no);
+            buckets[group2_id].push_back(label_no);
+        }
+        // Now buckets contains all equivalence classes that are
+        // refinements of group1.
+
+        // Now create the new groups together with their transitions.
+        const vector<Transition> &transitions1 = group1_it.get_transitions();
+        for (const auto &bucket : buckets) {
+            const vector<Transition> &transitions2 =
+                ts2->get_transitions_for_group_id(bucket.first);
+            int new_transitions_for_new_group = transitions1.size() * transitions2.size();
+            number_of_transitions += new_transitions_for_new_group;
+        }
+    }
+    return number_of_transitions;
+}
+
 int MergeDynamicWeighted::compute_weighted_sum(
     TransitionSystem *ts1, TransitionSystem *ts2) const {
     if (debug) {

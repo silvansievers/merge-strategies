@@ -156,9 +156,11 @@ private:
     void normalize_given_transitions(std::vector<Transition> &transitions) const;
     bool are_transitions_sorted_unique() const;
     void compute_locally_equivalent_labels();
+public: // TODO: temporary access
     const std::vector<Transition> &get_transitions_for_group_id(int group_id) const {
         return transitions_by_group_id[group_id];
     }
+private:
     std::vector<Transition> &get_transitions_for_group_id(int group_id) {
         return transitions_by_group_id[group_id];
     }
@@ -203,6 +205,7 @@ public:
         return TSConstIterator(
                    label_equivalence_relation, transitions_by_group_id, true);
     }
+    int get_group_id_for_label(int label_no) const;
     /*
       Method to identify the transition system in output.
       Print "Atomic transition system #x: " for atomic transition systems,
