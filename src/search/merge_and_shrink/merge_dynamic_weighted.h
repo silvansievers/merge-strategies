@@ -16,12 +16,13 @@ class MergeDynamicWeighted : public MergeStrategy {
     int w_prefer_ts_large_num_edges;
     std::shared_ptr<AbstractTask> task;
     CausalGraph *causal_graph;
-//    int cg_edges_count;
 
     std::vector<int> var_no_to_ts_index;
     std::vector<std::vector<bool> > additive_var_pairs;
 
     double compute_feature_causal_connection(
+        TransitionSystem *ts1, TransitionSystem *ts2) const;
+    double compute_feature_additive_variables(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
     int get_num_transitions(TransitionSystem *ts) const;
     double get_average_h_value(TransitionSystem *ts) const;

@@ -44,40 +44,46 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
     for (VariableProxy var : task_proxy.get_variables()) {
         var_no_to_ts_index.push_back(var.get_id());
     }
-    additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        for (EffectProxy e1 : op.get_effects()) {
-            for (EffectProxy e2 : op.get_effects()) {
-                int e1_var_id = e1.get_fact().get_variable().get_id();
-                int e2_var_id = e2.get_fact().get_variable().get_id();
-                additive_var_pairs[e1_var_id][e2_var_id] = false;
-            }
-        }
-    }
+
     if (w_prefer_causally_connected_vars) {
         // TODO: do not recreate causal graph. This is a solution for
         // circumventing of assigning a const reference to a non-const member.
         causal_graph = new CausalGraph(task_proxy.get_causal_graph());
-        cg_edges_count = 0;
         if (debug) {
             cout << "causal graph:" << endl;
-        }
-        for (VariableProxy var : task_proxy.get_variables()) {
-//            cg_edges_count += causal_graph->get_successors(var.get_id()).size();
-            if (debug) {
+            for (VariableProxy var : task_proxy.get_variables()) {
                 cout << "successors for var " << var.get_id() << ": "
                      << causal_graph->get_successors(var.get_id()) << endl;
             }
         }
-//        if (debug) {
-//            cout << "cg edge count: " << cg_edges_count << endl;
-//        }
+    }
+
+    if (w_avoid_additive_vars) {
+        additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
+        for (OperatorProxy op : task_proxy.get_operators()) {
+            for (EffectProxy e1 : op.get_effects()) {
+                for (EffectProxy e2 : op.get_effects()) {
+                    int e1_var_id = e1.get_fact().get_variable().get_id();
+                    int e2_var_id = e2.get_fact().get_variable().get_id();
+                    additive_var_pairs[e1_var_id][e2_var_id] = false;
+                }
+            }
+        }
+        if (debug) {
+            for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
+                for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
+                    cout << var_no1 << " and " << var_no2 << ": "
+                         << (additive_var_pairs[var_no1][var_no2] ? "" : "not ")
+                         << "additive" << endl;
+                }
+            }
+        }
     }
 }
 
 double MergeDynamicWeighted::compute_feature_causal_connection(
     TransitionSystem *ts1, TransitionSystem *ts2) const {
-    double feature_value = 0;
+    double feature_value = -1;
     if (w_prefer_causally_connected_vars) {
         const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
         vector<int> ts1_cg_neighbors;
@@ -107,6 +113,32 @@ double MergeDynamicWeighted::compute_feature_causal_connection(
     }
     if (debug) {
         cout << "causal connection percentage: " << feature_value << endl;
+    }
+    return feature_value;
+}
+
+double MergeDynamicWeighted::compute_feature_additive_variables(
+    TransitionSystem *ts1, TransitionSystem *ts2) const {
+    double feature_value = -1;
+    if (w_avoid_additive_vars) {
+        const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
+        const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
+        int not_additive_pair_count = 0;
+        for (int ts1_var_no : ts1_var_nos) {
+            for (int ts2_var_no : ts2_var_nos) {
+                if (!additive_var_pairs[ts1_var_no][ts2_var_no]) {
+                    ++not_additive_pair_count;
+                }
+            }
+        }
+        // NOTE: in contrast to the causally connected variables feature above,
+        // we consider every pair only once.
+        double total_pair_count = ts1_var_nos.size() * ts2_var_nos.size();
+        feature_value = static_cast<double>(not_additive_pair_count) / total_pair_count;
+    }
+    if (debug) {
+        cout << "percentage of non-additive variable pairs: "
+             << feature_value << endl;
     }
     return feature_value;
 }
@@ -150,25 +182,12 @@ int MergeDynamicWeighted::compute_weighted_sum(
       the meantime.
     */
     double weighted_sum = 0;
-    double tmp = compute_feature_causal_connection(ts1, ts2);
-    weighted_sum += w_prefer_causally_connected_vars * tmp;
+    double feature_value = compute_feature_causal_connection(ts1, ts2);
+    weighted_sum += w_prefer_causally_connected_vars * feature_value;
+    feature_value = compute_feature_additive_variables(ts1, ts2);
+    weighted_sum += w_avoid_additive_vars * feature_value;
 
-    if (w_avoid_additive_vars) {
-        const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
-        const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
-        bool are_additive = true;
-        for (int ts1_var_no : ts1_var_nos) {
-            for (int ts2_var_no : ts2_var_nos) {
-                if (!additive_var_pairs[ts1_var_no][ts2_var_no]) {
-                    are_additive = false;
-                    break;
-                }
-            }
-        }
-        if (!are_additive) {
-            weighted_sum += w_avoid_additive_vars * 100;
-        }
-    }
+
 
     if (w_high_initial_h_value) {
         weighted_sum += w_high_initial_h_value *
