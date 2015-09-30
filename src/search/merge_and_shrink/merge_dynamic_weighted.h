@@ -3,6 +3,10 @@
 
 #include "merge_strategy.h"
 
+#include "../utilities_hash.h"
+
+#include <unordered_map>
+
 class CausalGraph;
 class Options;
 
@@ -11,6 +15,7 @@ class MergeDynamicWeighted : public MergeStrategy {
     bool debug;
     int w_prefer_causally_connected_vars;
     int w_avoid_additive_vars;
+    int w_prefer_small_transitions_states_quotient;
     int w_high_initial_h_value;
     int w_high_average_h_value;
     int w_prefer_ts_large_num_states;
@@ -21,20 +26,29 @@ class MergeDynamicWeighted : public MergeStrategy {
     CausalGraph *causal_graph;
     std::vector<int> var_no_to_ts_index;
     std::vector<std::vector<bool> > additive_var_pairs;
+    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_quotients;
+    double highest_quotient;
+    double lowest_quotient;
 
     // Statistics
     std::vector<std::pair<int, int> > merge_order;
 
+    // Computation of features
     double compute_feature_causal_connection(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
     double compute_feature_additive_variables(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
-    int get_num_transitions(TransitionSystem *ts) const;
-    double get_average_h_value(TransitionSystem *ts) const;
     int compute_number_of_product_transitions(
         const TransitionSystem *ts1, const TransitionSystem *ts2) const;
+    double compute_feature_transitions_states_quotient(
+        TransitionSystem *ts1, TransitionSystem *ts2) const;
+
+    int get_num_transitions(TransitionSystem *ts) const;
+    double get_average_h_value(TransitionSystem *ts) const;
+    double normalize_value(double min, double max, double value) const;
     int compute_weighted_sum(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
+    void precompute_features(const std::vector<TransitionSystem *> &all_transition_systems);
 
     virtual void dump_strategy_specific_options() const override;
 public:

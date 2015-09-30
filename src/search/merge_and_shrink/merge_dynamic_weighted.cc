@@ -15,6 +15,7 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       debug(opts.get<bool>("debug")),
       w_prefer_causally_connected_vars(opts.get<int>("w_prefer_causally_connected_vars")),
       w_avoid_additive_vars(opts.get<int>("w_avoid_additive_vars")),
+      w_prefer_small_transitions_states_quotient(opts.get<int>("w_prefer_small_transitions_states_quotient")),
       w_high_initial_h_value(opts.get<int>("w_high_initial_h_value")),
       w_high_average_h_value(opts.get<int>("w_high_average_h_value")),
       w_prefer_ts_large_num_states(opts.get<int>("w_prefer_ts_large_num_states")),
@@ -29,6 +30,7 @@ MergeDynamicWeighted::~MergeDynamicWeighted() {
 void MergeDynamicWeighted::dump_strategy_specific_options() const {
     cout << "w_prefer_causally_connected_vars: " << w_prefer_causally_connected_vars << endl;
     cout << "w_avoid_additive_vars: " << w_avoid_additive_vars << endl;
+    cout << "w_prefer_small_transitions_states_quotient: " << w_prefer_small_transitions_states_quotient << endl;
     cout << "w_high_initial_h_value: " << w_high_initial_h_value << endl;
     cout << "w_high_average_h_value: " << w_high_average_h_value << endl;
     cout << "w_prefer_ts_large_num_states: " << w_prefer_ts_large_num_states << endl;
@@ -112,9 +114,6 @@ double MergeDynamicWeighted::compute_feature_causal_connection(
         double max_possible_edges = ts1_var_nos.size() * ts2_var_nos.size() * 2;
         feature_value = static_cast<double>(edge_count) / max_possible_edges;
     }
-    if (debug) {
-        cout << "causal connection percentage: " << feature_value << endl;
-    }
     return feature_value;
 }
 
@@ -137,33 +136,7 @@ double MergeDynamicWeighted::compute_feature_additive_variables(
         double total_pair_count = ts1_var_nos.size() * ts2_var_nos.size();
         feature_value = static_cast<double>(not_additive_pair_count) / total_pair_count;
     }
-    if (debug) {
-        cout << "percentage of non-additive variable pairs: "
-             << feature_value << endl;
-    }
     return feature_value;
-}
-
-int MergeDynamicWeighted::get_num_transitions(TransitionSystem *ts) const {
-    int num_transitions = 0;
-    for (TSConstIterator it = ts->begin(); it != ts->end(); ++it) {
-        int group_size = 0;
-        for (LabelConstIter label_it = it.begin();
-             label_it != it.end(); ++label_it) {
-            ++group_size;
-        }
-        num_transitions += (group_size * it.get_transitions().size());
-    }
-    return num_transitions;
-}
-
-double MergeDynamicWeighted::get_average_h_value(TransitionSystem *ts) const {
-    int num_states = ts->get_size();
-    int sum_distances = 0;
-    for (int state = 0; state < num_states; ++state) {
-        sum_distances += ts->get_goal_distance(state);
-    }
-    return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
 int MergeDynamicWeighted::compute_number_of_product_transitions(
@@ -201,6 +174,44 @@ int MergeDynamicWeighted::compute_number_of_product_transitions(
     return number_of_transitions;
 }
 
+double MergeDynamicWeighted::compute_feature_transitions_states_quotient(
+    TransitionSystem *ts1, TransitionSystem *ts2) const {
+    double feature_value = -1;
+    if (w_prefer_small_transitions_states_quotient) {
+        double states = ts1->get_size() * ts2->get_size();
+        double transitions = compute_number_of_product_transitions(ts1, ts2);
+        feature_value = states / transitions;
+    }
+    return feature_value;
+}
+
+int MergeDynamicWeighted::get_num_transitions(TransitionSystem *ts) const {
+    int num_transitions = 0;
+    for (TSConstIterator it = ts->begin(); it != ts->end(); ++it) {
+        int group_size = 0;
+        for (LabelConstIter label_it = it.begin();
+             label_it != it.end(); ++label_it) {
+            ++group_size;
+        }
+        num_transitions += (group_size * it.get_transitions().size());
+    }
+    return num_transitions;
+}
+
+double MergeDynamicWeighted::get_average_h_value(TransitionSystem *ts) const {
+    int num_states = ts->get_size();
+    int sum_distances = 0;
+    for (int state = 0; state < num_states; ++state) {
+        sum_distances += ts->get_goal_distance(state);
+    }
+    return static_cast<double>(sum_distances) / static_cast<double>(num_states);
+}
+
+double MergeDynamicWeighted::normalize_value(double min, double max, double value) const {
+    assert(max - min != 0);
+    return (value - min) / (max - min);
+}
+
 int MergeDynamicWeighted::compute_weighted_sum(
     TransitionSystem *ts1, TransitionSystem *ts2) const {
     if (debug) {
@@ -219,10 +230,26 @@ int MergeDynamicWeighted::compute_weighted_sum(
     */
     double weighted_sum = 0;
     double feature_value = compute_feature_causal_connection(ts1, ts2);
+    if (debug) {
+        cout << "causal connection percentage: " << feature_value << endl;
+    }
     weighted_sum += w_prefer_causally_connected_vars * feature_value;
+
     feature_value = compute_feature_additive_variables(ts1, ts2);
+    if (debug) {
+        cout << "percentage of non-additive variable pairs: "
+             << feature_value << endl;
+    }
     weighted_sum += w_avoid_additive_vars * feature_value;
 
+    feature_value = normalize_value(
+        lowest_quotient, highest_quotient,
+        precomputed_quotients.at(make_pair(ts1, ts2));
+    if (debug) {
+        cout << "normalized transitions to states quotient in the product: "
+             << feature_value << endl;
+    }
+    weighted_sum += w_prefer_small_transitions_states_quotient * feature_value;
 
 
     if (w_high_initial_h_value) {
@@ -256,6 +283,32 @@ int MergeDynamicWeighted::compute_weighted_sum(
     return weighted_sum;
 }
 
+void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> &all_transition_systems) {
+    if (w_prefer_small_transitions_states_quotient) {
+        highest_quotient = -1;
+        lowest_quotient = INF;
+        for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+            TransitionSystem *ts1 = all_transition_systems[i];
+            if (ts1) {
+                for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                    TransitionSystem *ts2 = all_transition_systems[j];
+                    if (ts2) {
+                        double quotient = compute_feature_transitions_states_quotient(ts1, ts2);
+                        precomputed_quotients[make_pair(ts1,
+                                                        ts2)] = quotient;
+                        if (quotient > highest_quotient) {
+                            highest_quotient = quotient;
+                        }
+                        if (quotient < lowest_quotient) {
+                            lowest_quotient = quotient;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     int ts_index1 = -1;
     int ts_index2 = -1;
@@ -273,6 +326,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
         }
         assert(in_bounds(ts_index2, all_transition_systems));
     } else {
+        precompute_features(all_transition_systems);
         int max_weight = -1;
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
             TransitionSystem *ts1 = all_transition_systems[i];
@@ -334,6 +388,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
+        "w_prefer_small_transitions_states_quotient",
+        "prefer merging 'sparse' transition systems",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
         "w_high_initial_h_value",
         "prefer merging transition systems with high initial h value",
         "0",
@@ -357,6 +416,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     Options opts = parser.parse();
     if (opts.get<int>("w_prefer_causally_connected_vars") == 0 &&
         opts.get<int>("w_avoid_additive_vars") == 0 &&
+        opts.get<int>("w_prefer_small_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_initial_h_value") == 0 &&
         opts.get<int>("w_high_average_h_value") == 0 &&
         opts.get<int>("w_prefer_ts_large_num_states") == 0 &&
