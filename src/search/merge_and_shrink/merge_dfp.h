@@ -3,7 +3,10 @@
 
 #include "merge_strategy.h"
 
+class Options;
+
 class MergeDFP : public MergeStrategy {
+    bool regular_order;
     // border_atomic_composites is the first index at which a composite
     // transition system can be found in vector of all transition systems as passed
     // as argument to the get_next method.
@@ -14,7 +17,7 @@ class MergeDFP : public MergeStrategy {
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:
-    MergeDFP();
+    MergeDFP(const Options &options);
     virtual ~MergeDFP() override = default;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
