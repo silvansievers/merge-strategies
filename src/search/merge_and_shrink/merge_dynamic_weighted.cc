@@ -13,9 +13,9 @@ using namespace std;
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
     : MergeStrategy(),
       debug(opts.get<bool>("debug")),
-      w_prefer_causally_connected_vars(opts.get<int>("w_prefer_causally_connected_vars")),
-      w_avoid_additive_vars(opts.get<int>("w_avoid_additive_vars")),
-      w_prefer_small_transitions_states_quotient(opts.get<int>("w_prefer_small_transitions_states_quotient")),
+      w_causally_connected_vars(opts.get<int>("w_causally_connected_vars")),
+      w_nonadditive_vars(opts.get<int>("w_nonadditive_vars")),
+      w_small_transitions_states_quotient(opts.get<int>("w_small_transitions_states_quotient")),
       w_high_initial_h_value(opts.get<int>("w_high_initial_h_value")),
       w_high_average_h_value(opts.get<int>("w_high_average_h_value")),
       w_prefer_ts_large_num_states(opts.get<int>("w_prefer_ts_large_num_states")),
@@ -28,9 +28,9 @@ MergeDynamicWeighted::~MergeDynamicWeighted() {
 }
 
 void MergeDynamicWeighted::dump_strategy_specific_options() const {
-    cout << "w_prefer_causally_connected_vars: " << w_prefer_causally_connected_vars << endl;
-    cout << "w_avoid_additive_vars: " << w_avoid_additive_vars << endl;
-    cout << "w_prefer_small_transitions_states_quotient: " << w_prefer_small_transitions_states_quotient << endl;
+    cout << "w_causally_connected_vars: " << w_causally_connected_vars << endl;
+    cout << "w_nonadditive_vars: " << w_nonadditive_vars << endl;
+    cout << "w_small_transitions_states_quotient: " << w_small_transitions_states_quotient << endl;
     cout << "w_high_initial_h_value: " << w_high_initial_h_value << endl;
     cout << "w_high_average_h_value: " << w_high_average_h_value << endl;
     cout << "w_prefer_ts_large_num_states: " << w_prefer_ts_large_num_states << endl;
@@ -48,7 +48,7 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
     }
     merge_order.reserve(num_variables * 2 - 1);
 
-    if (w_prefer_causally_connected_vars) {
+    if (w_causally_connected_vars) {
         // TODO: do not recreate causal graph. This is a solution for
         // circumventing of assigning a const reference to a non-const member.
         causal_graph = new CausalGraph(task_proxy.get_causal_graph());
@@ -61,7 +61,7 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
         }
     }
 
-    if (w_avoid_additive_vars) {
+    if (w_nonadditive_vars) {
         additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
         for (OperatorProxy op : task_proxy.get_operators()) {
             for (EffectProxy e1 : op.get_effects()) {
@@ -169,7 +169,7 @@ int MergeDynamicWeighted::compute_number_of_product_transitions(
 double MergeDynamicWeighted::compute_feature_transitions_states_quotient(
     TransitionSystem *ts1, TransitionSystem *ts2) const {
     double feature_value = -1;
-    if (w_prefer_small_transitions_states_quotient) {
+    if (w_small_transitions_states_quotient) {
         double states = ts1->get_size() * ts2->get_size();
         double transitions = compute_number_of_product_transitions(ts1, ts2);
         feature_value = states / transitions;
@@ -227,24 +227,24 @@ int MergeDynamicWeighted::compute_weighted_sum(
     double weighted_sum = 0;
     double feature_value = -1;
 
-    if (w_prefer_causally_connected_vars) {
+    if (w_causally_connected_vars) {
         feature_value = compute_feature_causal_connection(ts1, ts2);
         if (debug) {
             cout << "causal connection percentage: " << feature_value << endl;
         }
-        weighted_sum += w_prefer_causally_connected_vars * feature_value;
+        weighted_sum += w_causally_connected_vars * feature_value;
     }
 
-    if (w_avoid_additive_vars) {
+    if (w_nonadditive_vars) {
         feature_value = compute_feature_additive_variables(ts1, ts2);
         if (debug) {
             cout << "percentage of non-additive variable pairs: "
                  << feature_value << endl;
         }
-        weighted_sum += w_avoid_additive_vars * feature_value;
+        weighted_sum += w_nonadditive_vars * feature_value;
     }
 
-    if (w_prefer_small_transitions_states_quotient) {
+    if (w_small_transitions_states_quotient) {
         feature_value = normalize_value(
             lowest_quotient, highest_quotient,
             precomputed_quotients.at(make_pair(ts1, ts2)));
@@ -252,7 +252,7 @@ int MergeDynamicWeighted::compute_weighted_sum(
             cout << "normalized transitions to states quotient in the product: "
                  << feature_value << endl;
         }
-        weighted_sum += w_prefer_small_transitions_states_quotient * feature_value;
+        weighted_sum += w_small_transitions_states_quotient * feature_value;
     }
 
     if (w_high_initial_h_value) {
@@ -297,7 +297,7 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
             for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
                 TransitionSystem *ts2 = all_transition_systems[j];
                 if (ts2) {
-                    if (w_prefer_small_transitions_states_quotient) {
+                    if (w_small_transitions_states_quotient) {
                         double quotient = compute_feature_transitions_states_quotient(ts1, ts2);
                         precomputed_quotients[make_pair(ts1, ts2)] = quotient;
                         if (quotient > highest_quotient) {
@@ -421,17 +421,17 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_option<bool>(
         "debug", "debug", "false");
     parser.add_option<int>(
-        "w_prefer_causally_connected_vars",
+        "w_causally_connected_vars",
         "prefer merging variables that are causally connected ",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_avoid_additive_vars",
+        "w_nonadditive_vars",
         "avoid merging additive variables",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_prefer_small_transitions_states_quotient",
+        "w_small_transitions_states_quotient",
         "prefer merging 'sparse' transition systems",
         "0",
         Bounds("0", "100"));
@@ -457,9 +457,9 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         Bounds("0", "100"));
 
     Options opts = parser.parse();
-    if (opts.get<int>("w_prefer_causally_connected_vars") == 0 &&
-        opts.get<int>("w_avoid_additive_vars") == 0 &&
-        opts.get<int>("w_prefer_small_transitions_states_quotient") == 0 &&
+    if (opts.get<int>("w_causally_connected_vars") == 0 &&
+        opts.get<int>("w_nonadditive_vars") == 0 &&
+        opts.get<int>("w_small_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_initial_h_value") == 0 &&
         opts.get<int>("w_high_average_h_value") == 0 &&
         opts.get<int>("w_prefer_ts_large_num_states") == 0 &&

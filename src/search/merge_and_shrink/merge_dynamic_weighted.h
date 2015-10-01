@@ -13,9 +13,9 @@ class Options;
 class MergeDynamicWeighted : public MergeStrategy {
     // Options
     bool debug;
-    int w_prefer_causally_connected_vars;
-    int w_avoid_additive_vars;
-    int w_prefer_small_transitions_states_quotient;
+    int w_causally_connected_vars;
+    int w_nonadditive_vars;
+    int w_small_transitions_states_quotient;
     int w_high_initial_h_value;
     int w_high_average_h_value;
     int w_prefer_ts_large_num_states;
