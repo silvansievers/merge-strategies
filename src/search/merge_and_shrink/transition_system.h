@@ -149,8 +149,8 @@ private:
     */
     bool is_valid() const;
 
-    void compute_distances_and_prune();
-    void discard_states(const std::vector<bool> &to_be_pruned_states);
+    void compute_distances_and_prune(bool silent = false);
+    void discard_states(const std::vector<bool> &to_be_pruned_states, bool silent);
 
     // Methods related to the representation of transitions and labels
     void normalize_given_transitions(std::vector<Transition> &transitions) const;
@@ -193,9 +193,12 @@ public:
                      bool invalidate_components = true);
     ~TransitionSystem();
 
-    bool apply_abstraction(const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups);
-    void apply_label_reduction(const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
-                               bool only_equivalent_labels);
+    bool apply_abstraction(
+            const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups,
+            bool silent = false);
+    void apply_label_reduction(
+            const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
+            bool only_equivalent_labels);
     void release_memory();
 
     TSConstIterator begin() const {

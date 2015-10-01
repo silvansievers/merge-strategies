@@ -65,7 +65,7 @@ public:
 
     void clear_distances();
     bool are_distances_computed() const;
-    std::vector<bool> compute_distances();
+    std::vector<bool> compute_distances(bool silent);
 
     /*
       Update distances according to the given abstraction.
@@ -76,8 +76,8 @@ public:
       the method might fail to detect that the distance information is
       out of date.)
     */
-    bool apply_abstraction(
-        const std::vector<std::forward_list<int> > &collapsed_groups);
+    bool apply_abstraction(const std::vector<std::forward_list<int> > &collapsed_groups,
+                           bool silent);
 
     int get_max_f() const;
     int get_max_g() const;

@@ -172,8 +172,10 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
                                    TransitionSystem *ts2,
                                    bool invalidate_components)
     : TransitionSystem(task_proxy, labels) {
-    cout << "Merging " << ts1->description() << " and "
-         << ts2->description() << endl;
+    if (invalidate_components) {
+        cout << "Merging " << ts1->description() << " and "
+             << ts2->description() << endl;
+    }
 
     assert(ts1->is_solvable() && ts2->is_solvable());
     assert(ts1->is_valid() && ts2->is_valid());
@@ -283,7 +285,7 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
     }
 
     assert(are_transitions_sorted_unique());
-    compute_distances_and_prune();
+    compute_distances_and_prune(!invalidate_components);
     assert(is_valid());
 }
 
@@ -295,7 +297,8 @@ bool TransitionSystem::is_valid() const {
            && are_transitions_sorted_unique();
 }
 
-void TransitionSystem::discard_states(const vector<bool> &to_be_pruned_states) {
+void TransitionSystem::discard_states(const vector<bool> &to_be_pruned_states,
+                                      bool silent) {
     assert(static_cast<int>(to_be_pruned_states.size()) == num_states);
     vector<forward_list<AbstractStateRef> > equivalence_relation;
     equivalence_relation.reserve(num_states);
@@ -306,17 +309,17 @@ void TransitionSystem::discard_states(const vector<bool> &to_be_pruned_states) {
             equivalence_relation.push_back(group);
         }
     }
-    apply_abstraction(equivalence_relation);
+    apply_abstraction(equivalence_relation, silent);
 }
 
-void TransitionSystem::compute_distances_and_prune() {
+void TransitionSystem::compute_distances_and_prune(bool silent) {
     /*
       This method does all that compute_distances does and
       additionally prunes all states that are unreachable (abstract g
       is infinite) or irrelevant (abstract h is infinite).
     */
     assert(are_transitions_sorted_unique());
-    discard_states(distances->compute_distances());
+    discard_states(distances->compute_distances(silent), silent);
 }
 
 void TransitionSystem::normalize_given_transitions(vector<Transition> &transitions) const {
@@ -357,16 +360,21 @@ void TransitionSystem::compute_locally_equivalent_labels() {
 }
 
 bool TransitionSystem::apply_abstraction(
-    const vector<forward_list<AbstractStateRef> > &collapsed_groups) {
+    const vector<forward_list<AbstractStateRef> > &collapsed_groups,
+    bool silent) {
     assert(is_valid());
 
     if (static_cast<int>(collapsed_groups.size()) == get_size()) {
-        cout << tag() << "not applying abstraction (same number of states)" << endl;
+        if (!silent) {
+            cout << tag() << "not applying abstraction (same number of states)" << endl;
+        }
         return false;
     }
 
-    cout << tag() << "applying abstraction (" << get_size()
-         << " to " << collapsed_groups.size() << " states)" << endl;
+    if (!silent) {
+        cout << tag() << "applying abstraction (" << get_size()
+             << " to " << collapsed_groups.size() << " states)" << endl;
+    }
 
     typedef forward_list<AbstractStateRef> Group;
 
@@ -419,11 +427,18 @@ bool TransitionSystem::apply_abstraction(
 
     num_states = new_num_states;
     init_state = abstraction_mapping[init_state];
-    if (init_state == PRUNED_STATE)
-        cout << tag() << "initial state pruned; task unsolvable" << endl;
 
-    if (!distances->apply_abstraction(collapsed_groups))
-        cout << tag() << "simplification was not f-preserving!" << endl;
+    if (init_state == PRUNED_STATE) {
+        if (!silent) {
+            cout << tag() << "initial state pruned; task unsolvable" << endl;
+        }
+    }
+
+    if (!distances->apply_abstraction(collapsed_groups, silent)) {
+        if (!silent) {
+            cout << tag() << "simplification was not f-preserving!" << endl;
+        }
+    }
     heuristic_representation->apply_abstraction_to_lookup_table(
         abstraction_mapping);
 
