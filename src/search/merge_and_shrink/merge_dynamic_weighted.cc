@@ -196,6 +196,10 @@ double MergeDynamicWeighted::compute_average_h_value(TransitionSystem *ts) const
     for (int state = 0; state < num_states; ++state) {
         sum_distances += ts->get_goal_distance(state);
     }
+    if (num_states == 0) {
+        // For unsolvable transition systems
+        return INF;
+    }
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
@@ -340,7 +344,13 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
                     if (w_high_average_h_value_improvement || w_high_initial_h_value_improvement) {
                         TransitionSystem *merge = new TransitionSystem(TaskProxy(*task), ts1->get_labels(), ts1, ts2, false);
                         if (w_high_initial_h_value_improvement) {
-                            int new_init_h = merge->get_init_state_goal_distance();
+                            int new_init_h;
+                            if (merge->is_solvable()) {
+                                new_init_h = merge->get_init_state_goal_distance();
+                            } else {
+                                // initial state has been pruned
+                                new_init_h = INF;
+                            }
                             int old_init_h = max(ts1->get_init_state_goal_distance(),
                                                  ts2->get_init_state_goal_distance());
                             int difference = new_init_h - old_init_h;
