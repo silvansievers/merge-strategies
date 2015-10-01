@@ -29,6 +29,7 @@ class HeuristicRepresentationLeaf : public HeuristicRepresentation {
     std::vector<int> lookup_table;
 public:
     HeuristicRepresentationLeaf(int var_id, int domain_size);
+    HeuristicRepresentationLeaf(const HeuristicRepresentationLeaf *other);
     virtual ~HeuristicRepresentationLeaf() = default;
 
     virtual void apply_abstraction_to_lookup_table(
@@ -45,6 +46,10 @@ public:
     HeuristicRepresentationMerge(
         std::unique_ptr<HeuristicRepresentation> left_child,
         std::unique_ptr<HeuristicRepresentation> right_child);
+    HeuristicRepresentationMerge(
+        const HeuristicRepresentation *left_child,
+        const HeuristicRepresentation *right_child);
+    HeuristicRepresentationMerge(const HeuristicRepresentationMerge *other);
     virtual ~HeuristicRepresentationMerge() = default;
 
     virtual void apply_abstraction_to_lookup_table(

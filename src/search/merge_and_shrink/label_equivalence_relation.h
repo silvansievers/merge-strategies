@@ -91,6 +91,9 @@ public:
     const LabelGroup &operator[](int group_id) {
         return grouped_labels[group_id];
     }
+    const std::shared_ptr<Labels> get_labels() const { // for MergeDynamicWeighted
+        return labels;
+    }
 };
 
 #endif

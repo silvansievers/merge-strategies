@@ -189,7 +189,8 @@ public:
     TransitionSystem(const TaskProxy &task_proxy,
                      const std::shared_ptr<Labels> labels,
                      TransitionSystem *ts1,
-                     TransitionSystem *ts2);
+                     TransitionSystem *ts2,
+                     bool invalidate_components = true);
     ~TransitionSystem();
 
     bool apply_abstraction(const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups);
@@ -205,7 +206,6 @@ public:
         return TSConstIterator(
                    label_equivalence_relation, transitions_by_group_id, true);
     }
-    int get_group_id_for_label(int label_no) const;
     /*
       Method to identify the transition system in output.
       Print "Atomic transition system #x: " for atomic transition systems,
@@ -254,9 +254,12 @@ public:
     bool is_goal_relevant() const {  // used by merge_dfp
         return goal_relevant;
     }
-    const std::vector<int> &get_incorporated_variables() const { // used by DynamicMergeStrategies
+    // Following methods are used by MergeDynamicWeighted
+    const std::vector<int> &get_incorporated_variables() const {
         return incorporated_variables;
     }
+    int get_group_id_for_label(int label_no) const;
+    const std::shared_ptr<Labels> get_labels() const;
 };
 
 #endif

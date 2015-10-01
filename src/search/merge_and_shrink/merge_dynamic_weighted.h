@@ -29,6 +29,12 @@ class MergeDynamicWeighted : public MergeStrategy {
     std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_quotients;
     double highest_quotient;
     double lowest_quotient;
+    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_initial_h_improvement;
+    double highest_initial_h_improvement;
+    double lowest_initial_h_improvement;
+    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_average_h_improvement;
+    double highest_average_h_improvement;
+    double lowest_average_h_improvement;
 
     // Statistics
     std::vector<std::pair<int, int> > merge_order;
@@ -44,7 +50,7 @@ class MergeDynamicWeighted : public MergeStrategy {
         TransitionSystem *ts1, TransitionSystem *ts2) const;
 
     int get_num_transitions(TransitionSystem *ts) const;
-    double get_average_h_value(TransitionSystem *ts) const;
+    double compute_average_h_value(TransitionSystem *ts) const;
     double normalize_value(double min, double max, double value) const;
     int compute_weighted_sum(
         TransitionSystem *ts1, TransitionSystem *ts2) const;

@@ -169,7 +169,8 @@ TransitionSystem::TransitionSystem(
 TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
                                    const shared_ptr<Labels> labels,
                                    TransitionSystem *ts1,
-                                   TransitionSystem *ts2)
+                                   TransitionSystem *ts2,
+                                   bool invalidate_components)
     : TransitionSystem(task_proxy, labels) {
     cout << "Merging " << ts1->description() << " and "
          << ts2->description() << endl;
@@ -198,9 +199,15 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
         }
     }
 
-    heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
-        move(ts1->heuristic_representation),
-        move(ts2->heuristic_representation));
+    if (invalidate_components) {
+        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
+            move(ts1->heuristic_representation),
+            move(ts2->heuristic_representation));
+    } else {
+        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
+            ts1->heuristic_representation.get(),
+            ts2->heuristic_representation.get());
+    }
 
     /*
       We can compute the local equivalence relation of a composite T
@@ -500,10 +507,6 @@ void TransitionSystem::release_memory() {
     release_vector_memory(transitions_by_group_id);
 }
 
-int TransitionSystem::get_group_id_for_label(int label_no) const {
-    return label_equivalence_relation->get_group_id(label_no);
-}
-
 string TransitionSystem::tag() const {
     string desc(description());
     desc[0] = toupper(desc[0]);
@@ -660,4 +663,12 @@ int TransitionSystem::get_goal_distance(int state) const {
 
 int TransitionSystem::get_num_labels() const {
     return label_equivalence_relation->get_num_labels();
+}
+
+int TransitionSystem::get_group_id_for_label(int label_no) const {
+    return label_equivalence_relation->get_group_id(label_no);
+}
+
+const shared_ptr<Labels> TransitionSystem::get_labels() const {
+    return label_equivalence_relation->get_labels();
 }
