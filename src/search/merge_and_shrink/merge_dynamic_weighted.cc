@@ -16,10 +16,10 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       w_causally_connected_vars(opts.get<int>("w_causally_connected_vars")),
       w_nonadditive_vars(opts.get<int>("w_nonadditive_vars")),
       w_small_transitions_states_quotient(opts.get<int>("w_small_transitions_states_quotient")),
-      w_high_initial_h_value(opts.get<int>("w_high_initial_h_value")),
-      w_high_average_h_value(opts.get<int>("w_high_average_h_value")),
-      w_prefer_ts_large_num_states(opts.get<int>("w_prefer_ts_large_num_states")),
-      w_prefer_ts_large_num_edges(opts.get<int>("w_prefer_ts_large_num_edges")),
+      w_high_initial_h_value_improvement(opts.get<int>("w_high_initial_h_value_improvement")),
+      w_high_average_h_value_improvement(opts.get<int>("w_high_average_h_value_improvement")),
+      w_high_initial_h_value_sum(opts.get<int>("w_high_initial_h_value_sum")),
+      w_high_average_h_value_sum(opts.get<int>("w_high_average_h_value_sum")),
       causal_graph(0) {
 }
 
@@ -31,10 +31,10 @@ void MergeDynamicWeighted::dump_strategy_specific_options() const {
     cout << "w_causally_connected_vars: " << w_causally_connected_vars << endl;
     cout << "w_nonadditive_vars: " << w_nonadditive_vars << endl;
     cout << "w_small_transitions_states_quotient: " << w_small_transitions_states_quotient << endl;
-    cout << "w_high_initial_h_value: " << w_high_initial_h_value << endl;
-    cout << "w_high_average_h_value: " << w_high_average_h_value << endl;
-    cout << "w_prefer_ts_large_num_states: " << w_prefer_ts_large_num_states << endl;
-    cout << "w_prefer_ts_large_num_edges: " << w_prefer_ts_large_num_edges << endl;
+    cout << "w_high_initial_h_value_improvement: " << w_high_initial_h_value_improvement << endl;
+    cout << "w_high_average_h_value_improvement: " << w_high_average_h_value_improvement << endl;
+    cout << "w_high_initial_h_value_sum: " << w_high_initial_h_value_sum << endl;
+    cout << "w_high_average_h_value_sum: " << w_high_average_h_value_sum << endl;
 }
 
 void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task_) {
@@ -205,7 +205,10 @@ double MergeDynamicWeighted::normalize_value(double min, double max, double valu
         return 0;
     }
     assert(max - min != 0);
-    return (value - min) / (max - min);
+    double result = (value - min) / (max - min);
+    assert(result >= 0);
+    assert(result <= 1);
+    return result;
 }
 
 int MergeDynamicWeighted::compute_weighted_sum(
@@ -230,7 +233,7 @@ int MergeDynamicWeighted::compute_weighted_sum(
     if (w_causally_connected_vars) {
         feature_value = compute_feature_causal_connection(ts1, ts2);
         if (debug) {
-            cout << "causal connection percentage: " << feature_value << endl;
+            cout << "percentage of causally connected variables in the product: " << feature_value << endl;
         }
         weighted_sum += w_causally_connected_vars * feature_value;
     }
@@ -238,7 +241,7 @@ int MergeDynamicWeighted::compute_weighted_sum(
     if (w_nonadditive_vars) {
         feature_value = compute_feature_additive_variables(ts1, ts2);
         if (debug) {
-            cout << "percentage of non-additive variable pairs: "
+            cout << "percentage of non-additive variable pairs in the product: "
                  << feature_value << endl;
         }
         weighted_sum += w_nonadditive_vars * feature_value;
@@ -255,7 +258,7 @@ int MergeDynamicWeighted::compute_weighted_sum(
         weighted_sum += w_small_transitions_states_quotient * feature_value;
     }
 
-    if (w_high_initial_h_value) {
+    if (w_high_initial_h_value_improvement) {
         feature_value = normalize_value(
             lowest_initial_h_improvement, highest_initial_h_improvement,
             precomputed_initial_h_improvement.at(make_pair(ts1, ts2)));
@@ -263,10 +266,10 @@ int MergeDynamicWeighted::compute_weighted_sum(
             cout << "normalized relative improvement of the initial h value of the product to the maximum before: "
                  << feature_value << endl;
         }
-        weighted_sum += w_high_initial_h_value * feature_value;
+        weighted_sum += w_high_initial_h_value_improvement * feature_value;
     }
 
-    if (w_high_average_h_value) {
+    if (w_high_average_h_value_improvement) {
         feature_value = normalize_value(
             lowest_average_h_improvement, highest_average_h_improvement,
             precomputed_average_h_improvement.at(make_pair(ts1, ts2)));
@@ -274,7 +277,30 @@ int MergeDynamicWeighted::compute_weighted_sum(
             cout << "normalized relative improvement of the average h value of the product to the maximum before: "
                  << feature_value << endl;
         }
-        weighted_sum += w_high_average_h_value * feature_value;
+        weighted_sum += w_high_average_h_value_improvement * feature_value;
+    }
+
+    if (w_high_initial_h_value_sum) {
+        int init_h_sum = ts1->get_init_state_goal_distance() +
+            ts2->get_init_state_goal_distance();
+        feature_value = normalize_value(
+            lowest_initial_h_sum, highest_initial_h_sum, init_h_sum);
+        if (debug) {
+            cout << "normalized initial h value sum of the two components: "
+                 << feature_value << endl;
+        }
+        weighted_sum += w_high_initial_h_value_sum * feature_value;
+    }
+
+    if (w_high_average_h_value_sum) {
+        feature_value = normalize_value(
+            lowest_average_h_sum, highest_average_h_sum,
+            precomputed_average_h_sum.at(make_pair(ts1, ts2)));
+        if (debug) {
+            cout << "normalized average h value sum of the two components: "
+                 << feature_value << endl;
+        }
+        weighted_sum += w_high_average_h_value_sum * feature_value;
     }
 
     if (debug) {
@@ -291,6 +317,10 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
     lowest_initial_h_improvement = INF;
     highest_average_h_improvement = -1;
     lowest_average_h_improvement = INF;
+    highest_initial_h_sum = -1;
+    lowest_initial_h_sum = INF;
+    highest_average_h_sum = -1;
+    lowest_average_h_sum = INF;
     for (size_t i = 0; i < all_transition_systems.size(); ++i) {
         TransitionSystem *ts1 = all_transition_systems[i];
         if (ts1) {
@@ -307,9 +337,9 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
                             lowest_quotient = quotient;
                         }
                     }
-                    if (w_high_average_h_value || w_high_initial_h_value) {
+                    if (w_high_average_h_value_improvement || w_high_initial_h_value_improvement) {
                         TransitionSystem *merge = new TransitionSystem(TaskProxy(*task), ts1->get_labels(), ts1, ts2, false);
-                        if (w_high_initial_h_value) {
+                        if (w_high_initial_h_value_improvement) {
                             int new_init_h = merge->get_init_state_goal_distance();
                             int old_init_h = max(ts1->get_init_state_goal_distance(),
                                                  ts2->get_init_state_goal_distance());
@@ -327,7 +357,7 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
                                 lowest_initial_h_improvement = relative_improvement;
                             }
                         }
-                        if (w_high_average_h_value) {
+                        if (w_high_average_h_value_improvement) {
                             double new_average_h = compute_average_h_value(merge);
                             double old_average_h = max(compute_average_h_value(ts1),
                                                        compute_average_h_value(ts2));
@@ -345,6 +375,27 @@ void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> 
                             }
                         }
                         delete merge;
+                    }
+                    if (w_high_initial_h_value_sum) {
+                        int init_h_sum = ts1->get_init_state_goal_distance() +
+                            ts2->get_init_state_goal_distance();
+                        if (init_h_sum > highest_initial_h_sum) {
+                            highest_initial_h_sum = init_h_sum;
+                        }
+                        if (init_h_sum < lowest_initial_h_sum) {
+                            lowest_initial_h_sum = init_h_sum;
+                        }
+                    }
+                    if (w_high_average_h_value_sum) {
+                        double average_h_sum = compute_average_h_value(ts1) +
+                            compute_average_h_value(ts2);
+                        precomputed_average_h_sum[make_pair(ts1, ts2)] = average_h_sum;
+                        if (average_h_sum > highest_average_h_sum) {
+                            highest_average_h_sum = average_h_sum;
+                        }
+                        if (average_h_sum < lowest_average_h_sum) {
+                            lowest_average_h_sum = average_h_sum;
+                        }
                     }
                 }
             }
@@ -436,22 +487,22 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_high_initial_h_value",
+        "w_high_initial_h_value_improvement",
         "prefer merging transition systems with high initial h value",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_high_average_h_value",
+        "w_high_average_h_value_improvement",
         "prefer merging transition systems with high average h value",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_prefer_ts_large_num_states",
+        "w_high_initial_h_value_sum",
         "prefer merging transition systems with large number of states",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-        "w_prefer_ts_large_num_edges",
+        "w_high_average_h_value_sum",
         "prefer merging transition systems with large number of edges",
         "0",
         Bounds("0", "100"));
@@ -460,10 +511,10 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
         opts.get<int>("w_nonadditive_vars") == 0 &&
         opts.get<int>("w_small_transitions_states_quotient") == 0 &&
-        opts.get<int>("w_high_initial_h_value") == 0 &&
-        opts.get<int>("w_high_average_h_value") == 0 &&
-        opts.get<int>("w_prefer_ts_large_num_states") == 0 &&
-        opts.get<int>("w_prefer_ts_large_num_edges") == 0) {
+        opts.get<int>("w_high_initial_h_value_improvement") == 0 &&
+        opts.get<int>("w_high_average_h_value_improvement") == 0 &&
+        opts.get<int>("w_high_initial_h_value_sum") == 0 &&
+        opts.get<int>("w_high_average_h_value_sum") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }

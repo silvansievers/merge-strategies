@@ -16,10 +16,10 @@ class MergeDynamicWeighted : public MergeStrategy {
     int w_causally_connected_vars;
     int w_nonadditive_vars;
     int w_small_transitions_states_quotient;
-    int w_high_initial_h_value;
-    int w_high_average_h_value;
-    int w_prefer_ts_large_num_states;
-    int w_prefer_ts_large_num_edges;
+    int w_high_initial_h_value_improvement;
+    int w_high_average_h_value_improvement;
+    int w_high_initial_h_value_sum;
+    int w_high_average_h_value_sum;
 
     // Precomputed stuff
     std::shared_ptr<AbstractTask> task;
@@ -35,6 +35,11 @@ class MergeDynamicWeighted : public MergeStrategy {
     std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_average_h_improvement;
     double highest_average_h_improvement;
     double lowest_average_h_improvement;
+    int highest_initial_h_sum;
+    int lowest_initial_h_sum;
+    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_average_h_sum;
+    double highest_average_h_sum;
+    double lowest_average_h_sum;
 
     // Statistics
     std::vector<std::pair<int, int> > merge_order;
