@@ -229,9 +229,6 @@ public:
     int get_init_state() const {
         return init_state;
     }
-    int get_init_state_goal_distance() const {
-        return get_goal_distance(init_state);
-    }
 
     bool is_goal_state(int state) const {
         return goal_states[state];
@@ -260,6 +257,9 @@ public:
     // Following methods are used by MergeDynamicWeighted
     const std::vector<int> &get_incorporated_variables() const {
         return incorporated_variables;
+    }
+    int get_init_state_goal_distance() const {
+        return get_goal_distance(init_state);
     }
     int get_group_id_for_label(int label_no) const;
     const std::shared_ptr<Labels> get_labels() const;

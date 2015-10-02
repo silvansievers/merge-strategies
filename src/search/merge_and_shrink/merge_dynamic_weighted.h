@@ -12,16 +12,6 @@ class Options;
 
 const int NUM_FEATURES = 7;
 
-//enum FEATURE_TYPE {
-//    CAUSAL_CONNECTIONS,
-//    NON_ADDITIVITY,
-//    TRANS_STATES_QUOT,
-//    INIT_H_IMPR,
-//    AVG_H_IMPR,
-//    INIT_H_SUM,
-//    AVG_H_SUM
-//};
-
 class AbstractFeature {
     bool merge_required;
 public:
@@ -33,30 +23,73 @@ public:
     bool requires_merge() const {
         return merge_required;
     }
-    virtual void dump() const = 0;
+    virtual void dump_precomputed_data() const = 0;
 };
 
 class CausalConnectionFeature : public AbstractFeature {
     const std::shared_ptr<AbstractTask> task;
     const CausalGraph &causal_graph;
 public:
-    CausalConnectionFeature(bool merge_required,
-                            const std::shared_ptr<AbstractTask> task);
+    explicit CausalConnectionFeature(const std::shared_ptr<AbstractTask> task);
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump() const;
+    virtual void dump_precomputed_data() const;
 };
 
 class NonAdditivityFeature : public AbstractFeature {
     std::vector<std::vector<bool> > additive_var_pairs;
 public:
-    NonAdditivityFeature(bool merge_required,
-                         const std::shared_ptr<AbstractTask> task);
+    explicit NonAdditivityFeature(const std::shared_ptr<AbstractTask> task);
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump() const;
+    virtual void dump_precomputed_data() const;
+};
+
+class TransStatesQuotFeature : public AbstractFeature {
+public:
+    TransStatesQuotFeature();
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+    virtual void dump_precomputed_data() const {}
+};
+
+class InitHImprovementFeature : public AbstractFeature {
+public:
+    InitHImprovementFeature();
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+    virtual void dump_precomputed_data() const {}
+};
+
+class AvgHImprovementFeature : public AbstractFeature {
+public:
+    AvgHImprovementFeature();
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+    virtual void dump_precomputed_data() const {}
+};
+
+class InitHSumFeature : public AbstractFeature {
+public:
+    InitHSumFeature();
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+    virtual void dump_precomputed_data() const {}
+};
+
+class AvgHSumFeature : public AbstractFeature {
+public:
+    AvgHSumFeature();
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+    virtual void dump_precomputed_data() const {}
 };
 
 class Features {
@@ -85,45 +118,22 @@ public:
 class MergeDynamicWeighted : public MergeStrategy {
     // Options
     bool debug;
+    // TODO: move weights inside features. construct features in constructor,
+    // and give it an initialize method
     int w_causally_connected_vars;
     int w_nonadditive_vars;
-//    int w_small_transitions_states_quotient;
-//    int w_high_initial_h_value_improvement;
-//    int w_high_average_h_value_improvement;
-//    int w_high_initial_h_value_sum;
-//    int w_high_average_h_value_sum;
-
+    int w_small_transitions_states_quotient;
+    int w_high_initial_h_value_improvement;
+    int w_high_average_h_value_improvement;
+    int w_high_initial_h_value_sum;
+    int w_high_average_h_value_sum;
 
     // Precomputed stuff
     std::vector<int> var_no_to_ts_index;
     Features *features;
 
-//    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_quotients;
-//    double highest_quotient;
-//    double lowest_quotient;
-//    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_initial_h_improvement;
-//    double highest_initial_h_improvement;
-//    double lowest_initial_h_improvement;
-//    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_average_h_improvement;
-//    double highest_average_h_improvement;
-//    double lowest_average_h_improvement;
-//    int highest_initial_h_sum;
-//    int lowest_initial_h_sum;
-//    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>, double> precomputed_average_h_sum;
-//    double highest_average_h_sum;
-//    double lowest_average_h_sum;
-
     // Statistics
     std::vector<std::pair<int, int> > merge_order;
-
-    // Computation of features
-    int compute_number_of_product_transitions(
-        const TransitionSystem *ts1, const TransitionSystem *ts2) const;
-    double compute_feature_transitions_states_quotient(
-        TransitionSystem *ts1, TransitionSystem *ts2) const;
-    int get_num_transitions(TransitionSystem *ts) const;
-    double compute_average_h_value(TransitionSystem *ts) const;
-    void precompute_features(const std::vector<TransitionSystem *> &all_transition_systems);
 
     virtual void dump_strategy_specific_options() const override;
 public:

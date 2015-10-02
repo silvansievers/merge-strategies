@@ -10,13 +10,63 @@
 
 using namespace std;
 
+// Helper methods to deal with transition systems
+
+int compute_number_of_product_transitions(
+    const TransitionSystem *ts1, const TransitionSystem *ts2) {
+    // NOTE: this is copied from the merge constructor of TransitionSystem
+    /*
+      Note that this computes the number of tranistions in the product
+      without considering possible shrinking due to unreachable or
+      irrelevant states, which hence may reduce the actual number of
+      transitions in the product.
+    */
+    int number_of_transitions = 0;
+    for (TSConstIterator group1_it = ts1->begin();
+         group1_it != ts1->end(); ++group1_it) {
+        // Distribute the labels of this group among the "buckets"
+        // corresponding to the groups of ts2.
+        unordered_map<int, vector<int> > buckets;
+        for (LabelConstIter label_it = group1_it.begin();
+             label_it != group1_it.end(); ++label_it) {
+            int label_no = *label_it;
+            int group2_id = ts2->get_group_id_for_label(label_no);
+            buckets[group2_id].push_back(label_no);
+        }
+        // Now buckets contains all equivalence classes that are
+        // refinements of group1.
+
+        // Now create the new groups together with their transitions.
+        const vector<Transition> &transitions1 = group1_it.get_transitions();
+        for (const auto &bucket : buckets) {
+            const vector<Transition> &transitions2 =
+                ts2->get_transitions_for_group_id(bucket.first);
+            int new_transitions_for_new_group = transitions1.size() * transitions2.size();
+            number_of_transitions += new_transitions_for_new_group;
+        }
+    }
+    return number_of_transitions;
+}
+
+double compute_average_h_value(const TransitionSystem *ts) {
+    int num_states = ts->get_size();
+    int sum_distances = 0;
+    for (int state = 0; state < num_states; ++state) {
+        sum_distances += ts->get_goal_distance(state);
+    }
+    if (num_states == 0) {
+        // For unsolvable transition systems
+        return INF;
+    }
+    return static_cast<double>(sum_distances) / static_cast<double>(num_states);
+}
+
 AbstractFeature::AbstractFeature(bool merge_required)
     : merge_required(merge_required) {
 }
 
-CausalConnectionFeature::CausalConnectionFeature(bool merge_required,
-                                                 const shared_ptr<AbstractTask> task_)
-    : AbstractFeature(merge_required),
+CausalConnectionFeature::CausalConnectionFeature(const shared_ptr<AbstractTask> task_)
+    : AbstractFeature(false),
       task(task_),
       causal_graph(TaskProxy(*task).get_causal_graph()) {
 }
@@ -53,7 +103,7 @@ double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(edge_count) / max_possible_edges;
 }
 
-void CausalConnectionFeature::dump() const {
+void CausalConnectionFeature::dump_precomputed_data() const {
     TaskProxy task_proxy(*task);
     cout << "causal graph:" << endl;
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -62,9 +112,8 @@ void CausalConnectionFeature::dump() const {
     }
 }
 
-NonAdditivityFeature::NonAdditivityFeature(bool merge_required,
-                                           const shared_ptr<AbstractTask> task)
-    : AbstractFeature(merge_required) {
+NonAdditivityFeature::NonAdditivityFeature(const shared_ptr<AbstractTask> task)
+    : AbstractFeature(false) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
     additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
@@ -98,7 +147,7 @@ double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(not_additive_pair_count) / total_pair_count;
 }
 
-void NonAdditivityFeature::dump() const {
+void NonAdditivityFeature::dump_precomputed_data() const {
     int num_variables = additive_var_pairs.size();
     for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
         for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
@@ -107,6 +156,87 @@ void NonAdditivityFeature::dump() const {
                  << "additive" << endl;
         }
     }
+}
+
+TransStatesQuotFeature::TransStatesQuotFeature()
+    : AbstractFeature(false) {
+}
+
+double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
+                                             const TransitionSystem *ts2,
+                                             const TransitionSystem *) {
+    double product_states = ts1->get_size() * ts2->get_size();
+    double product_transitions = compute_number_of_product_transitions(ts1, ts2);
+    return product_states / product_transitions;
+}
+
+InitHImprovementFeature::InitHImprovementFeature()
+    : AbstractFeature(true) {
+}
+
+double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *merge) {
+    assert(merge);
+    int new_init_h;
+    if (merge->is_solvable()) {
+        new_init_h = merge->get_init_state_goal_distance();
+    } else {
+        // initial state has been pruned
+        new_init_h = INF;
+    }
+    int old_init_h = max(ts1->get_init_state_goal_distance(),
+                         ts2->get_init_state_goal_distance());
+    int difference = new_init_h - old_init_h;
+    double relative_improvement = 1; // TODO: changed from 0
+    if (old_init_h) {
+        relative_improvement = static_cast<double>(difference) /
+                               static_cast<double>(old_init_h);
+    }
+    return relative_improvement;
+}
+
+AvgHImprovementFeature::AvgHImprovementFeature()
+    : AbstractFeature(true) {
+}
+
+double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
+                                             const TransitionSystem *ts2,
+                                             const TransitionSystem *merge) {
+    assert(merge);
+    double new_average_h = compute_average_h_value(merge);
+    double old_average_h = max(compute_average_h_value(ts1),
+                               compute_average_h_value(ts2));
+    double difference = new_average_h - old_average_h;
+    double relative_improvement = 1; // TODO: changed from 0
+    if (old_average_h) {
+        relative_improvement =  difference / old_average_h;
+    }
+    return relative_improvement;
+}
+
+InitHSumFeature::InitHSumFeature()
+    : AbstractFeature(false) {
+}
+
+double InitHSumFeature::compute_value(const TransitionSystem *ts1,
+                                      const TransitionSystem *ts2,
+                                      const TransitionSystem *) {
+    int init_h_sum = ts1->get_init_state_goal_distance() +
+        ts2->get_init_state_goal_distance();
+    return init_h_sum;
+}
+
+AvgHSumFeature::AvgHSumFeature()
+    : AbstractFeature(false) {
+}
+
+double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
+                                     const TransitionSystem *ts2,
+                                     const TransitionSystem *) {
+    double average_h_sum = compute_average_h_value(ts1) +
+        compute_average_h_value(ts2);
+    return average_h_sum;
 }
 
 Features::Features(std::vector<int> &&weights_,
@@ -118,12 +248,33 @@ Features::Features(std::vector<int> &&weights_,
       features(weights.size(), 0) {
     clear();
     if (weights[0]) {
-        features[0] = new CausalConnectionFeature(false, task);
+        features[0] = new CausalConnectionFeature(task);
     }
     if (weights[1]) {
-        features[1] = new NonAdditivityFeature(false, task);
+        features[1] = new NonAdditivityFeature(task);
     }
-    // TODO: remaining features
+    if (weights[2]) {
+        features[2] = new TransStatesQuotFeature();
+    }
+    if (weights[3]) {
+        features[3] = new InitHImprovementFeature();
+    }
+    if (weights[4]) {
+        features[4] = new AvgHImprovementFeature();
+    }
+    if (weights[5]) {
+        features[5] = new InitHSumFeature();
+    }
+    if (weights[6]) {
+        features[6] = new AvgHSumFeature();
+    }
+    if (debug) {
+        for (AbstractFeature *feature : features) {
+            if (feature) {
+                feature->dump_precomputed_data();
+            }
+        }
+    }
 }
 
 Features::~Features() {
@@ -200,102 +351,14 @@ double Features::compute_weighted_normalized_sum(
         }
     }
     if (debug) {
-        cout << "weighted sum: " << weighted_sum << endl;
+        cout << "weighted normalized sum: " << weighted_sum << endl;
     }
     return weighted_sum;
-
-    /*
-      TODO: cache results for all transition systems? only two of the
-      transition systems disappear each merge, and only one new arises.
-      However, we would need to remove all pairs that the merge transition
-      systems were part of, and compute all the pairs with the new one.
-
-      Also, we would need to make sure that at the time that the
-      merge strategy is asked for the next pair, the cached results are
-      correct, i.e. the transition systems cannot have been shrunk in
-      the meantime.
-    */
-
-//    double feature_value = -1;
-
-//    if (w_causally_connected_vars) {
-//        feature_value = compute_feature_causal_connection(ts1, ts2);
-//        if (debug) {
-//            cout << "percentage of causally connected variables in the product: " << feature_value << endl;
-//        }
-//        weighted_sum += w_causally_connected_vars * feature_value;
-//    }
-
-//    if (w_nonadditive_vars) {
-//        feature_value = compute_feature_additive_variables(ts1, ts2);
-//        if (debug) {
-//            cout << "percentage of non-additive variable pairs in the product: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_nonadditive_vars * feature_value;
-//    }
-
-//    if (w_small_transitions_states_quotient) {
-//        feature_value = normalize_value(
-//            lowest_quotient, highest_quotient,
-//            precomputed_quotients.at(make_pair(ts1, ts2)));
-//        if (debug) {
-//            cout << "normalized transitions to states quotient in the product: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_small_transitions_states_quotient * feature_value;
-//    }
-
-//    if (w_high_initial_h_value_improvement) {
-//        feature_value = normalize_value(
-//            lowest_initial_h_improvement, highest_initial_h_improvement,
-//            precomputed_initial_h_improvement.at(make_pair(ts1, ts2)));
-//        if (debug) {
-//            cout << "normalized relative improvement of the initial h value of the product to the maximum before: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_high_initial_h_value_improvement * feature_value;
-//    }
-
-//    if (w_high_average_h_value_improvement) {
-//        feature_value = normalize_value(
-//            lowest_average_h_improvement, highest_average_h_improvement,
-//            precomputed_average_h_improvement.at(make_pair(ts1, ts2)));
-//        if (debug) {
-//            cout << "normalized relative improvement of the average h value of the product to the maximum before: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_high_average_h_value_improvement * feature_value;
-//    }
-
-//    if (w_high_initial_h_value_sum) {
-//        int init_h_sum = ts1->get_init_state_goal_distance() +
-//            ts2->get_init_state_goal_distance();
-//        feature_value = normalize_value(
-//            lowest_initial_h_sum, highest_initial_h_sum, init_h_sum);
-//        if (debug) {
-//            cout << "normalized initial h value sum of the two components: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_high_initial_h_value_sum * feature_value;
-//    }
-
-//    if (w_high_average_h_value_sum) {
-//        feature_value = normalize_value(
-//            lowest_average_h_sum, highest_average_h_sum,
-//            precomputed_average_h_sum.at(make_pair(ts1, ts2)));
-//        if (debug) {
-//            cout << "normalized average h value sum of the two components: "
-//                 << feature_value << endl;
-//        }
-//        weighted_sum += w_high_average_h_value_sum * feature_value;
-//    }
-//    return weighted_sum;
 }
 
 void Features::clear() {
-    min_values.resize(features.size(), INF);
-    max_values.resize(features.size(), -1);
+    min_values.assign(features.size(), INF);
+    max_values.assign(features.size(), -1);
     unnormalized_values.clear();
 }
 
@@ -304,19 +367,12 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       debug(opts.get<bool>("debug")),
       w_causally_connected_vars(opts.get<int>("w_causally_connected_vars")),
       w_nonadditive_vars(opts.get<int>("w_nonadditive_vars")),
-//      w_small_transitions_states_quotient(opts.get<int>("w_small_transitions_states_quotient")),
-//      w_high_initial_h_value_improvement(opts.get<int>("w_high_initial_h_value_improvement")),
-//      w_high_average_h_value_improvement(opts.get<int>("w_high_average_h_value_improvement")),
-//      w_high_initial_h_value_sum(opts.get<int>("w_high_initial_h_value_sum")),
-//      w_high_average_h_value_sum(opts.get<int>("w_high_average_h_value_sum")),
+      w_small_transitions_states_quotient(opts.get<int>("w_small_transitions_states_quotient")),
+      w_high_initial_h_value_improvement(opts.get<int>("w_high_initial_h_value_improvement")),
+      w_high_average_h_value_improvement(opts.get<int>("w_high_average_h_value_improvement")),
+      w_high_initial_h_value_sum(opts.get<int>("w_high_initial_h_value_sum")),
+      w_high_average_h_value_sum(opts.get<int>("w_high_average_h_value_sum")),
       features(0) {
-//    feature_weights.push_back(w_causally_connected_vars);
-//    feature_weights.push_back(w_nonadditive_vars);
-//    feature_weights.push_back(w_small_transitions_states_quotient);
-//    feature_weights.push_back(w_high_initial_h_value_improvement);
-//    feature_weights.push_back(w_high_average_h_value_improvement);
-//    feature_weights.push_back(w_high_initial_h_value_sum);
-//    feature_weights.push_back(w_high_average_h_value_sum);
 }
 
 MergeDynamicWeighted::~MergeDynamicWeighted() {
@@ -326,11 +382,11 @@ MergeDynamicWeighted::~MergeDynamicWeighted() {
 void MergeDynamicWeighted::dump_strategy_specific_options() const {
     cout << "w_causally_connected_vars: " << w_causally_connected_vars << endl;
     cout << "w_nonadditive_vars: " << w_nonadditive_vars << endl;
-//    cout << "w_small_transitions_states_quotient: " << w_small_transitions_states_quotient << endl;
-//    cout << "w_high_initial_h_value_improvement: " << w_high_initial_h_value_improvement << endl;
-//    cout << "w_high_average_h_value_improvement: " << w_high_average_h_value_improvement << endl;
-//    cout << "w_high_initial_h_value_sum: " << w_high_initial_h_value_sum << endl;
-//    cout << "w_high_average_h_value_sum: " << w_high_average_h_value_sum << endl;
+    cout << "w_small_transitions_states_quotient: " << w_small_transitions_states_quotient << endl;
+    cout << "w_high_initial_h_value_improvement: " << w_high_initial_h_value_improvement << endl;
+    cout << "w_high_average_h_value_improvement: " << w_high_average_h_value_improvement << endl;
+    cout << "w_high_initial_h_value_sum: " << w_high_initial_h_value_sum << endl;
+    cout << "w_high_average_h_value_sum: " << w_high_average_h_value_sum << endl;
 }
 
 void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
@@ -342,182 +398,16 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
         var_no_to_ts_index.push_back(var.get_id());
     }
     merge_order.reserve(num_variables * 2 - 1);
-    vector<int> test = {w_causally_connected_vars, w_nonadditive_vars};
-    features = new Features(move(test), task, debug);
-}
-
-int MergeDynamicWeighted::compute_number_of_product_transitions(
-    const TransitionSystem *ts1, const TransitionSystem *ts2) const {
-    /*
-      Note that this computes the number of tranistions in the product
-      without considering possible shrinking due to unreachable or
-      irrelevant states, which hence may reduce the actual number of
-      transitions in the product.
-    */
-    int number_of_transitions = 0;
-    for (TSConstIterator group1_it = ts1->begin();
-         group1_it != ts1->end(); ++group1_it) {
-        // Distribute the labels of this group among the "buckets"
-        // corresponding to the groups of ts2.
-        unordered_map<int, vector<int> > buckets;
-        for (LabelConstIter label_it = group1_it.begin();
-             label_it != group1_it.end(); ++label_it) {
-            int label_no = *label_it;
-            int group2_id = ts2->get_group_id_for_label(label_no);
-            buckets[group2_id].push_back(label_no);
-        }
-        // Now buckets contains all equivalence classes that are
-        // refinements of group1.
-
-        // Now create the new groups together with their transitions.
-        const vector<Transition> &transitions1 = group1_it.get_transitions();
-        for (const auto &bucket : buckets) {
-            const vector<Transition> &transitions2 =
-                ts2->get_transitions_for_group_id(bucket.first);
-            int new_transitions_for_new_group = transitions1.size() * transitions2.size();
-            number_of_transitions += new_transitions_for_new_group;
-        }
-    }
-    return number_of_transitions;
-}
-
-double MergeDynamicWeighted::compute_feature_transitions_states_quotient(
-    TransitionSystem *ts1, TransitionSystem *ts2) const {
-    double feature_value = -1;
-//    if (w_small_transitions_states_quotient) {
-        double states = ts1->get_size() * ts2->get_size();
-        double transitions = compute_number_of_product_transitions(ts1, ts2);
-        feature_value = states / transitions;
-//    }
-    return feature_value;
-}
-
-int MergeDynamicWeighted::get_num_transitions(TransitionSystem *ts) const {
-    int num_transitions = 0;
-    for (TSConstIterator it = ts->begin(); it != ts->end(); ++it) {
-        int group_size = 0;
-        for (LabelConstIter label_it = it.begin();
-             label_it != it.end(); ++label_it) {
-            ++group_size;
-        }
-        num_transitions += (group_size * it.get_transitions().size());
-    }
-    return num_transitions;
-}
-
-double MergeDynamicWeighted::compute_average_h_value(TransitionSystem *ts) const {
-    int num_states = ts->get_size();
-    int sum_distances = 0;
-    for (int state = 0; state < num_states; ++state) {
-        sum_distances += ts->get_goal_distance(state);
-    }
-    if (num_states == 0) {
-        // For unsolvable transition systems
-        return INF;
-    }
-    return static_cast<double>(sum_distances) / static_cast<double>(num_states);
-}
-
-void MergeDynamicWeighted::precompute_features(const vector<TransitionSystem *> &all_transition_systems) {
-
-//    highest_quotient = -1;
-//    lowest_quotient = INF;
-//    highest_initial_h_improvement = -1;
-//    lowest_initial_h_improvement = INF;
-//    highest_average_h_improvement = -1;
-//    lowest_average_h_improvement = INF;
-//    highest_initial_h_sum = -1;
-//    lowest_initial_h_sum = INF;
-//    highest_average_h_sum = -1;
-//    lowest_average_h_sum = INF;
-
-    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-        TransitionSystem *ts1 = all_transition_systems[i];
-        if (ts1) {
-            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
-                TransitionSystem *ts2 = all_transition_systems[j];
-                if (ts2) {
-                    features->precompute_unnormalized_values(ts1, ts2);
-//                    if (w_small_transitions_states_quotient) {
-//                        double quotient = compute_feature_transitions_states_quotient(ts1, ts2);
-//                        precomputed_quotients[make_pair(ts1, ts2)] = quotient;
-//                        if (quotient > highest_quotient) {
-//                            highest_quotient = quotient;
-//                        }
-//                        if (quotient < lowest_quotient) {
-//                            lowest_quotient = quotient;
-//                        }
-//                    }
-//                    if (w_high_average_h_value_improvement || w_high_initial_h_value_improvement) {
-//                        TransitionSystem *merge = new TransitionSystem(TaskProxy(*task), ts1->get_labels(), ts1, ts2, false);
-//                        if (w_high_initial_h_value_improvement) {
-//                            int new_init_h;
-//                            if (merge->is_solvable()) {
-//                                new_init_h = merge->get_init_state_goal_distance();
-//                            } else {
-//                                // initial state has been pruned
-//                                new_init_h = INF;
-//                            }
-//                            int old_init_h = max(ts1->get_init_state_goal_distance(),
-//                                                 ts2->get_init_state_goal_distance());
-//                            int difference = new_init_h - old_init_h;
-//                            double relative_improvement = 0;
-//                            if (old_init_h) {
-//                                relative_improvement = static_cast<double>(difference) /
-//                                        static_cast<double>(old_init_h);
-//                            }
-//                            precomputed_initial_h_improvement[make_pair(ts1, ts2)] = relative_improvement;
-//                            if (relative_improvement > highest_initial_h_improvement) {
-//                                highest_initial_h_improvement = relative_improvement;
-//                            }
-//                            if (relative_improvement < lowest_initial_h_improvement) {
-//                                lowest_initial_h_improvement = relative_improvement;
-//                            }
-//                        }
-//                        if (w_high_average_h_value_improvement) {
-//                            double new_average_h = compute_average_h_value(merge);
-//                            double old_average_h = max(compute_average_h_value(ts1),
-//                                                       compute_average_h_value(ts2));
-//                            double difference = new_average_h - old_average_h;
-//                            double relative_improvement = 0;
-//                            if (old_average_h) {
-//                                relative_improvement =  difference / old_average_h;
-//                            }
-//                            precomputed_average_h_improvement[make_pair(ts1, ts2)] = relative_improvement;
-//                            if (relative_improvement > highest_average_h_improvement) {
-//                                highest_average_h_improvement = relative_improvement;
-//                            }
-//                            if (relative_improvement < lowest_average_h_improvement) {
-//                                lowest_average_h_improvement = relative_improvement;
-//                            }
-//                        }
-//                        delete merge;
-//                    }
-//                    if (w_high_initial_h_value_sum) {
-//                        int init_h_sum = ts1->get_init_state_goal_distance() +
-//                            ts2->get_init_state_goal_distance();
-//                        if (init_h_sum > highest_initial_h_sum) {
-//                            highest_initial_h_sum = init_h_sum;
-//                        }
-//                        if (init_h_sum < lowest_initial_h_sum) {
-//                            lowest_initial_h_sum = init_h_sum;
-//                        }
-//                    }
-//                    if (w_high_average_h_value_sum) {
-//                        double average_h_sum = compute_average_h_value(ts1) +
-//                            compute_average_h_value(ts2);
-//                        precomputed_average_h_sum[make_pair(ts1, ts2)] = average_h_sum;
-//                        if (average_h_sum > highest_average_h_sum) {
-//                            highest_average_h_sum = average_h_sum;
-//                        }
-//                        if (average_h_sum < lowest_average_h_sum) {
-//                            lowest_average_h_sum = average_h_sum;
-//                        }
-//                    }
-                }
-            }
-        }
-    }
+    vector<int> feature_weights = {
+        w_causally_connected_vars,
+        w_nonadditive_vars,
+        w_small_transitions_states_quotient,
+        w_high_initial_h_value_improvement,
+        w_high_average_h_value_improvement,
+        w_high_initial_h_value_sum,
+        w_high_average_h_value_sum
+    };
+    features = new Features(move(feature_weights), task, debug);
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {
@@ -537,7 +427,20 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
         }
         assert(in_bounds(ts_index2, all_transition_systems));
     } else {
-        precompute_features(all_transition_systems);
+        // Go through all transitition systems and compute unnormalized feature values.
+        for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+            TransitionSystem *ts1 = all_transition_systems[i];
+            if (ts1) {
+                for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                    TransitionSystem *ts2 = all_transition_systems[j];
+                    if (ts2) {
+                        features->precompute_unnormalized_values(ts1, ts2);
+                    }
+                }
+            }
+        }
+
+        // Go through all transition systems again and normalize feature values.
         int max_weight = -1;
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
             TransitionSystem *ts1 = all_transition_systems[i];
@@ -558,8 +461,19 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
             }
         }
         assert(max_weight != -1);
+        /*
+          TODO: cache results for all transition systems? only two of the
+          transition systems disappear each merge, and only one new arises.
+          However, we would need to remove all pairs that the merge transition
+          systems were part of, and compute all the pairs with the new one.
+
+          Also, we would need to make sure that at the time that the
+          merge strategy is asked for the next pair, the cached results are
+          correct, i.e. the transition systems cannot have been shrunk in
+          the meantime.
+        */
+        features->clear();
     }
-    features->clear();
 
     assert(ts_index1 != -1);
     assert(ts_index2 != -1);
