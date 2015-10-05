@@ -61,6 +61,8 @@ double compute_average_h_value(const TransitionSystem *ts) {
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
+// ========================= FEATURE CLASSES ===============================
+
 AbstractFeature::AbstractFeature(bool merge_required)
     : merge_required(merge_required) {
 }
@@ -242,6 +244,8 @@ double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
     return average_h_sum;
 }
 
+// ========================= FEATURES ====================================
+
 Features::Features(std::vector<int> &&weights_,
                    const shared_ptr<AbstractTask> task,
                    bool debug)
@@ -364,6 +368,8 @@ void Features::clear() {
     max_values.assign(features.size(), -1);
     unnormalized_values.clear();
 }
+
+// ========================= MERGE STRATEGY ===============================
 
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
     : MergeStrategy(),
