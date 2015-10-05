@@ -188,12 +188,13 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
     int old_init_h = max(ts1->get_init_state_goal_distance(),
                          ts2->get_init_state_goal_distance());
     int difference = new_init_h - old_init_h;
-    double relative_improvement = 1; // TODO: changed from 0
-    if (old_init_h) {
-        relative_improvement = static_cast<double>(difference) /
-                               static_cast<double>(old_init_h);
+    if (!difference) {
+        return 0;
     }
-    return relative_improvement;
+    if (!old_init_h) {
+        return 1;
+    }
+    return static_cast<double>(difference) / static_cast<double>(old_init_h);
 }
 
 AvgHImprovementFeature::AvgHImprovementFeature()
@@ -208,11 +209,13 @@ double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
     double old_average_h = max(compute_average_h_value(ts1),
                                compute_average_h_value(ts2));
     double difference = new_average_h - old_average_h;
-    double relative_improvement = 1; // TODO: changed from 0
-    if (old_average_h) {
-        relative_improvement =  difference / old_average_h;
+    if (!difference) {
+        return 0;
     }
-    return relative_improvement;
+    if (!old_average_h) {
+        return 1;
+    }
+    return static_cast<double>(difference) / static_cast<double>(old_average_h);
 }
 
 InitHSumFeature::InitHSumFeature()
