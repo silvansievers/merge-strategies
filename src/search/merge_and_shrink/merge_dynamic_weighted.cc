@@ -63,14 +63,35 @@ double compute_average_h_value(const TransitionSystem *ts) {
 
 // ========================= FEATURE CLASSES ===============================
 
-AbstractFeature::AbstractFeature(bool merge_required)
-    : merge_required(merge_required) {
+Feature::Feature(int id, string name, bool merge_required, int weight)
+    : id(id),
+      name(name),
+      merge_required(merge_required),
+      weight(weight) {
 }
 
-CausalConnectionFeature::CausalConnectionFeature(const shared_ptr<AbstractTask> task_)
-    : AbstractFeature(false),
-      task(task_),
-      causal_graph(TaskProxy(*task).get_causal_graph()) {
+double Feature::compute_unnormalized_value(const TransitionSystem *ts1,
+                                           const TransitionSystem *ts2,
+                                           const TransitionSystem *merge) {
+    if (weight) {
+        // TODO: get rid of this? we currently also perform this check
+        // outside of this method before calling it
+        return compute_value(ts1, ts2, merge);
+    }
+    return 0;
+}
+
+void Feature::dump() const {
+    cout << name << ": " << weight << endl;
+}
+
+CausalConnectionFeature::CausalConnectionFeature(int id, int weight)
+    : Feature(id, "causally connected variables", false, weight),
+      causal_graph(0) {
+}
+
+CausalConnectionFeature::~CausalConnectionFeature() {
+    delete causal_graph;
 }
 
 double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
@@ -79,10 +100,10 @@ double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     vector<int> ts1_cg_neighbors;
     for (int var_no : ts1_var_nos) {
-        const vector<int> &ts1_cg_successors = causal_graph.get_successors(var_no);
+        const vector<int> &ts1_cg_successors = causal_graph->get_successors(var_no);
         ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_successors.begin(),
                                 ts1_cg_successors.end());
-        const vector<int> &ts1_cg_predecessors = causal_graph.get_predecessors(var_no);
+        const vector<int> &ts1_cg_predecessors = causal_graph->get_predecessors(var_no);
         ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_predecessors.begin(),
                                 ts1_cg_predecessors.end());
     }
@@ -105,29 +126,21 @@ double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(edge_count) / max_possible_edges;
 }
 
-void CausalConnectionFeature::dump_precomputed_data() const {
-    TaskProxy task_proxy(*task);
-    cout << "causal graph:" << endl;
-    for (VariableProxy var : task_proxy.get_variables()) {
-        cout << "successors for var " << var.get_id() << ": "
-             << causal_graph.get_successors(var.get_id()) << endl;
+void CausalConnectionFeature::initialize(const TaskProxy &task_proxy, bool dump) {
+    // TODO: avoid recreating a new causal graph (cannot assign a const
+    // reference in this method)
+    causal_graph = new CausalGraph(task_proxy);
+    if (dump) {
+        cout << "causal graph:" << endl;
+        for (VariableProxy var : task_proxy.get_variables()) {
+            cout << "successors for var " << var.get_id() << ": "
+                 << causal_graph->get_successors(var.get_id()) << endl;
+        }
     }
 }
 
-NonAdditivityFeature::NonAdditivityFeature(const shared_ptr<AbstractTask> task)
-    : AbstractFeature(false) {
-    TaskProxy task_proxy(*task);
-    int num_variables = task_proxy.get_variables().size();
-    additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        for (EffectProxy e1 : op.get_effects()) {
-            for (EffectProxy e2 : op.get_effects()) {
-                int e1_var_id = e1.get_fact().get_variable().get_id();
-                int e2_var_id = e2.get_fact().get_variable().get_id();
-                additive_var_pairs[e1_var_id][e2_var_id] = false;
-            }
-        }
-    }
+NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
+    : Feature(id, "non additive variables", false, weight) {
 }
 
 double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
@@ -149,19 +162,31 @@ double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(not_additive_pair_count) / total_pair_count;
 }
 
-void NonAdditivityFeature::dump_precomputed_data() const {
-    int num_variables = additive_var_pairs.size();
-    for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
-        for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
-            cout << var_no1 << " and " << var_no2 << ": "
-                 << (additive_var_pairs[var_no1][var_no2] ? "" : "not ")
-                 << "additive" << endl;
+void NonAdditivityFeature::initialize(const TaskProxy &task_proxy, bool dump) {
+    int num_variables = task_proxy.get_variables().size();
+    additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        for (EffectProxy e1 : op.get_effects()) {
+            for (EffectProxy e2 : op.get_effects()) {
+                int e1_var_id = e1.get_fact().get_variable().get_id();
+                int e2_var_id = e2.get_fact().get_variable().get_id();
+                additive_var_pairs[e1_var_id][e2_var_id] = false;
+            }
+        }
+    }
+    if (dump) {
+        for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
+            for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
+                cout << var_no1 << " and " << var_no2 << ": "
+                     << (additive_var_pairs[var_no1][var_no2] ? "" : "not ")
+                     << "additive" << endl;
+            }
         }
     }
 }
 
-TransStatesQuotFeature::TransStatesQuotFeature()
-    : AbstractFeature(false) {
+TransStatesQuotFeature::TransStatesQuotFeature(int id, int weight)
+    : Feature(id, "transitions per states quotient", false, weight) {
 }
 
 double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
@@ -172,8 +197,8 @@ double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
     return product_states / product_transitions;
 }
 
-InitHImprovementFeature::InitHImprovementFeature()
-    : AbstractFeature(true) {
+InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
+    : Feature(id, "initial h value improvement", true, weight) {
 }
 
 double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
@@ -199,8 +224,8 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(difference) / static_cast<double>(old_init_h);
 }
 
-AvgHImprovementFeature::AvgHImprovementFeature()
-    : AbstractFeature(true) {
+AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
+    : Feature(id, "average h value improvement", true, weight) {
 }
 
 double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
@@ -220,8 +245,8 @@ double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(difference) / static_cast<double>(old_average_h);
 }
 
-InitHSumFeature::InitHSumFeature()
-    : AbstractFeature(false) {
+InitHSumFeature::InitHSumFeature(int id, int weight)
+    : Feature(id, "initial h value sum", false, weight) {
 }
 
 double InitHSumFeature::compute_value(const TransitionSystem *ts1,
@@ -232,8 +257,8 @@ double InitHSumFeature::compute_value(const TransitionSystem *ts1,
     return init_h_sum;
 }
 
-AvgHSumFeature::AvgHSumFeature()
-    : AbstractFeature(false) {
+AvgHSumFeature::AvgHSumFeature(int id, int weight)
+    : Feature(id, "average h value sum", false, weight) {
 }
 
 double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
@@ -246,62 +271,54 @@ double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
 
 // ========================= FEATURES ====================================
 
-Features::Features(std::vector<int> &&weights_,
-                   const shared_ptr<AbstractTask> task,
-                   bool debug)
-    : weights(move(weights_)),
-      task(task),
-      debug(debug),
-      features(weights.size(), 0) {
-    clear();
-    if (weights[0]) {
-        features[0] = new CausalConnectionFeature(task);
-    }
-    if (weights[1]) {
-        features[1] = new NonAdditivityFeature(task);
-    }
-    if (weights[2]) {
-        features[2] = new TransStatesQuotFeature();
-    }
-    if (weights[3]) {
-        features[3] = new InitHImprovementFeature();
-    }
-    if (weights[4]) {
-        features[4] = new AvgHImprovementFeature();
-    }
-    if (weights[5]) {
-        features[5] = new InitHSumFeature();
-    }
-    if (weights[6]) {
-        features[6] = new AvgHSumFeature();
-    }
-    if (debug) {
-        for (AbstractFeature *feature : features) {
-            if (feature) {
-                feature->dump_precomputed_data();
-            }
+Features::Features(const Options opts)
+    : debug(opts.get<bool>("debug")) {
+    int id = 0;
+    features.push_back(new CausalConnectionFeature(
+                           id++, opts.get<int>("w_causally_connected_vars")));
+    features.push_back(new NonAdditivityFeature(
+                           id++, opts.get<int>("w_nonadditive_vars")));
+    features.push_back(new TransStatesQuotFeature(
+                           id++, opts.get<int>("w_small_transitions_states_quotient")));
+    features.push_back(new InitHImprovementFeature(
+                           id++, opts.get<int>("w_high_initial_h_value_improvement")));
+    features.push_back(new AvgHImprovementFeature(
+                           id++, opts.get<int>("w_high_average_h_value_improvement")));
+    features.push_back(new InitHSumFeature(
+                           id++, opts.get<int>("w_high_initial_h_value_sum")));
+    features.push_back(new AvgHSumFeature(
+                           id++, opts.get<int>("w_high_average_h_value_sum")));
+}
+
+void Features::initialize(const shared_ptr<AbstractTask> task) {
+    task_proxy = new TaskProxy(*task);
+    for (Feature *feature : features) {
+        if (feature->get_weight()) {
+            feature->initialize(*task_proxy, debug);
         }
     }
+    clear();
 }
 
 Features::~Features() {
-    for (AbstractFeature *feature : features) {
+    delete task_proxy;
+    for (Feature *feature : features) {
         delete feature;
     }
 }
 
-void Features::update_min_max(int feature_no, double value) {
-    if (value > max_values[feature_no]) {
-        max_values[feature_no] = value;
+void Features::update_min_max(int feature_id, double value) {
+    if (value > max_values[feature_id]) {
+        max_values[feature_id] = value;
     }
-    if (value < min_values[feature_no]) {
-        min_values[feature_no] = value;
+    if (value < min_values[feature_id]) {
+        min_values[feature_id] = value;
     }
 }
 
-double Features::normalize_value(int feature_no, double value) const {
-    double min = min_values[feature_no];
-    double max = max_values[feature_no];
+double Features::normalize_value(int feature_id, double value) const {
+    double min = min_values[feature_id];
+    double max = max_values[feature_id];
     if (max - min == 0) {
         // all three values are the same
         assert(min == value);
@@ -319,16 +336,15 @@ void Features::precompute_unnormalized_values(TransitionSystem *ts1,
     TransitionSystem *merge = 0;
     vector<double> values;
     values.reserve(features.size());
-    for (size_t feature_no = 0; feature_no < features.size(); ++feature_no) {
-        AbstractFeature *feature = features[feature_no];
-        if (feature) {
+    for (Feature *feature : features) {
+        if (feature->get_weight()) {
             if (feature->requires_merge() && !merge) {
-                merge = new TransitionSystem(TaskProxy(*task),
+                merge = new TransitionSystem(*task_proxy,
                                              ts1->get_labels(),
                                              ts1, ts2, false);
             }
-            double value = feature->compute_value(ts1, ts2, merge);
-            update_min_max(feature_no, value);
+            double value = feature->compute_unnormalized_value(ts1, ts2, merge);
+            update_min_max(feature->get_id(), value);
             values.push_back(value);
         } else {
             // dummy value for correct indices
@@ -347,14 +363,15 @@ double Features::compute_weighted_normalized_sum(
         cout << "computing weighted normalized sum for "
              << ts1->tag() << ts2->tag() << endl;
     }
-    for (size_t feature_no = 0; feature_no < features.size(); ++feature_no) {
-        if (weights[feature_no]) {
-            double normalized_value = normalize_value(feature_no, values[feature_no]);
+    for (Feature *feature : features) {
+        if (feature->get_weight()) {
+            double normalized_value = normalize_value(feature->get_id(),
+                                                      values[feature->get_id()]);
             if (debug) {
-                cout << "normalized value for feature number " << feature_no
+                cout << "normalized value for feature " << feature->get_name()
                      << ": " << normalized_value << endl;
             }
-            weighted_sum += weights[feature_no] * normalized_value;
+            weighted_sum += feature->get_weight() * normalized_value;
         }
     }
     if (debug) {
@@ -369,19 +386,17 @@ void Features::clear() {
     unnormalized_values.clear();
 }
 
+void Features::dump_weights() const {
+    for (Feature *feature : features) {
+        feature->dump();
+    }
+}
+
 // ========================= MERGE STRATEGY ===============================
 
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
-    : MergeStrategy(),
-      debug(opts.get<bool>("debug")),
-      w_causally_connected_vars(opts.get<int>("w_causally_connected_vars")),
-      w_nonadditive_vars(opts.get<int>("w_nonadditive_vars")),
-      w_small_transitions_states_quotient(opts.get<int>("w_small_transitions_states_quotient")),
-      w_high_initial_h_value_improvement(opts.get<int>("w_high_initial_h_value_improvement")),
-      w_high_average_h_value_improvement(opts.get<int>("w_high_average_h_value_improvement")),
-      w_high_initial_h_value_sum(opts.get<int>("w_high_initial_h_value_sum")),
-      w_high_average_h_value_sum(opts.get<int>("w_high_average_h_value_sum")),
-      features(0) {
+    : MergeStrategy() {
+    features = new Features(opts);
 }
 
 MergeDynamicWeighted::~MergeDynamicWeighted() {
@@ -389,13 +404,7 @@ MergeDynamicWeighted::~MergeDynamicWeighted() {
 }
 
 void MergeDynamicWeighted::dump_strategy_specific_options() const {
-    cout << "w_causally_connected_vars: " << w_causally_connected_vars << endl;
-    cout << "w_nonadditive_vars: " << w_nonadditive_vars << endl;
-    cout << "w_small_transitions_states_quotient: " << w_small_transitions_states_quotient << endl;
-    cout << "w_high_initial_h_value_improvement: " << w_high_initial_h_value_improvement << endl;
-    cout << "w_high_average_h_value_improvement: " << w_high_average_h_value_improvement << endl;
-    cout << "w_high_initial_h_value_sum: " << w_high_initial_h_value_sum << endl;
-    cout << "w_high_average_h_value_sum: " << w_high_average_h_value_sum << endl;
+    features->dump_weights();
 }
 
 void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
@@ -407,16 +416,7 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
         var_no_to_ts_index.push_back(var.get_id());
     }
     merge_order.reserve(num_variables * 2 - 1);
-    vector<int> feature_weights = {
-        w_causally_connected_vars,
-        w_nonadditive_vars,
-        w_small_transitions_states_quotient,
-        w_high_initial_h_value_improvement,
-        w_high_average_h_value_improvement,
-        w_high_initial_h_value_sum,
-        w_high_average_h_value_sum
-    };
-    features = new Features(move(feature_weights), task, debug);
+    features->initialize(task);
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {

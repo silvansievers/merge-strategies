@@ -9,94 +9,105 @@
 
 class CausalGraph;
 class Options;
+class TaskProxy;
 
 const int NUM_FEATURES = 7;
 
-class AbstractFeature {
-    bool merge_required;
-public:
-    explicit AbstractFeature(bool requires_merge);
-    virtual ~AbstractFeature() {}
+class Feature {
+    const int id;
+    const std::string name;
+    const bool merge_required;
+    const int weight;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) = 0;
+public:
+    Feature(int id, std::string name, bool requires_merge, int weight);
+    virtual ~Feature() {}
+    double compute_unnormalized_value(const TransitionSystem *ts1,
+                                      const TransitionSystem *ts2,
+                                      const TransitionSystem *merge);
+    int get_id() const {
+        return id;
+    }
+    std::string get_name() const {
+        return name;
+    }
     bool requires_merge() const {
         return merge_required;
     }
-    virtual void dump_precomputed_data() const = 0;
+    int get_weight() const {
+        return weight;
+    }
+    virtual void initialize(const TaskProxy &, bool) {}
+    void dump() const;
 };
 
-class CausalConnectionFeature : public AbstractFeature {
-    const std::shared_ptr<AbstractTask> task;
-    const CausalGraph &causal_graph;
-public:
-    explicit CausalConnectionFeature(const std::shared_ptr<AbstractTask> task);
+class CausalConnectionFeature : public Feature {
+    CausalGraph *causal_graph;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const;
+public:
+    CausalConnectionFeature(int id, int weight);
+    virtual ~CausalConnectionFeature();
+    virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 
-class NonAdditivityFeature : public AbstractFeature {
+class NonAdditivityFeature : public Feature {
     std::vector<std::vector<bool> > additive_var_pairs;
-public:
-    explicit NonAdditivityFeature(const std::shared_ptr<AbstractTask> task);
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const;
+public:
+    NonAdditivityFeature(int id, int weight);
+    virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 
-class TransStatesQuotFeature : public AbstractFeature {
-public:
-    TransStatesQuotFeature();
+class TransStatesQuotFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const {}
+public:
+    TransStatesQuotFeature(int id, int weight);
 };
 
-class InitHImprovementFeature : public AbstractFeature {
-public:
-    InitHImprovementFeature();
+class InitHImprovementFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const {}
+public:
+    InitHImprovementFeature(int id, int weight);
 };
 
-class AvgHImprovementFeature : public AbstractFeature {
-public:
-    AvgHImprovementFeature();
+class AvgHImprovementFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const {}
+public:
+    AvgHImprovementFeature(int id, int weight);
 };
 
-class InitHSumFeature : public AbstractFeature {
-public:
-    InitHSumFeature();
+class InitHSumFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const {}
+public:
+    InitHSumFeature(int id, int weight);
 };
 
-class AvgHSumFeature : public AbstractFeature {
-public:
-    AvgHSumFeature();
+class AvgHSumFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
-    virtual void dump_precomputed_data() const {}
+public:
+    AvgHSumFeature(int id, int weight);
 };
 
 class Features {
-    std::vector<int> weights;
-    const std::shared_ptr<AbstractTask> task;
-    bool debug;
-    std::vector<AbstractFeature *> features;
+    const bool debug;
+    TaskProxy *task_proxy;
+    std::vector<Feature *> features;
     std::vector<double> min_values;
     std::vector<double> max_values;
     std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>,
@@ -104,33 +115,20 @@ class Features {
     void update_min_max(int feature_no, double value);
     double normalize_value(int feature_no, double value) const;
 public:
-    Features(std::vector<int> &&weights,
-             const std::shared_ptr<AbstractTask> task,
-             bool debug);
+    explicit Features(const Options opts);
     ~Features();
+    void initialize(const std::shared_ptr<AbstractTask> task);
     void precompute_unnormalized_values(TransitionSystem *ts1,
                                         TransitionSystem *ts2);
     double compute_weighted_normalized_sum(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
     void clear();
+    void dump_weights() const;
 };
 
 class MergeDynamicWeighted : public MergeStrategy {
-    // Options
-    bool debug;
-    // TODO: move weights inside features. construct features in constructor,
-    // and give it an initialize method
-    int w_causally_connected_vars;
-    int w_nonadditive_vars;
-    int w_small_transitions_states_quotient;
-    int w_high_initial_h_value_improvement;
-    int w_high_average_h_value_improvement;
-    int w_high_initial_h_value_sum;
-    int w_high_average_h_value_sum;
-
-    // Precomputed stuff
-    std::vector<int> var_no_to_ts_index;
     Features *features;
+    std::vector<int> var_no_to_ts_index;
 
     // Statistics
     std::vector<std::pair<int, int> > merge_order;
