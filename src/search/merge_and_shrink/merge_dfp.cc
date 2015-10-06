@@ -14,7 +14,7 @@ using namespace std;
 
 
 MergeDFP::MergeDFP(const Options &options)
-    : MergeStrategy(), regular_order(options.get<bool>("regular_order")) {
+    : MergeStrategy(), order(Order(options.get_enum("order"))) {
 }
 
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
@@ -29,7 +29,8 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
 }
 
 int MergeDFP::get_corrected_index(int index) const {
-    if (regular_order) {
+    assert(order != REGULAR);
+    if (order == INVERSE) {
         return index;
     }
     /*
@@ -103,23 +104,36 @@ pair<int, int> MergeDFP::get_next(const vector<TransitionSystem *> &all_transiti
       transition systems from all_transition_systems in the desired order and
       compute label ranks.
     */
-    for (int i = all_transition_systems.size() - 1; i >= 0; --i) {
-        /*
-          We iterate from back to front, considering the composite
-          transition systems in the order from "most recently added" (= at the back
-          of the vector) to "first added" (= at border_atomics_composites).
-          Afterwards, we consider the atomic transition systems in the "regular"
-          order from the first one until the last one. See also explanation
-          at get_corrected_index().
-        */
-        int ts_index = get_corrected_index(i);
-        const TransitionSystem *transition_system = all_transition_systems[ts_index];
-        if (transition_system) {
-            sorted_transition_systems.push_back(transition_system);
-            indices_mapping.push_back(ts_index);
-            transition_system_label_ranks.push_back(vector<int>());
-            vector<int> &label_ranks = transition_system_label_ranks.back();
-            compute_label_ranks(transition_system, label_ranks);
+    if (order == REGULAR) {
+        for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+            const TransitionSystem *transition_system = all_transition_systems[i];
+            if (transition_system) {
+                sorted_transition_systems.push_back(transition_system);
+                indices_mapping.push_back(i);
+                transition_system_label_ranks.push_back(vector<int>());
+                vector<int> &label_ranks = transition_system_label_ranks.back();
+                compute_label_ranks(transition_system, label_ranks);
+            }
+        }
+    } else {
+        for (int i = all_transition_systems.size() - 1; i >= 0; --i) {
+            /*
+              We iterate from back to front, considering the composite
+              transition systems in the order from "most recently added" (= at the back
+              of the vector) to "first added" (= at border_atomics_composites).
+              Afterwards, we consider the atomic transition systems in the "regular"
+              order from the first one until the last one. See also explanation
+              at get_corrected_index().
+            */
+            int ts_index = get_corrected_index(i);
+            const TransitionSystem *transition_system = all_transition_systems[ts_index];
+            if (transition_system) {
+                sorted_transition_systems.push_back(transition_system);
+                indices_mapping.push_back(ts_index);
+                transition_system_label_ranks.push_back(vector<int>());
+                vector<int> &label_ranks = transition_system_label_ranks.back();
+                compute_label_ranks(transition_system, label_ranks);
+            }
         }
     }
 
@@ -147,6 +161,7 @@ pair<int, int> MergeDFP::get_next(const vector<TransitionSystem *> &all_transiti
                         pair_weight = min(pair_weight, max_label_rank);
                     }
                 }
+                cout << transition_system1->tag() << transition_system2->tag() << pair_weight << endl;
                 if (pair_weight < minimum_weight) {
                     minimum_weight = pair_weight;
                     next_index1 = indices_mapping[i];
@@ -197,7 +212,11 @@ string MergeDFP::name() const {
 }
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    parser.add_option<bool>("regular_order", "use regular variable order", "false");
+    vector<string> order;
+    order.push_back("DFP");
+    order.push_back("REGULAR");
+    order.push_back("INVERSE");
+    parser.add_enum_option("order", order, "order of transition systems", "DFP");
     Options options = parser.parse();
     parser.document_synopsis(
         "Merge strategy DFP",

@@ -6,7 +6,12 @@
 class Options;
 
 class MergeDFP : public MergeStrategy {
-    bool regular_order;
+    enum Order {
+        DFP,
+        REGULAR,
+        INVERSE
+    };
+    Order order;
     // border_atomic_composites is the first index at which a composite
     // transition system can be found in vector of all transition systems as passed
     // as argument to the get_next method.
