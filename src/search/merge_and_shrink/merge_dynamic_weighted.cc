@@ -245,7 +245,7 @@ void NonAdditivityFeature::initialize(const TaskProxy &task_proxy, bool dump) {
 }
 
 TransStatesQuotFeature::TransStatesQuotFeature(int id, int weight)
-    : Feature(id, weight, "transitions per states quotient", false, false) {
+    : Feature(id, weight, "transitions per states quotient", false, true) {
 }
 
 double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
@@ -254,9 +254,10 @@ double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
-    // TODO: change to transitions / states and let feature be a "minimize" feature?
-    // assert denominator != 0
-    return product_states / product_transitions;
+    if (!product_states) {
+        return INF;
+    }
+    return product_transitions / product_states;
 }
 
 InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
@@ -282,7 +283,7 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
         return 0;
     }
     if (!old_init_h) {
-        return 1;
+        return INF;
     }
     return static_cast<double>(difference) / static_cast<double>(old_init_h);
 }
@@ -304,7 +305,7 @@ double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
         return 0;
     }
     if (!old_average_h) {
-        return 1;
+        return INF;
     }
     return static_cast<double>(difference) / static_cast<double>(old_average_h);
 }
