@@ -15,14 +15,16 @@ const int NUM_FEATURES = 7;
 
 class Feature {
     const int id;
+    const int weight;
     const std::string name;
     const bool merge_required;
-    const int weight;
+    const bool minimize_value;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) = 0;
 public:
-    Feature(int id, std::string name, bool requires_merge, int weight);
+    Feature(int id, int weight, std::string name,
+            bool requires_merge, bool minimize_value);
     virtual ~Feature() {}
     double compute_unnormalized_value(const TransitionSystem *ts1,
                                       const TransitionSystem *ts2,
@@ -30,14 +32,17 @@ public:
     int get_id() const {
         return id;
     }
+    int get_weight() const {
+        return weight;
+    }
     std::string get_name() const {
         return name;
     }
     bool requires_merge() const {
         return merge_required;
     }
-    int get_weight() const {
-        return weight;
+    bool minimize() const {
+        return minimize_value;
     }
     virtual void initialize(const TaskProxy &, bool) {}
     void dump() const;
@@ -104,12 +109,20 @@ public:
     AvgHSumFeature(int id, int weight);
 };
 
+class DFPFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    DFPFeature(int id, int weight);
+};
+
 class Features {
     const bool debug;
     TaskProxy *task_proxy;
     std::vector<Feature *> features;
-    std::vector<double> min_values;
-    std::vector<double> max_values;
+    std::vector<double> min_values; // finite minium values of all features
+    std::vector<double> max_values; // finite maximum values of all features
     std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>,
                        std::vector<double> > unnormalized_values;
     void update_min_max(int feature_no, double value);

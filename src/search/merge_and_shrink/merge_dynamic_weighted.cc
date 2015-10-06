@@ -10,11 +10,13 @@
 
 using namespace std;
 
+const int MINUSINF = numeric_limits<int>::min();
+
 // Helper methods to deal with transition systems
 
 int compute_number_of_product_transitions(
     const TransitionSystem *ts1, const TransitionSystem *ts2) {
-    // NOTE: this is copied from the merge constructor of TransitionSystem
+    // TODO: this is copied from the merge constructor of TransitionSystem
     /*
       Note that this computes the number of tranistions in the product
       without considering possible shrinking due to unreachable or
@@ -61,13 +63,66 @@ double compute_average_h_value(const TransitionSystem *ts) {
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
+// TODO: get rid of this caching mechanism
+unordered_map<const TransitionSystem *, vector<int> > ts_to_label_ranks;
+
+const vector<int> &compute_label_ranks(const TransitionSystem *transition_system) {
+    if (ts_to_label_ranks.count(transition_system)) {
+        return ts_to_label_ranks.at(transition_system);
+    }
+    // TODO: copied from MergeDFP
+    ts_to_label_ranks[transition_system] = vector<int>();
+    vector<int> &label_ranks = ts_to_label_ranks[transition_system];
+    int num_labels = transition_system->get_num_labels();
+    // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
+    label_ranks.resize(num_labels, -1);
+
+    for (TSConstIterator group_it = transition_system->begin();
+         group_it != transition_system->end(); ++group_it) {
+        // Relevant labels with no transitions have a rank of infinity.
+        int label_rank = INF;
+        const vector<Transition> &transitions = group_it.get_transitions();
+        bool group_relevant = false;
+        if (static_cast<int>(transitions.size()) == transition_system->get_size()) {
+            /*
+              A label group is irrelevant in the earlier notion if it has
+              exactly a self loop transition for every state.
+            */
+            for (size_t i = 0; i < transitions.size(); ++i) {
+                if (transitions[i].target != transitions[i].src) {
+                    group_relevant = true;
+                    break;
+                }
+            }
+        } else {
+            group_relevant = true;
+        }
+        if (!group_relevant) {
+            label_rank = -1;
+        } else {
+            for (size_t i = 0; i < transitions.size(); ++i) {
+                const Transition &t = transitions[i];
+                label_rank = min(label_rank, transition_system->get_goal_distance(t.target));
+            }
+        }
+        for (LabelConstIter label_it = group_it.begin();
+             label_it != group_it.end(); ++label_it) {
+            int label_no = *label_it;
+            label_ranks[label_no] = label_rank;
+        }
+    }
+    return label_ranks;
+}
+
 // ========================= FEATURE CLASSES ===============================
 
-Feature::Feature(int id, string name, bool merge_required, int weight)
+Feature::Feature(int id, int weight, string name,
+                 bool merge_required, bool minimize_value)
     : id(id),
+      weight(weight),
       name(name),
       merge_required(merge_required),
-      weight(weight) {
+      minimize_value(minimize_value) {
 }
 
 double Feature::compute_unnormalized_value(const TransitionSystem *ts1,
@@ -86,7 +141,7 @@ void Feature::dump() const {
 }
 
 CausalConnectionFeature::CausalConnectionFeature(int id, int weight)
-    : Feature(id, "causally connected variables", false, weight),
+    : Feature(id, weight, "causally connected variables", false, false),
       causal_graph(0) {
 }
 
@@ -97,6 +152,7 @@ CausalConnectionFeature::~CausalConnectionFeature() {
 double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
                                               const TransitionSystem *ts2,
                                               const TransitionSystem *) {
+    // return value in [0,infinity)
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     vector<int> ts1_cg_neighbors;
     for (int var_no : ts1_var_nos) {
@@ -123,6 +179,7 @@ double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
         }
     }
     double max_possible_edges = ts1_var_nos.size() * ts2_var_nos.size() * 2;
+    assert(max_possible_edges);
     return static_cast<double>(edge_count) / max_possible_edges;
 }
 
@@ -140,12 +197,13 @@ void CausalConnectionFeature::initialize(const TaskProxy &task_proxy, bool dump)
 }
 
 NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
-    : Feature(id, "non additive variables", false, weight) {
+    : Feature(id, weight, "non additive variables", false, false) {
 }
 
 double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
                                            const TransitionSystem *ts2,
                                            const TransitionSystem *) {
+    // return value in [0,infinity)
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
     int not_additive_pair_count = 0;
@@ -159,6 +217,7 @@ double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
     // NOTE: in contrast to the causally connected variables feature,
     // we consider every pair only once.
     double total_pair_count = ts1_var_nos.size() * ts2_var_nos.size();
+    assert(total_pair_count);
     return static_cast<double>(not_additive_pair_count) / total_pair_count;
 }
 
@@ -186,24 +245,28 @@ void NonAdditivityFeature::initialize(const TaskProxy &task_proxy, bool dump) {
 }
 
 TransStatesQuotFeature::TransStatesQuotFeature(int id, int weight)
-    : Feature(id, "transitions per states quotient", false, weight) {
+    : Feature(id, weight, "transitions per states quotient", false, false) {
 }
 
 double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
                                              const TransitionSystem *ts2,
                                              const TransitionSystem *) {
+    // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
+    // TODO: change to transitions / states and let feature be a "minimize" feature?
+    // assert denominator != 0
     return product_states / product_transitions;
 }
 
 InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
-    : Feature(id, "initial h value improvement", true, weight) {
+    : Feature(id, weight, "initial h value improvement", true, false) {
 }
 
 double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
                                               const TransitionSystem *ts2,
                                               const TransitionSystem *merge) {
+    // return value in [0,infinity)
     assert(merge);
     int new_init_h;
     if (merge->is_solvable()) {
@@ -225,12 +288,13 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
 }
 
 AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
-    : Feature(id, "average h value improvement", true, weight) {
+    : Feature(id, weight, "average h value improvement", true, false) {
 }
 
 double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
                                              const TransitionSystem *ts2,
                                              const TransitionSystem *merge) {
+    // return value in [0,infinity)
     assert(merge);
     double new_average_h = compute_average_h_value(merge);
     double old_average_h = max(compute_average_h_value(ts1),
@@ -246,27 +310,58 @@ double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
 }
 
 InitHSumFeature::InitHSumFeature(int id, int weight)
-    : Feature(id, "initial h value sum", false, weight) {
+    : Feature(id, weight, "initial h value sum", false, false) {
 }
 
 double InitHSumFeature::compute_value(const TransitionSystem *ts1,
                                       const TransitionSystem *ts2,
                                       const TransitionSystem *) {
+    // return value in [0,infinity)
     int init_h_sum = ts1->get_init_state_goal_distance() +
         ts2->get_init_state_goal_distance();
     return init_h_sum;
 }
 
 AvgHSumFeature::AvgHSumFeature(int id, int weight)
-    : Feature(id, "average h value sum", false, weight) {
+    : Feature(id, weight, "average h value sum", false, false) {
 }
 
 double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
                                      const TransitionSystem *ts2,
                                      const TransitionSystem *) {
+    // return value in [0,infinity)
     double average_h_sum = compute_average_h_value(ts1) +
         compute_average_h_value(ts2);
     return average_h_sum;
+}
+
+DFPFeature::DFPFeature(int id, int weight)
+    : Feature(id, weight, "dfp", false, true) {
+}
+
+double DFPFeature::compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *) {
+    // return value in [0,infinity)
+    int pair_weight = INF;
+    if (ts1->is_goal_relevant() || ts2->is_goal_relevant()) {
+        const vector<int> &label_ranks1 = compute_label_ranks(ts1);
+        const vector<int> &label_ranks2 = compute_label_ranks(ts2);
+        assert(!label_ranks1.empty());
+        assert(!label_ranks2.empty());
+        assert(label_ranks1.size() == label_ranks2.size());
+        for (size_t i = 0; i < label_ranks1.size(); ++i) {
+            if (label_ranks1[i] != -1 && label_ranks2[i] != -1) {
+                // label is relevant in both transition_systems
+                int max_label_rank = max(label_ranks1[i], label_ranks2[i]);
+                pair_weight = min(pair_weight, max_label_rank);
+            }
+        }
+    }
+    // NOTE: if all pairs have infinite weight, the real DFP strategy would
+    // prefer merging the "first" pair with at least one goal relevant
+    // transition system. This feature here cannot do so.
+    return pair_weight;
 }
 
 // ========================= FEATURES ====================================
@@ -288,6 +383,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_high_initial_h_value_sum")));
     features.push_back(new AvgHSumFeature(
                            id++, opts.get<int>("w_high_average_h_value_sum")));
+    features.push_back(new DFPFeature(
+                           id++, opts.get<int>("w_dfp")));
 }
 
 void Features::initialize(const shared_ptr<AbstractTask> task) {
@@ -308,6 +405,10 @@ Features::~Features() {
 }
 
 void Features::update_min_max(int feature_id, double value) {
+    // Update minimum an maximum finite values
+    if (value == INF || value == MINUSINF) {
+        return;
+    }
     if (value > max_values[feature_id]) {
         max_values[feature_id] = value;
     }
@@ -319,6 +420,13 @@ void Features::update_min_max(int feature_id, double value) {
 double Features::normalize_value(int feature_id, double value) const {
     double min = min_values[feature_id];
     double max = max_values[feature_id];
+    // Again, only consider finite values. Clamp -infinity and infinity to 0 and 1
+    if (value == MINUSINF) {
+        return 0;
+    }
+    if (value == INF) {
+        return 1;
+    }
     if (max - min == 0) {
         // all three values are the same
         assert(min == value);
@@ -348,7 +456,8 @@ void Features::precompute_unnormalized_values(TransitionSystem *ts1,
             values.push_back(value);
         } else {
             // dummy value for correct indices
-            values.push_back(-1);
+            // (will be multiplied with weight 0 anyway)
+            values.push_back(0);
         }
     }
     unnormalized_values[make_pair(ts1, ts2)] = values;
@@ -367,6 +476,9 @@ double Features::compute_weighted_normalized_sum(
         if (feature->get_weight()) {
             double normalized_value = normalize_value(feature->get_id(),
                                                       values[feature->get_id()]);
+            if (feature->minimize()) {
+                normalized_value = 1.0 - normalized_value;
+            }
             if (debug) {
                 cout << "normalized value for feature " << feature->get_name()
                      << ": " << normalized_value << endl;
@@ -382,8 +494,9 @@ double Features::compute_weighted_normalized_sum(
 
 void Features::clear() {
     min_values.assign(features.size(), INF);
-    max_values.assign(features.size(), -1);
+    max_values.assign(features.size(), MINUSINF);
     unnormalized_values.clear();
+    ts_to_label_ranks.clear();
 }
 
 void Features::dump_weights() const {
@@ -495,6 +608,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
     for (int var_no : ts2->get_incorporated_variables()) {
         var_no_to_ts_index[var_no] = new_ts_index;
     }
+    cout << "Next pair of indices: (" << ts_index1 << ", " << ts_index2 << ")" << endl;
     --remaining_merges;
     merge_order.push_back(make_pair(ts_index1, ts_index2));
     if (!remaining_merges) {
@@ -549,6 +663,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "prefer merging transition systems with large number of edges",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_dfp",
+        "merge according to DFP merge strategy",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
@@ -557,7 +676,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_high_initial_h_value_improvement") == 0 &&
         opts.get<int>("w_high_average_h_value_improvement") == 0 &&
         opts.get<int>("w_high_initial_h_value_sum") == 0 &&
-        opts.get<int>("w_high_average_h_value_sum") == 0) {
+        opts.get<int>("w_high_average_h_value_sum") == 0 &&
+        opts.get<int>("w_dfp") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
