@@ -161,7 +161,6 @@ pair<int, int> MergeDFP::get_next(const vector<TransitionSystem *> &all_transiti
                         pair_weight = min(pair_weight, max_label_rank);
                     }
                 }
-                cout << transition_system1->tag() << transition_system2->tag() << pair_weight << endl;
                 if (pair_weight < minimum_weight) {
                     minimum_weight = pair_weight;
                     next_index1 = indices_mapping[i];
