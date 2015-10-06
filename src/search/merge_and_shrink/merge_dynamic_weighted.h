@@ -69,12 +69,20 @@ public:
     virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 
-class TransStatesQuotFeature : public Feature {
+class SmallTransStatesQuotFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
 public:
-    TransStatesQuotFeature(int id, int weight);
+    SmallTransStatesQuotFeature(int id, int weight);
+};
+
+class HighTransStatesQuotFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    HighTransStatesQuotFeature(int id, int weight);
 };
 
 class InitHImprovementFeature : public Feature {
@@ -115,6 +123,22 @@ class DFPFeature : public Feature {
                                  const TransitionSystem *merge) override;
 public:
     DFPFeature(int id, int weight);
+};
+
+class GoalRelevanceFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    GoalRelevanceFeature(int id, int weight);
+};
+
+class NumVariablesFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    NumVariablesFeature(int id, int weight);
 };
 
 class Features {

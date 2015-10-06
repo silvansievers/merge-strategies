@@ -244,13 +244,29 @@ void NonAdditivityFeature::initialize(const TaskProxy &task_proxy, bool dump) {
     }
 }
 
-TransStatesQuotFeature::TransStatesQuotFeature(int id, int weight)
-    : Feature(id, weight, "transitions per states quotient", false, true) {
+SmallTransStatesQuotFeature::SmallTransStatesQuotFeature(int id, int weight)
+    : Feature(id, weight, "small transitions per states quotient", false, true) {
 }
 
-double TransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
-                                             const TransitionSystem *ts2,
-                                             const TransitionSystem *) {
+double SmallTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
+                                                  const TransitionSystem *ts2,
+                                                  const TransitionSystem *) {
+    // return value in [0,infinity)
+    double product_states = ts1->get_size() * ts2->get_size();
+    double product_transitions = compute_number_of_product_transitions(ts1, ts2);
+    if (!product_states) {
+        return INF;
+    }
+    return product_transitions / product_states;
+}
+
+HighTransStatesQuotFeature::HighTransStatesQuotFeature(int id, int weight)
+    : Feature(id, weight, "high transitions per states quotient", false, false) {
+}
+
+double HighTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
+                                                 const TransitionSystem *ts2,
+                                                 const TransitionSystem *) {
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
@@ -365,6 +381,36 @@ double DFPFeature::compute_value(const TransitionSystem *ts1,
     return pair_weight;
 }
 
+GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
+    : Feature(id, weight, "goal relevance", false, false) {
+}
+
+double GoalRelevanceFeature::compute_value(const TransitionSystem *ts1,
+                                           const TransitionSystem *ts2,
+                                           const TransitionSystem *) {
+    // return value in [0,2]
+    int pair_weight = 0;
+    if (ts1->is_goal_relevant()) {
+        ++pair_weight;
+    }
+    if (ts2->is_goal_relevant()) {
+        ++pair_weight;
+    }
+    return pair_weight;
+}
+
+NumVariablesFeature::NumVariablesFeature(int id, int weight)
+    : Feature(id, weight, "number of incorporated variables", false, false) {
+}
+
+double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
+                                          const TransitionSystem *ts2,
+                                          const TransitionSystem *) {
+    // return value in [2,num_variables-1]
+    return ts1->get_incorporated_variables().size() +
+        ts2->get_incorporated_variables().size();
+}
+
 // ========================= FEATURES ====================================
 
 Features::Features(const Options opts)
@@ -374,8 +420,10 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_causally_connected_vars")));
     features.push_back(new NonAdditivityFeature(
                            id++, opts.get<int>("w_nonadditive_vars")));
-    features.push_back(new TransStatesQuotFeature(
+    features.push_back(new SmallTransStatesQuotFeature(
                            id++, opts.get<int>("w_small_transitions_states_quotient")));
+    features.push_back(new HighTransStatesQuotFeature(
+                           id++, opts.get<int>("w_high_transitions_states_quotient")));
     features.push_back(new InitHImprovementFeature(
                            id++, opts.get<int>("w_high_initial_h_value_improvement")));
     features.push_back(new AvgHImprovementFeature(
@@ -386,6 +434,10 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_high_average_h_value_sum")));
     features.push_back(new DFPFeature(
                            id++, opts.get<int>("w_dfp")));
+    features.push_back(new GoalRelevanceFeature(
+                           id++, opts.get<int>("w_goal_relevance")));
+    features.push_back(new NumVariablesFeature(
+                           id++, opts.get<int>("w_num_variables")));
 }
 
 void Features::initialize(const shared_ptr<AbstractTask> task) {
@@ -645,6 +697,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
+        "w_high_transitions_states_quotient",
+        "prefer merging 'dense' transition systems",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
         "w_high_initial_h_value_improvement",
         "prefer merging transition systems with high initial h value",
         "0",
@@ -669,16 +726,29 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "merge according to DFP merge strategy",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_goal_relevance",
+        "prefer goal relevant transition systems",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_num_variables",
+        "prefer transition systems with many incorporated variables",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
         opts.get<int>("w_nonadditive_vars") == 0 &&
         opts.get<int>("w_small_transitions_states_quotient") == 0 &&
+        opts.get<int>("w_high_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_initial_h_value_improvement") == 0 &&
         opts.get<int>("w_high_average_h_value_improvement") == 0 &&
         opts.get<int>("w_high_initial_h_value_sum") == 0 &&
         opts.get<int>("w_high_average_h_value_sum") == 0 &&
-        opts.get<int>("w_dfp") == 0) {
+        opts.get<int>("w_dfp") == 0 &&
+        opts.get<int>("w_goal_relevance") == 0 &&
+        opts.get<int>("w_num_variables") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
