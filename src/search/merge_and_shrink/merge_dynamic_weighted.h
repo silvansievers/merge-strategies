@@ -141,6 +141,14 @@ public:
     NumVariablesFeature(int id, int weight);
 };
 
+class NumTransitionsFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    NumTransitionsFeature(int id, int weight);
+};
+
 class Features {
     const bool debug;
     TaskProxy *task_proxy;

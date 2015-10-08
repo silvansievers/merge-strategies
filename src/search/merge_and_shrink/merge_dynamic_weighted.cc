@@ -400,7 +400,7 @@ double GoalRelevanceFeature::compute_value(const TransitionSystem *ts1,
 }
 
 NumVariablesFeature::NumVariablesFeature(int id, int weight)
-    : Feature(id, weight, "number of incorporated variables", false, false) {
+    : Feature(id, weight, "high number of incorporated variables", false, false) {
 }
 
 double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
@@ -409,6 +409,17 @@ double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
     // return value in [2,num_variables-1]
     return ts1->get_incorporated_variables().size() +
         ts2->get_incorporated_variables().size();
+}
+
+NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
+    : Feature(id, weight, "small number of transitions", false, true) {
+}
+
+double NumTransitionsFeature::compute_value(const TransitionSystem *ts1,
+                                            const TransitionSystem *ts2,
+                                            const TransitionSystem *) {
+    // return value in [0,infinity[
+    return compute_number_of_product_transitions(ts1, ts2);
 }
 
 // ========================= FEATURES ====================================
@@ -438,6 +449,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_goal_relevance")));
     features.push_back(new NumVariablesFeature(
                            id++, opts.get<int>("w_num_variables")));
+    features.push_back(new NumTransitionsFeature(
+                           id++, opts.get<int>("w_num_trans")));
 }
 
 void Features::initialize(const shared_ptr<AbstractTask> task) {
@@ -736,6 +749,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "prefer transition systems with many incorporated variables",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_num_trans",
+        "prefer transition systems with few transitions",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
@@ -748,7 +766,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_high_average_h_value_sum") == 0 &&
         opts.get<int>("w_dfp") == 0 &&
         opts.get<int>("w_goal_relevance") == 0 &&
-        opts.get<int>("w_num_variables") == 0) {
+        opts.get<int>("w_num_variables") == 0 &&
+        opts.get<int>("w_num_trans") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
