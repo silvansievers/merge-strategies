@@ -200,6 +200,17 @@ void MergeAndShrinkHeuristic::initialize() {
     } else {
         cout << "Abstract problem is unsolvable!" << endl;
     }
+    const vector<double> &miss_qualified_states_ratios =
+        shrink_strategy->get_miss_qualified_states_ratios();
+    size_t number_of_shrinks = miss_qualified_states_ratios.size();
+    // there are two shrinks per merge
+    assert(number_of_shrinks == (task_proxy.get_variables().size() - 1) * 2);
+    double summed_values = 0;
+    for (double value : miss_qualified_states_ratios) {
+        summed_values += value;
+    }
+    double average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
+    cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
     report_peak_memory_delta(true);
     cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
          << endl;

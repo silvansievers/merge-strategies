@@ -19,7 +19,7 @@ using namespace std;
    identical successor signature are not distinguished by
    bisimulation.
 
-   Each entry in the vector is a pair of (label, equivalence class of
+   Each entry in the vector is a pair of (label group, equivalence class of
    successor). The bisimulation algorithm requires that the vector is
    sorted and uniquified. */
 
@@ -305,6 +305,23 @@ void ShrinkBisimulation::compute_abstraction(
             sig_start = sig_end;
         }
     }
+    int potentially_miss_qualified_states = 0;
+    if (!stable || stop_requested) {
+        signatures.clear();
+        compute_signatures(ts, signatures, state_to_group);
+        for (int state = 2; state < ts.get_size() + 1; ++state) {
+            const Signature &prev_sig = signatures[state - 1];
+            const Signature &curr_sig = signatures[state];
+            if (prev_sig.group == curr_sig.group &&
+                prev_sig.succ_signature != curr_sig.succ_signature) {
+                ++potentially_miss_qualified_states;
+            }
+        }
+    }
+    assert(potentially_miss_qualified_states <= ts.get_size());
+    miss_qualified_states_ratios.push_back(
+        static_cast<double>(potentially_miss_qualified_states) /
+        static_cast<double>(ts.get_size()));
 
     /* Reduce memory pressure before generating the equivalence
        relation since this is one of the code parts relevant to peak

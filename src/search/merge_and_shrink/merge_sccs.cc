@@ -1,7 +1,6 @@
 #include "merge_sccs.h"
 
 #include "../causal_graph.h"
-//#include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../scc.h"
