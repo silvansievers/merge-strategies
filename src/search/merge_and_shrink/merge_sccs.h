@@ -3,6 +3,8 @@
 
 #include "merge_dfp.h"
 
+#include "../variable_order_finder.h"
+
 #include <unordered_set>
 
 class Options;
@@ -14,11 +16,13 @@ class MergeSCCs : public MergeDFP {
         DECREASING,
         INCREASING
     };
+    SCCOrder scc_order;
     enum MergeOrder {
         LINEAR,
         DFP
     };
     MergeOrder merge_order;
+    VariableOrderType var_order_type;
 
     // cg_sccs contain the sccs in order to be merged, from last to first.
     std::vector<std::unordered_set<int> > cg_sccs;
@@ -28,13 +32,14 @@ class MergeSCCs : public MergeDFP {
 
     std::pair<int, int> get_next_dfp();
 protected:
-    virtual void dump_strategy_specific_options() const {}
+    virtual void dump_strategy_specific_options() const override {}
 public:
     MergeSCCs(const Options &options);
-    virtual ~MergeSCCs() {}
+    virtual ~MergeSCCs() override = default;
+    virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
-    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems);
-    virtual std::string name() const;
+    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems) override;
+    virtual std::string name() const override;
 };
 
 #endif

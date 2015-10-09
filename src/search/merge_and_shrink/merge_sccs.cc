@@ -1,7 +1,7 @@
 #include "merge_sccs.h"
 
 #include "../causal_graph.h"
-#include "../globals.h"
+//#include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../scc.h"
@@ -23,14 +23,23 @@ bool compare_sccs_decreasing(const unordered_set<int> &lhs, const unordered_set<
 
 MergeSCCs::MergeSCCs(const Options &options)
     : MergeDFP(),
+      scc_order(SCCOrder(options.get_enum("scc_order"))),
       merge_order(MergeOrder(options.get_enum("merge_order"))),
+      var_order_type(VariableOrderType(options.get_enum("variable_order"))),
       number_of_merges_for_scc(0) {
+}
 
+void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
+    MergeDFP::initialize(task);
+    TaskProxy task_proxy(*task);
+    VariablesProxy vars = task_proxy.get_variables();
+    int num_vars = vars.size();
     // First step: compute SCCs and put them in the right order.
     vector<vector<int> > cg;
-    cg.reserve(g_variable_domain.size());
-    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
-        const std::vector<int> &successors = g_causal_graph->get_successors(var);
+    cg.reserve(num_vars);
+    for (VariableProxy var : vars) {
+        const std::vector<int> &successors =
+            task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
     }
     SCC scc(cg);
@@ -49,7 +58,7 @@ MergeSCCs::MergeSCCs(const Options &options)
                 cg_sccs.push_back(unordered_set<int>(single_scc.begin(), single_scc.end()));
             }
         }
-        switch (SCCOrder(options.get_enum("scc_order"))) {
+        switch (scc_order) {
         case TOPOLOGICAL:
             // sccs are computed in topological order
             break;
@@ -78,7 +87,7 @@ MergeSCCs::MergeSCCs(const Options &options)
     // Second step: if the merge order is linear, compute the order.
     if (merge_order == LINEAR) {
         // Compute the variable order from VariableOrderFinder
-        VariableOrderFinder order(VariableOrderType(options.get_enum("variable_order")));
+        VariableOrderFinder order(task, var_order_type);
         vector<int> variable_order;
         variable_order.reserve(g_variable_domain.size());
         while (!order.done()) {
@@ -266,7 +275,7 @@ string MergeSCCs::name() const {
     return "sccs";
 }
 
-static MergeStrategy *_parse(OptionParser &parser) {
+static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     vector<string> orders;
     orders.push_back("topological");
     orders.push_back("reverse_topological");
@@ -300,7 +309,7 @@ static MergeStrategy *_parse(OptionParser &parser) {
     if (parser.dry_run())
         return 0;
     else
-        return new MergeSCCs(options);
+        return make_shared<MergeSCCs>(options);
 }
 
-static Plugin<MergeStrategy> _plugin("merge_sccs", _parse);
+static PluginShared<MergeStrategy> _plugin("merge_sccs", _parse);
