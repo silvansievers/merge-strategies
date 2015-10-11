@@ -209,7 +209,10 @@ void MergeAndShrinkHeuristic::initialize() {
     for (double value : miss_qualified_states_ratios) {
         summed_values += value;
     }
-    double average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
+    double average_imperfect_shrinking = 0;
+    if (number_of_shrinks) {
+        average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
+    }
     cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
     report_peak_memory_delta(true);
     cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
