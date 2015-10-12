@@ -1,5 +1,6 @@
 #include "merge_dynamic_weighted.h"
 
+#include "labels.h"
 #include "transition_system.h"
 
 #include "../causal_graph.h"
@@ -63,27 +64,20 @@ double compute_average_h_value(const TransitionSystem *ts) {
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
-// TODO: get rid of this caching mechanism
-unordered_map<const TransitionSystem *, vector<int> > ts_to_label_ranks;
-
-const vector<int> &compute_label_ranks(const TransitionSystem *transition_system) {
-    if (ts_to_label_ranks.count(transition_system)) {
-        return ts_to_label_ranks.at(transition_system);
-    }
+void compute_label_ranks(const TransitionSystem *ts,
+                         vector<int> &label_ranks) {
     // TODO: copied from MergeDFP
-    ts_to_label_ranks[transition_system] = vector<int>();
-    vector<int> &label_ranks = ts_to_label_ranks[transition_system];
-    int num_labels = transition_system->get_num_labels();
+    int num_labels = ts->get_num_labels();
     // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
     label_ranks.resize(num_labels, -1);
 
-    for (TSConstIterator group_it = transition_system->begin();
-         group_it != transition_system->end(); ++group_it) {
+    for (TSConstIterator group_it = ts->begin();
+         group_it != ts->end(); ++group_it) {
         // Relevant labels with no transitions have a rank of infinity.
         int label_rank = INF;
         const vector<Transition> &transitions = group_it.get_transitions();
         bool group_relevant = false;
-        if (static_cast<int>(transitions.size()) == transition_system->get_size()) {
+        if (static_cast<int>(transitions.size()) == ts->get_size()) {
             /*
               A label group is irrelevant in the earlier notion if it has
               exactly a self loop transition for every state.
@@ -102,7 +96,7 @@ const vector<int> &compute_label_ranks(const TransitionSystem *transition_system
         } else {
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &t = transitions[i];
-                label_rank = min(label_rank, transition_system->get_goal_distance(t.target));
+                label_rank = min(label_rank, ts->get_goal_distance(t.target));
             }
         }
         for (LabelConstIter label_it = group_it.begin();
@@ -111,7 +105,6 @@ const vector<int> &compute_label_ranks(const TransitionSystem *transition_system
             label_ranks[label_no] = label_rank;
         }
     }
-    return label_ranks;
 }
 
 // ========================= FEATURE CLASSES ===============================
@@ -125,9 +118,9 @@ Feature::Feature(int id, int weight, string name,
       minimize_value(minimize_value) {
 }
 
-double Feature::compute_unnormalized_value(const TransitionSystem *ts1,
-                                           const TransitionSystem *ts2,
-                                           const TransitionSystem *merge) {
+double Feature::compute_unnormalized_value(TransitionSystem *ts1,
+                                           TransitionSystem *ts2,
+                                           TransitionSystem *merge) {
     if (weight) {
         // TODO: get rid of this? we currently also perform this check
         // outside of this method before calling it
@@ -149,9 +142,9 @@ CausalConnectionFeature::~CausalConnectionFeature() {
     delete causal_graph;
 }
 
-double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
-                                              const TransitionSystem *ts2,
-                                              const TransitionSystem *) {
+double CausalConnectionFeature::compute_value(TransitionSystem *ts1,
+                                              TransitionSystem *ts2,
+                                              TransitionSystem *) {
     // return value in [0,infinity)
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     vector<int> ts1_cg_neighbors;
@@ -200,9 +193,9 @@ NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
     : Feature(id, weight, "non additive variables", false, false) {
 }
 
-double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
-                                           const TransitionSystem *ts2,
-                                           const TransitionSystem *) {
+double NonAdditivityFeature::compute_value(TransitionSystem *ts1,
+                                           TransitionSystem *ts2,
+                                           TransitionSystem *) {
     // return value in [0,infinity)
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
@@ -248,9 +241,9 @@ SmallTransStatesQuotFeature::SmallTransStatesQuotFeature(int id, int weight)
     : Feature(id, weight, "small transitions per states quotient", false, true) {
 }
 
-double SmallTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
-                                                  const TransitionSystem *ts2,
-                                                  const TransitionSystem *) {
+double SmallTransStatesQuotFeature::compute_value(TransitionSystem *ts1,
+                                                  TransitionSystem *ts2,
+                                                  TransitionSystem *) {
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
@@ -264,9 +257,9 @@ HighTransStatesQuotFeature::HighTransStatesQuotFeature(int id, int weight)
     : Feature(id, weight, "high transitions per states quotient", false, false) {
 }
 
-double HighTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
-                                                 const TransitionSystem *ts2,
-                                                 const TransitionSystem *) {
+double HighTransStatesQuotFeature::compute_value(TransitionSystem *ts1,
+                                                 TransitionSystem *ts2,
+                                                 TransitionSystem *) {
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
@@ -280,9 +273,9 @@ InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
     : Feature(id, weight, "initial h value improvement", true, false) {
 }
 
-double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
-                                              const TransitionSystem *ts2,
-                                              const TransitionSystem *merge) {
+double InitHImprovementFeature::compute_value(TransitionSystem *ts1,
+                                              TransitionSystem *ts2,
+                                              TransitionSystem *merge) {
     // return value in [0,infinity)
     assert(merge);
     int new_init_h;
@@ -308,9 +301,9 @@ AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
     : Feature(id, weight, "average h value improvement", true, false) {
 }
 
-double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
-                                             const TransitionSystem *ts2,
-                                             const TransitionSystem *merge) {
+double AvgHImprovementFeature::compute_value(TransitionSystem *ts1,
+                                             TransitionSystem *ts2,
+                                             TransitionSystem *merge) {
     // return value in [0,infinity)
     assert(merge);
     double new_average_h = compute_average_h_value(merge);
@@ -330,9 +323,9 @@ InitHSumFeature::InitHSumFeature(int id, int weight)
     : Feature(id, weight, "initial h value sum", false, false) {
 }
 
-double InitHSumFeature::compute_value(const TransitionSystem *ts1,
-                                      const TransitionSystem *ts2,
-                                      const TransitionSystem *) {
+double InitHSumFeature::compute_value(TransitionSystem *ts1,
+                                      TransitionSystem *ts2,
+                                      TransitionSystem *) {
     // return value in [0,infinity)
     int init_h_sum = ts1->get_init_state_goal_distance() +
         ts2->get_init_state_goal_distance();
@@ -343,9 +336,9 @@ AvgHSumFeature::AvgHSumFeature(int id, int weight)
     : Feature(id, weight, "average h value sum", false, false) {
 }
 
-double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
-                                     const TransitionSystem *ts2,
-                                     const TransitionSystem *) {
+double AvgHSumFeature::compute_value(TransitionSystem *ts1,
+                                     TransitionSystem *ts2,
+                                     TransitionSystem *) {
     // return value in [0,infinity)
     double average_h_sum = compute_average_h_value(ts1) +
         compute_average_h_value(ts2);
@@ -356,14 +349,24 @@ DFPFeature::DFPFeature(int id, int weight)
     : Feature(id, weight, "dfp", false, true) {
 }
 
-double DFPFeature::compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *) {
+void DFPFeature::clear() {
+    ts_to_label_ranks.clear();
+}
+
+double DFPFeature::compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *) {
     // return value in [0,infinity)
     int pair_weight = INF;
     if (ts1->is_goal_relevant() || ts2->is_goal_relevant()) {
-        const vector<int> &label_ranks1 = compute_label_ranks(ts1);
-        const vector<int> &label_ranks2 = compute_label_ranks(ts2);
+        vector<int> &label_ranks1 = ts_to_label_ranks[ts1];
+        if (label_ranks1.empty()) {
+            compute_label_ranks(ts1, label_ranks1);
+        }
+        vector<int> &label_ranks2 = ts_to_label_ranks[ts2];
+        if (label_ranks2.empty()) {
+            compute_label_ranks(ts2, label_ranks2);
+        }
         assert(!label_ranks1.empty());
         assert(!label_ranks2.empty());
         assert(label_ranks1.size() == label_ranks2.size());
@@ -385,9 +388,9 @@ GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
     : Feature(id, weight, "goal relevance", false, false) {
 }
 
-double GoalRelevanceFeature::compute_value(const TransitionSystem *ts1,
-                                           const TransitionSystem *ts2,
-                                           const TransitionSystem *) {
+double GoalRelevanceFeature::compute_value(TransitionSystem *ts1,
+                                           TransitionSystem *ts2,
+                                           TransitionSystem *) {
     // return value in [0,2]
     int pair_weight = 0;
     if (ts1->is_goal_relevant()) {
@@ -403,9 +406,9 @@ NumVariablesFeature::NumVariablesFeature(int id, int weight)
     : Feature(id, weight, "high number of incorporated variables", false, false) {
 }
 
-double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
-                                          const TransitionSystem *ts2,
-                                          const TransitionSystem *) {
+double NumVariablesFeature::compute_value(TransitionSystem *ts1,
+                                          TransitionSystem *ts2,
+                                          TransitionSystem *) {
     // return value in [2,num_variables-1]
     return ts1->get_incorporated_variables().size() +
         ts2->get_incorporated_variables().size();
@@ -415,11 +418,106 @@ NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
     : Feature(id, weight, "small number of transitions", false, true) {
 }
 
-double NumTransitionsFeature::compute_value(const TransitionSystem *ts1,
-                                            const TransitionSystem *ts2,
-                                            const TransitionSystem *) {
+double NumTransitionsFeature::compute_value(TransitionSystem *ts1,
+                                            TransitionSystem *ts2,
+                                            TransitionSystem *) {
     // return value in [0,infinity[
     return compute_number_of_product_transitions(ts1, ts2);
+}
+
+LROpportunitiesFeatures::LROpportunitiesFeatures(int id, int weight)
+    : Feature(id, weight, "high number of reducible labels", false, false) {
+}
+
+void LROpportunitiesFeatures::clear() {
+    ts_pair_to_combinable_label_count.clear();
+}
+
+void LROpportunitiesFeatures::precompute_data(
+    const vector<TransitionSystem *> &all_transition_systems) {
+    // Precompute the set of irrelevant labels for every transition system
+    unordered_map<TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
+    for (TransitionSystem *ts : all_transition_systems) {
+        if (ts) {
+            vector<bool> irrelevant_labels(ts->get_num_labels(), false);
+            for (TSConstIterator group_it = ts->begin();
+                 group_it != ts->end(); ++group_it) {
+                const vector<Transition> &transitions = group_it.get_transitions();
+                bool group_relevant = false;
+                if (static_cast<int>(transitions.size()) == ts->get_size()) {
+                    /*
+                      A label group is irrelevant in the earlier notion if it has
+                      exactly a self loop transition for every state.
+                    */
+                    for (size_t i = 0; i < transitions.size(); ++i) {
+                        if (transitions[i].target != transitions[i].src) {
+                            group_relevant = true;
+                            break;
+                        }
+                    }
+                } else {
+                    group_relevant = true;
+                }
+                if (!group_relevant) {
+                    for (LabelConstIter label_it = group_it.begin();
+                         label_it != group_it.end(); ++label_it) {
+                        int label_no = *label_it;
+                        irrelevant_labels[label_no] = true;
+                    }
+                }
+            }
+            ts_to_irrelevant_labels[ts] = irrelevant_labels;
+        }
+    }
+
+    // Compute the number of labels that are irrelevant in all other transition
+    // systems than then current considered pair.
+    const shared_ptr<Labels> labels = all_transition_systems.back()->get_labels();
+    int num_labels = labels->get_size();
+    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+        TransitionSystem *ts1 = all_transition_systems[i];
+        if (ts1) {
+            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                TransitionSystem *ts2 = all_transition_systems[j];
+                if (ts2) {
+                    int count_combinable_labels = 0;
+                    for (int label_no = 0; label_no < num_labels; ++label_no) {
+                        bool label_irrelevant_in_all_other_ts = true;
+                        for (size_t k = 0; k < all_transition_systems.size(); ++k) {
+                            if (k == i || k == j) {
+                                continue;
+                            }
+                            TransitionSystem *ts3 = all_transition_systems[k];
+                            if (ts3) {
+                                if (!ts_to_irrelevant_labels[ts3][label_no]) {
+                                    label_irrelevant_in_all_other_ts = false;
+                                    break;
+                                }
+                            }
+
+                        }
+                        if (label_irrelevant_in_all_other_ts) {
+                            ++count_combinable_labels;
+                        }
+                    }
+                    ts_pair_to_combinable_label_count[make_pair(ts1, ts2)] =
+                        count_combinable_labels;
+                }
+            }
+        }
+    }
+}
+
+double LROpportunitiesFeatures::compute_value(TransitionSystem *ts1,
+                                              TransitionSystem *ts2,
+                                              TransitionSystem *) {
+    // return value in [0,infinity[
+    int combinable_labels = ts_pair_to_combinable_label_count[make_pair(ts1, ts2)];
+    if (combinable_labels >= 2) {
+        // need at least two labels to profit from label reduction
+        return combinable_labels;
+    }
+    return 0;
 }
 
 // ========================= FEATURES ====================================
@@ -451,6 +549,15 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_num_variables")));
     features.push_back(new NumTransitionsFeature(
                            id++, opts.get<int>("w_num_trans")));
+    features.push_back(new LROpportunitiesFeatures(
+                           id++, opts.get<int>("w_lr_opp")));
+}
+
+Features::~Features() {
+    delete task_proxy;
+    for (Feature *feature : features) {
+        delete feature;
+    }
 }
 
 void Features::initialize(const shared_ptr<AbstractTask> task) {
@@ -463,10 +570,12 @@ void Features::initialize(const shared_ptr<AbstractTask> task) {
     clear();
 }
 
-Features::~Features() {
-    delete task_proxy;
+void Features::precompute_data(
+    const vector<TransitionSystem *> &all_transition_sytems) {
     for (Feature *feature : features) {
-        delete feature;
+        if (feature->get_weight()) {
+            feature->precompute_data(all_transition_sytems);
+        }
     }
 }
 
@@ -562,7 +671,9 @@ void Features::clear() {
     min_values.assign(features.size(), INF);
     max_values.assign(features.size(), MINUSINF);
     unnormalized_values.clear();
-    ts_to_label_ranks.clear();
+    for (Feature *feature : features) {
+        feature->clear();
+    }
 }
 
 void Features::dump_weights() const {
@@ -615,6 +726,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
         }
         assert(in_bounds(ts_index2, all_transition_systems));
     } else {
+        features->precompute_data(all_transition_systems);
         // Go through all transitition systems and compute unnormalized feature values.
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
             TransitionSystem *ts1 = all_transition_systems[i];
@@ -754,6 +866,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "prefer transition systems with few transitions",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_lr_opp",
+        "prefer transition systems that allow for most label reductions",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
@@ -767,7 +884,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_dfp") == 0 &&
         opts.get<int>("w_goal_relevance") == 0 &&
         opts.get<int>("w_num_variables") == 0 &&
-        opts.get<int>("w_num_trans") == 0) {
+        opts.get<int>("w_num_trans") == 0 &&
+        opts.get<int>("w_lr_opp") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }

@@ -19,16 +19,20 @@ class Feature {
     const std::string name;
     const bool merge_required;
     const bool minimize_value;
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) = 0;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) = 0;
 public:
     Feature(int id, int weight, std::string name,
             bool requires_merge, bool minimize_value);
     virtual ~Feature() {}
-    double compute_unnormalized_value(const TransitionSystem *ts1,
-                                      const TransitionSystem *ts2,
-                                      const TransitionSystem *merge);
+    virtual void initialize(const TaskProxy &, bool) {}
+    virtual void precompute_data(
+        const std::vector<TransitionSystem *> &) {}
+    double compute_unnormalized_value(TransitionSystem *ts1,
+                                      TransitionSystem *ts2,
+                                      TransitionSystem *merge);
+    virtual void clear() {}
     int get_id() const {
         return id;
     }
@@ -44,15 +48,14 @@ public:
     bool minimize() const {
         return minimize_value;
     }
-    virtual void initialize(const TaskProxy &, bool) {}
     void dump() const;
 };
 
 class CausalConnectionFeature : public Feature {
     CausalGraph *causal_graph;
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     CausalConnectionFeature(int id, int weight);
     virtual ~CausalConnectionFeature();
@@ -61,92 +64,106 @@ public:
 
 class NonAdditivityFeature : public Feature {
     std::vector<std::vector<bool> > additive_var_pairs;
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     NonAdditivityFeature(int id, int weight);
     virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 
 class SmallTransStatesQuotFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     SmallTransStatesQuotFeature(int id, int weight);
 };
 
 class HighTransStatesQuotFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     HighTransStatesQuotFeature(int id, int weight);
 };
 
 class InitHImprovementFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     InitHImprovementFeature(int id, int weight);
 };
 
 class AvgHImprovementFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     AvgHImprovementFeature(int id, int weight);
 };
 
 class InitHSumFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     InitHSumFeature(int id, int weight);
 };
 
 class AvgHSumFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     AvgHSumFeature(int id, int weight);
 };
 
 class DFPFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    std::unordered_map<TransitionSystem *, std::vector<int> > ts_to_label_ranks;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     DFPFeature(int id, int weight);
+    void virtual clear() override;
 };
 
 class GoalRelevanceFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     GoalRelevanceFeature(int id, int weight);
 };
 
 class NumVariablesFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     NumVariablesFeature(int id, int weight);
 };
 
 class NumTransitionsFeature : public Feature {
-    virtual double compute_value(const TransitionSystem *ts1,
-                                 const TransitionSystem *ts2,
-                                 const TransitionSystem *merge) override;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
 public:
     NumTransitionsFeature(int id, int weight);
+};
+
+class LROpportunitiesFeatures : public Feature {
+    std::unordered_map<std::pair<TransitionSystem *, TransitionSystem *>,
+        int> ts_pair_to_combinable_label_count;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
+public:
+    LROpportunitiesFeatures(int id, int weight);
+    virtual void clear() override;
+    void precompute_data(const std::vector<TransitionSystem *> &all_transition_systems) override;
 };
 
 class Features {
@@ -163,6 +180,7 @@ public:
     explicit Features(const Options opts);
     ~Features();
     void initialize(const std::shared_ptr<AbstractTask> task);
+    void precompute_data(const std::vector<TransitionSystem *> &all_transition_sytems);
     void precompute_unnormalized_values(TransitionSystem *ts1,
                                         TransitionSystem *ts2);
     double compute_weighted_normalized_sum(
