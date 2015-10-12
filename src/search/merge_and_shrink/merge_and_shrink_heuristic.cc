@@ -101,6 +101,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     }
     cout << endl;
 
+    vector<int> remaining_labels;
+    remaining_labels.push_back(labels->compute_number_active_labels());
     if (!final_transition_system) { // All atomic transition system are solvable.
         while (!merge_strategy->done()) {
             // Choose next transition systems to merge
@@ -118,6 +120,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
             if (labels->reduce_before_shrinking()) {
                 labels->reduce(merge_indices, fts.get_vector());
+                remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
             // Shrinking
@@ -130,6 +133,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
             if (labels->reduce_before_merging()) {
                 labels->reduce(merge_indices, fts.get_vector());
+                remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
             // Merging
@@ -176,6 +180,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
         final_transition_system->release_memory();
     }
 
+    cout << "Course of label reduction: " << remaining_labels << endl;
+
     labels = nullptr;
 }
 
@@ -202,6 +208,8 @@ void MergeAndShrinkHeuristic::initialize() {
     }
     const vector<double> &miss_qualified_states_ratios =
         shrink_strategy->get_miss_qualified_states_ratios();
+    cout << "Course of miss qualified states shrinking: "
+         << miss_qualified_states_ratios << endl;
     size_t number_of_shrinks = miss_qualified_states_ratios.size();
     // there are two shrinks per merge
     assert(number_of_shrinks == (task_proxy.get_variables().size() - 1) * 2);
