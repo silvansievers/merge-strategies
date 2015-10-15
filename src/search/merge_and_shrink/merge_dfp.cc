@@ -123,9 +123,16 @@ void MergeDFP::compute_relevant_labels(const TransitionSystem *ts,
 }
 
 pair<int, int> MergeDFP::get_next_cost(const vector<TransitionSystem *> &all_transition_systems) {
+    TransitionSystem *some_ts = 0;
+    for (TransitionSystem *ts : all_transition_systems) {
+        if (ts) {
+            some_ts = ts;
+            break;
+        }
+    }
     vector<vector<bool> > transition_system_relevant_labels;
     transition_system_relevant_labels.resize(all_transition_systems.size());
-    const shared_ptr<Labels> labels = all_transition_systems.back()->get_labels();
+    const shared_ptr<Labels> labels = some_ts->get_labels();
     int next_index1 = -1;
     int next_index2 = -1;
     int max_cost = -1;
