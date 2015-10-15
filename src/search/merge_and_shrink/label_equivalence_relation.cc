@@ -84,3 +84,7 @@ int LabelEquivalenceRelation::add_label_group(const vector<int> &new_labels) {
 int LabelEquivalenceRelation::get_num_labels() const {
     return labels->get_size();
 }
+
+const shared_ptr<Labels> LabelEquivalenceRelation::get_labels() const {
+    return labels;
+}

@@ -657,3 +657,7 @@ int TransitionSystem::get_goal_distance(int state) const {
 int TransitionSystem::get_num_labels() const {
     return label_equivalence_relation->get_num_labels();
 }
+
+const shared_ptr<Labels> TransitionSystem::get_labels() const {
+    return label_equivalence_relation->get_labels();
+}

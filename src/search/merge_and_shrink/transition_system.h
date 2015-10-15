@@ -248,6 +248,7 @@ public:
     bool is_goal_relevant() const {  // used by merge_dfp
         return goal_relevant;
     }
+    const std::shared_ptr<Labels> get_labels() const;
 };
 
 #endif
