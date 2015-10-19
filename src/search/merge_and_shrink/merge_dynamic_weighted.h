@@ -168,6 +168,7 @@ public:
 
 class Features {
     const bool debug;
+    const int max_states;
     TaskProxy *task_proxy;
     std::vector<Feature *> features;
     std::vector<double> min_values; // finite minium values of all features

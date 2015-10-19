@@ -170,9 +170,9 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
                                    const shared_ptr<Labels> labels,
                                    TransitionSystem *ts1,
                                    TransitionSystem *ts2,
-                                   bool invalidate_components)
+                                   bool silent)
     : TransitionSystem(task_proxy, labels) {
-    if (invalidate_components) {
+    if (!silent) {
         cout << "Merging " << ts1->description() << " and "
              << ts2->description() << endl;
     }
@@ -201,15 +201,9 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
         }
     }
 
-    if (invalidate_components) {
-        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
-            move(ts1->heuristic_representation),
-            move(ts2->heuristic_representation));
-    } else {
-        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
-            ts1->heuristic_representation.get(),
-            ts2->heuristic_representation.get());
-    }
+    heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(
+        move(ts1->heuristic_representation),
+        move(ts2->heuristic_representation));
 
     /*
       We can compute the local equivalence relation of a composite T
@@ -285,8 +279,27 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
     }
 
     assert(are_transitions_sorted_unique());
-    compute_distances_and_prune(!invalidate_components);
+    compute_distances_and_prune(silent);
     assert(is_valid());
+}
+
+TransitionSystem::TransitionSystem(const TransitionSystem &other)
+    : num_variables(other.num_variables),
+      incorporated_variables(other.incorporated_variables),
+      label_equivalence_relation(make_shared<LabelEquivalenceRelation>(*other.label_equivalence_relation.get())),
+      transitions_by_group_id(other.transitions_by_group_id),
+      num_states(other.num_states),
+      heuristic_representation(nullptr),
+      distances(make_unique_ptr<Distances>(*this, *other.distances.get())),
+      goal_states(other.goal_states),
+      init_state(other.init_state),
+      goal_relevant(other.goal_relevant) {
+    if (dynamic_cast<HeuristicRepresentationLeaf *>(other.heuristic_representation.get())) {
+        heuristic_representation = make_unique_ptr<HeuristicRepresentationLeaf>(dynamic_cast<HeuristicRepresentationLeaf *>(other.heuristic_representation.get()));
+    } else {
+        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(dynamic_cast<HeuristicRepresentationMerge *>(other.heuristic_representation.get()));
+    }
+    assert(*this == other);
 }
 
 TransitionSystem::~TransitionSystem() {
@@ -686,4 +699,27 @@ int TransitionSystem::get_group_id_for_label(int label_no) const {
 
 const shared_ptr<Labels> TransitionSystem::get_labels() const {
     return label_equivalence_relation->get_labels();
+}
+
+bool TransitionSystem::operator==(const TransitionSystem &other) const {
+    assert(num_variables == other.num_variables);
+    assert(incorporated_variables == other.incorporated_variables);
+    assert(*label_equivalence_relation.get() == *other.label_equivalence_relation.get());
+    assert(transitions_by_group_id == other.transitions_by_group_id);
+    assert(num_states == other.num_states);
+    assert(*heuristic_representation.get() == *other.heuristic_representation.get());
+    assert(*distances.get() == *other.distances.get());
+    assert(goal_states == other.goal_states);
+    assert(init_state == other.init_state);
+    assert(goal_relevant == other.goal_relevant);
+    return (num_variables == other.num_variables &&
+            incorporated_variables == other.incorporated_variables &&
+            *label_equivalence_relation.get() == *other.label_equivalence_relation.get() &&
+            transitions_by_group_id == other.transitions_by_group_id &&
+            num_states == other.num_states &&
+            *heuristic_representation.get() == *other.heuristic_representation.get() &&
+            *distances.get() == *other.distances.get() &&
+            goal_states == other.goal_states &&
+            init_state == other.init_state &&
+            goal_relevant == other.goal_relevant);
 }

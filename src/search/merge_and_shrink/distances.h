@@ -61,6 +61,7 @@ class Distances {
     void compute_goal_distances_general_cost();
 public:
     explicit Distances(const TransitionSystem &transition_system);
+    Distances(const TransitionSystem &transition_system, const Distances &other);
     ~Distances();
 
     void clear_distances();
@@ -89,6 +90,9 @@ public:
 
     int get_goal_distance(int state) const {
         return goal_distances[state];
+    }
+    bool operator==(const Distances &other) const {
+        return (init_distances == other.init_distances && goal_distances == other.goal_distances && max_f == other.max_f && max_g == other.max_g && max_h == other.max_h);
     }
 };
 

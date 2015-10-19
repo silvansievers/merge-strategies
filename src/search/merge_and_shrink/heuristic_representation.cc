@@ -72,53 +72,22 @@ HeuristicRepresentationMerge::HeuristicRepresentationMerge(
     }
 }
 
-HeuristicRepresentationMerge::HeuristicRepresentationMerge(
-    const HeuristicRepresentation *left_child_,
-    const HeuristicRepresentation *right_child_)
-    : HeuristicRepresentation(left_child_->get_domain_size() *
-                              right_child_->get_domain_size()),
-      lookup_table(left_child_->get_domain_size(),
-                   vector<int>(right_child_->get_domain_size())) {
-    if (dynamic_cast<const HeuristicRepresentationLeaf *>(left_child_)) {
-        left_child = make_unique_ptr<HeuristicRepresentationLeaf>(
-            new HeuristicRepresentationLeaf(dynamic_cast<const HeuristicRepresentationLeaf *>(left_child_)));
-    } else {
-        left_child = make_unique_ptr<HeuristicRepresentationMerge>(
-            new HeuristicRepresentationMerge(dynamic_cast<const HeuristicRepresentationMerge *>(left_child_)));
-    }
-    if (dynamic_cast<const HeuristicRepresentationLeaf *>(right_child_)) {
-        right_child = make_unique_ptr<HeuristicRepresentationLeaf>(
-            new HeuristicRepresentationLeaf(dynamic_cast<const HeuristicRepresentationLeaf *>(right_child_)));
-    } else {
-        right_child = make_unique_ptr<HeuristicRepresentationMerge>(
-            new HeuristicRepresentationMerge(dynamic_cast<const HeuristicRepresentationMerge *>(right_child_)));
-    }
-    int counter = 0;
-    for (vector<int> &row : lookup_table) {
-        for (int &entry : row) {
-            entry = counter;
-            ++counter;
-        }
-    }
-}
-
 HeuristicRepresentationMerge::HeuristicRepresentationMerge(const HeuristicRepresentationMerge *other)
-    : HeuristicRepresentation(other->left_child->get_domain_size() *
-                              other->right_child->get_domain_size()),
+    : HeuristicRepresentation(other->domain_size),
       lookup_table(other->lookup_table) {
     if (dynamic_cast<HeuristicRepresentationLeaf *>(other->left_child.get())) {
         left_child = make_unique_ptr<HeuristicRepresentationLeaf>(
-            new HeuristicRepresentationLeaf(dynamic_cast<HeuristicRepresentationLeaf *>(other->left_child.get())));
+            dynamic_cast<HeuristicRepresentationLeaf *>(other->left_child.get()));
     } else {
         left_child = make_unique_ptr<HeuristicRepresentationMerge>(
-            new HeuristicRepresentationMerge(dynamic_cast<HeuristicRepresentationMerge *>(other->left_child.get())));
+            dynamic_cast<HeuristicRepresentationMerge *>(other->left_child.get()));
     }
     if (dynamic_cast<HeuristicRepresentationLeaf *>(other->right_child.get())) {
         right_child = make_unique_ptr<HeuristicRepresentationLeaf>(
-            new HeuristicRepresentationLeaf(dynamic_cast<HeuristicRepresentationLeaf *>(other->right_child.get())));
+            dynamic_cast<HeuristicRepresentationLeaf *>(other->right_child.get()));
     } else {
         right_child = make_unique_ptr<HeuristicRepresentationMerge>(
-            new HeuristicRepresentationMerge(dynamic_cast<HeuristicRepresentationMerge *>(other->right_child.get())));
+            dynamic_cast<HeuristicRepresentationMerge *>(other->right_child.get()));
     }
 }
 

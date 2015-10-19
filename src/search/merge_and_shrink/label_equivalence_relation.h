@@ -57,6 +57,9 @@ public:
     int get_cost() const {
         return cost;
     }
+    bool operator==(const LabelGroup &other) const {
+        return (labels == other.labels && cost == other.cost);
+    }
 };
 
 class LabelEquivalenceRelation {
@@ -73,6 +76,7 @@ class LabelEquivalenceRelation {
     void add_label_to_group(int group_id, int label_no);
 public:
     explicit LabelEquivalenceRelation(const std::shared_ptr<Labels> labels);
+    explicit LabelEquivalenceRelation(const LabelEquivalenceRelation &other);
     virtual ~LabelEquivalenceRelation() = default;
 
     void recompute_group_cost();
@@ -94,6 +98,7 @@ public:
     const std::shared_ptr<Labels> get_labels() const { // for MergeDynamicWeighted
         return labels;
     }
+    bool operator==(const LabelEquivalenceRelation &other) const;
 };
 
 #endif

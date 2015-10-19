@@ -190,7 +190,8 @@ public:
                      const std::shared_ptr<Labels> labels,
                      TransitionSystem *ts1,
                      TransitionSystem *ts2,
-                     bool invalidate_components = true);
+                     bool silent = false);
+    explicit TransitionSystem(const TransitionSystem &other);
     ~TransitionSystem();
 
     bool apply_abstraction(
@@ -263,6 +264,7 @@ public:
     }
     int get_group_id_for_label(int label_no) const;
     const std::shared_ptr<Labels> get_labels() const;
+    bool operator==(const TransitionSystem &other) const;
 };
 
 #endif

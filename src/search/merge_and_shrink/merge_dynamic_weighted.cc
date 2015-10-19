@@ -1,6 +1,7 @@
 #include "merge_dynamic_weighted.h"
 
 #include "labels.h"
+#include "shrink_bisimulation.h"
 #include "transition_system.h"
 
 #include "../causal_graph.h"
@@ -523,7 +524,8 @@ double LROpportunitiesFeatures::compute_value(TransitionSystem *ts1,
 // ========================= FEATURES ====================================
 
 Features::Features(const Options opts)
-    : debug(opts.get<bool>("debug")) {
+    : debug(opts.get<bool>("debug")),
+      max_states(opts.get<int>("max_states")) {
     int id = 0;
     features.push_back(new CausalConnectionFeature(
                            id++, opts.get<int>("w_causally_connected_vars")));
@@ -616,15 +618,28 @@ double Features::normalize_value(int feature_id, double value) const {
 
 void Features::precompute_unnormalized_values(TransitionSystem *ts1,
                                               TransitionSystem *ts2) {
+    TransitionSystem *ts1_copy = 0;
+    TransitionSystem *ts2_copy = 0;
     TransitionSystem *merge = 0;
     vector<double> values;
     values.reserve(features.size());
     for (Feature *feature : features) {
         if (feature->get_weight()) {
             if (feature->requires_merge() && !merge) {
+                ts1_copy = new TransitionSystem(*ts1);
+                ts2_copy = new TransitionSystem(*ts2);
+                Options options;
+                options.set<int>("max_states", max_states);
+                options.set<int>("max_states_before_merge", max_states);
+                options.set<int>("threshold", 1);
+                options.set<bool>("greedy", false);
+                options.set<int>("at_limit", 0);
+                ShrinkBisimulation shrink_bisim(options);
+                shrink_bisim.shrink(*ts1_copy, *ts2_copy, true);
                 merge = new TransitionSystem(*task_proxy,
-                                             ts1->get_labels(),
-                                             ts1, ts2, false);
+                                             ts1_copy->get_labels(),
+                                             ts1_copy, ts2_copy, true);
+
             }
             double value = feature->compute_unnormalized_value(ts1, ts2, merge);
             update_min_max(feature->get_id(), value);
@@ -636,6 +651,8 @@ void Features::precompute_unnormalized_values(TransitionSystem *ts1,
         }
     }
     unnormalized_values[make_pair(ts1, ts2)] = values;
+    delete ts1_copy;
+    delete ts2_copy;
     delete merge;
 }
 
@@ -806,6 +823,7 @@ std::string MergeDynamicWeighted::name() const {
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_option<bool>(
         "debug", "debug", "false");
+    parser.add_option<int>("max_states", "shrink strategy option", "50000");
     parser.add_option<int>(
         "w_causally_connected_vars",
         "prefer merging variables that are causally connected ",

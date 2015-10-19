@@ -13,6 +13,12 @@ LabelEquivalenceRelation::LabelEquivalenceRelation(const std::shared_ptr<Labels>
     label_to_positions.resize(labels->get_max_size());
 }
 
+LabelEquivalenceRelation::LabelEquivalenceRelation(const LabelEquivalenceRelation &other)
+    : labels(other.labels),
+      grouped_labels(other.grouped_labels),
+      label_to_positions(other.label_to_positions) {
+}
+
 void LabelEquivalenceRelation::add_label_to_group(int group_id,
                                                   int label_no) {
     LabelIter label_it = grouped_labels[group_id].insert(label_no);
@@ -83,4 +89,10 @@ int LabelEquivalenceRelation::add_label_group(const vector<int> &new_labels) {
 
 int LabelEquivalenceRelation::get_num_labels() const {
     return labels->get_size();
+}
+
+bool LabelEquivalenceRelation::operator==(const LabelEquivalenceRelation &other) const {
+    assert(grouped_labels == other.grouped_labels);
+    assert(label_to_positions == other.label_to_positions);
+    return (grouped_labels == other.grouped_labels && label_to_positions == other.label_to_positions);
 }

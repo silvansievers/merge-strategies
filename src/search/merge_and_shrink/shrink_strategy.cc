@@ -25,21 +25,25 @@ ShrinkStrategy::ShrinkStrategy(const Options &opts)
 ShrinkStrategy::~ShrinkStrategy() {
 }
 
-bool ShrinkStrategy::shrink_transition_system(TransitionSystem &ts, int new_size) const {
+bool ShrinkStrategy::shrink_transition_system(TransitionSystem &ts,
+                                              int new_size,
+                                              bool silent) const {
     assert(ts.is_solvable());
     int num_states = ts.get_size();
     if (num_states > min(new_size, shrink_threshold_before_merge)) {
-        cout << ts.tag() << "current size: " << num_states;
-        if (new_size < num_states)
-            cout << " (new size limit: " << new_size;
-        else
-            cout << " (shrink threshold: " << shrink_threshold_before_merge;
-        cout << ")" << endl;
+        if (!silent) {
+            cout << ts.tag() << "current size: " << num_states;
+            if (new_size < num_states)
+                cout << " (new size limit: " << new_size;
+            else
+                cout << " (shrink threshold: " << shrink_threshold_before_merge;
+            cout << ")" << endl;
+        }
         StateEquivalenceRelation equivalence_relation;
         compute_equivalence_relation(ts, new_size, equivalence_relation);
         // TODO: We currently violate this; see issue250
         //assert(equivalence_relation.size() <= new_size);
-        return ts.apply_abstraction(equivalence_relation);
+        return ts.apply_abstraction(equivalence_relation, silent);
     }
     return false;
 }
@@ -81,7 +85,8 @@ pair<size_t, size_t> ShrinkStrategy::compute_shrink_sizes(
 }
 
 pair<bool, bool> ShrinkStrategy::shrink(TransitionSystem &ts1,
-                                        TransitionSystem &ts2) const {
+                                        TransitionSystem &ts2,
+                                        bool silent) const {
     /*
       Compute the size limit for both transition systems as imposed by
       max_states and max_states_before_merge.
@@ -93,8 +98,8 @@ pair<bool, bool> ShrinkStrategy::shrink(TransitionSystem &ts1,
       For both transition systems, possibly compute and apply an
       abstraction.
     */
-    bool shrunk2 = shrink_transition_system(ts2, new_sizes.second);
-    bool shrunk1 = shrink_transition_system(ts1, new_sizes.first);
+    bool shrunk2 = shrink_transition_system(ts2, new_sizes.second, silent);
+    bool shrunk1 = shrink_transition_system(ts1, new_sizes.first, silent);
     return make_pair(shrunk1, shrunk2);
 }
 
