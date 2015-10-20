@@ -144,14 +144,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
             new_transition_system->statistics(timer);
             fts.get_vector().push_back(new_transition_system);
 
-            int new_init_dist = new_transition_system->get_init_state_goal_distance();
-            int difference = new_init_dist - max(init_dist1, init_dist2);
-            cout << "Difference of init h values: " << difference << endl;
-            if (difference < 0) {
-                ++negative_improvement_counter;
-            }
-            init_hvalue_increase.push_back(difference);
-
             /*
               NOTE: both the shrinking strategy classes and the construction of
               the composite require input transition systems to be solvable.
@@ -160,6 +152,14 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 final_transition_system = new_transition_system;
                 break;
             }
+
+            int new_init_dist = new_transition_system->get_init_state_goal_distance();
+            int difference = new_init_dist - max(init_dist1, init_dist2);
+            cout << "Difference of init h values: " << difference << endl;
+            if (difference < 0) {
+                ++negative_improvement_counter;
+            }
+            init_hvalue_increase.push_back(difference);
 
             transition_system1->release_memory();
             transition_system2->release_memory();
