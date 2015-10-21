@@ -739,6 +739,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
                     if (ts2) {
                         TransitionSystem *merge = 0;
                         if (features->require_merge()) {
+                            cout << "trying to compute the merge..." << endl;
                             const shared_ptr<Labels> labels = ts1->get_labels();
                             shared_ptr<Labels> labels_copy = make_shared<Labels>(*labels.get());
 
@@ -764,6 +765,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
                             merge = new TransitionSystem(*task_proxy,
                                                          labels_copy,
                                                          ts1_copy, ts2_copy, true);
+                            cout << "...done computing the merge." << endl;
                         }
                         features->precompute_unnormalized_values(ts1, ts2, merge);
                         if (features->require_merge()) {
