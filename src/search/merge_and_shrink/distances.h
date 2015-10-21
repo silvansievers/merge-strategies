@@ -62,6 +62,7 @@ class Distances {
 public:
     explicit Distances(const TransitionSystem &transition_system);
     Distances(const TransitionSystem &transition_system, const Distances &other);
+    Distances(const Distances &other) = delete;
     ~Distances();
 
     void clear_distances();

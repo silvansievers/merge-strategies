@@ -191,14 +191,15 @@ public:
                      TransitionSystem *ts1,
                      TransitionSystem *ts2,
                      bool silent = false);
-    explicit TransitionSystem(const TransitionSystem &other);
+    TransitionSystem(const TransitionSystem &other,
+                     const std::shared_ptr<Labels> labels);
+    TransitionSystem(const TransitionSystem &other) = delete;
     ~TransitionSystem();
 
     bool apply_abstraction(
             const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups,
             bool silent = false);
-    void apply_label_reduction(
-            const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
+    void apply_label_reduction(const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
             bool only_equivalent_labels);
     void release_memory();
 

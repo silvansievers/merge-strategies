@@ -43,6 +43,30 @@ Labels::Labels(const Options &options)
       lr_system_order(LabelReductionSystemOrder(options.get_enum("system_order"))) {
 }
 
+Labels::Labels(const Labels &other)
+    : max_size(other.max_size),
+      transition_system_order(other.transition_system_order),
+      lr_before_shrinking(other.lr_before_shrinking),
+      lr_before_merging(other.lr_before_merging),
+      lr_method(other.lr_method),
+      lr_system_order(other.lr_system_order) {
+    labels.reserve(other.labels.size());
+    for (Label *label : other.labels) {
+        if (label) {
+            labels.push_back(new Label(label->get_cost()));
+        } else {
+            labels.push_back(0);
+        }
+    }
+    assert(*this == other);
+}
+
+Labels::~Labels() {
+    for (Label *label : labels) {
+        delete label;
+    }
+}
+
 bool Labels::initialized() const {
     return !transition_system_order.empty();
 }
@@ -93,7 +117,8 @@ void Labels::notify_transition_systems(
 }
 
 bool Labels::apply_label_reduction(const EquivalenceRelation *relation,
-                                   vector<pair<int, vector<int> > > &label_mapping) {
+                                   vector<pair<int, vector<int> > > &label_mapping,
+                                   bool silent) {
     int num_labels = 0;
     int num_labels_after_reduction = 0;
     for (BlockListConstIter group_it = relation->begin();
@@ -132,7 +157,7 @@ bool Labels::apply_label_reduction(const EquivalenceRelation *relation,
         }
     }
     int number_reduced_labels = num_labels - num_labels_after_reduction;
-    if (number_reduced_labels > 0) {
+    if (number_reduced_labels > 0 && !silent) {
         cout << "Label reduction: "
              << num_labels << " labels, "
              << num_labels_after_reduction << " after reduction"
@@ -179,12 +204,14 @@ EquivalenceRelation *Labels::compute_combinable_equivalence_relation(
 }
 
 void Labels::reduce(pair<int, int> next_merge,
-                    const vector<TransitionSystem *> &all_transition_systems) {
+                    const vector<TransitionSystem *> &all_transition_systems,
+                    bool partial) {
     assert(initialized());
     assert(reduce_before_shrinking() || reduce_before_merging());
     int num_transition_systems = all_transition_systems.size();
 
     if (lr_method == TWO_TRANSITION_SYSTEMS) {
+        assert(!partial);
         /* Note:
            We compute the combinable relation for labels for the two transition systems
            in the order given by the merge strategy. We conducted experiments
@@ -199,7 +226,7 @@ void Labels::reduce(pair<int, int> next_merge,
             next_merge.first,
             all_transition_systems);
         vector<pair<int, vector<int> > > label_mapping;
-        bool have_reduced = apply_label_reduction(relation, label_mapping);
+        bool have_reduced = apply_label_reduction(relation, label_mapping, partial);
         if (have_reduced) {
             notify_transition_systems(next_merge.first,
                                       all_transition_systems,
@@ -212,7 +239,7 @@ void Labels::reduce(pair<int, int> next_merge,
         relation = compute_combinable_equivalence_relation(
             next_merge.second,
             all_transition_systems);
-        have_reduced = apply_label_reduction(relation, label_mapping);
+        have_reduced = apply_label_reduction(relation, label_mapping, partial);
         if (have_reduced) {
             notify_transition_systems(next_merge.second,
                                       all_transition_systems,
@@ -252,15 +279,22 @@ void Labels::reduce(pair<int, int> next_merge,
             EquivalenceRelation *relation =
                 compute_combinable_equivalence_relation(ts_index,
                                                         all_transition_systems);
-            have_reduced = apply_label_reduction(relation, label_mapping);
+            have_reduced = apply_label_reduction(relation, label_mapping, partial);
             delete relation;
         }
 
         if (have_reduced) {
             num_unsuccessful_iterations = 0;
-            notify_transition_systems(ts_index,
-                                      all_transition_systems,
-                                      label_mapping);
+            if (partial) {
+                all_transition_systems[next_merge.first]->
+                    apply_label_reduction(label_mapping, next_merge.first != ts_index);
+                all_transition_systems[next_merge.second]->
+                    apply_label_reduction(label_mapping, next_merge.second != ts_index);
+            } else {
+                notify_transition_systems(ts_index,
+                                          all_transition_systems,
+                                          label_mapping);
+            }
         } else {
             // Even if the transition system has been removed, we need to count
             // it as unsuccessful iterations (the size of the vector matters).
@@ -340,6 +374,41 @@ void Labels::dump_options() const {
         }
         cout << endl;
     }
+}
+
+bool Labels::operator==(const Labels &other) const {
+    assert(max_size == other.max_size);
+    bool labels_equivalent = true;
+    if (labels.size() != other.labels.size()) {
+        labels_equivalent = false;
+    } else {
+        for (size_t i = 0; i < labels.size(); ++i) {
+            Label *label = labels[i];
+            const Label *other_label = other.labels[i];
+            if ((label && !other_label) || (!label && other_label)) {
+                labels_equivalent = false;
+                break;
+            } else if (label && other_label) {
+                if (label->get_cost() != other_label->get_cost()) {
+                    labels_equivalent = false;
+                    break;
+                }
+            }
+        }
+    }
+    assert(labels_equivalent);
+    assert(transition_system_order == other.transition_system_order);
+    assert(lr_before_shrinking == other.lr_before_shrinking);
+    assert(lr_before_merging == other.lr_before_merging);
+    assert(lr_method == other.lr_method);
+    assert(lr_system_order == other.lr_system_order);
+    return (max_size == other.max_size &&
+            labels_equivalent &&
+            transition_system_order == other.transition_system_order &&
+            lr_before_shrinking == other.lr_before_shrinking &&
+            lr_before_merging == other.lr_before_merging &&
+            lr_method == other.lr_method &&
+            lr_system_order == other.lr_system_order);
 }
 
 static shared_ptr<Labels>_parse(OptionParser &parser) {

@@ -65,17 +65,20 @@ class Labels {
     // the resulting label mapping.
     bool apply_label_reduction(
         const EquivalenceRelation *relation,
-        std::vector<std::pair<int, std::vector<int> > > &label_mapping);
+        std::vector<std::pair<int, std::vector<int> > > &label_mapping,
+        bool silent);
     EquivalenceRelation *compute_combinable_equivalence_relation(
         int ts_index,
         const std::vector<TransitionSystem *> &all_transition_systems) const;
 public:
     explicit Labels(const Options &options);
-    ~Labels() {}
+    explicit Labels(const Labels &other);
+    ~Labels();
     void initialize(const TaskProxy &task_proxy);
     void add_label(int cost);
     void reduce(std::pair<int, int> next_merge,
-                const std::vector<TransitionSystem *> &all_transition_systems);
+                const std::vector<TransitionSystem *> &all_transition_systems,
+                bool partial = false);
     bool is_current_label(int label_no) const;
     int get_label_cost(int label_no) const;
     void dump_labels() const;
@@ -94,6 +97,7 @@ public:
     int get_max_size() const {
         return max_size;
     }
+    bool operator==(const Labels &other) const;
 };
 
 #endif

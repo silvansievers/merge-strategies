@@ -168,8 +168,7 @@ public:
 
 class Features {
     const bool debug;
-    const int max_states;
-    TaskProxy *task_proxy;
+    bool merge_required; // if any of the active features require the merge
     std::vector<Feature *> features;
     std::vector<double> min_values; // finite minium values of all features
     std::vector<double> max_values; // finite maximum values of all features
@@ -180,10 +179,14 @@ class Features {
 public:
     explicit Features(const Options opts);
     ~Features();
-    void initialize(const std::shared_ptr<AbstractTask> task);
+    void initialize(const TaskProxy &task_proxy);
     void precompute_data(const std::vector<TransitionSystem *> &all_transition_sytems);
+    bool require_merge() const {
+        return merge_required;
+    }
     void precompute_unnormalized_values(TransitionSystem *ts1,
-                                        TransitionSystem *ts2);
+                                        TransitionSystem *ts2,
+                                        TransitionSystem *merge);
     double compute_weighted_normalized_sum(
         TransitionSystem *ts1, TransitionSystem *ts2) const;
     void clear();
@@ -191,8 +194,10 @@ public:
 };
 
 class MergeDynamicWeighted : public MergeStrategy {
+    const int max_states; // bisimulation option
     Features *features;
     std::vector<int> var_no_to_ts_index;
+    TaskProxy *task_proxy;
 
     // Statistics
     std::vector<std::pair<int, int> > merge_order;

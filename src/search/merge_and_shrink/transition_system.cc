@@ -283,10 +283,13 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
     assert(is_valid());
 }
 
-TransitionSystem::TransitionSystem(const TransitionSystem &other)
+TransitionSystem::TransitionSystem(const TransitionSystem &other,
+                                   const shared_ptr<Labels> labels)
     : num_variables(other.num_variables),
       incorporated_variables(other.incorporated_variables),
-      label_equivalence_relation(make_shared<LabelEquivalenceRelation>(*other.label_equivalence_relation.get())),
+      label_equivalence_relation(make_shared<LabelEquivalenceRelation>(
+                                     *other.label_equivalence_relation.get(),
+                                     labels)),
       transitions_by_group_id(other.transitions_by_group_id),
       num_states(other.num_states),
       heuristic_representation(nullptr),

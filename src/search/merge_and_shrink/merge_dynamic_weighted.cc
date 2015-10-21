@@ -525,7 +525,7 @@ double LROpportunitiesFeatures::compute_value(TransitionSystem *ts1,
 
 Features::Features(const Options opts)
     : debug(opts.get<bool>("debug")),
-      max_states(opts.get<int>("max_states")) {
+      merge_required(false) {
     int id = 0;
     features.push_back(new CausalConnectionFeature(
                            id++, opts.get<int>("w_causally_connected_vars")));
@@ -553,20 +553,24 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_num_trans")));
     features.push_back(new LROpportunitiesFeatures(
                            id++, opts.get<int>("w_lr_opp")));
+    for (Feature *feature : features) {
+        if (feature->get_weight() && feature->requires_merge()) {
+            merge_required = true;
+            break;
+        }
+    }
 }
 
 Features::~Features() {
-    delete task_proxy;
     for (Feature *feature : features) {
         delete feature;
     }
 }
 
-void Features::initialize(const shared_ptr<AbstractTask> task) {
-    task_proxy = new TaskProxy(*task);
+void Features::initialize(const TaskProxy &task_proxy) {
     for (Feature *feature : features) {
         if (feature->get_weight()) {
-            feature->initialize(*task_proxy, debug);
+            feature->initialize(task_proxy, debug);
         }
     }
     clear();
@@ -617,30 +621,12 @@ double Features::normalize_value(int feature_id, double value) const {
 }
 
 void Features::precompute_unnormalized_values(TransitionSystem *ts1,
-                                              TransitionSystem *ts2) {
-    TransitionSystem *ts1_copy = 0;
-    TransitionSystem *ts2_copy = 0;
-    TransitionSystem *merge = 0;
+                                              TransitionSystem *ts2,
+                                              TransitionSystem *merge) {
     vector<double> values;
     values.reserve(features.size());
     for (Feature *feature : features) {
         if (feature->get_weight()) {
-            if (feature->requires_merge() && !merge) {
-                ts1_copy = new TransitionSystem(*ts1);
-                ts2_copy = new TransitionSystem(*ts2);
-                Options options;
-                options.set<int>("max_states", max_states);
-                options.set<int>("max_states_before_merge", max_states);
-                options.set<int>("threshold", 1);
-                options.set<bool>("greedy", false);
-                options.set<int>("at_limit", 0);
-                ShrinkBisimulation shrink_bisim(options);
-                shrink_bisim.shrink(*ts1_copy, *ts2_copy, true);
-                merge = new TransitionSystem(*task_proxy,
-                                             ts1_copy->get_labels(),
-                                             ts1_copy, ts2_copy, true);
-
-            }
             double value = feature->compute_unnormalized_value(ts1, ts2, merge);
             update_min_max(feature->get_id(), value);
             values.push_back(value);
@@ -651,9 +637,6 @@ void Features::precompute_unnormalized_values(TransitionSystem *ts1,
         }
     }
     unnormalized_values[make_pair(ts1, ts2)] = values;
-    delete ts1_copy;
-    delete ts2_copy;
-    delete merge;
 }
 
 double Features::compute_weighted_normalized_sum(
@@ -702,11 +685,13 @@ void Features::dump_weights() const {
 // ========================= MERGE STRATEGY ===============================
 
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
-    : MergeStrategy() {
+    : MergeStrategy(),
+      max_states(opts.get<int>("max_states")) {
     features = new Features(opts);
 }
 
 MergeDynamicWeighted::~MergeDynamicWeighted() {
+    delete task_proxy;
     delete features;
 }
 
@@ -716,14 +701,14 @@ void MergeDynamicWeighted::dump_strategy_specific_options() const {
 
 void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
-    TaskProxy task_proxy(*task);
-    int num_variables = task_proxy.get_variables().size();
+    task_proxy = new TaskProxy(*task);
+    int num_variables = task_proxy->get_variables().size();
     var_no_to_ts_index.reserve(num_variables);
-    for (VariableProxy var : task_proxy.get_variables()) {
+    for (VariableProxy var : task_proxy->get_variables()) {
         var_no_to_ts_index.push_back(var.get_id());
     }
     merge_order.reserve(num_variables * 2 - 1);
-    features->initialize(task);
+    features->initialize(*task_proxy);
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &all_transition_systems) {
@@ -745,13 +730,50 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
     } else {
         features->precompute_data(all_transition_systems);
         // Go through all transitition systems and compute unnormalized feature values.
+        vector<TransitionSystem *> tmp_transition_systems(all_transition_systems);
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
             TransitionSystem *ts1 = all_transition_systems[i];
             if (ts1) {
                 for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
                     TransitionSystem *ts2 = all_transition_systems[j];
                     if (ts2) {
-                        features->precompute_unnormalized_values(ts1, ts2);
+                        TransitionSystem *merge = 0;
+                        if (features->require_merge()) {
+                            const shared_ptr<Labels> labels = ts1->get_labels();
+                            shared_ptr<Labels> labels_copy = make_shared<Labels>(*labels.get());
+
+                            TransitionSystem *ts1_copy = new TransitionSystem(*ts1, labels_copy);
+                            TransitionSystem *ts2_copy = new TransitionSystem(*ts2, labels_copy);
+                            tmp_transition_systems[i] = ts1_copy;
+                            tmp_transition_systems[j] = ts2_copy;
+
+                            if (labels_copy->reduce_before_shrinking()) {
+                                labels_copy->reduce(make_pair(i, j),
+                                                    tmp_transition_systems,
+                                                    true);
+                            }
+
+                            Options options;
+                            options.set<int>("max_states", max_states);
+                            options.set<int>("max_states_before_merge", max_states);
+                            options.set<int>("threshold", 1);
+                            options.set<bool>("greedy", false);
+                            options.set<int>("at_limit", 0);
+                            ShrinkBisimulation shrink_bisim(options);
+                            shrink_bisim.shrink(*ts1_copy, *ts2_copy, true);
+                            merge = new TransitionSystem(*task_proxy,
+                                                         labels_copy,
+                                                         ts1_copy, ts2_copy, true);
+                        }
+                        features->precompute_unnormalized_values(ts1, ts2, merge);
+                        if (features->require_merge()) {
+                            // delete and reset
+                            delete merge;
+                            delete tmp_transition_systems[i];
+                            delete tmp_transition_systems[j];
+                            tmp_transition_systems[i] = ts1;
+                            tmp_transition_systems[j] = ts2;
+                        }
                     }
                 }
             }
@@ -766,8 +788,7 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
                     TransitionSystem *ts2 = all_transition_systems[j];
                     if (ts2) {
                         int pair_weight =
-                            features->compute_weighted_normalized_sum(
-                                all_transition_systems[i], all_transition_systems[j]);
+                            features->compute_weighted_normalized_sum(ts1, ts2);
                         if (pair_weight > max_weight) {
                             max_weight = pair_weight;
                             ts_index1 = i;
