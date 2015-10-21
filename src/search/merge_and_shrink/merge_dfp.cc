@@ -87,7 +87,9 @@ void MergeDFP::compute_label_ranks(const TransitionSystem *transition_system,
         for (LabelConstIter label_it = group_it.begin();
              label_it != group_it.end(); ++label_it) {
             int label_no = *label_it;
-            label_ranks[label_no] = label_rank;
+            if (label_rank < label_ranks[label_no] || label_ranks[label_no] == -1) {
+                label_ranks[label_no] = label_rank;
+            }
         }
     }
 }
@@ -199,6 +201,19 @@ pair<int, int> MergeDFP::get_next(const vector<TransitionSystem *> &all_transiti
       assuming that the global goal specification is non-empty. Hence at
       this point, we must have found a pair of transition systems to merge.
     */
+    // NOT true if used on a subset of transitions!
+    if (next_index1 == -1 || next_index2 == -1) {
+        assert(next_index1 == -1 && next_index2 == -1);
+        assert(minimum_weight == INF);
+        size_t ts_index = 0;
+        size_t other_ts_index = 1;
+        assert(sorted_transition_systems[ts_index]);
+        assert(sorted_transition_systems[other_ts_index]);
+        next_index1 = indices_mapping[ts_index];
+        next_index2 = indices_mapping[other_ts_index];
+        assert(all_transition_systems[next_index1] == sorted_transition_systems[ts_index]);
+        assert(all_transition_systems[next_index2] == sorted_transition_systems[other_ts_index]);
+    }
     assert(next_index1 != -1);
     assert(next_index2 != -1);
     cout << "Next pair of indices: (" << next_index1 << ", " << next_index2 << ")" << endl;

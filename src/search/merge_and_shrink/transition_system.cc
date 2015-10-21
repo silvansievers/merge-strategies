@@ -632,12 +632,12 @@ void TransitionSystem::dump_dot_graph() const {
         for (size_t i = 0; i < transitions.size(); ++i) {
             int src = transitions[i].src;
             int target = transitions[i].target;
-            cout << "    node" << src << " -> node" << target << " [labels = ";
+            cout << "    node" << src << " -> node" << target << " [label = ";
             for (LabelConstIter label_it = group_it.begin();
                  label_it != group_it.end(); ++label_it) {
                 if (label_it != group_it.begin())
-                    cout << ",";
-                cout << "l" << *label_it;
+                    cout << "_";
+                cout << "x" << *label_it;
             }
             cout << "];" << endl;
         }

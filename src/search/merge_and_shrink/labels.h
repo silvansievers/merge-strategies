@@ -79,6 +79,7 @@ public:
     void reduce(std::pair<int, int> next_merge,
                 const std::vector<TransitionSystem *> &all_transition_systems,
                 bool partial = false);
+    int compute_number_active_labels() const;
     bool is_current_label(int label_no) const;
     int get_label_cost(int label_no) const;
     void dump_labels() const;

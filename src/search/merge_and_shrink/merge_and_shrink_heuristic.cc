@@ -103,7 +103,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
     vector<int> init_hvalue_increase;
     int negative_improvement_counter = 0;
-
+    vector<int> remaining_labels;
+    remaining_labels.push_back(labels->compute_number_active_labels());
     if (!final_transition_system) { // All atomic transition system are solvable.
         while (!merge_strategy->done()) {
             // Choose next transition systems to merge
@@ -121,6 +122,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
             if (labels->reduce_before_shrinking()) {
                 labels->reduce(merge_indices, fts.get_vector());
+                remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
             // Shrinking
@@ -133,6 +135,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
             if (labels->reduce_before_merging()) {
                 labels->reduce(merge_indices, fts.get_vector());
+                remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
             int init_dist1 = transition_system1->get_init_state_goal_distance();
@@ -192,6 +195,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
     cout << "Init h value improvements: " << init_hvalue_increase << endl;
     cout << "Negative improvements: " << negative_improvement_counter << endl;
+    cout << "Course of label reduction: " << remaining_labels << endl;
 
     labels = nullptr;
 }
@@ -217,6 +221,22 @@ void MergeAndShrinkHeuristic::initialize() {
     } else {
         cout << "Abstract problem is unsolvable!" << endl;
     }
+    const vector<double> &miss_qualified_states_ratios =
+        shrink_strategy->get_miss_qualified_states_ratios();
+    cout << "Course of miss qualified states shrinking: "
+         << miss_qualified_states_ratios << endl;
+    size_t number_of_shrinks = miss_qualified_states_ratios.size();
+    // there are two shrinks per merge
+    assert(number_of_shrinks == (task_proxy.get_variables().size() - 1) * 2);
+    double summed_values = 0;
+    for (double value : miss_qualified_states_ratios) {
+        summed_values += value;
+    }
+    double average_imperfect_shrinking = 0;
+    if (number_of_shrinks) {
+        average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
+    }
+    cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
     report_peak_memory_delta(true);
     cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
          << endl;

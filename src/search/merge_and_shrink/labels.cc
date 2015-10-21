@@ -316,6 +316,16 @@ void Labels::reduce(pair<int, int> next_merge,
     }
 }
 
+int Labels::compute_number_active_labels() const {
+    int counter = 0;
+    for (Label *label : labels) {
+        if (label) {
+            ++counter;
+        }
+    }
+    return counter;
+}
+
 bool Labels::is_current_label(int label_no) const {
     assert(initialized());
     assert(in_bounds(label_no, labels));

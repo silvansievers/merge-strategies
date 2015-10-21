@@ -73,6 +73,7 @@ HEADERS = \
           root_task.h \
           sampling.h \
           scalar_evaluator.h \
+          scc.h \
           search_engine.h \
           search_node_info.h \
           search_progress.h \
@@ -130,6 +131,7 @@ HEADERS += merge_and_shrink/distances.h \
            merge_and_shrink/merge_dfp.h \
            merge_and_shrink/merge_dynamic_weighted.h \
            merge_and_shrink/merge_linear.h \
+           merge_and_shrink/merge_sccs.h \
            merge_and_shrink/merge_strategy.h \
            merge_and_shrink/shrink_bisimulation.h \
            merge_and_shrink/shrink_bucket_based.h \

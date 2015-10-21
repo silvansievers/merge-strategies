@@ -56,6 +56,7 @@ private:
     std::pair<std::size_t, std::size_t> compute_shrink_sizes(
         std::size_t size1, std::size_t size2) const;
 protected:
+    mutable std::vector<double> miss_qualified_states_ratios;
     /*
       Compute an equivalence relation on the states that shrinks the given
       transition system down to at most size target. This method needs to be
@@ -78,6 +79,9 @@ public:
     std::pair<bool, bool> shrink(TransitionSystem &ts1,
                                  TransitionSystem &ts2,
                                  bool silent = false) const;
+const std::vector<double> &get_miss_qualified_states_ratios() const {
+        return miss_qualified_states_ratios;
+    }
 
     void dump_options() const;
     std::string get_name() const;
