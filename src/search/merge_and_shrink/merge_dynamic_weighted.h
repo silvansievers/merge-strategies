@@ -62,6 +62,16 @@ public:
     virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 
+class BoolCausalConnectionFeature : public Feature {
+    std::vector<std::vector<bool> > causally_connected_var_pairs;
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
+public:
+    BoolCausalConnectionFeature(int id, int weight);
+    virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
+};
+
 class NonAdditivityFeature : public Feature {
     std::vector<std::vector<bool> > additive_var_pairs;
     virtual double compute_value(TransitionSystem *ts1,

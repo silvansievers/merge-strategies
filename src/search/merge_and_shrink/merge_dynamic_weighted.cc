@@ -147,6 +147,7 @@ double CausalConnectionFeature::compute_value(TransitionSystem *ts1,
                                               TransitionSystem *ts2,
                                               TransitionSystem *) {
     // return value in [0,infinity)
+    // TODO: precompute for every variable pair the count of edges?
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     vector<int> ts1_cg_neighbors;
     for (int var_no : ts1_var_nos) {
@@ -190,6 +191,56 @@ void CausalConnectionFeature::initialize(const TaskProxy &task_proxy, bool dump)
     }
 }
 
+BoolCausalConnectionFeature::BoolCausalConnectionFeature(int id, int weight)
+    : Feature(id, weight, "boolean causally connected variables", false, false) {
+}
+
+double BoolCausalConnectionFeature::compute_value(TransitionSystem *ts1,
+                                                  TransitionSystem *ts2,
+                                                  TransitionSystem *) {
+    // return value in [0,infinity]
+    const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
+    const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
+    bool result = false;
+    for (int ts1_var_no : ts1_var_nos) {
+        for (int ts2_var_no : ts2_var_nos) {
+            if (causally_connected_var_pairs[ts1_var_no][ts2_var_no]) {
+                result = true;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+void BoolCausalConnectionFeature::initialize(const TaskProxy &task_proxy, bool dump) {
+    const CausalGraph &cg = task_proxy.get_causal_graph();
+    int num_variables = task_proxy.get_variables().size();
+    causally_connected_var_pairs.resize(num_variables, vector<bool>(num_variables, false));
+    for (VariableProxy var : task_proxy.get_variables()) {
+        int var_no = var.get_id();
+        const vector<int> &successors = cg.get_successors(var_no);
+        for (int succ : successors) {
+            causally_connected_var_pairs[var_no][succ] = true;
+            causally_connected_var_pairs[succ][var_no] = true;
+        }
+        const vector<int> &predecessors = cg.get_predecessors(var_no);
+        for (int pred : predecessors) {
+            causally_connected_var_pairs[var_no][pred] = true;
+            causally_connected_var_pairs[pred][var_no] = true;
+        }
+    }
+    if (dump) {
+        for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
+            for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
+                cout << var_no1 << " and " << var_no2 << ": "
+                     << (causally_connected_var_pairs[var_no1][var_no2] ? "" : "not ")
+                     << "causally connected" << endl;
+            }
+        }
+    }
+}
+
 NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
     : Feature(id, weight, "non additive variables", false, false) {
 }
@@ -224,6 +275,7 @@ void NonAdditivityFeature::initialize(const TaskProxy &task_proxy, bool dump) {
                 int e1_var_id = e1.get_fact().get_variable().get_id();
                 int e2_var_id = e2.get_fact().get_variable().get_id();
                 additive_var_pairs[e1_var_id][e2_var_id] = false;
+                additive_var_pairs[e2_var_id][e1_var_id] = false;
             }
         }
     }
@@ -529,6 +581,8 @@ Features::Features(const Options opts)
     int id = 0;
     features.push_back(new CausalConnectionFeature(
                            id++, opts.get<int>("w_causally_connected_vars")));
+    features.push_back(new BoolCausalConnectionFeature(
+                           id++, opts.get<int>("w_bool_causally_connected_vars")));
     features.push_back(new NonAdditivityFeature(
                            id++, opts.get<int>("w_nonadditive_vars")));
     features.push_back(new SmallTransStatesQuotFeature(
@@ -853,6 +907,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
+        "w_bool_causally_connected_vars",
+        "prefer merging variables that are causally connected ",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
         "w_nonadditive_vars",
         "avoid merging additive variables",
         "0",
@@ -915,6 +974,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
+        opts.get<int>("w_bool_causally_connected_vars") == 0 &&
         opts.get<int>("w_nonadditive_vars") == 0 &&
         opts.get<int>("w_small_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_transitions_states_quotient") == 0 &&
