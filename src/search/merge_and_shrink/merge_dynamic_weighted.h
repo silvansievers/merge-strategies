@@ -106,6 +106,38 @@ public:
     InitHImprovementFeature(int id, int weight);
 };
 
+class AbsoluteInitHFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    AbsoluteInitHFeature(int id, int weight);
+};
+
+class AbsoluteMaxFFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    AbsoluteMaxFFeature(int id, int weight);
+};
+
+class AbsoluteMaxGFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    AbsoluteMaxGFeature(int id, int weight);
+};
+
+class AbsoluteMaxHFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    AbsoluteMaxHFeature(int id, int weight);
+};
+
 class AvgHImprovementFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,

@@ -352,6 +352,74 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
     return static_cast<double>(difference) / static_cast<double>(old_init_h);
 }
 
+AbsoluteInitHFeature::AbsoluteInitHFeature(int id, int weight)
+    : Feature(id, weight, "absolute initial h value", true, false) {
+}
+
+double AbsoluteInitHFeature::compute_value(const TransitionSystem *,
+                                           const TransitionSystem *,
+                                           const TransitionSystem *merge) {
+    // return value in [0,infinity)
+    assert(merge);
+    if (merge->is_solvable()) {
+        return merge->get_init_state_goal_distance();
+    } else {
+        // initial state has been pruned
+        return INF;
+    }
+}
+
+AbsoluteMaxFFeature::AbsoluteMaxFFeature(int id, int weight)
+    : Feature(id, weight, "absolute max f value", true, false) {
+}
+
+double AbsoluteMaxFFeature::compute_value(const TransitionSystem *,
+                                          const TransitionSystem *,
+                                          const TransitionSystem *merge) {
+    // return value in [0,infinity)
+    assert(merge);
+    if (merge->is_solvable()) {
+        return merge->get_max_f();
+    } else {
+        // initial state has been pruned
+        return INF;
+    }
+}
+
+AbsoluteMaxGFeature::AbsoluteMaxGFeature(int id, int weight)
+    : Feature(id, weight, "absolute max g value", true, false) {
+}
+
+double AbsoluteMaxGFeature::compute_value(const TransitionSystem *,
+                                          const TransitionSystem *,
+                                          const TransitionSystem *merge) {
+    // return value in [0,infinity)
+    assert(merge);
+    if (merge->is_solvable()) {
+        return merge->get_max_g();
+    } else {
+        // initial state has been pruned
+        return INF;
+    }
+}
+
+AbsoluteMaxHFeature::AbsoluteMaxHFeature(int id, int weight)
+    : Feature(id, weight, "absolute max h value", true, false) {
+}
+
+double AbsoluteMaxHFeature::compute_value(const TransitionSystem *,
+                                          const TransitionSystem *,
+                                          const TransitionSystem *merge) {
+    // return value in [0,infinity)
+    assert(merge);
+    if (merge->is_solvable()) {
+        return merge->get_max_h();
+    } else {
+        // initial state has been pruned
+        return INF;
+    }
+}
+
 AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
     : Feature(id, weight, "average h value improvement", true, false) {
 }
@@ -616,6 +684,14 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_high_transitions_states_quotient")));
     features.push_back(new InitHImprovementFeature(
                            id++, opts.get<int>("w_high_initial_h_value_improvement")));
+    features.push_back(new AbsoluteInitHFeature(
+                           id++, opts.get<int>("w_high_absolute_initial_h_value")));
+    features.push_back(new AbsoluteMaxFFeature(
+                           id++, opts.get<int>("w_high_absolute_max_f_value")));
+    features.push_back(new AbsoluteMaxGFeature(
+                           id++, opts.get<int>("w_high_absolute_max_g_value")));
+    features.push_back(new AbsoluteMaxHFeature(
+                           id++, opts.get<int>("w_high_absolute_max_h_value")));
     features.push_back(new AvgHImprovementFeature(
                            id++, opts.get<int>("w_high_average_h_value_improvement")));
     features.push_back(new InitHSumFeature(
@@ -970,7 +1046,27 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         Bounds("0", "100"));
     parser.add_option<int>(
         "w_high_initial_h_value_improvement",
-        "prefer merging transition systems with high initial h value",
+        "prefer merging transition systems with high initial h value improvement",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_high_absolute_initial_h_value",
+        "prefer merging transition systems with high absolute initial h value",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_high_absolute_max_f_value",
+        "prefer merging transition systems with high absolute max f value",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_high_absolute_max_g_value",
+        "prefer merging transition systems with high absolute max g value",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_high_absolute_max_h_value",
+        "prefer merging transition systems with high absolute max h value",
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
@@ -1026,6 +1122,10 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_small_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_transitions_states_quotient") == 0 &&
         opts.get<int>("w_high_initial_h_value_improvement") == 0 &&
+        opts.get<int>("w_high_absolute_initial_h_value") == 0 &&
+        opts.get<int>("w_high_absolute_max_f_value") == 0 &&
+        opts.get<int>("w_high_absolute_max_g_value") == 0 &&
+        opts.get<int>("w_high_absolute_max_h_value") == 0 &&
         opts.get<int>("w_high_average_h_value_improvement") == 0 &&
         opts.get<int>("w_high_initial_h_value_sum") == 0 &&
         opts.get<int>("w_high_average_h_value_sum") == 0 &&
