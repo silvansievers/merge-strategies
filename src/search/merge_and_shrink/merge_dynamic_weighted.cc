@@ -103,7 +103,9 @@ void compute_label_ranks(const TransitionSystem *ts,
         for (LabelConstIter label_it = group_it.begin();
              label_it != group_it.end(); ++label_it) {
             int label_no = *label_it;
-            label_ranks[label_no] = label_rank;
+            if (label_rank < label_ranks[label_no] || label_ranks[label_no] == -1) {
+                label_ranks[label_no] = label_rank;
+            }
         }
     }
 }
