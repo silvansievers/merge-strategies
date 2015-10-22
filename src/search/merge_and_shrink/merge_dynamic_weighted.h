@@ -216,6 +216,14 @@ public:
     void precompute_data(const std::vector<TransitionSystem *> &all_transition_systems) override;
 };
 
+class MIASMFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    MIASMFeature(int id, int weight);
+};
+
 class Features {
     const bool debug;
     bool merge_required; // if any of the active features require the merge

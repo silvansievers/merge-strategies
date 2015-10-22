@@ -666,6 +666,27 @@ double LROpportunitiesFeatures::compute_value(const TransitionSystem *ts1,
     return 0;
 }
 
+MIASMFeature::MIASMFeature(int id, int weight)
+    : Feature(id, weight, "high number of unreachable and irrelevant states", true, true) {
+}
+
+double MIASMFeature::compute_value(const TransitionSystem *ts1,
+                                   const TransitionSystem *ts2,
+                                   const TransitionSystem *merge) {
+    // return value in [0,infinity)
+    int expected_size = ts1->get_size() * ts2->get_size();
+    assert(expected_size);
+    int new_size = merge->get_size();
+    assert(new_size <= expected_size);
+    if (merge->is_solvable()) {
+        return static_cast<double>(new_size) / static_cast<double>(expected_size);
+    } else {
+        // initial state has been pruned
+        // return 0 because this feature is minimized
+        return 0;
+    }
+}
+
 // ========================= FEATURES ====================================
 
 Features::Features(const Options opts)
@@ -710,6 +731,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_num_trans")));
     features.push_back(new LROpportunitiesFeatures(
                            id++, opts.get<int>("w_lr_opp")));
+    features.push_back(new MIASMFeature(
+                           id++, opts.get<int>("w_miasm")));
     for (Feature *feature : features) {
         if (feature->get_weight() && feature->requires_merge()) {
             merge_required = true;
@@ -1114,6 +1137,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "prefer transition systems that allow for most label reductions",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+        "w_miasm",
+        "prefer transition systems that allow for most unreachable and irrelevant pruning",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
@@ -1134,7 +1162,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_num_variables") == 0 &&
         opts.get<int>("w_shrink_perfectly") == 0 &&
         opts.get<int>("w_num_trans") == 0 &&
-        opts.get<int>("w_lr_opp") == 0) {
+        opts.get<int>("w_lr_opp") == 0 &&
+        opts.get<int>("w_miasm") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }
