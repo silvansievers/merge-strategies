@@ -345,7 +345,7 @@ double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
 }
 
 AbsoluteInitHFeature::AbsoluteInitHFeature(int id, int weight)
-    : Feature(id, weight, "absolute initial h value", true, false) {
+    : Feature(id, weight, "initial h value absolute", true, false) {
 }
 
 double AbsoluteInitHFeature::compute_value(const TransitionSystem *,
