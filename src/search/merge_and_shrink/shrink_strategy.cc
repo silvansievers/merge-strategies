@@ -103,6 +103,12 @@ pair<bool, bool> ShrinkStrategy::shrink(TransitionSystem &ts1,
     return make_pair(shrunk1, shrunk2);
 }
 
+int ShrinkStrategy::compute_size_after_perfect_shrink(const TransitionSystem &ts) {
+    StateEquivalenceRelation equivalence_relation;
+    compute_equivalence_relation(ts, ts.get_size(), equivalence_relation);
+    return equivalence_relation.size();
+}
+
 void ShrinkStrategy::dump_options() const {
     cout << "Shrink strategy options: " << endl;
     cout << "Transition system size limit: " << max_states << endl

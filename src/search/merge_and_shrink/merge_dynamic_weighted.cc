@@ -469,6 +469,29 @@ double NumVariablesFeature::compute_value(TransitionSystem *ts1,
         ts2->get_incorporated_variables().size();
 }
 
+ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
+    : Feature(id, weight, "shrink perfectly", true, false) {
+}
+
+double ShrinkPerfectlyFeature::compute_value(TransitionSystem *,
+                                             TransitionSystem *,
+                                             TransitionSystem *merge) {
+    int size_before = merge->get_size();
+    assert(size_before);
+    Options options;
+    options.set<int>("max_states", INF);
+    options.set<int>("max_states_before_merge", INF);
+    options.set<int>("threshold", 1);
+    options.set<bool>("greedy", false);
+    options.set<int>("at_limit", 0);
+    ShrinkBisimulation shrink_bisim(options);
+    int size_after = shrink_bisim.compute_size_after_perfect_shrink(*merge);
+    assert(size_after <= size_before);
+    int difference = size_before - size_after;
+    return static_cast<double>(difference) /
+        static_cast<double>(size_before);
+}
+
 NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
     : Feature(id, weight, "small number of transitions", false, true) {
 }
@@ -605,6 +628,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_goal_relevance")));
     features.push_back(new NumVariablesFeature(
                            id++, opts.get<int>("w_num_variables")));
+    features.push_back(new ShrinkPerfectlyFeature(
+                           id++, opts.get<int>("w_shrink_perfectly")));
     features.push_back(new NumTransitionsFeature(
                            id++, opts.get<int>("w_num_trans")));
     features.push_back(new LROpportunitiesFeatures(
@@ -979,6 +1004,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
+        "w_shrink_perfectly",
+        "prefer merges which allow shrinking perfectly",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
         "w_num_trans",
         "prefer transition systems with few transitions",
         "0",
@@ -1002,6 +1032,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_dfp") == 0 &&
         opts.get<int>("w_goal_relevance") == 0 &&
         opts.get<int>("w_num_variables") == 0 &&
+        opts.get<int>("w_shrink_perfectly") == 0 &&
         opts.get<int>("w_num_trans") == 0 &&
         opts.get<int>("w_lr_opp") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;

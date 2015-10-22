@@ -79,9 +79,10 @@ public:
     std::pair<bool, bool> shrink(TransitionSystem &ts1,
                                  TransitionSystem &ts2,
                                  bool silent = false) const;
-const std::vector<double> &get_miss_qualified_states_ratios() const {
+    const std::vector<double> &get_miss_qualified_states_ratios() const {
         return miss_qualified_states_ratios;
     }
+    int compute_size_after_perfect_shrink(const TransitionSystem &ts);
 
     void dump_options() const;
     std::string get_name() const;

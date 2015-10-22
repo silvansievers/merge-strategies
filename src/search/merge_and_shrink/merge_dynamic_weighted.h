@@ -156,6 +156,14 @@ public:
     NumVariablesFeature(int id, int weight);
 };
 
+class ShrinkPerfectlyFeature : public Feature {
+    virtual double compute_value(TransitionSystem *ts1,
+                                 TransitionSystem *ts2,
+                                 TransitionSystem *merge) override;
+public:
+    ShrinkPerfectlyFeature(int id, int weight);
+};
+
 class NumTransitionsFeature : public Feature {
     virtual double compute_value(TransitionSystem *ts1,
                                  TransitionSystem *ts2,
