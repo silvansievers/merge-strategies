@@ -121,9 +121,9 @@ Feature::Feature(int id, int weight, string name,
       minimize_value(minimize_value) {
 }
 
-double Feature::compute_unnormalized_value(TransitionSystem *ts1,
-                                           TransitionSystem *ts2,
-                                           TransitionSystem *merge) {
+double Feature::compute_unnormalized_value(const TransitionSystem *ts1,
+                                           const TransitionSystem *ts2,
+                                           const TransitionSystem *merge) {
     if (weight) {
         // TODO: get rid of this? we currently also perform this check
         // outside of this method before calling it
@@ -145,9 +145,9 @@ CausalConnectionFeature::~CausalConnectionFeature() {
     delete causal_graph;
 }
 
-double CausalConnectionFeature::compute_value(TransitionSystem *ts1,
-                                              TransitionSystem *ts2,
-                                              TransitionSystem *) {
+double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *) {
     // return value in [0,infinity)
     // TODO: precompute for every variable pair the count of edges?
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
@@ -197,9 +197,9 @@ BoolCausalConnectionFeature::BoolCausalConnectionFeature(int id, int weight)
     : Feature(id, weight, "boolean causally connected variables", false, false) {
 }
 
-double BoolCausalConnectionFeature::compute_value(TransitionSystem *ts1,
-                                                  TransitionSystem *ts2,
-                                                  TransitionSystem *) {
+double BoolCausalConnectionFeature::compute_value(const TransitionSystem *ts1,
+                                                  const TransitionSystem *ts2,
+                                                  const TransitionSystem *) {
     // return value in [0,infinity]
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
@@ -247,9 +247,9 @@ NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
     : Feature(id, weight, "non additive variables", false, false) {
 }
 
-double NonAdditivityFeature::compute_value(TransitionSystem *ts1,
-                                           TransitionSystem *ts2,
-                                           TransitionSystem *) {
+double NonAdditivityFeature::compute_value(const TransitionSystem *ts1,
+                                           const TransitionSystem *ts2,
+                                           const TransitionSystem *) {
     // return value in [0,infinity)
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
     const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
@@ -296,9 +296,9 @@ SmallTransStatesQuotFeature::SmallTransStatesQuotFeature(int id, int weight)
     : Feature(id, weight, "small transitions per states quotient", false, true) {
 }
 
-double SmallTransStatesQuotFeature::compute_value(TransitionSystem *ts1,
-                                                  TransitionSystem *ts2,
-                                                  TransitionSystem *) {
+double SmallTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
+                                                  const TransitionSystem *ts2,
+                                                  const TransitionSystem *) {
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
@@ -312,9 +312,9 @@ HighTransStatesQuotFeature::HighTransStatesQuotFeature(int id, int weight)
     : Feature(id, weight, "high transitions per states quotient", false, false) {
 }
 
-double HighTransStatesQuotFeature::compute_value(TransitionSystem *ts1,
-                                                 TransitionSystem *ts2,
-                                                 TransitionSystem *) {
+double HighTransStatesQuotFeature::compute_value(const TransitionSystem *ts1,
+                                                 const TransitionSystem *ts2,
+                                                 const TransitionSystem *) {
     // return value in [0,infinity)
     double product_states = ts1->get_size() * ts2->get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
@@ -328,9 +328,9 @@ InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
     : Feature(id, weight, "initial h value improvement", true, false) {
 }
 
-double InitHImprovementFeature::compute_value(TransitionSystem *ts1,
-                                              TransitionSystem *ts2,
-                                              TransitionSystem *merge) {
+double InitHImprovementFeature::compute_value(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *merge) {
     // return value in [0,infinity)
     assert(merge);
     int new_init_h;
@@ -356,9 +356,9 @@ AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
     : Feature(id, weight, "average h value improvement", true, false) {
 }
 
-double AvgHImprovementFeature::compute_value(TransitionSystem *ts1,
-                                             TransitionSystem *ts2,
-                                             TransitionSystem *merge) {
+double AvgHImprovementFeature::compute_value(const TransitionSystem *ts1,
+                                             const TransitionSystem *ts2,
+                                             const TransitionSystem *merge) {
     // return value in [0,infinity)
     assert(merge);
     double new_average_h = compute_average_h_value(merge);
@@ -378,9 +378,9 @@ InitHSumFeature::InitHSumFeature(int id, int weight)
     : Feature(id, weight, "initial h value sum", false, false) {
 }
 
-double InitHSumFeature::compute_value(TransitionSystem *ts1,
-                                      TransitionSystem *ts2,
-                                      TransitionSystem *) {
+double InitHSumFeature::compute_value(const TransitionSystem *ts1,
+                                      const TransitionSystem *ts2,
+                                      const TransitionSystem *) {
     // return value in [0,infinity)
     int init_h_sum = ts1->get_init_state_goal_distance() +
         ts2->get_init_state_goal_distance();
@@ -391,9 +391,9 @@ AvgHSumFeature::AvgHSumFeature(int id, int weight)
     : Feature(id, weight, "average h value sum", false, false) {
 }
 
-double AvgHSumFeature::compute_value(TransitionSystem *ts1,
-                                     TransitionSystem *ts2,
-                                     TransitionSystem *) {
+double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
+                                     const TransitionSystem *ts2,
+                                     const TransitionSystem *) {
     // return value in [0,infinity)
     double average_h_sum = compute_average_h_value(ts1) +
         compute_average_h_value(ts2);
@@ -408,9 +408,9 @@ void DFPFeature::clear() {
     ts_to_label_ranks.clear();
 }
 
-double DFPFeature::compute_value(TransitionSystem *ts1,
-                                 TransitionSystem *ts2,
-                                 TransitionSystem *) {
+double DFPFeature::compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *) {
     // return value in [0,infinity)
     int pair_weight = INF;
     if (ts1->is_goal_relevant() || ts2->is_goal_relevant()) {
@@ -443,9 +443,9 @@ GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
     : Feature(id, weight, "goal relevance", false, false) {
 }
 
-double GoalRelevanceFeature::compute_value(TransitionSystem *ts1,
-                                           TransitionSystem *ts2,
-                                           TransitionSystem *) {
+double GoalRelevanceFeature::compute_value(const TransitionSystem *ts1,
+                                           const TransitionSystem *ts2,
+                                           const TransitionSystem *) {
     // return value in [0,2]
     int pair_weight = 0;
     if (ts1->is_goal_relevant()) {
@@ -461,9 +461,9 @@ NumVariablesFeature::NumVariablesFeature(int id, int weight)
     : Feature(id, weight, "high number of incorporated variables", false, false) {
 }
 
-double NumVariablesFeature::compute_value(TransitionSystem *ts1,
-                                          TransitionSystem *ts2,
-                                          TransitionSystem *) {
+double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
+                                          const TransitionSystem *ts2,
+                                          const TransitionSystem *) {
     // return value in [2,num_variables-1]
     return ts1->get_incorporated_variables().size() +
         ts2->get_incorporated_variables().size();
@@ -473,9 +473,9 @@ ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
     : Feature(id, weight, "shrink perfectly", true, false) {
 }
 
-double ShrinkPerfectlyFeature::compute_value(TransitionSystem *,
-                                             TransitionSystem *,
-                                             TransitionSystem *merge) {
+double ShrinkPerfectlyFeature::compute_value(const TransitionSystem *,
+                                             const TransitionSystem *,
+                                             const TransitionSystem *merge) {
     int size_before = merge->get_size();
     assert(size_before);
     Options options;
@@ -496,9 +496,9 @@ NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
     : Feature(id, weight, "small number of transitions", false, true) {
 }
 
-double NumTransitionsFeature::compute_value(TransitionSystem *ts1,
-                                            TransitionSystem *ts2,
-                                            TransitionSystem *) {
+double NumTransitionsFeature::compute_value(const TransitionSystem *ts1,
+                                            const TransitionSystem *ts2,
+                                            const TransitionSystem *) {
     // return value in [0,infinity[
     return compute_number_of_product_transitions(ts1, ts2);
 }
@@ -514,8 +514,8 @@ void LROpportunitiesFeatures::clear() {
 void LROpportunitiesFeatures::precompute_data(
     const vector<TransitionSystem *> &all_transition_systems) {
     // Precompute the set of irrelevant labels for every transition system
-    unordered_map<TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
-    for (TransitionSystem *ts : all_transition_systems) {
+    unordered_map<const TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
+    for (const TransitionSystem *ts : all_transition_systems) {
         if (ts) {
             vector<bool> irrelevant_labels(ts->get_num_labels(), false);
             for (TSConstIterator group_it = ts->begin();
@@ -553,10 +553,10 @@ void LROpportunitiesFeatures::precompute_data(
     const shared_ptr<Labels> labels = all_transition_systems.back()->get_labels();
     int num_labels = labels->get_size();
     for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-        TransitionSystem *ts1 = all_transition_systems[i];
+        const TransitionSystem *ts1 = all_transition_systems[i];
         if (ts1) {
             for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
-                TransitionSystem *ts2 = all_transition_systems[j];
+                const TransitionSystem *ts2 = all_transition_systems[j];
                 if (ts2) {
                     int count_combinable_labels = 0;
                     for (int label_no = 0; label_no < num_labels; ++label_no) {
@@ -586,9 +586,9 @@ void LROpportunitiesFeatures::precompute_data(
     }
 }
 
-double LROpportunitiesFeatures::compute_value(TransitionSystem *ts1,
-                                              TransitionSystem *ts2,
-                                              TransitionSystem *) {
+double LROpportunitiesFeatures::compute_value(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *) {
     // return value in [0,infinity[
     int combinable_labels = ts_pair_to_combinable_label_count[make_pair(ts1, ts2)];
     if (combinable_labels >= 2) {
@@ -701,9 +701,9 @@ double Features::normalize_value(int feature_id, double value) const {
     return result;
 }
 
-void Features::precompute_unnormalized_values(TransitionSystem *ts1,
-                                              TransitionSystem *ts2,
-                                              TransitionSystem *merge) {
+void Features::precompute_unnormalized_values(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *merge) {
     vector<double> values;
     values.reserve(features.size());
     for (Feature *feature : features) {
@@ -721,7 +721,7 @@ void Features::precompute_unnormalized_values(TransitionSystem *ts1,
 }
 
 double Features::compute_weighted_normalized_sum(
-    TransitionSystem *ts1, TransitionSystem *ts2) const {
+    const TransitionSystem *ts1, const TransitionSystem *ts2) const {
     const std::vector<double> &values = unnormalized_values.at(make_pair(ts1, ts2));
     double weighted_sum = 0;
     if (debug) {
@@ -879,10 +879,10 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
         // Go through all transition systems again and normalize feature values.
         int max_weight = -1;
         for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-            TransitionSystem *ts1 = all_transition_systems[i];
+            const TransitionSystem *ts1 = all_transition_systems[i];
             if (ts1) {
                 for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
-                    TransitionSystem *ts2 = all_transition_systems[j];
+                    const TransitionSystem *ts2 = all_transition_systems[j];
                     if (ts2) {
                         int pair_weight =
                             features->compute_weighted_normalized_sum(ts1, ts2);
@@ -913,8 +913,8 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
     assert(ts_index1 != -1);
     assert(ts_index2 != -1);
     int new_ts_index = all_transition_systems.size();
-    TransitionSystem *ts1 = all_transition_systems[ts_index1];
-    TransitionSystem *ts2 = all_transition_systems[ts_index2];
+    const TransitionSystem *ts1 = all_transition_systems[ts_index1];
+    const TransitionSystem *ts2 = all_transition_systems[ts_index2];
     for (int var_no : ts1->get_incorporated_variables()) {
         var_no_to_ts_index[var_no] = new_ts_index;
     }
