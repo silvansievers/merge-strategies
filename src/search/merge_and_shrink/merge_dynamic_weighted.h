@@ -205,6 +205,7 @@ public:
 
 class MergeDynamicWeighted : public MergeStrategy {
     const int max_states; // bisimulation option
+    const bool use_lr;
     Features *features;
     std::vector<int> var_no_to_ts_index;
     TaskProxy *task_proxy;

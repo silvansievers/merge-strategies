@@ -740,7 +740,8 @@ void Features::dump_weights() const {
 
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
     : MergeStrategy(),
-      max_states(opts.get<int>("max_states")) {
+      max_states(opts.get<int>("max_states")),
+      use_lr(opts.get<bool>("use_lr")) {
     features = new Features(opts);
 }
 
@@ -792,21 +793,26 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
                     TransitionSystem *ts2 = all_transition_systems[j];
                     if (ts2) {
                         TransitionSystem *merge = 0;
+                        TransitionSystem *ts1_copy = 0;
+                        TransitionSystem *ts2_copy = 0;
                         if (features->require_merge()) {
                             cout << "trying to compute the merge..." << endl;
                             const shared_ptr<Labels> labels = ts1->get_labels();
-                            shared_ptr<Labels> labels_copy = make_shared<Labels>(*labels.get());
-
-                            TransitionSystem *ts1_copy = new TransitionSystem(*ts1, labels_copy);
-                            TransitionSystem *ts2_copy = new TransitionSystem(*ts2, labels_copy);
-                            tmp_transition_systems[i] = ts1_copy;
-                            tmp_transition_systems[j] = ts2_copy;
-
-                            if (labels_copy->reduce_before_shrinking()) {
+                            shared_ptr<Labels> labels_copy = 0;
+                            if (use_lr) {
+                                labels_copy = make_shared<Labels>(*labels.get());
+                                ts1_copy = new TransitionSystem(*ts1, labels_copy);
+                                ts2_copy = new TransitionSystem(*ts2, labels_copy);
+                                tmp_transition_systems[i] = ts1_copy;
+                                tmp_transition_systems[j] = ts2_copy;
                                 labels_copy->reduce(make_pair(i, j),
                                                     tmp_transition_systems,
                                                     true);
+                            } else {
+                                ts1_copy = new TransitionSystem(*ts1, labels);
+                                ts2_copy = new TransitionSystem(*ts2, labels);
                             }
+
 
                             Options options;
                             options.set<int>("max_states", max_states);
@@ -816,19 +822,27 @@ pair<int, int> MergeDynamicWeighted::get_next(const vector<TransitionSystem *> &
                             options.set<int>("at_limit", 0);
                             ShrinkBisimulation shrink_bisim(options);
                             shrink_bisim.shrink(*ts1_copy, *ts2_copy, true);
-                            merge = new TransitionSystem(*task_proxy,
-                                                         labels_copy,
-                                                         ts1_copy, ts2_copy, true);
+                            if (use_lr) {
+                                merge = new TransitionSystem(*task_proxy,
+                                                             labels_copy,
+                                                             ts1_copy, ts2_copy, true);
+                            } else {
+                                merge = new TransitionSystem(*task_proxy,
+                                                             labels,
+                                                             ts1_copy, ts2_copy, true);
+                            }
                             cout << "...done computing the merge." << endl;
                         }
                         features->precompute_unnormalized_values(ts1, ts2, merge);
                         if (features->require_merge()) {
                             // delete and reset
                             delete merge;
-                            delete tmp_transition_systems[i];
-                            delete tmp_transition_systems[j];
-                            tmp_transition_systems[i] = ts1;
-                            tmp_transition_systems[j] = ts2;
+                            delete ts1_copy;
+                            delete ts2_copy;
+                            if (use_lr) {
+                                tmp_transition_systems[i] = ts1;
+                                tmp_transition_systems[j] = ts2;
+                            }
                         }
                     }
                 }
@@ -901,6 +915,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_option<bool>(
         "debug", "debug", "false");
     parser.add_option<int>("max_states", "shrink strategy option", "50000");
+    parser.add_option<bool>("use_lr", "use label reduction", "false");
     parser.add_option<int>(
         "w_causally_connected_vars",
         "prefer merging variables that are causally connected ",
