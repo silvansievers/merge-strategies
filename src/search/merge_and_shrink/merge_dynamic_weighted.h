@@ -52,13 +52,12 @@ public:
 };
 
 class CausalConnectionFeature : public Feature {
-    CausalGraph *causal_graph;
+    std::vector<std::vector<int> > var_pair_causal_links;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
 public:
     CausalConnectionFeature(int id, int weight);
-    virtual ~CausalConnectionFeature();
     virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
 };
 

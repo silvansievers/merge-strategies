@@ -137,42 +137,19 @@ void Feature::dump() const {
 }
 
 CausalConnectionFeature::CausalConnectionFeature(int id, int weight)
-    : Feature(id, weight, "causally connected variables", false, false),
-      causal_graph(0) {
-}
-
-CausalConnectionFeature::~CausalConnectionFeature() {
-    delete causal_graph;
+    : Feature(id, weight, "causally connected variables", false, false) {
 }
 
 double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
                                               const TransitionSystem *ts2,
                                               const TransitionSystem *) {
-    // return value in [0,infinity)
-    // TODO: precompute for every variable pair the count of edges?
+    // return value in [0,infinity]
     const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
-    vector<int> ts1_cg_neighbors;
-    for (int var_no : ts1_var_nos) {
-        const vector<int> &ts1_cg_successors = causal_graph->get_successors(var_no);
-        ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_successors.begin(),
-                                ts1_cg_successors.end());
-        const vector<int> &ts1_cg_predecessors = causal_graph->get_predecessors(var_no);
-        ts1_cg_neighbors.insert(ts1_cg_neighbors.end(), ts1_cg_predecessors.begin(),
-                                ts1_cg_predecessors.end());
-    }
-    // NOTE: we want to count directed edges, to take into account if there
-    // is a connection between variables in both directions or not.
-//    sort(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end());
-//    ts1_cg_neighbors.erase(unique(ts1_cg_neighbors.begin(), ts1_cg_neighbors.end()),
-//                           ts1_cg_neighbors.end());
-
     const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
     int edge_count = 0;
-    for (int ts1_cg_neighbor : ts1_cg_neighbors) {
+    for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
-            if (ts2_var_no == ts1_cg_neighbor) {
-                ++edge_count;
-            }
+            edge_count += var_pair_causal_links[ts1_var_no][ts2_var_no];
         }
     }
     double max_possible_edges = ts1_var_nos.size() * ts2_var_nos.size() * 2;
@@ -181,14 +158,29 @@ double CausalConnectionFeature::compute_value(const TransitionSystem *ts1,
 }
 
 void CausalConnectionFeature::initialize(const TaskProxy &task_proxy, bool dump) {
-    // TODO: avoid recreating a new causal graph (cannot assign a const
-    // reference in this method)
-    causal_graph = new CausalGraph(task_proxy);
+    const CausalGraph &cg = task_proxy.get_causal_graph();
+    int num_variables = task_proxy.get_variables().size();
+    var_pair_causal_links.resize(num_variables, vector<int>(num_variables, 0));
+    for (VariableProxy var : task_proxy.get_variables()) {
+        int var_no = var.get_id();
+        const vector<int> &successors = cg.get_successors(var_no);
+        for (int succ : successors) {
+            var_pair_causal_links[var_no][succ] += 1;
+            var_pair_causal_links[succ][var_no] += 1;
+        }
+        const vector<int> &predecessors = cg.get_predecessors(var_no);
+        for (int pred : predecessors) {
+            var_pair_causal_links[var_no][pred] += 1;
+            var_pair_causal_links[pred][var_no] += 1;
+        }
+    }
     if (dump) {
-        cout << "causal graph:" << endl;
-        for (VariableProxy var : task_proxy.get_variables()) {
-            cout << "successors for var " << var.get_id() << ": "
-                 << causal_graph->get_successors(var.get_id()) << endl;
+        for (int var_no1 = 0; var_no1 < num_variables; ++var_no1) {
+            for (int var_no2 = var_no1 + 1; var_no2 < num_variables; ++var_no2) {
+                cout << var_no1 << " and " << var_no2 << " have "
+                     << var_pair_causal_links[var_no1][var_no2]
+                     << "causal graph edges" << endl;
+            }
         }
     }
 }
