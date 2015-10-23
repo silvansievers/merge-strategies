@@ -658,6 +658,110 @@ double LROpportunitiesFeatures::compute_value(const TransitionSystem *ts1,
     return 0;
 }
 
+MoreLROpportunitiesFeatures::MoreLROpportunitiesFeatures(int id, int weight)
+    : Feature(id, weight, "even higher number of reducible labels", false, false) {
+}
+
+void MoreLROpportunitiesFeatures::clear() {
+    ts_pair_to_combinable_label_count.clear();
+}
+
+void MoreLROpportunitiesFeatures::precompute_data(
+    const vector<TransitionSystem *> &all_transition_systems) {
+    // Precompute the set of irrelevant labels for every transition system
+    unordered_map<const TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
+    for (const TransitionSystem *ts : all_transition_systems) {
+        if (ts) {
+            vector<bool> irrelevant_labels(ts->get_num_labels(), false);
+            for (TSConstIterator group_it = ts->begin();
+                 group_it != ts->end(); ++group_it) {
+                const vector<Transition> &transitions = group_it.get_transitions();
+                bool group_relevant = false;
+                if (static_cast<int>(transitions.size()) == ts->get_size()) {
+                    /*
+                      A label group is irrelevant in the earlier notion if it has
+                      exactly a self loop transition for every state.
+                    */
+                    for (size_t i = 0; i < transitions.size(); ++i) {
+                        if (transitions[i].target != transitions[i].src) {
+                            group_relevant = true;
+                            break;
+                        }
+                    }
+                } else {
+                    group_relevant = true;
+                }
+                if (!group_relevant) {
+                    for (LabelConstIter label_it = group_it.begin();
+                         label_it != group_it.end(); ++label_it) {
+                        int label_no = *label_it;
+                        irrelevant_labels[label_no] = true;
+                    }
+                }
+            }
+            ts_to_irrelevant_labels[ts] = irrelevant_labels;
+        }
+    }
+
+    // Compute the number of labels that are irrelevant in all other transition
+    // systems than then current considered pair.
+    const shared_ptr<Labels> labels = all_transition_systems.back()->get_labels();
+    int num_labels = labels->get_size();
+    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+        const TransitionSystem *ts1 = all_transition_systems[i];
+        if (ts1) {
+            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
+                const TransitionSystem *ts2 = all_transition_systems[j];
+                if (ts2) {
+                    int count_combinable_label_pairs = 0;
+                    for (int label_no1 = 0; label_no1 < num_labels; ++label_no1) {
+                        if (labels->is_current_label(label_no1)) {
+                            for (int label_no2 = label_no1 + 1;
+                                 label_no2 < num_labels; ++label_no2) {
+                                if (labels->is_current_label(label_no2)) {
+                                    bool equivalent_in_all_other_ts = true;
+                                    for (size_t k = 0; k < all_transition_systems.size(); ++k) {
+                                        if (k == i || k == j) {
+                                            continue;
+                                        }
+                                        TransitionSystem *ts3 = all_transition_systems[k];
+                                        if (ts3) {
+                                            if (ts3->get_group_id_for_label(label_no1)
+                                                    != ts3->get_group_id_for_label(label_no2)) {
+                                                equivalent_in_all_other_ts = false;
+                                                break;
+                                            }
+                                        }
+
+                                    }
+                                    if (equivalent_in_all_other_ts) {
+                                        ++count_combinable_label_pairs;
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                    ts_pair_to_combinable_label_count[make_pair(ts1, ts2)] =
+                        count_combinable_label_pairs;
+                }
+            }
+        }
+    }
+}
+
+double MoreLROpportunitiesFeatures::compute_value(const TransitionSystem *ts1,
+                                              const TransitionSystem *ts2,
+                                              const TransitionSystem *) {
+    // return value in [0,infinity[
+    int combinable_label_pairs = ts_pair_to_combinable_label_count[make_pair(ts1, ts2)];
+    if (combinable_label_pairs >= 1) {
+        // need at least one label pair to profit from label reduction
+        return combinable_label_pairs;
+    }
+    return 0;
+}
+
 MIASMFeature::MIASMFeature(int id, int weight)
     : Feature(id, weight, "high number of unreachable and irrelevant states", true, true) {
 }
@@ -723,6 +827,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_num_trans")));
     features.push_back(new LROpportunitiesFeatures(
                            id++, opts.get<int>("w_lr_opp")));
+    features.push_back(new MoreLROpportunitiesFeatures(
+                           id++, opts.get<int>("w_more_lr_opp")));
     features.push_back(new MIASMFeature(
                            id++, opts.get<int>("w_miasm")));
     for (Feature *feature : features) {
@@ -1130,6 +1236,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
+        "w_more_lr_opp",
+        "prefer transition systems that allow for most label reductions",
+        "0",
+        Bounds("0", "100"));
+    parser.add_option<int>(
         "w_miasm",
         "prefer transition systems that allow for most unreachable and irrelevant pruning",
         "0",
@@ -1155,6 +1266,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_shrink_perfectly") == 0 &&
         opts.get<int>("w_num_trans") == 0 &&
         opts.get<int>("w_lr_opp") == 0 &&
+        opts.get<int>("w_more_lr_opp") == 0 &&
         opts.get<int>("w_miasm") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);

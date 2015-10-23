@@ -215,6 +215,18 @@ public:
     void precompute_data(const std::vector<TransitionSystem *> &all_transition_systems) override;
 };
 
+class MoreLROpportunitiesFeatures : public Feature {
+    std::unordered_map<std::pair<const TransitionSystem *, const TransitionSystem *>,
+        int> ts_pair_to_combinable_label_count;
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2,
+                                 const TransitionSystem *merge) override;
+public:
+    MoreLROpportunitiesFeatures(int id, int weight);
+    virtual void clear() override;
+    void precompute_data(const std::vector<TransitionSystem *> &all_transition_systems) override;
+};
+
 class MIASMFeature : public Feature {
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
