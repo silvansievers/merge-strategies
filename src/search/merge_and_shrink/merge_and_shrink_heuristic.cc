@@ -105,6 +105,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     int negative_improvement_counter = 0;
     vector<int> remaining_labels;
     remaining_labels.push_back(labels->compute_number_active_labels());
+    int iteration_counter = 0;
+    bool still_perfect = true;
     if (!final_transition_system) { // All atomic transition system are solvable.
         while (!merge_strategy->done()) {
             // Choose next transition systems to merge
@@ -132,6 +134,14 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 transition_system1->statistics(timer);
             if (shrunk.second)
                 transition_system2->statistics(timer);
+
+            const vector<double> &miss_qualified_states_ratios =
+                shrink_strategy->get_miss_qualified_states_ratios();
+            int size = miss_qualified_states_ratios.size();
+            if (still_perfect && (miss_qualified_states_ratios[size-1] || miss_qualified_states_ratios[size-2])) {
+                cout << "not perfect anymore in iteration " << iteration_counter << endl;
+                still_perfect = false;
+            }
 
             if (labels->reduce_before_merging()) {
                 labels->reduce(merge_indices, fts.get_vector());
@@ -171,6 +181,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
 
             report_peak_memory_delta();
             cout << endl;
+            ++iteration_counter;
         }
     }
 
