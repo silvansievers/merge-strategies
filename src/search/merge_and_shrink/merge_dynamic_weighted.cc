@@ -5,6 +5,7 @@
 #include "transition_system.h"
 
 #include "../causal_graph.h"
+#include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../task_proxy.h"
@@ -783,6 +784,29 @@ double MIASMFeature::compute_value(const TransitionSystem *ts1,
     }
 }
 
+MutexFeature::MutexFeature(int id, int weight)
+    : Feature(id, weight, "prefer merging variables that have mutex values ", false, true) {
+}
+
+double MutexFeature::compute_value(const TransitionSystem *ts1,
+                                   const TransitionSystem *ts2,
+                                   const TransitionSystem *) {
+    // return value in [0,infinity)
+    const vector<int> ts1_var_nos = ts1->get_incorporated_variables();
+    const vector<int> ts2_var_nos = ts2->get_incorporated_variables();
+    int mutex_pair_count = 0;
+    for (int ts1_var_no : ts1_var_nos) {
+        for (int ts2_var_no : ts2_var_nos) {
+            if (!g_mutex_var_groups[ts1_var_no].count(ts2_var_no)) {
+                ++mutex_pair_count;
+            }
+        }
+    }
+    double total_pair_count = ts1_var_nos.size() * ts2_var_nos.size();
+    assert(total_pair_count);
+    return static_cast<double>(mutex_pair_count) / total_pair_count;
+}
+
 // ========================= FEATURES ====================================
 
 Features::Features(const Options opts)
@@ -831,6 +855,8 @@ Features::Features(const Options opts)
                            id++, opts.get<int>("w_more_lr_opp")));
     features.push_back(new MIASMFeature(
                            id++, opts.get<int>("w_miasm")));
+    features.push_back(new MutexFeature(
+                           id++, opts.get<int>("w_mutex")));
     for (Feature *feature : features) {
         if (feature->get_weight() && feature->requires_merge()) {
             merge_required = true;
@@ -1245,6 +1271,11 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "prefer transition systems that allow for most unreachable and irrelevant pruning",
         "0",
         Bounds("0", "100"));
+    parser.add_option<int>(
+                "w_mutex",
+                "prefer transition systems that have facts mutex to each other",
+                "0",
+                Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&
@@ -1267,7 +1298,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_num_trans") == 0 &&
         opts.get<int>("w_lr_opp") == 0 &&
         opts.get<int>("w_more_lr_opp") == 0 &&
-        opts.get<int>("w_miasm") == 0) {
+        opts.get<int>("w_miasm") == 0 &&
+        opts.get<int>("w_mutex") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         exit_with(EXIT_INPUT_ERROR);
     }

@@ -235,6 +235,13 @@ public:
     MIASMFeature(int id, int weight);
 };
 
+class MutexFeature : public Feature {
+    virtual double compute_value(const TransitionSystem *ts1,
+                                 const TransitionSystem *ts2, const TransitionSystem *) override;
+public:
+    MutexFeature(int id, int weight);
+};
+
 class Features {
     const bool debug;
     bool merge_required; // if any of the active features require the merge

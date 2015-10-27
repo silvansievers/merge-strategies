@@ -35,6 +35,7 @@ static const int PRE_FILE_VERSION = 3;
 //       structure globally.)
 
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
+vector<set<int> > g_mutex_var_groups;
 
 bool test_goal(const GlobalState &state) {
     for (size_t i = 0; i < g_goal.size(); ++i) {
@@ -159,11 +160,14 @@ void read_mutexes(istream &in) {
         in >> num_facts;
         vector<pair<int, int> > invariant_group;
         invariant_group.reserve(num_facts);
+        set<int> mutex_vars;
         for (int j = 0; j < num_facts; ++j) {
             int var, val;
             in >> var >> val;
             invariant_group.push_back(make_pair(var, val));
+            mutex_vars.insert(var);
         }
+        g_mutex_var_groups.push_back(mutex_vars);
         check_magic(in, "end_mutex_group");
         for (size_t j = 0; j < invariant_group.size(); ++j) {
             const pair<int, int> &fact1 = invariant_group[j];

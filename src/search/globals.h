@@ -3,6 +3,7 @@
 
 #include <iosfwd>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -82,5 +83,6 @@ extern RandomNumberGenerator g_rng;
 extern StateRegistry *g_state_registry;
 
 extern const std::shared_ptr<AbstractTask> g_root_task();
+extern std::vector<std::set<int> > g_mutex_var_groups;
 
 #endif
