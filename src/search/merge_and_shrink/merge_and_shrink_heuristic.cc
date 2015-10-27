@@ -237,13 +237,11 @@ void MergeAndShrinkHeuristic::initialize() {
         shrink_strategy->get_miss_qualified_states_ratios();
     cout << "Course of miss qualified states shrinking: "
          << miss_qualified_states_ratios << endl;
-    size_t number_of_shrinks = miss_qualified_states_ratios.size();
-    // there are two shrinks per merge
-    assert(number_of_shrinks == (task_proxy.get_variables().size() - 1) * 2);
     double summed_values = 0;
     for (double value : miss_qualified_states_ratios) {
         summed_values += value;
     }
+    size_t number_of_shrinks = miss_qualified_states_ratios.size();
     double average_imperfect_shrinking = 0;
     if (number_of_shrinks) {
         average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);

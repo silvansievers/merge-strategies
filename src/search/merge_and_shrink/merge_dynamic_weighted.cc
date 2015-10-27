@@ -537,20 +537,25 @@ ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
 double ShrinkPerfectlyFeature::compute_value(const TransitionSystem *,
                                              const TransitionSystem *,
                                              const TransitionSystem *merge) {
-    int size_before = merge->get_size();
-    assert(size_before);
-    Options options;
-    options.set<int>("max_states", INF);
-    options.set<int>("max_states_before_merge", INF);
-    options.set<int>("threshold", 1);
-    options.set<bool>("greedy", false);
-    options.set<int>("at_limit", 0);
-    ShrinkBisimulation shrink_bisim(options);
-    int size_after = shrink_bisim.compute_size_after_perfect_shrink(*merge);
-    assert(size_after <= size_before);
-    int difference = size_before - size_after;
-    return static_cast<double>(difference) /
-        static_cast<double>(size_before);
+    // return value in [0,infinity)
+    assert(merge);
+    if (merge->is_solvable()) {
+        Options options;
+        options.set<int>("max_states", INF);
+        options.set<int>("max_states_before_merge", INF);
+        options.set<int>("threshold", 1);
+        options.set<bool>("greedy", false);
+        options.set<int>("at_limit", 0);
+        ShrinkBisimulation shrink_bisim(options);
+        int size_before = merge->get_size();
+        int size_after = shrink_bisim.compute_size_after_perfect_shrink(*merge);
+        assert(size_after <= size_before);
+        int difference = size_before - size_after;
+        return static_cast<double>(difference) /
+            static_cast<double>(size_before);
+    } else {
+        return INF;
+    }
 }
 
 NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
@@ -752,8 +757,8 @@ void MoreLROpportunitiesFeatures::precompute_data(
 }
 
 double MoreLROpportunitiesFeatures::compute_value(const TransitionSystem *ts1,
-                                              const TransitionSystem *ts2,
-                                              const TransitionSystem *) {
+                                                  const TransitionSystem *ts2,
+                                                  const TransitionSystem *) {
     // return value in [0,infinity[
     int combinable_label_pairs = ts_pair_to_combinable_label_count[make_pair(ts1, ts2)];
     if (combinable_label_pairs >= 1) {
@@ -771,11 +776,12 @@ double MIASMFeature::compute_value(const TransitionSystem *ts1,
                                    const TransitionSystem *ts2,
                                    const TransitionSystem *merge) {
     // return value in [0,infinity)
-    int expected_size = ts1->get_size() * ts2->get_size();
-    assert(expected_size);
-    int new_size = merge->get_size();
-    assert(new_size <= expected_size);
+    assert(merge);
     if (merge->is_solvable()) {
+        int expected_size = ts1->get_size() * ts2->get_size();
+        assert(expected_size);
+        int new_size = merge->get_size();
+        assert(new_size <= expected_size);
         return static_cast<double>(new_size) / static_cast<double>(expected_size);
     } else {
         // initial state has been pruned
