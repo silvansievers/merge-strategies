@@ -40,10 +40,13 @@ bool ShrinkStrategy::shrink_transition_system(TransitionSystem &ts,
             cout << ")" << endl;
         }
         StateEquivalenceRelation equivalence_relation;
+        // NOTE: subclasses must push a number into miss_qualified_states_ratios
         compute_equivalence_relation(ts, new_size, equivalence_relation);
         // TODO: We currently violate this; see issue250
         //assert(equivalence_relation.size() <= new_size);
         return ts.apply_abstraction(equivalence_relation, silent);
+    } else {
+        miss_qualified_states_ratios.push_back(0);
     }
     return false;
 }
