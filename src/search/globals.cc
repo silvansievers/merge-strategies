@@ -35,7 +35,7 @@ static const int PRE_FILE_VERSION = 3;
 //       structure globally.)
 
 static vector<vector<set<pair<int, int> > > > g_inconsistent_facts;
-vector<set<int> > g_mutex_var_groups;
+vector<vector<bool> > g_mutex_var_pairs;
 
 bool test_goal(const GlobalState &state) {
     for (size_t i = 0; i < g_goal.size(); ++i) {
@@ -144,6 +144,8 @@ void read_mutexes(istream &in) {
     g_inconsistent_facts.resize(g_variable_domain.size());
     for (size_t i = 0; i < g_variable_domain.size(); ++i)
         g_inconsistent_facts[i].resize(g_variable_domain[i]);
+    g_mutex_var_pairs.resize(g_variable_domain.size(),
+                             vector<bool>(g_variable_domain.size(), false));
 
     int num_mutex_groups;
     in >> num_mutex_groups;
@@ -160,14 +162,11 @@ void read_mutexes(istream &in) {
         in >> num_facts;
         vector<pair<int, int> > invariant_group;
         invariant_group.reserve(num_facts);
-        set<int> mutex_vars;
         for (int j = 0; j < num_facts; ++j) {
             int var, val;
             in >> var >> val;
             invariant_group.push_back(make_pair(var, val));
-            mutex_vars.insert(var);
         }
-        g_mutex_var_groups.push_back(mutex_vars);
         check_magic(in, "end_mutex_group");
         for (size_t j = 0; j < invariant_group.size(); ++j) {
             const pair<int, int> &fact1 = invariant_group[j];
@@ -187,6 +186,8 @@ void read_mutexes(istream &in) {
                        where some but not all facts talk about the
                        same variable. */
                     g_inconsistent_facts[var1][val1].insert(fact2);
+                    g_mutex_var_pairs[var1][var2] = true;
+                    g_mutex_var_pairs[var2][var1] = true;
                 }
             }
         }

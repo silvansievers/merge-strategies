@@ -803,7 +803,7 @@ double MutexFeature::compute_value(const TransitionSystem *ts1,
     int mutex_pair_count = 0;
     for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
-            if (!g_mutex_var_groups[ts1_var_no].count(ts2_var_no)) {
+            if (g_mutex_var_pairs[ts1_var_no][ts2_var_no]) {
                 ++mutex_pair_count;
             }
         }
