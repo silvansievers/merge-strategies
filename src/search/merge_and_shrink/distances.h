@@ -78,7 +78,7 @@ public:
       the method might fail to detect that the distance information is
       out of date.)
     */
-    bool apply_abstraction(const std::vector<std::forward_list<int> > &collapsed_groups,
+    bool apply_abstraction(const std::vector<std::forward_list<int>> &collapsed_groups,
                            bool silent);
 
     int get_max_f() const;
