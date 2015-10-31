@@ -19,27 +19,31 @@ MergeRandom::MergeRandom(const Options &options)
 pair<int, int> MergeRandom::get_next(const vector<TransitionSystem *> &all_transition_systems) {
     assert(initialized());
     assert(!done());
-    int size = all_transition_systems.size();
+    int number_ts = all_transition_systems.size();
+    vector<int> active_count_to_ts_index;
+    for (int ts_index = 0; ts_index < number_ts; ++ts_index) {
+        if (all_transition_systems[ts_index]) {
+            active_count_to_ts_index.push_back(ts_index);
+        }
+    }
+
     RandomNumberGenerator &rng_ = *rng;
-
-    int index1 = -1;
-    while (true) {
-        index1 = rng_(size);
-        if (all_transition_systems[index1]) {
-            break;
-        }
+    int number_active_ts = active_count_to_ts_index.size();
+    int active_index1 = rng_(number_active_ts);
+    int active_index2 = rng_(number_active_ts);
+    while (active_index2 == active_index1) {
+        active_index2 = rng_(number_active_ts);
     }
 
-    int index2 = -1;
-    while (true) {
-        index2 = rng_(size);
-        if (all_transition_systems[index2] && index2 != index1) {
-            break;
-        }
-    }
+    assert(in_bounds(active_index1, active_count_to_ts_index));
+    assert(in_bounds(active_index2, active_count_to_ts_index));
+    int next_index1 = active_count_to_ts_index[active_index1];
+    int next_index2 = active_count_to_ts_index[active_index2];
+    assert(all_transition_systems[next_index1]);
+    assert(all_transition_systems[next_index2]);
 
     --remaining_merges;
-    return make_pair(index1, index2);
+    return make_pair(next_index1, next_index2);
 }
 
 void MergeRandom::dump_strategy_specific_options() const {
