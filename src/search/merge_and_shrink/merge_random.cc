@@ -43,6 +43,8 @@ pair<int, int> MergeRandom::get_next(const vector<TransitionSystem *> &all_trans
     assert(all_transition_systems[next_index2]);
 
     --remaining_merges;
+    cout << "Next pair of indices: (" << next_index1 << ", "
+         << next_index2 << ")" << endl;
     return make_pair(next_index1, next_index2);
 }
 
