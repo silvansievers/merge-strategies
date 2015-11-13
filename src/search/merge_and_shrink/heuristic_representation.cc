@@ -53,6 +53,13 @@ int HeuristicRepresentationLeaf::get_abstract_state(const State &state) const {
     return lookup_table[value];
 }
 
+void HeuristicRepresentationLeaf::dump() const {
+    for (const auto &value : lookup_table) {
+        cout << value << ", ";
+    }
+    cout << endl;
+}
+
 
 HeuristicRepresentationMerge::HeuristicRepresentationMerge(
     unique_ptr<HeuristicRepresentation> left_child_,
@@ -113,4 +120,17 @@ int HeuristicRepresentationMerge::get_abstract_state(
         state2 == TransitionSystem::PRUNED_STATE)
         return TransitionSystem::PRUNED_STATE;
     return lookup_table[state1][state2];
+}
+
+void HeuristicRepresentationMerge::dump() const {
+    for (const auto &row : lookup_table) {
+        for (const auto &value : row) {
+            cout << value << ", ";
+        }
+        cout << endl;
+    }
+    cout << "dump left child:" << endl;
+    left_child->dump();
+    cout << "dump right child:" << endl;
+    right_child->dump();
 }

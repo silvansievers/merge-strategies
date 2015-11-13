@@ -22,6 +22,7 @@ public:
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) = 0;
     virtual bool operator==(const HeuristicRepresentation &other) const = 0;
+    virtual void dump() const = 0;
 };
 
 
@@ -49,6 +50,7 @@ public:
             return false;
         }
     }
+    virtual void dump() const override;
 };
 
 
@@ -79,6 +81,7 @@ public:
             return false;
         }
     }
+    virtual void dump() const override;
 };
 
 
