@@ -86,7 +86,8 @@ public:
     const std::vector<double> &get_miss_qualified_states_ratios() const {
         return miss_qualified_states_ratios;
     }
-    int compute_size_after_perfect_shrink(const TransitionSystem &ts);
+    int compute_size_after_perfect_shrink(
+        std::shared_ptr<FactoredTransitionSystem> fts, int index);
 
     void dump_options() const;
     std::string get_name() const;

@@ -51,7 +51,8 @@ FactoredTransitionSystem::~FactoredTransitionSystem() {
 }
 
 void FactoredTransitionSystem::discard_states(int index,
-                                              const vector<bool> &to_be_pruned_states) {
+                                              const vector<bool> &to_be_pruned_states,
+                                              bool silent) {
     assert(is_index_valid(index));
     int num_states = transition_systems[index]->get_size();
     assert(static_cast<int>(to_be_pruned_states.size()) == num_states);
@@ -64,7 +65,7 @@ void FactoredTransitionSystem::discard_states(int index,
             equivalence_relation.push_back(group);
         }
     }
-    apply_abstraction(index, equivalence_relation);
+    apply_abstraction(index, equivalence_relation, silent);
 }
 
 bool FactoredTransitionSystem::is_index_valid(int index) const {
@@ -79,14 +80,14 @@ bool FactoredTransitionSystem::is_component_valid(int index) const {
 }
 
 
-void FactoredTransitionSystem::compute_distances_and_prune(int index) {
+void FactoredTransitionSystem::compute_distances_and_prune(int index, bool silent) {
     /*
       This method does all that compute_distances does and
       additionally prunes all states that are unreachable (abstract g
       is infinite) or irrelevant (abstract h is infinite).
     */
     assert(is_index_valid(index));
-    discard_states(index, distances[index]->compute_distances());
+    discard_states(index, distances[index]->compute_distances(silent), silent);
     assert(is_component_valid(index));
 }
 
@@ -102,7 +103,7 @@ void FactoredTransitionSystem::apply_label_reduction(
 }
 
 bool FactoredTransitionSystem::apply_abstraction(
-    int index, const vector<forward_list<int>> &collapsed_groups) {
+    int index, const vector<forward_list<int>> &collapsed_groups, bool silent) {
     assert(is_index_valid(index));
 
     vector<int> abstraction_mapping(transition_systems[index]->get_size(), PRUNED_STATE);
@@ -116,8 +117,11 @@ bool FactoredTransitionSystem::apply_abstraction(
     }
 
     bool shrunk = transition_systems[index]->apply_abstraction(collapsed_groups, abstraction_mapping);
-    if (!distances[index]->apply_abstraction(collapsed_groups))
-        cout << transition_systems[index]->tag() << "simplification was not f-preserving!" << endl;
+    if (!distances[index]->apply_abstraction(collapsed_groups, silent)) {
+        if (!silent) {
+            cout << transition_systems[index]->tag() << "simplification was not f-preserving!" << endl;
+        }
+    }
     if (shrunk) {
         heuristic_representations[index]->apply_abstraction_to_lookup_table(
             abstraction_mapping);
@@ -229,4 +233,8 @@ void FactoredTransitionSystem::dump(int index) const {
 
 int FactoredTransitionSystem::get_num_labels() const {
     return labels->get_size();
+}
+
+int FactoredTransitionSystem::get_init_state_goal_distance(int index) const {
+    return distances[index]->get_goal_distance(transition_systems[index]->get_init_state());
 }

@@ -138,8 +138,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
-            int init_dist1 = transition_system1->get_init_state_goal_distance();
-            int init_dist2 = transition_system2->get_init_state_goal_distance();
+            int init_dist1 = fts->get_init_state_goal_distance(merge_index1);
+            int init_dist2 = fts->get_init_state_goal_distance(merge_index2);
 
             // Merging
             final_index = fts->merge(task_proxy, merge_index1, merge_index2);
@@ -151,7 +151,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 break;
             }
 
-            int new_init_dist = new_transition_system->get_init_state_goal_distance();
+            int new_init_dist = fts->get_init_state_goal_distance(final_index);
             int difference = new_init_dist - max(init_dist1, init_dist2);
             cout << "Difference of init h values: " << difference << endl;
             if (difference < 0) {

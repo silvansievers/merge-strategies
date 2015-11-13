@@ -280,16 +280,9 @@ TransitionSystem::TransitionSystem(const TransitionSystem &other,
                                      labels)),
       transitions_by_group_id(other.transitions_by_group_id),
       num_states(other.num_states),
-      heuristic_representation(nullptr),
-      distances(make_unique_ptr<Distances>(*this, *other.distances.get())),
       goal_states(other.goal_states),
       init_state(other.init_state),
       goal_relevant(other.goal_relevant) {
-    if (dynamic_cast<HeuristicRepresentationLeaf *>(other.heuristic_representation.get())) {
-        heuristic_representation = make_unique_ptr<HeuristicRepresentationLeaf>(dynamic_cast<HeuristicRepresentationLeaf *>(other.heuristic_representation.get()));
-    } else {
-        heuristic_representation = make_unique_ptr<HeuristicRepresentationMerge>(dynamic_cast<HeuristicRepresentationMerge *>(other.heuristic_representation.get()));
-    }
     assert(*this == other);
 }
 
@@ -580,8 +573,6 @@ bool TransitionSystem::operator==(const TransitionSystem &other) const {
     assert(*label_equivalence_relation.get() == *other.label_equivalence_relation.get());
     assert(transitions_by_group_id == other.transitions_by_group_id);
     assert(num_states == other.num_states);
-    assert(*heuristic_representation.get() == *other.heuristic_representation.get());
-    assert(*distances.get() == *other.distances.get());
     assert(goal_states == other.goal_states);
     assert(init_state == other.init_state);
     assert(goal_relevant == other.goal_relevant);
@@ -590,8 +581,6 @@ bool TransitionSystem::operator==(const TransitionSystem &other) const {
             *label_equivalence_relation.get() == *other.label_equivalence_relation.get() &&
             transitions_by_group_id == other.transitions_by_group_id &&
             num_states == other.num_states &&
-            *heuristic_representation.get() == *other.heuristic_representation.get() &&
-            *distances.get() == *other.distances.get() &&
             goal_states == other.goal_states &&
             init_state == other.init_state &&
             goal_relevant == other.goal_relevant);

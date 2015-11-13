@@ -271,16 +271,16 @@ void Labels::reduce(pair<int, int> next_merge,
             num_unsuccessful_iterations = 0;
             fts->apply_label_reduction(label_mapping, ts_index);
             // TODO: fix
-            if (partial) {
-                all_transition_systems[next_merge.first]->
-                    apply_label_reduction(label_mapping, next_merge.first != ts_index);
-                all_transition_systems[next_merge.second]->
-                    apply_label_reduction(label_mapping, next_merge.second != ts_index);
-            } else {
-                notify_transition_systems(ts_index,
-                                          all_transition_systems,
-                                          label_mapping);
-            }
+//            if (partial) {
+//                all_transition_systems[next_merge.first]->
+//                    apply_label_reduction(label_mapping, next_merge.first != ts_index);
+//                all_transition_systems[next_merge.second]->
+//                    apply_label_reduction(label_mapping, next_merge.second != ts_index);
+//            } else {
+//                notify_transition_systems(ts_index,
+//                                          all_transition_systems,
+//                                          label_mapping);
+//            }
         } else {
             // Even if the transition system has been removed, we need to count
             // it as unsuccessful iterations (the size of the vector matters).

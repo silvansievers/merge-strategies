@@ -319,7 +319,7 @@ void ShrinkBisimulation::compute_abstraction(
     int potentially_miss_qualified_states = 0;
     if (!stable || stop_requested) {
         signatures.clear();
-        compute_signatures(ts, signatures, state_to_group);
+        compute_signatures(fts, index, signatures, state_to_group);
         for (int state = 2; state < ts.get_size() + 1; ++state) {
             const Signature &prev_sig = signatures[state - 1];
             const Signature &curr_sig = signatures[state];

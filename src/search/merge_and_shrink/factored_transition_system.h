@@ -29,8 +29,9 @@ class FactoredTransitionSystem {
     bool solvable;
     // TODO: add something like "current_index"? for shrink classes e.g.
 
-    void compute_distances_and_prune(int index);
-    void discard_states(int index, const std::vector<bool> &to_be_pruned_states);
+    void compute_distances_and_prune(int index, bool silent = false);
+    void discard_states(int index, const std::vector<bool> &to_be_pruned_states,
+                        bool silent);
 
     bool is_index_valid(int index) const;
     bool is_component_valid(int index) const;
@@ -62,7 +63,9 @@ public:
     void label_reduction(std::pair<int, int> merge_indices);
     void apply_label_reduction(const std::vector<std::pair<int, std::vector<int>>> &label_mapping,
                                int combinable_index);
-    bool apply_abstraction(int index, const std::vector<std::forward_list<int>> &collapsed_groups);
+    bool apply_abstraction(int index,
+                           const std::vector<std::forward_list<int>> &collapsed_groups,
+                           bool silent = false);
     int merge(const TaskProxy &task_proxy, int index1, int index2);
     void finalize(int index = -1);
     bool is_solvable() const {
@@ -83,6 +86,7 @@ public:
         return is_index_valid(index);
     }
     int get_num_labels() const; // used by merge_dfp
+    int get_init_state_goal_distance(int index) const;
 };
 
 #endif

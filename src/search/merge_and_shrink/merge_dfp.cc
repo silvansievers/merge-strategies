@@ -110,14 +110,12 @@ pair<int, int> MergeDFP::get_next(shared_ptr<FactoredTransitionSystem> fts) {
     int num_transition_systems = fts->get_size();
     if (order == REGULAR) {
         // TODO: fix this
-        for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-            const TransitionSystem *transition_system = all_transition_systems[i];
-            if (transition_system) {
-                sorted_transition_systems.push_back(transition_system);
-                indices_mapping.push_back(i);
+        for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
+            if (fts->is_active(ts_index)) {
+                sorted_active_ts_indices.push_back(ts_index);
                 transition_system_label_ranks.push_back(vector<int>());
                 vector<int> &label_ranks = transition_system_label_ranks.back();
-                compute_label_ranks(transition_system, label_ranks);
+                compute_label_ranks(fts, ts_index, label_ranks);
             }
         }
     } else {
@@ -213,17 +211,10 @@ pair<int, int> MergeDFP::get_next(shared_ptr<FactoredTransitionSystem> fts) {
     */
     // NOT true if used on a subset of transitions!
     if (next_index1 == -1 || next_index2 == -1) {
-        // TODO: fix this
         assert(next_index1 == -1 && next_index2 == -1);
         assert(minimum_weight == INF);
-        size_t ts_index = 0;
-        size_t other_ts_index = 1;
-        assert(sorted_transition_systems[ts_index]);
-        assert(sorted_transition_systems[other_ts_index]);
-        next_index1 = indices_mapping[ts_index];
-        next_index2 = indices_mapping[other_ts_index];
-        assert(all_transition_systems[next_index1] == sorted_transition_systems[ts_index]);
-        assert(all_transition_systems[next_index2] == sorted_transition_systems[other_ts_index]);
+        next_index1 = sorted_active_ts_indices[0];
+        next_index2 = sorted_active_ts_indices[1];
     }
     assert(next_index1 != -1);
     assert(next_index2 != -1);

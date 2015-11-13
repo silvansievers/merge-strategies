@@ -115,9 +115,11 @@ pair<bool, bool> ShrinkStrategy::shrink(shared_ptr<FactoredTransitionSystem> fts
     return make_pair(shrunk1, shrunk2);
 }
 
-int ShrinkStrategy::compute_size_after_perfect_shrink(const TransitionSystem &ts) {
+int ShrinkStrategy::compute_size_after_perfect_shrink(
+    shared_ptr<FactoredTransitionSystem> fts,
+    int index) {
     StateEquivalenceRelation equivalence_relation;
-    compute_equivalence_relation(ts, ts.get_size(), equivalence_relation);
+    compute_equivalence_relation(fts, index, fts->get_ts(index).get_size(), equivalence_relation);
     return equivalence_relation.size();
 }
 

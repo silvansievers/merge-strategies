@@ -168,6 +168,7 @@ public:
                      TransitionSystem *ts1,
                      TransitionSystem *ts2,
                      bool silent = false);
+    // Copy constructor
     TransitionSystem(const TransitionSystem &other,
                      const std::shared_ptr<Labels> labels);
     TransitionSystem(const TransitionSystem &other) = delete;
@@ -221,9 +222,7 @@ public:
     const std::vector<int> &get_incorporated_variables() const {
         return incorporated_variables;
     }
-    int get_init_state_goal_distance() const {
-        return get_goal_distance(init_state);
-    }
+
     int get_group_id_for_label(int label_no) const;
     const std::shared_ptr<Labels> get_labels() const;
     bool operator==(const TransitionSystem &other) const;

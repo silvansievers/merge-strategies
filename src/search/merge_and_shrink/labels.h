@@ -73,7 +73,7 @@ public:
     void initialize(const TaskProxy &task_proxy);
     void add_label(int cost);
     void reduce(std::pair<int, int> next_merge,
-                std::shared_ptr<FactoredTransitionSystem> fts),
+                std::shared_ptr<FactoredTransitionSystem> fts,
                 bool partial = false);
     int compute_number_active_labels() const;
     bool is_current_label(int label_no) const;
