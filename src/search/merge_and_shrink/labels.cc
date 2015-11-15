@@ -398,13 +398,13 @@ bool Labels::operator==(const Labels &other) const {
     assert(lr_before_merging == other.lr_before_merging);
     assert(lr_method == other.lr_method);
     assert(lr_system_order == other.lr_system_order);
-    return (max_size == other.max_size &&
-            labels_equivalent &&
-            transition_system_order == other.transition_system_order &&
-            lr_before_shrinking == other.lr_before_shrinking &&
-            lr_before_merging == other.lr_before_merging &&
-            lr_method == other.lr_method &&
-            lr_system_order == other.lr_system_order);
+    return max_size == other.max_size &&
+           labels_equivalent &&
+           transition_system_order == other.transition_system_order &&
+           lr_before_shrinking == other.lr_before_shrinking &&
+           lr_before_merging == other.lr_before_merging &&
+           lr_method == other.lr_method &&
+           lr_system_order == other.lr_system_order;
 }
 
 static shared_ptr<Labels>_parse(OptionParser &parser) {

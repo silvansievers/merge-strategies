@@ -64,7 +64,7 @@ public:
         return cost;
     }
     bool operator==(const LabelGroup &other) const {
-        return (labels == other.labels && cost == other.cost);
+        return labels == other.labels && cost == other.cost;
     }
 };
 

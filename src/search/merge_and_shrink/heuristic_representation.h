@@ -44,8 +44,8 @@ public:
             assert(domain_size == tmp.domain_size);
             assert(var_id == tmp.var_id);
             assert(lookup_table == tmp.lookup_table);
-            return (var_id == tmp.var_id && lookup_table == tmp.lookup_table);
-        } catch (const std::bad_cast&) {
+            return var_id == tmp.var_id && lookup_table == tmp.lookup_table;
+        } catch (const std::bad_cast &) {
             assert(false);
             return false;
         }
@@ -75,8 +75,8 @@ public:
             assert(*left_child.get() == *tmp.left_child.get());
             assert(*right_child.get() == *tmp.right_child.get());
             assert(lookup_table == tmp.lookup_table);
-            return (*left_child.get() == *tmp.left_child.get() && *right_child.get() == *tmp.right_child.get() && lookup_table == tmp.lookup_table);
-        } catch (const std::bad_cast&) {
+            return *left_child.get() == *tmp.left_child.get() && *right_child.get() == *tmp.right_child.get() && lookup_table == tmp.lookup_table;
+        } catch (const std::bad_cast &) {
             assert(false);
             return false;
         }

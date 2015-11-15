@@ -21,7 +21,7 @@
 #include <vector>
 
 class SCC {
-    const std::vector<std::vector<int> > &graph;
+    const std::vector<std::vector<int>> &graph;
 
     // The following three are indexed by vertex number.
     std::vector<int> dfs_numbers;
@@ -29,13 +29,13 @@ class SCC {
     std::vector<int> stack_indices;
 
     std::vector<int> stack; // This is indexed by the level of recursion.
-    std::vector<std::vector<int> > sccs;
+    std::vector<std::vector<int>> sccs;
 
     int current_dfs_number;
 
     void dfs(int vertex);
 public:
-    SCC(const std::vector<std::vector<int> > &graph);
-    const std::vector<std::vector<int> > &get_result();
+    SCC(const std::vector<std::vector<int>> &graph);
+    const std::vector<std::vector<int>> &get_result();
 };
 #endif

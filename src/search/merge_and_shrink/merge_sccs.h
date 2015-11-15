@@ -25,10 +25,10 @@ class MergeSCCs : public MergeDFP {
     VariableOrderType var_order_type;
 
     // cg_sccs contain the sccs in order to be merged, from last to first.
-    std::vector<std::unordered_set<int> > cg_sccs;
+    std::vector<std::unordered_set<int>> cg_sccs;
     int number_of_merges_for_scc;
     std::vector<TransitionSystem *> current_transition_systems;
-    std::vector<std::pair<int, int> > linear_order;
+    std::vector<std::pair<int, int>> linear_order;
 
     std::pair<int, int> get_next_dfp();
 protected:

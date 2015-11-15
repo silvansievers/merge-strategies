@@ -35,7 +35,7 @@ static const int PRE_FILE_VERSION = 3;
 //       structure globally.)
 
 static vector<vector<set<pair<int, int>>>> g_inconsistent_facts;
-vector<vector<bool> > g_mutex_var_pairs;
+vector<vector<bool>> g_mutex_var_pairs;
 
 bool test_goal(const GlobalState &state) {
     for (size_t i = 0; i < g_goal.size(); ++i) {

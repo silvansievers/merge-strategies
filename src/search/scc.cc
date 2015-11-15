@@ -5,11 +5,11 @@
 
 using namespace std;
 
-SCC::SCC(const vector<vector<int> > &graph_)
+SCC::SCC(const vector<vector<int>> &graph_)
     : graph(graph_) {
 }
 
-const vector<vector<int> > &SCC::get_result() {
+const vector<vector<int>> &SCC::get_result() {
     int node_count = graph.size();
     dfs_numbers.resize(node_count, -1);
     dfs_minima.resize(node_count, -1);

@@ -129,7 +129,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 shrink_strategy->get_miss_qualified_states_ratios();
             int size = miss_qualified_states_ratios.size();
             assert(size >= 2);
-            if (still_perfect && (miss_qualified_states_ratios[size-1] || miss_qualified_states_ratios[size-2])) {
+            if (still_perfect && (miss_qualified_states_ratios[size - 1] || miss_qualified_states_ratios[size - 2])) {
                 cout << "not perfect anymore in iteration " << iteration_counter << endl;
                 still_perfect = false;
             }

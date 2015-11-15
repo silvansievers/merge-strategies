@@ -34,7 +34,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
     // First step: compute SCCs and put them in the right order.
-    vector<vector<int> > cg;
+    vector<vector<int>> cg;
     cg.reserve(num_vars);
     for (VariableProxy var : vars) {
         const std::vector<int> &successors =
@@ -42,10 +42,10 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
         cg.push_back(successors);
     }
     SCC scc(cg);
-    const vector<vector<int> > &sccs = scc.get_result();
+    const vector<vector<int>> &sccs = scc.get_result();
     if (sccs.size() == 1) {
         cout << "found single scc, continue as regular merge with the "
-                "chosen external merge setting" << endl;
+            "chosen external merge setting" << endl;
     } else {
         cout << "found cg sccs:" << endl;
         for (size_t i = 0; i < sccs.size(); ++i) {

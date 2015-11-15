@@ -225,7 +225,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order must contain "
-                            "exactly two elements!" << endl;
+                        "exactly two elements!" << endl;
                     cout << pair << endl;
                     exit_with(EXIT_INPUT_ERROR);
                 }

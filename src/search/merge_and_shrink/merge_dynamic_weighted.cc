@@ -31,7 +31,7 @@ int compute_number_of_product_transitions(
          group1_it != ts1->end(); ++group1_it) {
         // Distribute the labels of this group among the "buckets"
         // corresponding to the groups of ts2.
-        unordered_map<int, vector<int> > buckets;
+        unordered_map<int, vector<int>> buckets;
         for (LabelConstIter label_it = group1_it.begin();
              label_it != group1_it.end(); ++label_it) {
             int label_no = *label_it;
@@ -444,7 +444,7 @@ double InitHSumFeature::compute_value(const TransitionSystem *ts1,
                                       const TransitionSystem *) {
     // return value in [0,infinity)
     int init_h_sum = ts1->get_init_state_goal_distance() +
-        ts2->get_init_state_goal_distance();
+                     ts2->get_init_state_goal_distance();
     return init_h_sum;
 }
 
@@ -457,7 +457,7 @@ double AvgHSumFeature::compute_value(const TransitionSystem *ts1,
                                      const TransitionSystem *) {
     // return value in [0,infinity)
     double average_h_sum = compute_average_h_value(ts1) +
-        compute_average_h_value(ts2);
+                           compute_average_h_value(ts2);
     return average_h_sum;
 }
 
@@ -527,7 +527,7 @@ double NumVariablesFeature::compute_value(const TransitionSystem *ts1,
                                           const TransitionSystem *) {
     // return value in [2,num_variables-1]
     return ts1->get_incorporated_variables().size() +
-        ts2->get_incorporated_variables().size();
+           ts2->get_incorporated_variables().size();
 }
 
 ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
@@ -552,7 +552,7 @@ double ShrinkPerfectlyFeature::compute_value(const TransitionSystem *,
         assert(size_after <= size_before);
         int difference = size_before - size_after;
         return static_cast<double>(difference) /
-            static_cast<double>(size_before);
+               static_cast<double>(size_before);
     } else {
         return INF;
     }
@@ -580,7 +580,7 @@ void LROpportunitiesFeatures::clear() {
 void LROpportunitiesFeatures::precompute_data(
     const vector<TransitionSystem *> &all_transition_systems) {
     // Precompute the set of irrelevant labels for every transition system
-    unordered_map<const TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
+    unordered_map<const TransitionSystem *, vector<bool>> ts_to_irrelevant_labels;
     for (const TransitionSystem *ts : all_transition_systems) {
         if (ts) {
             vector<bool> irrelevant_labels(ts->get_num_labels(), false);
@@ -638,7 +638,6 @@ void LROpportunitiesFeatures::precompute_data(
                                     break;
                                 }
                             }
-
                         }
                         if (label_irrelevant_in_all_other_ts) {
                             ++count_combinable_labels;
@@ -675,7 +674,7 @@ void MoreLROpportunitiesFeatures::clear() {
 void MoreLROpportunitiesFeatures::precompute_data(
     const vector<TransitionSystem *> &all_transition_systems) {
     // Precompute the set of irrelevant labels for every transition system
-    unordered_map<const TransitionSystem *, vector<bool> > ts_to_irrelevant_labels;
+    unordered_map<const TransitionSystem *, vector<bool>> ts_to_irrelevant_labels;
     for (const TransitionSystem *ts : all_transition_systems) {
         if (ts) {
             vector<bool> irrelevant_labels(ts->get_num_labels(), false);
@@ -733,12 +732,11 @@ void MoreLROpportunitiesFeatures::precompute_data(
                                         TransitionSystem *ts3 = all_transition_systems[k];
                                         if (ts3) {
                                             if (ts3->get_group_id_for_label(label_no1)
-                                                    != ts3->get_group_id_for_label(label_no2)) {
+                                                != ts3->get_group_id_for_label(label_no2)) {
                                                 equivalent_in_all_other_ts = false;
                                                 break;
                                             }
                                         }
-
                                     }
                                     if (equivalent_in_all_other_ts) {
                                         ++count_combinable_label_pairs;
@@ -746,7 +744,6 @@ void MoreLROpportunitiesFeatures::precompute_data(
                                 }
                             }
                         }
-
                     }
                     ts_pair_to_combinable_label_count[make_pair(ts1, ts2)] =
                         count_combinable_label_pairs;
@@ -1278,10 +1275,10 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "0",
         Bounds("0", "100"));
     parser.add_option<int>(
-                "w_mutex",
-                "prefer transition systems that have facts mutex to each other",
-                "0",
-                Bounds("0", "100"));
+        "w_mutex",
+        "prefer transition systems that have facts mutex to each other",
+        "0",
+        Bounds("0", "100"));
 
     Options opts = parser.parse();
     if (opts.get<int>("w_causally_connected_vars") == 0 &&

@@ -94,7 +94,7 @@ pair<size_t, size_t> ShrinkStrategy::compute_shrink_sizes(
 
 pair<bool, bool> ShrinkStrategy::shrink(shared_ptr<FactoredTransitionSystem> fts,
                                         int index1,
-                                        int index2, 
+                                        int index2,
                                         bool silent) const {
     const TransitionSystem &ts1 = fts->get_ts(index1);
     const TransitionSystem &ts2 = fts->get_ts(index2);

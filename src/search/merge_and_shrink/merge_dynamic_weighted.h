@@ -52,7 +52,7 @@ public:
 };
 
 class CausalConnectionFeature : public Feature {
-    std::vector<std::vector<int> > var_pair_causal_links;
+    std::vector<std::vector<int>> var_pair_causal_links;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -62,7 +62,7 @@ public:
 };
 
 class BoolCausalConnectionFeature : public Feature {
-    std::vector<std::vector<bool> > causally_connected_var_pairs;
+    std::vector<std::vector<bool>> causally_connected_var_pairs;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -72,7 +72,7 @@ public:
 };
 
 class NonAdditivityFeature : public Feature {
-    std::vector<std::vector<bool> > additive_var_pairs;
+    std::vector<std::vector<bool>> additive_var_pairs;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -162,7 +162,7 @@ public:
 };
 
 class DFPFeature : public Feature {
-    std::unordered_map<const TransitionSystem *, std::vector<int> > ts_to_label_ranks;
+    std::unordered_map<const TransitionSystem *, std::vector<int>> ts_to_label_ranks;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -205,7 +205,7 @@ public:
 
 class LROpportunitiesFeatures : public Feature {
     std::unordered_map<std::pair<const TransitionSystem *, const TransitionSystem *>,
-        int> ts_pair_to_combinable_label_count;
+                       int> ts_pair_to_combinable_label_count;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -217,7 +217,7 @@ public:
 
 class MoreLROpportunitiesFeatures : public Feature {
     std::unordered_map<std::pair<const TransitionSystem *, const TransitionSystem *>,
-        int> ts_pair_to_combinable_label_count;
+                       int> ts_pair_to_combinable_label_count;
     virtual double compute_value(const TransitionSystem *ts1,
                                  const TransitionSystem *ts2,
                                  const TransitionSystem *merge) override;
@@ -249,7 +249,7 @@ class Features {
     std::vector<double> min_values; // finite minium values of all features
     std::vector<double> max_values; // finite maximum values of all features
     std::unordered_map<std::pair<const TransitionSystem *, const TransitionSystem *>,
-                       std::vector<double> > unnormalized_values;
+                       std::vector<double>> unnormalized_values;
     void update_min_max(int feature_no, double value);
     double normalize_value(int feature_no, double value) const;
 public:
@@ -277,7 +277,7 @@ class MergeDynamicWeighted : public MergeStrategy {
     TaskProxy *task_proxy;
 
     // Statistics
-    std::vector<std::pair<int, int> > merge_order;
+    std::vector<std::pair<int, int>> merge_order;
 
     virtual void dump_strategy_specific_options() const override;
 public:

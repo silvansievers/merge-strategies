@@ -570,12 +570,12 @@ bool TransitionSystem::operator==(const TransitionSystem &other) const {
     assert(goal_states == other.goal_states);
     assert(init_state == other.init_state);
     assert(goal_relevant == other.goal_relevant);
-    return (num_variables == other.num_variables &&
-            incorporated_variables == other.incorporated_variables &&
-            *label_equivalence_relation.get() == *other.label_equivalence_relation.get() &&
-            transitions_by_group_id == other.transitions_by_group_id &&
-            num_states == other.num_states &&
-            goal_states == other.goal_states &&
-            init_state == other.init_state &&
-            goal_relevant == other.goal_relevant);
+    return num_variables == other.num_variables &&
+           incorporated_variables == other.incorporated_variables &&
+           *label_equivalence_relation.get() == *other.label_equivalence_relation.get() &&
+           transitions_by_group_id == other.transitions_by_group_id &&
+           num_states == other.num_states &&
+           goal_states == other.goal_states &&
+           init_state == other.init_state &&
+           goal_relevant == other.goal_relevant;
 }
