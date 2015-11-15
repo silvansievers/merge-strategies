@@ -9,7 +9,8 @@ class MergeDFP : public MergeStrategy {
     enum Order {
         DFP,
         REGULAR,
-        INVERSE
+        INVERSE,
+        RANDOM
     };
     Order order;
     // Store the "DFP" ordering in which transition systems should be considered.

@@ -4,9 +4,11 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
+#include "../globals.h"
 #include "../option_parser.h"
 #include "../option_parser_util.h"
 #include "../plugin.h"
+#include "../rng.h"
 #include "../task_proxy.h"
 
 #include <algorithm>
@@ -26,19 +28,34 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     int num_variables = task_proxy.get_variables().size();
     int max_transition_system_count = num_variables * 2 - 1;
     transition_system_order.reserve(max_transition_system_count);
-    /*
-      Precompute the order in which we consider transition systems:
-      first consider the non-atomic transition systems, going from the most
-      recent to the oldest one (located at index num_variables). Afterwards,
-      consider the atomic transition systems in the "regular" order, i.e.
-      in the Fast Downward order of variables.
-    */
-    for (int i = max_transition_system_count - 1; i >= 0; --i) {
-        int corrected_index = i;
-        if (i < num_variables) {
-            corrected_index = num_variables - 1 - i;
+    if (order == DFP || order == INVERSE) {
+        /*
+          Precompute the order in which we consider transition systems:
+          first consider the non-atomic transition systems, going from the most
+          recent to the oldest one (located at index num_variables). Afterwards,
+          consider the atomic transition systems in the "regular" order, i.e.
+          in the Fast Downward order of variables.
+        */
+        for (int i = max_transition_system_count - 1; i >= 0; --i) {
+            if (order == DFP) {
+                int corrected_index = i;
+                if (i < num_variables) {
+                    corrected_index = num_variables - 1 - i;
+                }
+                transition_system_order.push_back(corrected_index);
+            }
+            if (order == INVERSE) {
+                transition_system_order.push_back(i);
+            }
         }
-        transition_system_order.push_back(corrected_index);
+    }
+    if (order == REGULAR || order == RANDOM) {
+        for (int i = 0; i < max_transition_system_count; ++i) {
+            transition_system_order.push_back(i);
+        }
+        if (order == RANDOM) {
+            g_rng.shuffle(transition_system_order);
+        }
     }
 }
 
@@ -201,6 +218,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     order.push_back("DFP");
     order.push_back("REGULAR");
     order.push_back("INVERSE");
+    order.push_back("RANDOM");
     parser.add_enum_option("order", order, "order of transition systems", "DFP");
     Options options = parser.parse();
     parser.document_synopsis(
