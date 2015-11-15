@@ -18,6 +18,9 @@ class MergeDFP : public MergeStrategy {
     void compute_label_ranks(std::shared_ptr<FactoredTransitionSystem> fts,
                              int index,
                              std::vector<int> &label_ranks) const;
+    std::pair<int, int> get_next_dfp(
+        std::shared_ptr<FactoredTransitionSystem> fts,
+        const std::vector<int> &sorted_active_ts_indices) const;
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:
@@ -26,6 +29,8 @@ public:
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
     virtual std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts) override;
+    std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts,
+                                 const std::vector<int> &ts_indices);
     virtual std::string name() const override;
 };
 

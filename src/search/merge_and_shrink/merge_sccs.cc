@@ -1,5 +1,8 @@
 #include "merge_sccs.h"
 
+#include "factored_transition_system.h"
+#include "merge_dfp.h"
+
 #include "../causal_graph.h"
 #include "../option_parser.h"
 #include "../plugin.h"
@@ -21,15 +24,26 @@ bool compare_sccs_decreasing(const unordered_set<int> &lhs, const unordered_set<
 }
 
 MergeSCCs::MergeSCCs(const Options &options)
-    : MergeDFP(options),
+    : MergeStrategy(),
       scc_order(SCCOrder(options.get_enum("scc_order"))),
       merge_order(MergeOrder(options.get_enum("merge_order"))),
       var_order_type(VariableOrderType(options.get_enum("variable_order"))),
+      merge_dfp(0),
       number_of_merges_for_scc(0) {
 }
 
+MergeSCCs::~MergeSCCs() {
+    delete merge_dfp;
+}
+
 void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
-    MergeDFP::initialize(task);
+    MergeStrategy::initialize(task);
+
+    Options opts;
+    opts.set<int>("order", 0);
+    merge_dfp = new MergeDFP(opts);
+    merge_dfp->initialize(task);
+
     TaskProxy task_proxy(*task);
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
@@ -79,7 +93,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
         }
 
         if (merge_order == DFP) {
-            current_transition_systems.reserve(g_variable_domain.size());
+            current_scc_ts_indices.reserve(g_variable_domain.size());
         }
     }
 
@@ -166,9 +180,10 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     }
 }
 
-pair<int, int> MergeSCCs::get_next_dfp() {
+pair<int, int> MergeSCCs::get_next_dfp(
+    shared_ptr<FactoredTransitionSystem> fts) {
     unordered_set<int> &current_scc = cg_sccs.back();
-    pair<int, int> next_pair = MergeDFP::get_next(current_transition_systems);
+    pair<int, int> next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
     /*
       Try to remove both indices from the current scc. If we merge one or two
       composite transition systems resulting from previous merges of this scc,
@@ -176,13 +191,21 @@ pair<int, int> MergeSCCs::get_next_dfp() {
     */
     current_scc.erase(next_pair.first);
     current_scc.erase(next_pair.second);
-    current_transition_systems[next_pair.first] = 0;
-    current_transition_systems[next_pair.second] = 0;
+    for (vector<int>::iterator it = current_scc_ts_indices.begin();
+         it != current_scc_ts_indices.end(); ) {
+      if (*it == next_pair.first || *it == next_pair.second) {
+        it = current_scc_ts_indices.erase(it);
+      } else {
+        ++it;
+      }
+    }
+    --remaining_merges;
     --number_of_merges_for_scc;
     return next_pair;
 }
 
-pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_transition_systems) {
+pair<int, int> MergeSCCs::get_next(
+    shared_ptr<FactoredTransitionSystem> fts) {
     assert(!done());
 
     if (merge_order == LINEAR) {
@@ -195,7 +218,7 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
         if (!number_of_merges_for_scc && !cg_sccs.empty()) {
             unordered_set<int> &current_scc = cg_sccs.back();
             assert(current_scc.size() > 1);
-            assert(current_transition_systems.empty());
+            assert(current_scc_ts_indices.empty());
 
             number_of_merges_for_scc = current_scc.size() - 1;
             if (number_of_merges_for_scc == 1) {
@@ -209,52 +232,34 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
             }
 
             // Initialize current transition systems with all those contained in the scc
-            for (size_t i = 0; i < all_transition_systems.size(); ++i) {
+            int number_ts = fts->get_size();
+            for (int i = 0; i < number_ts; ++i) {
                 if (current_scc.count(i)) {
-                    TransitionSystem *ts = all_transition_systems[i];
-                    assert(ts);
-                    current_transition_systems.push_back(ts);
-                } else {
-                    current_transition_systems.push_back(0);
+                    assert(fts->is_active(i));
+                    current_scc_ts_indices.push_back(i);
                 }
             }
-            return get_next_dfp();
+            return get_next_dfp(fts);
         }
 
         if (number_of_merges_for_scc > 1) {
             // Add the newest transition system to the set of current ones of the scc
-            current_transition_systems.push_back(all_transition_systems.back());
-            return get_next_dfp();
+            current_scc_ts_indices.push_back(fts->get_size() - 1);
+            return get_next_dfp(fts);
         }
 
         if (number_of_merges_for_scc == 1) {
-            current_transition_systems.push_back(all_transition_systems.back());
-            pair<int, int> next_pair;
-            bool looking_for_first = true;
-            for (size_t i = 0; i < current_transition_systems.size(); ++i) {
-                if (current_transition_systems[i]) {
-                    if (looking_for_first) {
-                        next_pair.first = i;
-                        looking_for_first = false;
-                    } else {
-                        next_pair.second = i;
-                        break;
-                    }
-                }
-            }
-            cout << "Next pair of indices: (" << next_pair.first << ", " << next_pair.second << ")" << endl;
+            current_scc_ts_indices.push_back(fts->get_size() - 1);
+            assert(current_scc_ts_indices.size() == 2);
+            pair<int, int> next_pair = make_pair(current_scc_ts_indices[0],
+                current_scc_ts_indices[1]);
 
             // Assert that we merged all transition systems that we expected to merge.
             unordered_set<int> &current_scc = cg_sccs.back();
             current_scc.erase(next_pair.first);
             current_scc.erase(next_pair.second);
             assert(current_scc.empty());
-            current_transition_systems[next_pair.first] = 0;
-            current_transition_systems[next_pair.second] = 0;
-            for (size_t i = 0; i < current_transition_systems.size(); ++i) {
-                assert(!current_transition_systems[i]);
-            }
-            current_transition_systems.clear();
+            current_scc_ts_indices.clear();
             cg_sccs.erase(cg_sccs.end());
 
             --remaining_merges;
@@ -263,7 +268,8 @@ pair<int, int> MergeSCCs::get_next(const std::vector<TransitionSystem *> &all_tr
             return next_pair;
         }
 
-        return MergeDFP::get_next(all_transition_systems);
+        --remaining_merges;
+        return merge_dfp->get_next(fts);
     } else {
         ABORT("Unknown merge order");
         return make_pair(-1, -1);

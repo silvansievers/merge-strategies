@@ -139,8 +139,11 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
+            // TODO: something is wrong here with the distance output!
             int init_dist1 = fts->get_init_state_goal_distance(merge_index1);
             int init_dist2 = fts->get_init_state_goal_distance(merge_index2);
+//            cout << "init dist1: " << init_dist1 << endl;
+//            cout << "init dist2: " << init_dist2 << endl;
 
             // Merging
             final_index = fts->merge(merge_index1, merge_index2);
@@ -152,6 +155,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 break;
             }
 
+            fts->statistics(final_index, timer);
+
             int new_init_dist = fts->get_init_state_goal_distance(final_index);
             int difference = new_init_dist - max(init_dist1, init_dist2);
             cout << "Difference of init h values: " << difference << endl;
@@ -159,8 +164,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 ++negative_improvement_counter;
             }
             init_hvalue_increase.push_back(difference);
-
-            fts->statistics(final_index, timer);
 
             report_peak_memory_delta();
             cout << endl;
