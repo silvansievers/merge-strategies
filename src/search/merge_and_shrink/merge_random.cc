@@ -1,9 +1,10 @@
 #include "merge_random.h"
 
-#include "../rng.h"
+#include "factored_transition_system.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../rng.h"
 
 #include <cassert>
 #include <iostream>
@@ -16,13 +17,14 @@ MergeRandom::MergeRandom(const Options &options)
       rng(make_unique_ptr<RandomNumberGenerator>(random_seed)) {
 }
 
-pair<int, int> MergeRandom::get_next(const vector<TransitionSystem *> &all_transition_systems) {
+pair<int, int> MergeRandom::get_next(
+    shared_ptr<FactoredTransitionSystem> fts) {
     assert(initialized());
     assert(!done());
-    int number_ts = all_transition_systems.size();
+    int number_ts = fts->get_size();
     vector<int> active_count_to_ts_index;
     for (int ts_index = 0; ts_index < number_ts; ++ts_index) {
-        if (all_transition_systems[ts_index]) {
+        if (fts->is_active(ts_index)) {
             active_count_to_ts_index.push_back(ts_index);
         }
     }
@@ -39,12 +41,8 @@ pair<int, int> MergeRandom::get_next(const vector<TransitionSystem *> &all_trans
     assert(in_bounds(active_index2, active_count_to_ts_index));
     int next_index1 = active_count_to_ts_index[active_index1];
     int next_index2 = active_count_to_ts_index[active_index2];
-    assert(all_transition_systems[next_index1]);
-    assert(all_transition_systems[next_index2]);
 
     --remaining_merges;
-    cout << "Next pair of indices: (" << next_index1 << ", "
-         << next_index2 << ")" << endl;
     return make_pair(next_index1, next_index2);
 }
 

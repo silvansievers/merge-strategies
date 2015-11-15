@@ -16,7 +16,7 @@ public:
     virtual ~MergeRandom() override = default;
 
     virtual std::pair<int, int> get_next(
-        const std::vector<TransitionSystem *> &all_transition_systems) override;
+        std::shared_ptr<FactoredTransitionSystem> fts) override;
     virtual std::string name() const override;
 };
 

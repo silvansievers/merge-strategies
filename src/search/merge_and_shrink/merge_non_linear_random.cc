@@ -1,11 +1,11 @@
 #include "merge_non_linear_random.h"
 
+#include "factored_transition_system.h"
 #include "transition_system.h"
-
-#include "../rng.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../rng.h"
 
 #include <cassert>
 #include <iostream>
@@ -20,21 +20,21 @@ MergeNonLinearRandom::MergeNonLinearRandom(const Options &options)
 }
 
 pair<int, int> MergeNonLinearRandom::get_next(
-    const vector<TransitionSystem *> &all_transition_systems) {
+    shared_ptr<FactoredTransitionSystem> fts) {
     assert(initialized());
     assert(!done());
 
     RandomNumberGenerator &rng_ = *rng;
 
     vector<pair<int, int>> possible_noshrink_merges;
-    for (size_t i = 0; i < all_transition_systems.size(); ++i) {
-        const TransitionSystem *ts1 = all_transition_systems[i];
-        if (ts1) {
-            for (size_t j = i + 1; j < all_transition_systems.size(); ++j) {
-                const TransitionSystem *ts2 = all_transition_systems[j];
-                if (ts2) {
-                    if (ts1->get_size() < shrink_threshold / ts2->get_size()) {
-                        possible_noshrink_merges.push_back(make_pair(i, j));
+    int number_ts = fts->get_size();
+    for (int ts_index1 = 0; ts_index1 < number_ts; ++ts_index1) {
+        if (fts->is_active(ts_index1)) {
+            for (int ts_index2 = ts_index1 + 1; ts_index2 < number_ts; ++ts_index2) {
+                if (fts->is_active(ts_index2)) {
+                    if (fts->get_ts(ts_index1).get_size() < shrink_threshold
+                            / fts->get_ts(ts_index2).get_size()) {
+                        possible_noshrink_merges.push_back(make_pair(ts_index1, ts_index2));
                     }
                 }
             }
@@ -48,10 +48,9 @@ pair<int, int> MergeNonLinearRandom::get_next(
         next_index1 = possible_noshrink_merges[index].first;
         next_index2 = possible_noshrink_merges[index].second;
     } else {
-        int number_ts = all_transition_systems.size();
         vector<int> active_count_to_ts_index;
         for (int ts_index = 0; ts_index < number_ts; ++ts_index) {
-            if (all_transition_systems[ts_index]) {
+            if (fts->is_active(ts_index)) {
                 active_count_to_ts_index.push_back(ts_index);
             }
         }
@@ -67,12 +66,8 @@ pair<int, int> MergeNonLinearRandom::get_next(
     }
     assert(next_index1 != -1);
     assert(next_index1 != -2);
-    assert(all_transition_systems[next_index1]);
-    assert(all_transition_systems[next_index2]);
 
     --remaining_merges;
-    cout << "Next pair of indices: (" << next_index1 << ", "
-         << next_index2 << ")" << endl;
     return make_pair(next_index1, next_index2);
 }
 
