@@ -1,5 +1,7 @@
 #include "merge_predefined.h"
 
+#include "factored_transition_system.h"
+
 #include "../option_parser.h"
 #include "../plugin.h"
 #include "../utilities.h"
@@ -88,6 +90,8 @@ public:
             left_child = nullptr;
             right_child = nullptr;
         } else {
+            // TODO: this seems to be incorrect. If the left subtree "returns"
+            // a next merge pair, we should be done.
             if (left_child) {
                 left_child->get_next_merge(new_index, next_index1, next_index2);
             }
@@ -156,7 +160,7 @@ void MergePredefined::initialize(const shared_ptr<AbstractTask> task) {
 }
 
 pair<int, int> MergePredefined::get_next(
-    const vector<TransitionSystem *> &all_transition_systems) {
+    shared_ptr<FactoredTransitionSystem> fts) {
     int next_index1 = -1;
     int next_index2 = -1;
     if (!merge_order.empty()) {
@@ -166,14 +170,12 @@ pair<int, int> MergePredefined::get_next(
         next_index2 = next_pair[1];
         merge_order.erase(merge_order.begin());
     } else if (root) {
-        root->get_next_merge(all_transition_systems.size(), next_index1, next_index2);
+        root->get_next_merge(fts->get_size(), next_index1, next_index2);
         assert(root->compute_size() == remaining_merges - 1);
     }
-    assert(all_transition_systems[next_index1]);
-    assert(all_transition_systems[next_index2]);
+    assert(fts->is_active(next_index1));
+    assert(fts->is_active(next_index2));
     --remaining_merges;
-    cout << "Next pair of indices: (" << next_index1 << ", "
-         << next_index2 << ")" << endl;
     return make_pair(next_index1, next_index2);
 }
 

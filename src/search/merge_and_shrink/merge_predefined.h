@@ -17,7 +17,7 @@ public:
     virtual void initialize(const std::shared_ptr<AbstractTask> task);
 
     virtual std::pair<int, int> get_next(
-        const std::vector<TransitionSystem *> &all_transition_systems) override;
+        std::shared_ptr<FactoredTransitionSystem> fts) override;
     virtual std::string name() const override;
 };
 
