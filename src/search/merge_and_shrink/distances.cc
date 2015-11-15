@@ -205,7 +205,7 @@ bool Distances::are_distances_computed() const {
     return true;
 }
 
-std::vector<bool> Distances::compute_distances(bool silent) {
+vector<bool> Distances::compute_distances(bool silent) {
     /*
       This method does the following:
       - Computes the distances of abstract states from the abstract
@@ -296,7 +296,7 @@ bool Distances::apply_abstraction(
       we should have a typedef for this and perhaps also for a vector of
       this at a more central place.
     */
-    typedef forward_list<AbstractStateRef> Group;
+    typedef forward_list<int> Group;
 
     int new_num_states = collapsed_groups.size();
     vector<int> new_init_distances(new_num_states, DISTANCE_UNKNOWN);

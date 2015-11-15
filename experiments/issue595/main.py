@@ -11,12 +11,18 @@ def main(revisions=None):
     SUITE = suites.suite_optimal_with_ipc11()
 
     B_CONFIGS = {
+        'rl-b50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=reverse_level),shrink_strategy=shrink_bisimulation(max_states=50000,threshold=1,greedy=false),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
+        'cggl-b50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=cg_goal_level),shrink_strategy=shrink_bisimulation(max_states=50000,threshold=1,greedy=false),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
         'dfp-b50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_dfp,shrink_strategy=shrink_bisimulation(max_states=50000,threshold=1,greedy=false),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
     }
     G_CONFIGS = {
+        'rl-ginf': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=reverse_level),shrink_strategy=shrink_bisimulation(max_states=infinity,threshold=1,greedy=true),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
+        'cggl-ginf': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=cg_goal_level),shrink_strategy=shrink_bisimulation(max_states=infinity,threshold=1,greedy=true),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
         'dfp-ginf': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_dfp,shrink_strategy=shrink_bisimulation(max_states=infinity,threshold=1,greedy=true),label_reduction=label_reduction(before_shrinking=true,before_merging=false)))'],
     }
     F_CONFIGS = {
+        'rl-f50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=reverse_level),shrink_strategy=shrink_fh(max_states=50000),label_reduction=label_reduction(before_shrinking=false,before_merging=true)))'],
+        'cggl-f50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=cg_goal_level),shrink_strategy=shrink_fh(max_states=50000),label_reduction=label_reduction(before_shrinking=false,before_merging=true)))'],
         'dfp-f50k': ['--search', 'astar(merge_and_shrink(merge_strategy=merge_dfp,shrink_strategy=shrink_fh(max_states=50000),label_reduction=label_reduction(before_shrinking=false,before_merging=true)))'],
     }
     CONFIGS = dict(B_CONFIGS)
@@ -38,7 +44,6 @@ def main(revisions=None):
     perfect_heuristic = Attribute('perfect_heuristic', absolute=True, min_wins=False)
     proved_unsolvability = Attribute('proved_unsolvability', absolute=True, min_wins=False)
     actual_search_time = Attribute('actual_search_time', absolute=False, min_wins=True, functions=[gm])
-    initial_h_value = Attribute('initial_h_value', absolute=False, min_wins=False)
 
     # m&s attributes
     ms_construction_time = Attribute('ms_construction_time', absolute=False, min_wins=True, functions=[gm])
@@ -53,7 +58,6 @@ def main(revisions=None):
         perfect_heuristic,
         proved_unsolvability,
         actual_search_time,
-        initial_h_value,
 
         ms_construction_time,
         ms_abstraction_constructed,
@@ -69,6 +73,3 @@ def main(revisions=None):
     exp.add_comparison_table_step(attributes=attributes)
 
     exp()
-
-if __name__ == '__main__':
-    main(revisions=['issue583-base-v2', 'issue583-v4'])
