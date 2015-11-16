@@ -139,11 +139,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 remaining_labels.push_back(labels->compute_number_active_labels());
             }
 
-            // TODO: something is wrong here with the distance output!
             int init_dist1 = fts->get_init_state_goal_distance(merge_index1);
             int init_dist2 = fts->get_init_state_goal_distance(merge_index2);
-//            cout << "init dist1: " << init_dist1 << endl;
-//            cout << "init dist2: " << init_dist2 << endl;
 
             // Merging
             final_index = fts->merge(merge_index1, merge_index2);

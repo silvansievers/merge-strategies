@@ -122,12 +122,11 @@ bool FactoredTransitionSystem::apply_abstraction(
     }
 
     bool shrunk = transition_systems[index]->apply_abstraction(collapsed_groups, abstraction_mapping);
-    if (!distances[index]->apply_abstraction(collapsed_groups, silent)) {
-        if (!silent) {
+    if (shrunk) {
+        bool f_preserving = distances[index]->apply_abstraction(collapsed_groups, silent);
+        if (!silent && !f_preserving) {
             cout << transition_systems[index]->tag() << "simplification was not f-preserving!" << endl;
         }
-    }
-    if (shrunk) {
         heuristic_representations[index]->apply_abstraction_to_lookup_table(
             abstraction_mapping);
     }
