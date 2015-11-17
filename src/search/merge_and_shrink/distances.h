@@ -99,6 +99,7 @@ public:
     bool operator==(const Distances &other) const {
         return init_distances == other.init_distances && goal_distances == other.goal_distances && max_f == other.max_f && max_g == other.max_g && max_h == other.max_h;
     }
+    void dump() const;
 };
 
 #endif

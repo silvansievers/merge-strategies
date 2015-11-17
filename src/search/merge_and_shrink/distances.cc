@@ -290,6 +290,8 @@ bool Distances::apply_abstraction(
     const vector<forward_list<int>> &collapsed_groups,
     bool silent) {
     assert(are_distances_computed());
+    assert(collapsed_groups.size() < init_distances.size());
+    assert(collapsed_groups.size() < goal_distances.size());
 
     /*
       TODO: Get rid of this repeated typedef, which also occurs elsewhere;
@@ -339,4 +341,12 @@ bool Distances::apply_abstraction(
         goal_distances = move(new_goal_distances);
         return true;
     }
+}
+
+void Distances::dump() const {
+    cout << "Distances: ";
+    for (size_t i = 0; i < goal_distances.size(); ++i) {
+        cout << i << ": " << goal_distances[i] << ", ";
+    }
+    cout << endl;
 }
