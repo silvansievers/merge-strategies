@@ -136,13 +136,13 @@ bool FactoredTransitionSystem::apply_abstraction(
     return shrunk;
 }
 
-int FactoredTransitionSystem::merge(int index1, int index2, bool silent) {
+int FactoredTransitionSystem::merge(int index1, int index2, bool not_real_merge) {
     assert(is_index_valid(index1));
     assert(is_index_valid(index2));
     TransitionSystem *ts1 = transition_systems[index1];
     TransitionSystem *ts2 = transition_systems[index2];
     TransitionSystem *new_transition_system = new TransitionSystem(
-        labels, ts1, ts2, silent);
+        labels, ts1, ts2, not_real_merge);
     transition_systems.push_back(new_transition_system);
     delete ts1;
     delete ts2;
@@ -155,11 +155,13 @@ int FactoredTransitionSystem::merge(int index1, int index2, bool silent) {
                                             move(heuristic_representations[index2])));
     distances.push_back(make_unique_ptr<Distances>(*new_transition_system));
     int new_index = transition_systems.size() - 1;
-    compute_distances_and_prune(new_index, silent);
+    compute_distances_and_prune(new_index, not_real_merge);
     assert(is_component_valid(new_index));
-    if (!new_transition_system->is_solvable()) {
-        solvable = false;
-        finalize(new_index);
+    if (!not_real_merge) {
+        if (!new_transition_system->is_solvable()) {
+            solvable = false;
+            finalize(new_index);
+        }
     }
     return new_index;
 }

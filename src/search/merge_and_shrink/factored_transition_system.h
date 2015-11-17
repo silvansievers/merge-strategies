@@ -65,7 +65,7 @@ public:
     bool apply_abstraction(int index,
                            const std::vector<std::forward_list<int>> &collapsed_groups,
                            bool silent = false);
-    int merge(int index1, int index2, bool silent = false);
+    int merge(int index1, int index2, bool not_real_merge = false);
     void finalize(int index = -1);
     bool is_solvable() const {
         return solvable;
