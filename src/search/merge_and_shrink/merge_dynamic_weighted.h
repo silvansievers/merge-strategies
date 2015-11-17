@@ -191,8 +191,7 @@ public:
 };
 
 class DFPFeature : public Feature {
-    // TODO: change to vector and use an initialize method
-    std::unordered_map<int, std::vector<int>> ts_index_to_label_ranks;
+    std::vector<std::vector<int>> ts_index_to_label_ranks;
     virtual double compute_value(
         const std::shared_ptr<FactoredTransitionSystem> fts,
         int ts_index1,
@@ -200,7 +199,9 @@ class DFPFeature : public Feature {
         int merge_index) override;
 public:
     DFPFeature(int id, int weight);
-    void virtual clear() override;
+    virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
+//    virtual void precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override;
+    virtual void clear() override;
 };
 
 class GoalRelevanceFeature : public Feature {

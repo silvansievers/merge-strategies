@@ -165,7 +165,7 @@ Feature::Feature(int id, int weight, string name,
 }
 
 double Feature::compute_unnormalized_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -186,7 +186,7 @@ CausalConnectionFeature::CausalConnectionFeature(int id, int weight)
 }
 
 double CausalConnectionFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -237,7 +237,7 @@ BoolCausalConnectionFeature::BoolCausalConnectionFeature(int id, int weight)
 }
 
 double BoolCausalConnectionFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -289,7 +289,7 @@ NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
 }
 
 double NonAdditivityFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -340,7 +340,7 @@ SmallTransStatesQuotFeature::SmallTransStatesQuotFeature(int id, int weight)
 }
 
 double SmallTransStatesQuotFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -360,7 +360,7 @@ HighTransStatesQuotFeature::HighTransStatesQuotFeature(int id, int weight)
 }
 
 double HighTransStatesQuotFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -380,7 +380,7 @@ InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
 }
 
 double InitHImprovementFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -410,7 +410,7 @@ AbsoluteInitHFeature::AbsoluteInitHFeature(int id, int weight)
 }
 
 double AbsoluteInitHFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int,
     int,
     int merge_index) {
@@ -429,7 +429,7 @@ AbsoluteMaxFFeature::AbsoluteMaxFFeature(int id, int weight)
 }
 
 double AbsoluteMaxFFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int,
     int,
     int merge_index) {
@@ -448,7 +448,7 @@ AbsoluteMaxGFeature::AbsoluteMaxGFeature(int id, int weight)
 }
 
 double AbsoluteMaxGFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int,
     int,
     int merge_index) {
@@ -467,7 +467,7 @@ AbsoluteMaxHFeature::AbsoluteMaxHFeature(int id, int weight)
 }
 
 double AbsoluteMaxHFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int,
     int,
     int merge_index) {
@@ -486,7 +486,7 @@ AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
 }
 
 double AvgHImprovementFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -510,7 +510,7 @@ InitHSumFeature::InitHSumFeature(int id, int weight)
 }
 
 double InitHSumFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -525,7 +525,7 @@ AvgHSumFeature::AvgHSumFeature(int id, int weight)
 }
 
 double AvgHSumFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -539,16 +539,26 @@ DFPFeature::DFPFeature(int id, int weight)
     : Feature(id, weight, "dfp", false, true) {
 }
 
+void DFPFeature::initialize(const TaskProxy &task_proxy, bool) {
+    ts_index_to_label_ranks.reserve(task_proxy.get_variables().size() * 2 - 1);
+}
+
+//void DFPFeature::precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override {
+//}
+
 void DFPFeature::clear() {
     ts_index_to_label_ranks.clear();
 }
 
 double DFPFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
+    if (ts_index_to_label_ranks.empty()) {
+        ts_index_to_label_ranks.assign(fts->get_size(), vector<int>());
+    }
     const TransitionSystem &ts1 = fts->get_ts(ts_index1);
     const TransitionSystem &ts2 = fts->get_ts(ts_index2);
     int pair_weight = INF;
@@ -583,7 +593,7 @@ GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
 }
 
 double GoalRelevanceFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -603,7 +613,7 @@ NumVariablesFeature::NumVariablesFeature(int id, int weight)
 }
 
 double NumVariablesFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -617,7 +627,7 @@ ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
 }
 
 double ShrinkPerfectlyFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int,
     int ,
     int merge_index) {
@@ -647,7 +657,7 @@ NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
 }
 
 double NumTransitionsFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -704,7 +714,7 @@ void LROpportunitiesFeatures::precompute_data(
 }
 
 double LROpportunitiesFeatures::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem>,
+    const shared_ptr<FactoredTransitionSystem>,
     int ts_index1,
     int ts_index2,
     int) {
@@ -776,7 +786,7 @@ void MoreLROpportunitiesFeatures::precompute_data(
 }
 
 double MoreLROpportunitiesFeatures::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem>,
+    const shared_ptr<FactoredTransitionSystem>,
     int ts_index1,
     int ts_index2,
     int) {
@@ -794,7 +804,7 @@ MIASMFeature::MIASMFeature(int id, int weight)
 }
 
 double MIASMFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -818,7 +828,7 @@ MutexFeature::MutexFeature(int id, int weight)
 }
 
 double MutexFeature::compute_value(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int) {
@@ -956,7 +966,7 @@ double Features::normalize_value(int feature_id, double value) const {
 }
 
 void Features::precompute_unnormalized_values(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -978,10 +988,10 @@ void Features::precompute_unnormalized_values(
 }
 
 double Features::compute_weighted_normalized_sum(
-    const std::shared_ptr<FactoredTransitionSystem> fts,
+    const shared_ptr<FactoredTransitionSystem> fts,
     int ts_index1,
     int ts_index2) const {
-    const std::vector<double> &values = unnormalized_values.at(make_pair(ts_index1, ts_index2));
+    const vector<double> &values = unnormalized_values.at(make_pair(ts_index1, ts_index2));
     double weighted_sum = 0;
     if (debug) {
         cout << "computing weighted normalized sum for "
@@ -1143,7 +1153,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
     return make_pair(next_index1, next_index2);
 }
 
-std::string MergeDynamicWeighted::name() const {
+string MergeDynamicWeighted::name() const {
     return "dynamic merging";
 }
 
