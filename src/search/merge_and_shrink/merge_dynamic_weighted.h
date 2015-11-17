@@ -321,6 +321,7 @@ public:
 };
 
 class MergeDynamicWeighted : public MergeStrategy {
+    const bool debug;
     const int max_states; // bisimulation option
     const bool use_lr;
     Features *features;
