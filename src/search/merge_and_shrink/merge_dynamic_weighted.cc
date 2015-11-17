@@ -117,6 +117,7 @@ void compute_label_ranks(shared_ptr<FactoredTransitionSystem> fts,
 void compute_irrelevant_labels(const shared_ptr<FactoredTransitionSystem> fts,
                                vector<vector<bool>> &ts_index_to_irrelevant_labels) {
     int num_ts = fts->get_size();
+    ts_index_to_irrelevant_labels.resize(num_ts, vector<bool>());
     int num_labels = fts->get_labels()->get_size();
     for (int ts_index = 0; ts_index < num_ts; ++ts_index) {
         if (fts->is_active(ts_index)) {
