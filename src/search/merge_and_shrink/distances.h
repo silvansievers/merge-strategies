@@ -53,7 +53,9 @@ class Distances {
     int max_h;
 
     void clear_distances();
+public: // for MergeDynamicWeighted
     int get_num_states() const;
+private:
     bool is_unit_cost() const;
 
     void compute_init_distances_unit_cost();

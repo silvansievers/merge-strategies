@@ -88,9 +88,7 @@ class LabelEquivalenceRelation {
     void add_label_to_group(int group_id, int label_no);
 public:
     explicit LabelEquivalenceRelation(const std::shared_ptr<Labels> labels);
-    LabelEquivalenceRelation(const LabelEquivalenceRelation &other,
-                             const std::shared_ptr<Labels> labels);
-    LabelEquivalenceRelation(const LabelEquivalenceRelation &other) = delete;
+    LabelEquivalenceRelation(const LabelEquivalenceRelation &other);
     virtual ~LabelEquivalenceRelation() = default;
 
     void recompute_group_cost();

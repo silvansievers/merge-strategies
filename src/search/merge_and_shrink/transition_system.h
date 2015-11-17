@@ -167,9 +167,7 @@ public:
                      TransitionSystem *ts2,
                      bool silent = false);
     // Copy constructor
-    TransitionSystem(const TransitionSystem &other,
-                     const std::shared_ptr<Labels> labels);
-    TransitionSystem(const TransitionSystem &other) = delete;
+    TransitionSystem(const TransitionSystem &other);
     ~TransitionSystem();
 
     bool apply_abstraction(
@@ -222,7 +220,6 @@ public:
     }
 
     int get_group_id_for_label(int label_no) const;
-    const std::shared_ptr<Labels> get_labels() const;
     bool operator==(const TransitionSystem &other) const;
 };
 

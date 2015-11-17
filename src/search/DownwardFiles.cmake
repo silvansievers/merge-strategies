@@ -271,7 +271,7 @@ fast_downward_plugin(
         merge_and_shrink/labels.cc
         merge_and_shrink/merge_and_shrink_heuristic.cc
         merge_and_shrink/merge_dfp.cc
-        #merge_and_shrink/merge_dynamic_weighted.cc
+        merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_linear.cc
         merge_and_shrink/merge_non_linear_random.cc
         merge_and_shrink/merge_predefined.cc

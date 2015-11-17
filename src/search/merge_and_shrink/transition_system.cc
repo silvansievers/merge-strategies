@@ -265,14 +265,11 @@ TransitionSystem::TransitionSystem(const shared_ptr<Labels> labels,
     assert(are_transitions_sorted_unique());
 }
 
-// TODO: fix this
-TransitionSystem::TransitionSystem(const TransitionSystem &other,
-                                   const shared_ptr<Labels> labels)
+TransitionSystem::TransitionSystem(const TransitionSystem &other)
     : num_variables(other.num_variables),
       incorporated_variables(other.incorporated_variables),
       label_equivalence_relation(make_shared<LabelEquivalenceRelation>(
-                                     *other.label_equivalence_relation.get(),
-                                     labels)),
+                                     *other.label_equivalence_relation.get())),
       transitions_by_group_id(other.transitions_by_group_id),
       num_states(other.num_states),
       goal_states(other.goal_states),
@@ -555,10 +552,6 @@ void TransitionSystem::statistics() const {
 
 int TransitionSystem::get_group_id_for_label(int label_no) const {
     return label_equivalence_relation->get_group_id(label_no);
-}
-
-const shared_ptr<Labels> TransitionSystem::get_labels() const {
-    return label_equivalence_relation->get_labels();
 }
 
 bool TransitionSystem::operator==(const TransitionSystem &other) const {

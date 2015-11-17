@@ -65,7 +65,7 @@ public:
     bool apply_abstraction(int index,
                            const std::vector<std::forward_list<int>> &collapsed_groups,
                            bool silent = false);
-    int merge(int index1, int index2);
+    int merge(int index1, int index2, bool silent = false);
     void finalize(int index = -1);
     bool is_solvable() const {
         return solvable;
@@ -86,6 +86,11 @@ public:
     }
     int get_num_labels() const; // used by merge_dfp
     int get_init_state_goal_distance(int index) const;
+    const std::shared_ptr<Labels> get_labels() const { // for MergeDynamicWeighted
+        return labels;
+    }
+    int copy(int index);
+    void release_copies();
 };
 
 #endif

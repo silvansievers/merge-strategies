@@ -49,7 +49,7 @@ bool ShrinkStrategy::shrink_transition_system(
         compute_equivalence_relation(fts, index, new_size, equivalence_relation);
         // TODO: We currently violate this; see issue250
         //assert(equivalence_relation.size() <= new_size);
-        return fts->apply_abstraction(index, equivalence_relation);
+        return fts->apply_abstraction(index, equivalence_relation, silent);
     } else {
         miss_qualified_states_ratios.push_back(0);
     }

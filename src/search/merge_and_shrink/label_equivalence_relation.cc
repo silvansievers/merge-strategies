@@ -16,9 +16,8 @@ LabelEquivalenceRelation::LabelEquivalenceRelation(const shared_ptr<Labels> labe
     label_to_positions.resize(labels->get_max_size());
 }
 
-LabelEquivalenceRelation::LabelEquivalenceRelation(const LabelEquivalenceRelation &other,
-                                                   const shared_ptr<Labels> labels)
-    : labels(labels),
+LabelEquivalenceRelation::LabelEquivalenceRelation(const LabelEquivalenceRelation &other)
+    : labels(other.labels),
       label_to_positions(other.label_to_positions) {
     // we need to reserve max size to ensure that no move occurs in grouped_labels
     // otherwise, iterators to elements of list<int> of LabelGroup could become
