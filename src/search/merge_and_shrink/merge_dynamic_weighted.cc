@@ -1037,7 +1037,6 @@ void Features::dump_weights() const {
 
 MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
     : MergeStrategy(),
-      debug(opts.get<bool>("debug")),
       max_states(opts.get<int>("max_states")),
       use_lr(opts.get<bool>("use_lr")) {
     if (use_lr) {
@@ -1089,9 +1088,8 @@ pair<int, int> MergeDynamicWeighted::get_next(
                         int copy_ts_index2;
                         int merge_index = -1;
                         if (features->require_merge()) {
-                            if (debug) {
-                                cout << "trying to compute the merge..." << endl;
-                            }
+                            // Output for parser
+                            cout << "trying to compute the merge..." << endl;
                             copy_ts_index1 = fts->copy(ts_index1);
                             copy_ts_index2 = fts->copy(ts_index2);
                             Options options;
@@ -1103,9 +1101,8 @@ pair<int, int> MergeDynamicWeighted::get_next(
                             ShrinkBisimulation shrink_bisim(options);
                             shrink_bisim.shrink(fts, copy_ts_index1, copy_ts_index2, true);
                             merge_index = fts->merge(copy_ts_index1, copy_ts_index2, true);
-                            if (debug) {
-                                cout << "...done computing the merge." << endl;
-                            }
+                            // Output for parser
+                            cout << "...done computing the merge." << endl;
                         }
                         features->precompute_unnormalized_values(fts, ts_index1,
                                                                  ts_index2, merge_index);
