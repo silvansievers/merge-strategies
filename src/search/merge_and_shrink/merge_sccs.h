@@ -19,11 +19,17 @@ class MergeSCCs : public MergeStrategy {
     ExternalMergeOrder external_merge_order;
     enum InternalMergeOrder {
         LINEAR,
-        DFP
+        DFP,
+        LINEAR_MANUAL
     };
     InternalMergeOrder internal_merge_order;
     std::vector<int> linear_variable_order;
     MergeDFP *merge_dfp;
+
+    std::vector<bool> is_causally_linked;
+    std::vector<bool> is_goal_variable;
+    std::vector<std::vector<int>> cg_successors;
+    std::vector<std::vector<int>> cg_predecessors;
 
     // cg_sccs contain the sccs in order to be merged, from last to first.
     std::vector<std::unordered_set<int>> cg_sccs;

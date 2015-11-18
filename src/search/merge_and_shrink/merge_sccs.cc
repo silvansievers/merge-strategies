@@ -63,10 +63,22 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     // Compute SCCs of the causal graph
     vector<vector<int>> cg;
     cg.reserve(num_vars);
+    if (internal_merge_order == LINEAR_MANUAL) {
+        is_causally_linked.resize(num_vars, false);
+        is_goal_variable.resize(num_vars, false);
+        for (FactProxy goal : task_proxy.get_goals())
+            is_goal_variable[goal.get_variable().get_id()] = true;
+        cg_successors.reserve(num_vars);
+        cg_predecessors.reserve(num_vars);
+    }
     for (VariableProxy var : vars) {
         const std::vector<int> &successors =
             task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
+        if (internal_merge_order == LINEAR_MANUAL) {
+            cg_successors.push_back(successors);
+            cg_predecessors.push_back(task_proxy.get_causal_graph().get_predecessors(var.get_id()));
+        }
     }
 //    cout << "CG:" << endl;
 //    for (size_t var = 0; var < cg.size(); ++var) {
@@ -172,9 +184,51 @@ pair<int, int> MergeSCCs::get_next(
                     }
                 }
                 next_pair = make_pair(next_index1, next_index2);
-            } else {
-                assert(internal_merge_order == DFP);
+            } else if (internal_merge_order == DFP) {
                 next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
+            } else if (internal_merge_order == LINEAR_MANUAL) {
+                int next_index1 = -1;
+                int next_index2 = -1;
+                if (first_merge_of_scc) {
+                    int max_num_vars = is_causally_linked.size();
+                    is_causally_linked.assign(max_num_vars, false);
+                    for (int var : current_scc_ts_indices) {
+                        if (is_goal_variable[var]) {
+                            next_index1 = var;
+                            break;
+                        }
+                    }
+                    if (next_index1 == -1) {
+                        next_index1 = current_scc_ts_indices.front();
+                    }
+                    const vector<int> &successors = cg_successors[next_index1];
+                    for (int succ : successors) {
+                        is_causally_linked[succ] = true;
+                    }
+                    const vector<int> &predecessors = cg_predecessors[next_index1];
+                    for (int pred : predecessors) {
+                        is_causally_linked[pred] = true;
+                    }
+                } else {
+                    next_index1 = most_recent_index;
+                }
+                assert(next_index1 != -1);
+                for (int var : current_scc_ts_indices) {
+                    if (var != next_index1 && is_causally_linked[var]) {
+                        next_index2 = var;
+                        break;
+                    }
+                }
+                assert(next_index2 != -1);
+                const vector<int> &successors = cg_successors[next_index2];
+                for (int succ : successors) {
+                    is_causally_linked[succ] = true;
+                }
+                const vector<int> &predecessors = cg_predecessors[next_index2];
+                for (int pred : predecessors) {
+                    is_causally_linked[pred] = true;
+                }
+                next_pair = make_pair(next_index1, next_index2);
             }
 
             // Remove the two merged indices from the current set of indices
@@ -246,6 +300,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     vector<string> internal_merge_order;
     internal_merge_order.push_back("linear");
     internal_merge_order.push_back("dfp");
+    internal_merge_order.push_back("linear_manual");
     parser.add_enum_option("internal_merge_order",
                            internal_merge_order,
                            "choose a merge order: linear (specify "
