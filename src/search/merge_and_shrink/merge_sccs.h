@@ -3,37 +3,35 @@
 
 #include "merge_strategy.h"
 
-#include "../variable_order_finder.h"
-
 #include <unordered_set>
 
 class MergeDFP;
 class Options;
 
 class MergeSCCs : public MergeStrategy {
-    enum SCCOrder {
+    const Options *options;
+    enum ExternalMergeOrder {
         TOPOLOGICAL,
         REVERSE_TOPOLOGICAL,
         DECREASING,
         INCREASING
     };
-    SCCOrder scc_order;
-    enum MergeOrder {
+    ExternalMergeOrder external_merge_order;
+    enum InternalMergeOrder {
         LINEAR,
         DFP
     };
-    MergeOrder merge_order;
-    VariableOrderType var_order_type;
+    InternalMergeOrder internal_merge_order;
+    std::vector<int> linear_variable_order;
     MergeDFP *merge_dfp;
 
     // cg_sccs contain the sccs in order to be merged, from last to first.
     std::vector<std::unordered_set<int>> cg_sccs;
     int number_of_merges_for_scc;
     std::vector<int> current_scc_ts_indices;
-    std::vector<std::pair<int, int>> linear_order;
-
-    std::pair<int, int> get_next_dfp(
-        std::shared_ptr<FactoredTransitionSystem> fts);
+    bool merged_all_sccs;
+    std::vector<int> indices_of_merged_sccs;
+    bool start_merging_sccs;
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:

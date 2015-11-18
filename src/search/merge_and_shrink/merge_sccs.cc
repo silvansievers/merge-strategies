@@ -15,21 +15,23 @@
 
 using namespace std;
 
-bool compare_sccs_increasing(const unordered_set<int> &lhs, const unordered_set<int> &rhs) {
+bool compare_sccs_increasing(const vector<int> &lhs, const vector<int> &rhs) {
     return lhs.size() < rhs.size();
 }
 
-bool compare_sccs_decreasing(const unordered_set<int> &lhs, const unordered_set<int> &rhs) {
+bool compare_sccs_decreasing(const vector<int> &lhs, const vector<int> &rhs) {
     return lhs.size() > rhs.size();
 }
 
-MergeSCCs::MergeSCCs(const Options &options)
+MergeSCCs::MergeSCCs(const Options &options_)
     : MergeStrategy(),
-      scc_order(SCCOrder(options.get_enum("scc_order"))),
-      merge_order(MergeOrder(options.get_enum("merge_order"))),
-      var_order_type(VariableOrderType(options.get_enum("variable_order"))),
-      merge_dfp(0),
-      number_of_merges_for_scc(0) {
+      external_merge_order(ExternalMergeOrder(options_.get_enum("external_merge_order"))),
+      internal_merge_order(InternalMergeOrder(options_.get_enum("internal_merge_order"))),
+      merge_dfp(nullptr),
+      number_of_merges_for_scc(0),
+      merged_all_sccs(false),
+      start_merging_sccs(true) {
+    options = new Options(options_);
 }
 
 MergeSCCs::~MergeSCCs() {
@@ -39,15 +41,26 @@ MergeSCCs::~MergeSCCs() {
 void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
 
-    Options opts;
-    opts.set<int>("order", 0);
-    merge_dfp = new MergeDFP(opts);
-    merge_dfp->initialize(task);
-
     TaskProxy task_proxy(*task);
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
-    // First step: compute SCCs and put them in the right order.
+
+    if (internal_merge_order == DFP) {
+        merge_dfp = new MergeDFP(*options);
+        merge_dfp->initialize(task);
+    }
+    if (internal_merge_order == LINEAR) {
+        VariableOrderFinder vof(task, VariableOrderType(options->get_enum("variable_order")));
+        linear_variable_order.reserve(num_vars);
+        while (!vof.done()) {
+            linear_variable_order.push_back(vof.next());
+        }
+        cout << "linear variable order: " << linear_variable_order << endl;
+    }
+    delete options;
+    options = nullptr;
+
+    // Compute SCCs of the causal graph
     vector<vector<int>> cg;
     cg.reserve(num_vars);
     for (VariableProxy var : vars) {
@@ -55,246 +68,165 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
             task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
     }
+//    cout << "CG:" << endl;
+//    for (size_t var = 0; var < cg.size(); ++var) {
+//        cout << var << ": " << cg[var] << endl;
+//    }
     SCC scc(cg);
-    const vector<vector<int>> &sccs = scc.get_result();
-    if (sccs.size() == 1) {
-        cout << "found single scc, continue as regular merge with the "
-            "chosen external merge setting" << endl;
-    } else {
-        cout << "found cg sccs:" << endl;
-        for (size_t i = 0; i < sccs.size(); ++i) {
-            const vector<int> &single_scc = sccs[i];
-            if (single_scc.size() == 1) {
-                cout << "skipping scc of size 1" << endl;
-            } else {
-                cout << single_scc << endl;
-                cg_sccs.push_back(unordered_set<int>(single_scc.begin(), single_scc.end()));
-            }
-        }
-        switch (scc_order) {
-        case TOPOLOGICAL:
-            // sccs are computed in topological order
-            break;
-        case REVERSE_TOPOLOGICAL:
-            reverse(cg_sccs.begin(), cg_sccs.end());
-            break;
-        case DECREASING:
-            /*
-              We merge starting with the *last* scc, hence sorting
-              according to increasing size gives the desires decreasing
-              order.
-            */
-            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs_increasing);
-            break;
-        case INCREASING:
-            // see DECREASING
-            sort(cg_sccs.begin(), cg_sccs.end(), compare_sccs_decreasing);
-            break;
-        }
+    vector<vector<int>> sccs(scc.get_result());
 
-        if (merge_order == DFP) {
-            current_scc_ts_indices.reserve(g_variable_domain.size());
-        }
+    // Put the SCCs in the desired order
+    switch (external_merge_order) {
+    case TOPOLOGICAL:
+        // SCCs are computed in topological order
+        break;
+    case REVERSE_TOPOLOGICAL:
+        // SCCs are computed in topological order
+        reverse(sccs.begin(), sccs.end());
+        break;
+    case DECREASING:
+        sort(sccs.begin(), sccs.end(), compare_sccs_decreasing);
+        break;
+    case INCREASING:
+        sort(sccs.begin(), sccs.end(), compare_sccs_increasing);
+        break;
     }
 
-    // Second step: if the merge order is linear, compute the order.
-    if (merge_order == LINEAR) {
-        // Compute the variable order from VariableOrderFinder
-        VariableOrderFinder order(task, var_order_type);
-        vector<int> variable_order;
-        variable_order.reserve(g_variable_domain.size());
-        while (!order.done()) {
-            variable_order.push_back(order.next());
-        }
-//        cout << "variable order finder: " << variable_order << endl;
-
-        linear_order.reserve(g_variable_domain.size() - 1);
-        int next_ts_index = g_variable_domain.size() - 1;
-        unordered_map<int, int> var_to_ts_index;
-        // Compute the merge order within sccs.
-        while (!cg_sccs.empty()) {
-            unordered_set<int> &scc = cg_sccs.back();
-            int first = -1;
-            int second = -1;
-            int ts_index_after_scc = next_ts_index + scc.size() - 1;
-            set<int> used_vars;
-            for (size_t j = 0; j < variable_order.size(); ++j) {
-                int var = variable_order[j];
-                if (scc.count(var)) {
-                    if (first == -1) {
-                        first = var;
-                    } else if (second == -1) {
-                        second = var;
-                        linear_order.push_back(make_pair(first, second));
-                        ++next_ts_index;
-                    } else {
-                        linear_order.push_back(make_pair(next_ts_index, var));
-                        ++next_ts_index;
-                    }
-
-                    // The following asserts that the internal linear order
-                    // makes variables so that there is always a causal
-                    // connection between the already merged variables and the
-                    // next one.
-                    if (!used_vars.empty()) {
-                        bool connected_var = false;
-                        const vector<int> &successors = cg[var];
-                        for (int successor : successors) {
-                            if (used_vars.count(successor)) {
-                                connected_var = true;
-                                break;
-                            }
-                        }
-                        if (!connected_var) {
-                            cerr << "Variable not causally connected" << endl;
-                            exit_with(EXIT_CRITICAL_ERROR);
-                        }
-                    }
-                    used_vars.insert(var);
-                    scc.erase(var);
-                    var_to_ts_index[var] = ts_index_after_scc;
-                    if (scc.empty()) {
-                        assert(ts_index_after_scc == next_ts_index);
-                        break;
-                    }
-                }
-            }
-            cg_sccs.erase(cg_sccs.end());
-        }
-//        cout << "precomputed internal scc merge order: " << endl;
-//        for (size_t i = 0; i < linear_order.size(); ++i) {
-//            cout << linear_order[i].first << ", "
-//                 << linear_order[i].second << endl;
-//        }
-//        int debug_size = linear_order.size();
-
-        // Compute linear merge order after having merged the sccs.
-        unordered_set<int> used_indices;
-        int first = variable_order[0];
-        if (var_to_ts_index.count(first)) {
-            first = var_to_ts_index[first];
-        }
-        used_indices.insert(first);
-        bool use_first = true;
-        for (size_t i = 1; i < variable_order.size(); ++i) {
-            int var = variable_order[i];
-            if (var_to_ts_index.count(var)) {
-                var = var_to_ts_index[var];
-            }
-            if (!used_indices.count(var)) {
-                used_indices.insert(var);
-                if (use_first) {
-                    linear_order.push_back(make_pair(first, var));
-                    use_first = false;
-                } else {
-                    linear_order.push_back(make_pair(next_ts_index, var));
-                }
-                ++next_ts_index;
-            }
-        }
-//        cout << "precomputed composite scc merge order: " << endl;
-//        for (size_t i = debug_size; i < linear_order.size(); ++i) {
-//            cout << linear_order[i].first << ", "
-//                 << linear_order[i].second << endl;
-//        }
-        assert(linear_order.size() == g_variable_domain.size() - 1);
-    }
-}
-
-pair<int, int> MergeSCCs::get_next_dfp(
-    shared_ptr<FactoredTransitionSystem> fts) {
-    unordered_set<int> &current_scc = cg_sccs.back();
-    pair<int, int> next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
     /*
-      Try to remove both indices from the current scc. If we merge one or two
-      composite transition systems resulting from previous merges of this scc,
-      then no index is actually removed.
+      Compute the indices at which the merged SCCs can be found when all
+      SCCs have been merged. The order corresponds to the chosen external
+      order.
     */
-    current_scc.erase(next_pair.first);
-    current_scc.erase(next_pair.second);
-    for (vector<int>::iterator it = current_scc_ts_indices.begin();
-         it != current_scc_ts_indices.end(); ) {
-      if (*it == next_pair.first || *it == next_pair.second) {
-        it = current_scc_ts_indices.erase(it);
-      } else {
-        ++it;
-      }
+    int index = num_vars - 1;
+    cout << "found cg sccs:" << endl;
+    indices_of_merged_sccs.reserve(sccs.size());
+    int largest_scc_size = 0;
+    for (const vector<int> &scc : sccs) {
+        cout << scc << endl;
+        int scc_size = scc.size();
+        if (scc_size > largest_scc_size) {
+            largest_scc_size = scc_size;
+        }
+        if (scc_size == 1) {
+            indices_of_merged_sccs.push_back(scc.front());
+        } else {
+            index += scc_size - 1;
+            indices_of_merged_sccs.push_back(index);
+            // only store non-singleton sccs for internal merging
+            cg_sccs.push_back(unordered_set<int>(scc.begin(), scc.end()));
+        }
     }
-    --remaining_merges;
-    --number_of_merges_for_scc;
-    return next_pair;
+    if (sccs.size() == 1) {
+        cout << "Only one single SCC" << endl;
+    }
+    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
+    current_scc_ts_indices.reserve(largest_scc_size);
 }
 
 pair<int, int> MergeSCCs::get_next(
     shared_ptr<FactoredTransitionSystem> fts) {
     assert(!done());
 
-    if (merge_order == LINEAR) {
-        // use next precomputed pair
-        pair<int, int> next_pair = linear_order.front();
-        linear_order.erase(linear_order.begin());
-        --remaining_merges;
-        return next_pair;
-    } else if (merge_order == DFP) {
-        if (!number_of_merges_for_scc && !cg_sccs.empty()) {
-            unordered_set<int> &current_scc = cg_sccs.back();
+    pair<int, int > next_pair = make_pair(-1, -1);
+    int most_recent_index = fts->get_size() - 1;
+    if (!merged_all_sccs) {
+
+        // We did not start merging a specific SCC yet
+        bool first_merge_of_scc = false; // needed for linear merging
+        if (!number_of_merges_for_scc) {
+            first_merge_of_scc = true;
+            assert(!cg_sccs.empty());
+            const unordered_set<int> &current_scc = cg_sccs.front();
             assert(current_scc.size() > 1);
             assert(current_scc_ts_indices.empty());
-
             number_of_merges_for_scc = current_scc.size() - 1;
-            if (number_of_merges_for_scc == 1) {
-                --remaining_merges;
-                --number_of_merges_for_scc;
-                assert(!number_of_merges_for_scc);
-                int first = *current_scc.begin();
-                int second = *(++current_scc.begin());
-                cg_sccs.erase(cg_sccs.end());
-                return make_pair(first, second);
-            }
-
             // Initialize current transition systems with all those contained in the scc
-            int number_ts = fts->get_size();
-            for (int i = 0; i < number_ts; ++i) {
-                if (current_scc.count(i)) {
-                    assert(fts->is_active(i));
-                    current_scc_ts_indices.push_back(i);
-                }
-            }
-            return get_next_dfp(fts);
+            current_scc_ts_indices.insert(current_scc_ts_indices.end(),
+                                          current_scc.begin(), current_scc.end());
+        } else {
+            // Add the newest transition system to the set of current ones of the scc
+            current_scc_ts_indices.push_back(most_recent_index);
         }
 
         if (number_of_merges_for_scc > 1) {
-            // Add the newest transition system to the set of current ones of the scc
-            current_scc_ts_indices.push_back(fts->get_size() - 1);
-            return get_next_dfp(fts);
-        }
+            if (internal_merge_order == LINEAR) {
+                int next_index1 = -1;
+                if (!first_merge_of_scc) {
+                    next_index1 = most_recent_index;
+                }
+                int next_index2 = -1;
+                for (int var : linear_variable_order) {
+                    for (int scc_var : current_scc_ts_indices) {
+                        if (scc_var == var) {
+                            if (next_index1 == -1) {
+                                next_index1 = var;
+                            } else {
+                                assert(next_index2 == -1);
+                                next_index2 = var;
+                                break;
+                            }
+                        }
+                    }
+                    if (next_index1 != -1 && next_index2 != -1) {
+                        break;
+                    }
+                }
+                next_pair = make_pair(next_index1, next_index2);
+            } else {
+                assert(internal_merge_order == DFP);
+                next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
+            }
 
-        if (number_of_merges_for_scc == 1) {
-            current_scc_ts_indices.push_back(fts->get_size() - 1);
+            // Remove the two merged indices from the current set of indices
+            for (vector<int>::iterator it = current_scc_ts_indices.begin();
+                it != current_scc_ts_indices.end(); ) {
+                if (*it == next_pair.first || *it == next_pair.second) {
+                    it = current_scc_ts_indices.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        } else {
+            assert(number_of_merges_for_scc == 1);
             assert(current_scc_ts_indices.size() == 2);
-            pair<int, int> next_pair = make_pair(current_scc_ts_indices[0],
+            next_pair = make_pair(current_scc_ts_indices[0],
                 current_scc_ts_indices[1]);
 
-            // Assert that we merged all transition systems that we expected to merge.
-            unordered_set<int> &current_scc = cg_sccs.back();
-            current_scc.erase(next_pair.first);
-            current_scc.erase(next_pair.second);
-            assert(current_scc.empty());
             current_scc_ts_indices.clear();
-            cg_sccs.erase(cg_sccs.end());
-
-            --remaining_merges;
-            --number_of_merges_for_scc;
-            assert(!number_of_merges_for_scc);
-            return next_pair;
+            cg_sccs.erase(cg_sccs.begin());
+            if (cg_sccs.empty()) {
+                merged_all_sccs = true;
+            }
         }
 
-        --remaining_merges;
-        return merge_dfp->get_next(fts);
+        --number_of_merges_for_scc;
     } else {
-        ABORT("Unknown merge order");
-        return make_pair(-1, -1);
+        if (start_merging_sccs) {
+            // If we end up here the first time, we have at least 2 SCCs
+            assert(indices_of_merged_sccs.size() > 1);
+            start_merging_sccs = false;
+            next_pair.first = indices_of_merged_sccs[0];
+            next_pair.second = indices_of_merged_sccs[1];
+        } else {
+            assert(!indices_of_merged_sccs.empty());
+            next_pair.first = fts->get_size() - 1;
+            next_pair.second = indices_of_merged_sccs[0];
+        }
+        // Remove the two indices from indices_of_merged
+        for (vector<int>::iterator it = indices_of_merged_sccs.begin();
+            it != indices_of_merged_sccs.end(); ) {
+            if (*it == next_pair.first || *it == next_pair.second) {
+                it = indices_of_merged_sccs.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
+
+    assert(next_pair.first != -1);
+    assert(next_pair.second != -1);
+    --remaining_merges;
+    return next_pair;
 }
 
 string MergeSCCs::name() const {
@@ -302,22 +234,22 @@ string MergeSCCs::name() const {
 }
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    vector<string> orders;
-    orders.push_back("topological");
-    orders.push_back("reverse_topological");
-    orders.push_back("decreasing");
-    orders.push_back("increasing");
-    parser.add_enum_option("scc_order",
-                           orders,
+    vector<string> external_merge_order;
+    external_merge_order.push_back("topological");
+    external_merge_order.push_back("reverse_topological");
+    external_merge_order.push_back("decreasing");
+    external_merge_order.push_back("increasing");
+    parser.add_enum_option("external_merge_order",
+                           external_merge_order,
                            "choose an ordering of the sccs",
                            "topological");
-    vector<string> merge_order;
-    merge_order.push_back("linear");
-    merge_order.push_back("dfp");
-    parser.add_enum_option("merge_order",
-                           merge_order,
+    vector<string> internal_merge_order;
+    internal_merge_order.push_back("linear");
+    internal_merge_order.push_back("dfp");
+    parser.add_enum_option("internal_merge_order",
+                           internal_merge_order,
                            "choose a merge order: linear (specify "
-                           "variable_order)  or dfp.",
+                           "variable_order) or dfp.",
                            "dfp");
     // linear merge strategy option
     vector<string> variable_order;
@@ -337,6 +269,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     order.push_back("DFP");
     order.push_back("REGULAR");
     order.push_back("INVERSE");
+    order.push_back("RANDOM");
     parser.add_enum_option("order", order, "order of transition systems", "DFP");
     Options options = parser.parse();
     if (parser.dry_run())

@@ -1,5 +1,5 @@
-#ifndef MERGE_AND_SHRINK_SYMMETRIES_SCC_H
-#define MERGE_AND_SHRINK_SYMMETRIES_SCC_H
+#ifndef SCC_H
+#define SCC_H
 
 /*
   This implements Tarjan's linear-time algorithm for finding the maximal
