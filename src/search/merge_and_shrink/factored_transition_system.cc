@@ -66,6 +66,11 @@ void FactoredTransitionSystem::discard_states(int index,
         }
     }
     apply_abstraction(index, equivalence_relation, silent);
+    if (!silent) {
+        double new_size = transition_systems[index]->get_size();
+        assert(new_size <= num_states);
+        relative_pruning_per_iteration.push_back(new_size / static_cast<double>(num_states));
+    }
 }
 
 bool FactoredTransitionSystem::is_index_valid(int index) const {

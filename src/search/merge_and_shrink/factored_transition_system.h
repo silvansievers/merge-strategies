@@ -28,6 +28,9 @@ class FactoredTransitionSystem {
     bool solvable;
     // TODO: add something like "current_index"? for shrink classes e.g.
 
+    // Statistics
+    std::vector<double> relative_pruning_per_iteration;
+
     void compute_distances_and_prune(int index, bool silent = false);
     void discard_states(int index, const std::vector<bool> &to_be_pruned_states,
                         bool silent);
@@ -91,6 +94,9 @@ public:
     }
     int copy(int index);
     void release_copies();
+    const std::vector<double> &get_pruning_statistics() const {
+        return relative_pruning_per_iteration;
+    }
 };
 
 #endif

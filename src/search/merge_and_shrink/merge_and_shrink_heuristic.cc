@@ -212,6 +212,14 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
         }
     }
     cout << "]" << endl;
+    const vector<double> &pruning_statistics = fts->get_pruning_statistics();
+    cout << "Relative pruning per iteration: " << pruning_statistics << endl;
+    double summed_pruning = 0;
+    for (double pruning : pruning_statistics) {
+        summed_pruning += pruning;
+    }
+    cout << "Average relative pruning: "
+         << summed_pruning / static_cast<double>(pruning_statistics.size()) << endl;
 
     labels = nullptr;
 }
