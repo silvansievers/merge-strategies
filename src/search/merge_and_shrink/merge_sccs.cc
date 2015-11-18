@@ -117,6 +117,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
             int first = -1;
             int second = -1;
             int ts_index_after_scc = next_ts_index + scc.size() - 1;
+            set<int> used_vars;
             for (size_t j = 0; j < variable_order.size(); ++j) {
                 int var = variable_order[j];
                 if (scc.count(var)) {
@@ -130,6 +131,26 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
                         linear_order.push_back(make_pair(next_ts_index, var));
                         ++next_ts_index;
                     }
+
+                    // The following asserts that the internal linear order
+                    // makes variables so that there is always a causal
+                    // connection between the already merged variables and the
+                    // next one.
+                    if (!used_vars.empty()) {
+                        bool connected_var = false;
+                        const vector<int> &successors = cg[var];
+                        for (int successor : successors) {
+                            if (used_vars.count(successor)) {
+                                connected_var = true;
+                                break;
+                            }
+                        }
+                        if (!connected_var) {
+                            cerr << "Variable not causally connected" << endl;
+                            exit_with(EXIT_CRITICAL_ERROR);
+                        }
+                    }
+                    used_vars.insert(var);
                     scc.erase(var);
                     var_to_ts_index[var] = ts_index_after_scc;
                     if (scc.empty()) {
