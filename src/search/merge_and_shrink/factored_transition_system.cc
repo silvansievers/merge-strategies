@@ -141,28 +141,55 @@ bool FactoredTransitionSystem::apply_abstraction(
     return shrunk;
 }
 
-int FactoredTransitionSystem::merge(int index1, int index2, bool not_real_merge) {
+int FactoredTransitionSystem::merge(int index1, int index2, bool invalidating_merge,
+                                    bool finalize_if_unsolvable) {
     assert(is_index_valid(index1));
     assert(is_index_valid(index2));
     TransitionSystem *ts1 = transition_systems[index1];
     TransitionSystem *ts2 = transition_systems[index2];
     TransitionSystem *new_transition_system = new TransitionSystem(
-        labels, ts1, ts2, not_real_merge);
+        labels, *ts1, *ts2, !invalidating_merge);
     transition_systems.push_back(new_transition_system);
-    delete ts1;
-    delete ts2;
-    distances[index1] = nullptr;
-    distances[index2] = nullptr;
-    transition_systems[index1] = nullptr;
-    transition_systems[index2] = nullptr;
-    heuristic_representations.push_back(make_unique_ptr<HeuristicRepresentationMerge>(
-                                            move(heuristic_representations[index1]),
-                                            move(heuristic_representations[index2])));
+    if (invalidating_merge) {
+        delete ts1;
+        delete ts2;
+        distances[index1] = nullptr;
+        distances[index2] = nullptr;
+        transition_systems[index1] = nullptr;
+        transition_systems[index2] = nullptr;
+        heuristic_representations.push_back(make_unique_ptr<HeuristicRepresentationMerge>(
+                                                move(heuristic_representations[index1]),
+                                                move(heuristic_representations[index2])));
+    } else {
+        unique_ptr<HeuristicRepresentation> hr1 = nullptr;
+        if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index1].get())) {
+            hr1 = make_unique_ptr<HeuristicRepresentationLeaf>(
+                dynamic_cast<HeuristicRepresentationLeaf *>
+                    (heuristic_representations[index1].get()));
+        } else {
+            hr1 = make_unique_ptr<HeuristicRepresentationMerge>(
+                dynamic_cast<HeuristicRepresentationMerge *>(
+                    heuristic_representations[index1].get()));
+        }
+        unique_ptr<HeuristicRepresentation> hr2 = nullptr;
+        if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index2].get())) {
+            hr2 = make_unique_ptr<HeuristicRepresentationLeaf>(
+                        dynamic_cast<HeuristicRepresentationLeaf *>
+                        (heuristic_representations[index2].get()));
+        } else {
+            hr2 = make_unique_ptr<HeuristicRepresentationMerge>(
+                        dynamic_cast<HeuristicRepresentationMerge *>(
+                            heuristic_representations[index2].get()));
+        }
+        heuristic_representations.push_back(make_unique_ptr<HeuristicRepresentationMerge>(
+                                                move(hr1),
+                                                move(hr2)));
+    }
     distances.push_back(make_unique_ptr<Distances>(*new_transition_system));
     int new_index = transition_systems.size() - 1;
-    compute_distances_and_prune(new_index, not_real_merge);
+    compute_distances_and_prune(new_index, !invalidating_merge);
     assert(is_component_valid(new_index));
-    if (!not_real_merge) {
+    if (finalize_if_unsolvable) {
         if (!new_transition_system->is_solvable()) {
             solvable = false;
             finalize(new_index);

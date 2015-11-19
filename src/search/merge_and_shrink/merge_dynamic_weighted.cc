@@ -1100,7 +1100,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
                             options.set<int>("at_limit", 0);
                             ShrinkBisimulation shrink_bisim(options);
                             shrink_bisim.shrink(fts, copy_ts_index1, copy_ts_index2, true);
-                            merge_index = fts->merge(copy_ts_index1, copy_ts_index2, true);
+                            merge_index = fts->merge(copy_ts_index1, copy_ts_index2, true, false);
                             // Output for parser
                             cout << "...done computing the merge." << endl;
                         }

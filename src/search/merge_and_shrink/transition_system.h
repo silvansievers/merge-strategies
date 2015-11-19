@@ -163,8 +163,8 @@ public:
       (It is a bug to merge an unsolvable transition system.)
     */
     TransitionSystem(const std::shared_ptr<Labels> labels,
-                     TransitionSystem *ts1,
-                     TransitionSystem *ts2,
+                     const TransitionSystem &ts1,
+                     const TransitionSystem &ts2,
                      bool silent = false);
     // Copy constructor
     TransitionSystem(const TransitionSystem &other);
