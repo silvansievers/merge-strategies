@@ -131,7 +131,12 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     if (sccs.size() == 1) {
         cout << "Only one single SCC" << endl;
     }
-    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
+    if (static_cast<int>(sccs.size()) == num_vars) {
+        cout << "Only singleton SCCs" << endl;
+        assert(cg_sccs.empty());
+        merged_all_sccs = true;
+    }
+//    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
     current_scc_ts_indices.reserve(largest_scc_size);
 }
 
