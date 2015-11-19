@@ -285,6 +285,13 @@ fast_downward_plugin(
         merge_and_shrink/shrink_strategy.cc
         merge_and_shrink/transition_system.cc
         scc.cc
+        merge_and_shrink/miasm/merge_miasm.cc
+        merge_and_shrink/miasm/merge_miasm_parameters.cc
+        merge_and_shrink/miasm/merge_tree.cc
+        merge_and_shrink/miasm/miasm_mas.cc
+        merge_and_shrink/miasm/sink_set_search.cc
+        merge_and_shrink/miasm/subset_info.cc
+        merge_and_shrink/miasm/types.cc
 )
 
 fast_downward_plugin(

@@ -1,15 +1,15 @@
 #include "miasm_mas.h"
 
-#include "labels.h"
-//#include "merge_and_shrink_heuristic.h"
-#include "merge_strategy.h"
-#include "shrink_strategy.h"
 #include "subset_info.h"
-#include "transition_system.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-#include "../utilities.h"
+#include "../labels.h"
+#include "../merge_strategy.h"
+#include "../shrink_strategy.h"
+#include "../transition_system.h"
+
+#include "../../option_parser.h"
+#include "../../plugin.h"
+#include "../../utilities.h"
 
 #include <cassert>
 #include <iostream>
@@ -23,18 +23,12 @@ using namespace mst;
 MiasmAbstraction::MiasmAbstraction(const Options &opts)
     : task(get_task_from_options(opts)),
       task_proxy(*task),
-      merge_strategy(opts.get<MergeStrategy *>("merge_strategy")),
-      shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
-      labels(opts.get<Labels *>("label_reduction")),
+      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
+      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      labels(opts.get<shared_ptr<Labels>>("label_reduction")),
       built_atomics(false) {
     merge_strategy->initialize(task);
     labels->initialize(task_proxy);
-}
-
-MiasmAbstraction::~MiasmAbstraction() {
-    delete merge_strategy;
-    delete shrink_strategy;
-    delete labels;
 }
 
 string MiasmAbstraction::option_key() {
@@ -77,7 +71,7 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
         }
         built_atomics = true;
         vector<TransitionSystem *> atomic;
-        TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels, true);
+//        TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels, true);
 
         /* remove the atomic abstraction if its variable is not involved */
         for (var_t i = 0; (size_t)i < atomic.size(); ++i) {
@@ -128,15 +122,15 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
 //    cerr << left_set << ", " << right_set << endl;
 
 
-    TransitionSystem *left = build_transition_system(left_set,
-                                                     newly_built, vsir);
-    TransitionSystem *right = build_transition_system(right_set,
-                                                      newly_built, vsir);
+//    TransitionSystem *left = build_transition_system(left_set,
+//                                                     newly_built, vsir);
+//    TransitionSystem *right = build_transition_system(right_set,
+//                                                      newly_built, vsir);
 
-    TransitionSystem *root = new CompositeTransitionSystem(task_proxy, labels, left, right, true);
+//    TransitionSystem *root = new CompositeTransitionSystem(task_proxy, labels, left, right, true);
 
     newly_built.push_back(G);
-    cache.insert(pair<var_set_t, TransitionSystem *>(G, root));
+//    cache.insert(pair<var_set_t, TransitionSystem *>(G, root));
     assert(cache.count(G));
 //    cerr << "new: " << G << endl;
     return cache[G];
@@ -144,23 +138,23 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
 
 static MiasmAbstraction *_parse(OptionParser &parser) {
     // Merge strategy option.
-    parser.add_option<MergeStrategy *>(
+    parser.add_option<shared_ptr<MergeStrategy>>(
         "merge_strategy",
-        "merge strategy; choose between merge_linear with various variable "
-        "orderings and merge_dfp.");
+        "See detailed documentation for merge strategies. "
+        "We currently recommend merge_dfp.");
 
     // Shrink strategy option.
-    parser.add_option<ShrinkStrategy *>(
+    parser.add_option<shared_ptr<ShrinkStrategy>>(
         "shrink_strategy",
-        "shrink strategy; choose between shrink_fh and shrink_bisimulation. "
-        "A good configuration for bisimulation based shrinking is: "
-        "shrink_bisimulation(max_states=50000, max_states_before_merge=50000, "
-        "threshold=1, greedy=false)");
+        "See detailed documentation for shrink strategies. "
+        "We currently recommend shrink_bisimulation.");
 
     // Label reduction option.
-    parser.add_option<Labels *>("label_reduction",
-                                "Choose relevant options for label reduction. "
-                                "Also note the interaction with shrink strategies.");
+    parser.add_option<shared_ptr<Labels>>(
+        "label_reduction",
+        "See detailed documentation for labels. There is currently only "
+        "one 'option' to use label_reduction. Also note the interaction "
+        "with shrink strategies.");
 
     // For AbstractTask
     Heuristic::add_options_to_parser(parser);

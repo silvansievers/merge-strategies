@@ -2,20 +2,14 @@
 #define MERGE_AND_SHRINK_MERGE_MIASM_H
 
 #include "merge_miasm_parameters.h"
-#include "merge_strategy.h"
-//#include "merge_tree.h"
-//#include "../operator_cost.h"
 
-#include "../option_parser.h"
+#include "../merge_strategy.h"
 
-//#include <cstdlib>
+#include "../../option_parser.h"
 
-//#include <vector>
 #include <set>
-//#include <queue>
 
 class Options;
-//class SinkSetSearch;
 
 /**
  * @brief The MIASM merging strategy
@@ -55,21 +49,8 @@ protected:
 public:
     virtual std::string name() const;
     virtual std::pair<int, int> get_next(
-        const std::vector<TransitionSystem *> &all_transition_systems);
+        std::shared_ptr<FactoredTransitionSystem> fts) override;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
-    /**
-     * The function that builds a merge-and-shrink abstraction
-     * on a subset of variables. It use the merging strategy,
-     * the shrinking strategy and label reduction specified
-     * for the current MIASM merging strategy
-     * @param ordered_varset The subset of variables the abstraction will be
-     * build on
-     * @param intermediate All abstractions in the final merge tree whose root
-     * is the abstraction on the subset
-     */
-    void build_partial_transition_system(
-        const std::vector<int> &ordered_varset,
-        std::vector<TransitionSystem *> &intermediate) const;
     /**
      * The greedy method for computing the maximal weighted packing of
      * the family of subsets

@@ -34,7 +34,7 @@ static const int PRE_FILE_VERSION = 3;
 //       are_mutex, which is at least better than exposing the data
 //       structure globally.)
 
-static vector<vector<set<pair<int, int>>>> g_inconsistent_facts;
+vector<vector<set<pair<int, int>>>> g_inconsistent_facts;
 vector<vector<bool>> g_mutex_var_pairs;
 
 bool test_goal(const GlobalState &state) {

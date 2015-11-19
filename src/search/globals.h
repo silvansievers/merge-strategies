@@ -84,5 +84,7 @@ extern StateRegistry *g_state_registry;
 
 extern const std::shared_ptr<AbstractTask> g_root_task();
 extern std::vector<std::vector<bool>> g_mutex_var_pairs;
+extern std::vector<std::vector<std::set<std::pair<int, int> > > >
+g_inconsistent_facts;
 
 #endif

@@ -1,19 +1,14 @@
 #include "sink_set_search.h"
 
 #include "miasm_mas.h"
-
-#include "transition_system.h"
 #include "merge_miasm.h"
-#include "scc.h"
 
-//#include "../globals.h"
-#include "../causal_graph.h"
-//#include "../option_parser.h"
-//#include "../plugin.h"
+#include "../transition_system.h"
 
-//#include "../domain_transition_graph.h"
+#include "../../causal_graph.h"
+#include "../../scc.h"
 
-#include "../ext/get_rss.h"
+#include "get_rss.h"
 
 #include <cassert>
 #include <cmath>
@@ -413,7 +408,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
         miasm_abstraction->build_transition_system(S, newly_built, vsir);
 
     /* initialize the ratio and gain */
-    const vector<int> &var_id_set = transition_system->get_var_id_set();
+    const vector<int> &var_id_set = transition_system->get_incorporated_variables();
     vsi.ratio = (double)transition_system->get_size() /
                 combinatorial_size(set<int>(var_id_set.begin(), var_id_set.end()), task_proxy);
     /* defaul gain */

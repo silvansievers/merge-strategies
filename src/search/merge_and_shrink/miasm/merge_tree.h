@@ -5,7 +5,7 @@
 
 #include "subset_info.h"
 
-#include <../ext/tree.hh>
+#include "../../ext/tree.hh"
 
 #include <cstdlib>
 #include <memory>

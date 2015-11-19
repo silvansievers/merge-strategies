@@ -5,8 +5,8 @@
 #include "option_struct.h"
 #include "subset_info.h"
 
-#include "../task_proxy.h"
-#include "../timer.h"
+#include "../../task_proxy.h"
+#include "../../timer.h"
 
 #include <cstdlib>
 

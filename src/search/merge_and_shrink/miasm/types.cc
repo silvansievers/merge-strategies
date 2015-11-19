@@ -1,6 +1,6 @@
 #include "types.h"
 
-#include "../globals.h"
+#include "../../globals.h"
 
 #include <limits>
 #include <utility>

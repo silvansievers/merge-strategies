@@ -7,8 +7,9 @@
 
 #include "sink_set_search.h"
 
-#include "../utilities.h"
-#include "transition_system.h"
+#include "../transition_system.h"
+
+#include "../../utilities.h"
 
 using namespace std;
 using namespace mst;

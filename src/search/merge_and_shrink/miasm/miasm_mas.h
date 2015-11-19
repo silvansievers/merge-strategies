@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-#include "../task_proxy.h"
+#include "../../task_proxy.h"
 
 #include <memory>
 #include <string>
@@ -20,14 +20,12 @@ class VarSetInfoRegistry;
 class MiasmAbstraction {
     const std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
-    MergeStrategy *const merge_strategy;
-    ShrinkStrategy *const shrink_strategy;
-    /** @brief the transition labels */
-    Labels *labels;
+    std::shared_ptr<MergeStrategy> merge_strategy;
+    std::shared_ptr<ShrinkStrategy> shrink_strategy;
+    std::shared_ptr<Labels> labels;
     bool built_atomics;
 public:
     MiasmAbstraction(const Options &opts);
-    virtual ~MiasmAbstraction();
     static std::string option_key();
     static std::string plugin_key();
 

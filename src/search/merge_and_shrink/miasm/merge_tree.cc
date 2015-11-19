@@ -1,10 +1,10 @@
 #include "merge_tree.h"
 
-#include "../utilities.h"
-#include "../causal_graph.h"
-#include "../task_proxy.h"
+#include "../../utilities.h"
+#include "../../causal_graph.h"
+#include "../../task_proxy.h"
 
-#include "../ext/tree_util.hh"
+#include "../../ext/tree_util.hh"
 
 #include <cassert>
 #include <algorithm>
