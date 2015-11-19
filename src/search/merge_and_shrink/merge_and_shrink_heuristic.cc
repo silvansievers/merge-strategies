@@ -218,7 +218,9 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     for (double pruning : pruning_statistics) {
         summed_pruning += pruning;
     }
-    double average_pruning = 0;
+    // If pruning statistics are empty, then because the instance is unsolvable.
+    // In this case, we return 1, which is the worst value possible for pruning.
+    double average_pruning = 1;
     if (!pruning_statistics.empty()) {
         average_pruning =  summed_pruning / static_cast<double>(pruning_statistics.size());
     }
