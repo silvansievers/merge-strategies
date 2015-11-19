@@ -12,11 +12,11 @@
 using namespace std;
 
 
-FactoredTransitionSystem::FactoredTransitionSystem(
-    shared_ptr<Labels> labels,
+FactoredTransitionSystem::FactoredTransitionSystem(shared_ptr<Labels> labels,
     vector<TransitionSystem *> &&transition_systems,
     vector<unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
-    vector<unique_ptr<Distances>> &&distances)
+    vector<unique_ptr<Distances>> &&distances,
+    bool finalize_if_unsolvable)
     : labels(labels),
       transition_systems(move(transition_systems)),
       heuristic_representations(move(heuristic_representations)),
@@ -25,7 +25,7 @@ FactoredTransitionSystem::FactoredTransitionSystem(
       solvable(true) {
     for (size_t i = 0; i < this->transition_systems.size(); ++i) {
         compute_distances_and_prune(i);
-        if (!this->transition_systems[i]->is_solvable()) {
+        if (finalize_if_unsolvable && !this->transition_systems[i]->is_solvable()) {
             solvable = false;
             finalize(i);
             break;

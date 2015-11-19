@@ -45,7 +45,8 @@ public:
         std::shared_ptr<Labels> labels,
         std::vector<TransitionSystem *> &&transition_systems,
         std::vector<std::unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
-        std::vector<std::unique_ptr<Distances>> &&distances);
+        std::vector<std::unique_ptr<Distances>> &&distances,
+        bool finalize_if_unsolvable);
     FactoredTransitionSystem(FactoredTransitionSystem &&other);
     ~FactoredTransitionSystem();
 

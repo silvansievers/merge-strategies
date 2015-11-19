@@ -81,7 +81,7 @@ int MiasmAbstraction::build_transition_system(
         assert(!fts);
         built_atomics = true;
         fts = make_shared<FactoredTransitionSystem>(
-            create_factored_transition_system(task_proxy, labels));
+            create_factored_transition_system(task_proxy, labels, false));
 
         /* remove the atomic abstraction if its variable is not involved */
         for (var_t i = 0; i < fts->get_size(); ++i) {
