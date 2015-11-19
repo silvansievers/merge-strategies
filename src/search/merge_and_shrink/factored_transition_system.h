@@ -95,6 +95,7 @@ public:
     }
     int copy(int index);
     void release_copies();
+    void remove(int index);
     const std::vector<double> &get_pruning_statistics() const {
         return relative_pruning_per_iteration;
     }

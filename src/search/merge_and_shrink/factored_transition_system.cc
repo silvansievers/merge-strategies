@@ -322,3 +322,11 @@ void FactoredTransitionSystem::release_copies() {
     assert(!distances.back());
     distances.pop_back();
 }
+
+void FactoredTransitionSystem::remove(int index) {
+    assert(is_active(index));
+    delete transition_systems[index];
+    transition_systems[index] = nullptr;
+    heuristic_representations[index] = nullptr;
+    distances[index] = nullptr;
+}

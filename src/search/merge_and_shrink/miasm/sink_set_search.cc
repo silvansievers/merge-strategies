@@ -3,6 +3,7 @@
 #include "miasm_mas.h"
 #include "merge_miasm.h"
 
+#include "../factored_transition_system.h"
 #include "../transition_system.h"
 
 #include "../../causal_graph.h"
@@ -404,13 +405,16 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
 //    cerr << "compute the abstraction on " << S << endl;
 
     vector<var_set_t> newly_built;
-    TransitionSystem *transition_system =
+    int ts_index =
         miasm_abstraction->build_transition_system(S, newly_built, vsir);
+    const TransitionSystem &ts = miasm_abstraction->fts->get_ts(ts_index);
 
     /* initialize the ratio and gain */
-    const vector<int> &var_id_set = transition_system->get_incorporated_variables();
-    vsi.ratio = (double)transition_system->get_size() /
-                combinatorial_size(set<int>(var_id_set.begin(), var_id_set.end()), task_proxy);
+    const vector<int> &var_id_set = ts.get_incorporated_variables();
+    set<int> var_id_set2(var_id_set.begin(), var_id_set.end());
+    assert(S == var_id_set2);
+    vsi.ratio = (double)ts.get_size() /
+                combinatorial_size(var_id_set2, task_proxy);
     /* defaul gain */
     vsi.gain = 1.0 - vsi.ratio;
 

@@ -2,6 +2,8 @@
 
 #include "subset_info.h"
 
+#include "../factored_transition_system.h"
+#include "../fts_factory.h"
 #include "../labels.h"
 #include "../merge_strategy.h"
 #include "../shrink_strategy.h"
@@ -26,7 +28,8 @@ MiasmAbstraction::MiasmAbstraction(const Options &opts)
       merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
       shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       labels(opts.get<shared_ptr<Labels>>("label_reduction")),
-      built_atomics(false) {
+      built_atomics(false),
+      fts(nullptr) {
     merge_strategy->initialize(task);
     labels->initialize(task_proxy);
 }
@@ -42,44 +45,51 @@ string MiasmAbstraction::plugin_key() {
 void MiasmAbstraction::release_cache(const var_set_t &var_set) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
     assert(cache.count(var_set));
-    delete cache[var_set];
+    int ts_index = cache[var_set];
+    // TODO: erase vector position and shift all others?
+    fts->remove(ts_index);
     cache.erase(var_set);
 }
 
 void MiasmAbstraction::release_cache() {
 //    cerr << __PRETTY_FUNCTION__ << endl;
-    for (map<var_set_t, TransitionSystem *>::iterator i = cache.begin();
+    for (map<var_set_t, int>::iterator i = cache.begin();
          i != cache.end(); ++i) {
 //        cerr << i->first << endl;
-        delete i->second;
+        int ts_index = i->second;
+        // TODO: erase vector position and shift all others?
+        fts->remove(ts_index);
     }
-    map<var_set_t, TransitionSystem *>().swap(cache);
+    map<var_set_t, int>().swap(cache);
 }
 
-TransitionSystem *MiasmAbstraction::build_transition_system(
+int MiasmAbstraction::build_transition_system(
     const var_set_t &G, vector<var_set_t> &newly_built,
     const VarSetInfoRegistry &vsir) {
+    assert(!G.empty());
     if (cache.count(G)) {
 //        cerr << "old: " << G << endl;
+        assert(fts);
         return cache[G];
     }
-    assert(!G.empty());
+
     /* will do once only */
     if (G.size() == 1) {
         if (built_atomics) {
             ABORT("Cannot recompute atomic abstractions");
         }
+        assert(!fts);
         built_atomics = true;
-        vector<TransitionSystem *> atomic;
-//        TransitionSystem::build_atomic_transition_systems(task_proxy, atomic, labels, true);
+        fts = make_shared<FactoredTransitionSystem>(
+            create_factored_transition_system(task_proxy, labels));
 
         /* remove the atomic abstraction if its variable is not involved */
-        for (var_t i = 0; (size_t)i < atomic.size(); ++i) {
+        for (var_t i = 0; i < fts->get_size(); ++i) {
             var_set_t s = mst::singleton(i);
             assert(!cache.count(s));
             newly_built.push_back(s);
 //            cerr << "new: " << s << endl;
-            cache.insert(pair<var_set_t, TransitionSystem *>(s, atomic[i]));
+            cache.insert(pair<var_set_t, int>(s, i));
         }
 
         assert(cache.count(G));
@@ -122,15 +132,14 @@ TransitionSystem *MiasmAbstraction::build_transition_system(
 //    cerr << left_set << ", " << right_set << endl;
 
 
-//    TransitionSystem *left = build_transition_system(left_set,
-//                                                     newly_built, vsir);
-//    TransitionSystem *right = build_transition_system(right_set,
-//                                                      newly_built, vsir);
-
-//    TransitionSystem *root = new CompositeTransitionSystem(task_proxy, labels, left, right, true);
+    int left_ts_index = build_transition_system(left_set,
+                                                newly_built, vsir);
+    int right_ts_index = build_transition_system(right_set,
+                                                 newly_built, vsir);
+    int new_ts_index = fts->merge(left_ts_index, right_ts_index, false, false);
 
     newly_built.push_back(G);
-//    cache.insert(pair<var_set_t, TransitionSystem *>(G, root));
+    cache.insert(pair<var_set_t, int>(G, new_ts_index));
     assert(cache.count(G));
 //    cerr << "new: " << G << endl;
     return cache[G];

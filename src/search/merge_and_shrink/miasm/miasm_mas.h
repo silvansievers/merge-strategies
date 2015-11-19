@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 
+class FactoredTransitionSystem;
 class Labels;
 class MergeStrategy;
 class Options;
@@ -30,12 +31,12 @@ public:
     static std::string plugin_key();
 
 
-
-    std::map<mst::var_set_t, TransitionSystem *> cache;
+    std::shared_ptr<FactoredTransitionSystem> fts;
+    std::map<mst::var_set_t, int> cache;
     void release_cache();
     void release_cache(const mst::var_set_t &var_set);
 
-    TransitionSystem *build_transition_system(
+    int build_transition_system(
         const mst::var_set_t &G,
         std::vector<mst::var_set_t> &newly_built,
         const VarSetInfoRegistry &vsir);
