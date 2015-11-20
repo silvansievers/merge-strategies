@@ -143,12 +143,13 @@ bool FactoredTransitionSystem::apply_abstraction(
 
 int FactoredTransitionSystem::merge(int index1, int index2, bool invalidating_merge,
                                     bool finalize_if_unsolvable) {
+    bool silent = !invalidating_merge || !finalize_if_unsolvable;
     assert(is_index_valid(index1));
     assert(is_index_valid(index2));
     TransitionSystem *ts1 = transition_systems[index1];
     TransitionSystem *ts2 = transition_systems[index2];
     TransitionSystem *new_transition_system = new TransitionSystem(
-        labels, *ts1, *ts2, !invalidating_merge);
+        labels, *ts1, *ts2, silent);
     transition_systems.push_back(new_transition_system);
     if (invalidating_merge) {
         delete ts1;
@@ -187,7 +188,7 @@ int FactoredTransitionSystem::merge(int index1, int index2, bool invalidating_me
     }
     distances.push_back(make_unique_ptr<Distances>(*new_transition_system));
     int new_index = transition_systems.size() - 1;
-    compute_distances_and_prune(new_index, !invalidating_merge);
+    compute_distances_and_prune(new_index, silent);
     assert(is_component_valid(new_index));
     if (finalize_if_unsolvable) {
         if (!new_transition_system->is_solvable()) {
