@@ -10,19 +10,24 @@ class Options;
 
 class MergeSCCs : public MergeStrategy {
     const Options *options;
-    enum ExternalMergeOrder {
+    enum OrderOfSCCs {
         TOPOLOGICAL,
         REVERSE_TOPOLOGICAL,
         DECREASING,
         INCREASING
     };
-    ExternalMergeOrder external_merge_order;
+    OrderOfSCCs order_of_sccs;
     enum InternalMergeOrder {
-        LINEAR,
-        DFP,
+        LINEAR1,
+        DFP1,
         LINEAR_MANUAL
     };
     InternalMergeOrder internal_merge_order;
+    enum MergedSCCsMergeOrder {
+        LINEAR2,
+        DFP2
+    };
+    MergedSCCsMergeOrder merged_sccs_merge_order;
     std::vector<int> linear_variable_order;
     MergeDFP *merge_dfp;
 
@@ -33,7 +38,7 @@ class MergeSCCs : public MergeStrategy {
 
     // cg_sccs contain the sccs in order to be merged, from last to first.
     std::vector<std::unordered_set<int>> cg_sccs;
-    int number_of_merges_for_scc;
+    int number_of_merges_for_scc; // TODO: get rid of, use current_scc_ts_indices.size()
     std::vector<int> current_scc_ts_indices;
     bool merged_all_sccs;
     std::vector<int> indices_of_merged_sccs;
