@@ -1193,7 +1193,6 @@ pair<int, int> MergeDynamicWeighted::get_next(
             for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
                 int ts_index2 = sorted_active_ts_indices[j];
                 assert(fts->is_active(ts_index2));
-                cout << "considering pair " << ts_index1 << ", " << ts_index2 << endl;
                 int pair_weight =
                     features->compute_weighted_normalized_sum(fts,
                                                               ts_index1,
@@ -1253,10 +1252,10 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_enum_option("product_ts_order",
                            product_ts_order,
                            "order of product transition systems",
-                           "NEW_TO_OLD");
+                           "OLD_TO_NEW");
     parser.add_option<bool>("atomic_before_product",
                             "atomic ts before product ts",
-                            "false");
+                            "true");
     parser.add_option<bool>("randomized_order",
                             "globally randomized order",
                             "false");
