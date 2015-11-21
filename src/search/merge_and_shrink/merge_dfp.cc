@@ -32,6 +32,7 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     int num_variables = task_proxy.get_variables().size();
     int max_transition_system_count = num_variables * 2 - 1;
 
+    transition_system_order.reserve(max_transition_system_count);
     if (randomized_order) {
         for (int i = 0; i < max_transition_system_count; ++i) {
             transition_system_order.push_back(i);
