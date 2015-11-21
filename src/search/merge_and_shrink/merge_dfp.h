@@ -6,13 +6,21 @@
 class Options;
 
 class MergeDFP : public MergeStrategy {
-    enum Order {
-        DFP,
+    enum AtomicTSOrder {
         REGULAR,
         INVERSE,
-        RANDOM
+        RANDOM1
     };
-    Order order;
+    AtomicTSOrder atomic_ts_order;
+    enum ProductTSOrder {
+        OLD_TO_NEW,
+        NEW_TO_OLD,
+        RANDOM2
+    };
+    ProductTSOrder product_ts_order;
+    bool atomic_before_product;
+    bool randomized_order;
+
     // Store the "DFP" ordering in which transition systems should be considered.
     std::vector<int> transition_system_order;
     void compute_label_ranks(std::shared_ptr<FactoredTransitionSystem> fts,

@@ -19,7 +19,11 @@ using namespace std;
 
 
 MergeDFP::MergeDFP(const Options &options)
-    : MergeStrategy(), order(Order(options.get_enum("order"))) {
+    : MergeStrategy(),
+      atomic_ts_order(AtomicTSOrder(options.get_enum("atomic_ts_order"))),
+      product_ts_order(ProductTSOrder(options.get_enum("product_ts_order"))),
+      atomic_before_product(options.get<bool>("atomic_before_product")),
+      randomized_order(options.get<bool>("randomized_order")) {
 }
 
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
@@ -27,34 +31,79 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
     int max_transition_system_count = num_variables * 2 - 1;
-    transition_system_order.reserve(max_transition_system_count);
-    if (order == DFP || order == INVERSE) {
-        /*
-          Precompute the order in which we consider transition systems:
-          first consider the non-atomic transition systems, going from the most
-          recent to the oldest one (located at index num_variables). Afterwards,
-          consider the atomic transition systems in the "regular" order, i.e.
-          in the Fast Downward order of variables.
-        */
-        for (int i = max_transition_system_count - 1; i >= 0; --i) {
-            if (order == DFP) {
-                int corrected_index = i;
-                if (i < num_variables) {
-                    corrected_index = num_variables - 1 - i;
-                }
-                transition_system_order.push_back(corrected_index);
-            }
-            if (order == INVERSE) {
-                transition_system_order.push_back(i);
-            }
-        }
-    }
-    if (order == REGULAR || order == RANDOM) {
+
+    if (randomized_order) {
         for (int i = 0; i < max_transition_system_count; ++i) {
             transition_system_order.push_back(i);
         }
-        if (order == RANDOM) {
-            g_rng.shuffle(transition_system_order);
+        g_rng.shuffle(transition_system_order);
+    } else {
+
+        // Compute the order in which atomic transition systems are considered
+        vector<int> atomic_tso;
+        for (int i = 0; i < num_variables; ++i) {
+            atomic_tso.push_back(i);
+        }
+        if (atomic_ts_order == INVERSE) {
+            reverse(atomic_tso.begin(), atomic_tso.end());
+        } else if (atomic_ts_order == RANDOM1) {
+            g_rng.shuffle(atomic_tso);
+        }
+
+        // Compute the order in which product transition systems are considered
+        vector<int> product_tso;
+        for (int i = num_variables; i < max_transition_system_count; ++i) {
+            product_tso.push_back(i);
+        }
+        if (product_ts_order == NEW_TO_OLD) {
+            reverse(product_tso.begin(), product_tso.end());
+        } else if (product_ts_order == RANDOM2) {
+            g_rng.shuffle(product_tso);
+        }
+
+        // Put the orders in the correct order
+        if (atomic_before_product) {
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+        } else {
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+        }
+
+        vector<int> original_dfp_order;
+        vector<int> inverse_dfp_order;
+        vector<int> regular_dfp_order;
+        for (int i = max_transition_system_count - 1; i >= 0; --i) {
+            int corrected_index = i;
+            if (i < num_variables) {
+                corrected_index = num_variables - 1 - i;
+            }
+            original_dfp_order.push_back(corrected_index);
+            inverse_dfp_order.push_back(i);
+        }
+        for (int i = 0; i < max_transition_system_count; ++i) {
+            regular_dfp_order.push_back(i);
+        }
+
+        if (atomic_ts_order == REGULAR && product_ts_order == NEW_TO_OLD
+                && atomic_before_product == false) {
+            assert(transition_system_order == original_dfp_order);
+        }
+        if (atomic_ts_order == INVERSE && product_ts_order == NEW_TO_OLD
+                && atomic_before_product == false) {
+            assert(transition_system_order == inverse_dfp_order);
+        }
+        if (atomic_ts_order == REGULAR && product_ts_order == OLD_TO_NEW
+                && atomic_before_product == true) {
+            assert(transition_system_order == regular_dfp_order);
         }
     }
 }
@@ -248,12 +297,28 @@ string MergeDFP::name() const {
 }
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    vector<string> order;
-    order.push_back("DFP");
-    order.push_back("REGULAR");
-    order.push_back("INVERSE");
-    order.push_back("RANDOM");
-    parser.add_enum_option("order", order, "order of transition systems", "DFP");
+    vector<string> atomic_ts_order;
+    atomic_ts_order.push_back("REGULAR");
+    atomic_ts_order.push_back("INVERSE");
+    atomic_ts_order.push_back("RANDOM");
+    parser.add_enum_option("atomic_ts_order",
+                           atomic_ts_order,
+                           "order of atomic transition systems",
+                           "REGULAR");
+    vector<string> product_ts_order;
+    product_ts_order.push_back("OLD_TO_NEW");
+    product_ts_order.push_back("NEW_TO_OLD");
+    product_ts_order.push_back("RANDOM");
+    parser.add_enum_option("product_ts_order",
+                           product_ts_order,
+                           "order of product transition systems",
+                           "NEW_TO_OLD");
+    parser.add_option<bool>("atomic_before_product",
+                            "atomic ts before product ts",
+                            "false");
+    parser.add_option<bool>("randomized_order",
+                            "globally randomized order",
+                            "false");
     Options options = parser.parse();
     parser.document_synopsis(
         "Merge strategy DFP",
