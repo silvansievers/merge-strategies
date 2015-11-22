@@ -27,6 +27,8 @@ class SearchStatistics {
     int lastjump_evaluated_states;
     int lastjump_generated_states;
 
+    int last_reported_states;
+
     void print_f_line() const;
 public:
     SearchStatistics();

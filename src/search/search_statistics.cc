@@ -23,6 +23,7 @@ SearchStatistics::SearchStatistics() {
     lastjump_generated_states = 0;
 
     lastjump_f_value = -1;
+    last_reported_states = 0;
 }
 
 void SearchStatistics::report_f_value_progress(int f) {
@@ -33,6 +34,9 @@ void SearchStatistics::report_f_value_progress(int f) {
         lastjump_reopened_states = reopened_states;
         lastjump_evaluated_states = evaluated_states;
         lastjump_generated_states = generated_states;
+    } else if (expanded_states >= last_reported_states + 1000000) {
+        last_reported_states = expanded_states;
+        cout << "special statistics: " << expanded_states << " expanded" << endl;
     }
 }
 
