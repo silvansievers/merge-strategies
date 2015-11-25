@@ -1145,6 +1145,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
 
         // Go through all transition systems again and normalize feature values.
         int max_weight = -1;
+        unordered_map<int, int> weight_to_count;
         for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
             int ts_index1 = sorted_active_ts_indices[i];
             assert(fts->is_active(ts_index1));
@@ -1155,6 +1156,11 @@ pair<int, int> MergeDynamicWeighted::get_next(
                     features->compute_weighted_normalized_sum(fts,
                                                               ts_index1,
                                                               ts_index2);
+                if (!weight_to_count.count(pair_weight)) {
+                    weight_to_count[pair_weight] = 1;
+                } else {
+                    weight_to_count[pair_weight] += 1;
+                }
                 if (pair_weight > max_weight) {
                     max_weight = pair_weight;
                     next_index1 = ts_index1;
@@ -1175,6 +1181,13 @@ pair<int, int> MergeDynamicWeighted::get_next(
           the meantime.
         */
         features->clear();
+
+        int maximum_weight_pair_count = weight_to_count[max_weight];
+        assert(maximum_weight_pair_count >= 1);
+        if (maximum_weight_pair_count > 1) {
+            ++iterations_with_tiebreaking;
+            total_tiebreaking_pair_count += maximum_weight_pair_count;
+        }
     }
 
     assert(next_index1 != -1);
