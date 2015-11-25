@@ -13,6 +13,8 @@ class MergeStrategy {
     const int UNINITIALIZED = -1;
 protected:
     int remaining_merges;
+    int iterations_with_tiebreaking;
+    int total_tiebreaking_pair_count;
     bool initialized() const;
     virtual void dump_strategy_specific_options() const = 0;
 public:
@@ -25,6 +27,14 @@ public:
     // Implementations of get_next have to decrease remaining_merges by one
     virtual std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts) = 0;
     virtual std::string name() const = 0;
+
+    // statistics
+    virtual int get_iterations_with_tiebreaking() const {
+        return iterations_with_tiebreaking;
+    }
+    virtual int get_total_tiebreaking_pair_count() const {
+        return total_tiebreaking_pair_count;
+    }
 };
 
 #endif

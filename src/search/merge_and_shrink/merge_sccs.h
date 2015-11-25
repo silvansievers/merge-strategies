@@ -47,6 +47,8 @@ public:
     virtual std::pair<int, int> get_next(
         std::shared_ptr<FactoredTransitionSystem> fts) override;
     virtual std::string name() const override;
+    virtual int get_iterations_with_tiebreaking() const override;
+    virtual int get_total_tiebreaking_pair_count() const override;
 };
 
 #endif

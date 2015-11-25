@@ -217,6 +217,22 @@ string MergeSCCs::name() const {
     return "sccs";
 }
 
+int MergeSCCs::get_iterations_with_tiebreaking() const {
+    if (merge_dfp) {
+        return merge_dfp->get_iterations_with_tiebreaking();
+    } else {
+        return 0;
+    }
+}
+
+int MergeSCCs::get_total_tiebreaking_pair_count() const {
+    if (merge_dfp) {
+        return merge_dfp->get_total_tiebreaking_pair_count();
+    } else {
+        return 0;
+    }
+}
+
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     vector<string> order_of_sccs;
     order_of_sccs.push_back("topological");

@@ -231,6 +231,10 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
         average_pruning =  summed_pruning / static_cast<double>(pruning_statistics.size());
     }
     cout << "Average relative pruning: " << average_pruning << endl;
+    cout << "Iterations with merge tiebreaking: "
+         << merge_strategy->get_iterations_with_tiebreaking() << endl;
+    cout << "Total tiebreaking merge candidates: "
+         << merge_strategy->get_total_tiebreaking_pair_count() << endl;
 
     labels = nullptr;
 }

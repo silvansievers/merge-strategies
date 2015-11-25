@@ -32,7 +32,7 @@ class MergeDFP : public MergeStrategy {
                              std::vector<int> &label_ranks) const;
     std::pair<int, int> get_next_dfp(
         std::shared_ptr<FactoredTransitionSystem> fts,
-        const std::vector<int> &sorted_active_ts_indices) const;
+        const std::vector<int> &sorted_active_ts_indices);
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:

@@ -100,13 +100,14 @@ void MergeDFP::compute_label_ranks(shared_ptr<FactoredTransitionSystem> fts,
 
 pair<int, int> MergeDFP::get_next_dfp(
     shared_ptr<FactoredTransitionSystem> fts,
-    const vector<int> &sorted_active_ts_indices) const {
+    const vector<int> &sorted_active_ts_indices) {
     int next_index1 = -1;
     int next_index2 = -1;
     int first_valid_pair_index1 = -1;
     int first_valid_pair_index2 = -1;
     int minimum_weight = INF;
     vector<vector<int>> transition_system_label_ranks(sorted_active_ts_indices.size());
+    unordered_map<int, int> weight_to_count;
     // Go over all pairs of transition systems and compute their weight.
     for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
         int ts_index1 = sorted_active_ts_indices[i];
@@ -146,6 +147,11 @@ pair<int, int> MergeDFP::get_next_dfp(
                         pair_weight = min(pair_weight, max_label_rank);
                     }
                 }
+                if (!weight_to_count.count(pair_weight)) {
+                    weight_to_count[pair_weight] = 1;
+                } else {
+                    weight_to_count[pair_weight] += 1;
+                }
                 if (pair_weight < minimum_weight) {
                     minimum_weight = pair_weight;
                     next_index1 = ts_index1;
@@ -180,6 +186,13 @@ pair<int, int> MergeDFP::get_next_dfp(
             next_index1 = first_valid_pair_index1;
             next_index2 = first_valid_pair_index2;
         }
+    }
+
+    int minimum_weight_pair_count = weight_to_count[minimum_weight];
+    assert(minimum_weight_pair_count >= 1);
+    if (minimum_weight_pair_count > 1) {
+        ++iterations_with_tiebreaking;
+        total_tiebreaking_pair_count += minimum_weight_pair_count;
     }
 
     assert(next_index1 != -1);

@@ -8,7 +8,8 @@
 
 using namespace std;
 
-MergeStrategy::MergeStrategy() : remaining_merges(UNINITIALIZED) {
+MergeStrategy::MergeStrategy() : remaining_merges(UNINITIALIZED),
+    iterations_with_tiebreaking(0), total_tiebreaking_pair_count(0) {
 }
 
 bool MergeStrategy::initialized() const {
