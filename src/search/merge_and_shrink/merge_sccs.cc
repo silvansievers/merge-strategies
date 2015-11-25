@@ -30,7 +30,6 @@ MergeSCCs::MergeSCCs(const Options &options_)
       internal_merge_order(InternalMergeOrder(options_.get_enum("internal_merge_order"))),
       merged_sccs_merge_order(MergedSCCsMergeOrder(options_.get_enum("merged_sccs_merge_order"))),
       merge_dfp(nullptr),
-      number_of_merges_for_scc(0),
       merged_all_sccs(false),
       start_merging_sccs(true) {
     options = new Options(options_);
@@ -38,6 +37,7 @@ MergeSCCs::MergeSCCs(const Options &options_)
 
 MergeSCCs::~MergeSCCs() {
     delete merge_dfp;
+    delete options;
 }
 
 void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
@@ -65,22 +65,10 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     // Compute SCCs of the causal graph
     vector<vector<int>> cg;
     cg.reserve(num_vars);
-    if (internal_merge_order == LINEAR_MANUAL) {
-        is_causally_linked.resize(num_vars, false);
-        is_goal_variable.resize(num_vars, false);
-        for (FactProxy goal : task_proxy.get_goals())
-            is_goal_variable[goal.get_variable().get_id()] = true;
-        cg_successors.reserve(num_vars);
-        cg_predecessors.reserve(num_vars);
-    }
     for (VariableProxy var : vars) {
         const std::vector<int> &successors =
             task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
-        if (internal_merge_order == LINEAR_MANUAL) {
-            cg_successors.push_back(successors);
-            cg_predecessors.push_back(task_proxy.get_causal_graph().get_predecessors(var.get_id()));
-        }
     }
 //    cout << "CG:" << endl;
 //    for (size_t var = 0; var < cg.size(); ++var) {
@@ -137,7 +125,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
         assert(cg_sccs.empty());
         merged_all_sccs = true;
     }
-    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
+//    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
     current_scc_ts_indices.reserve(largest_scc_size);
 }
 
@@ -187,14 +175,12 @@ pair<int, int> MergeSCCs::get_next(
     if (!merged_all_sccs) {
 
         bool first_merge_of_scc = false; // needed for linear merging
-        if (!number_of_merges_for_scc) {
+        if (current_scc_ts_indices.empty()) {
             // We did not start merging a specific SCC yet
             first_merge_of_scc = true;
             assert(!cg_sccs.empty());
             const unordered_set<int> &current_scc = cg_sccs.front();
             assert(current_scc.size() > 1);
-            assert(current_scc_ts_indices.empty());
-            number_of_merges_for_scc = current_scc.size() - 1;
             // Initialize current transition systems with all those contained in the scc
             current_scc_ts_indices.insert(current_scc_ts_indices.end(),
                                           current_scc.begin(), current_scc.end());
@@ -203,7 +189,7 @@ pair<int, int> MergeSCCs::get_next(
             current_scc_ts_indices.push_back(most_recent_index);
         }
 
-        if (number_of_merges_for_scc > 1) {
+        if (current_scc_ts_indices.size() > 2) {
             if (internal_merge_order == LINEAR1) {
                 next_pair = get_next_linear(fts,
                                             current_scc_ts_indices,
@@ -211,49 +197,6 @@ pair<int, int> MergeSCCs::get_next(
                                             first_merge_of_scc);
             } else if (internal_merge_order == DFP1) {
                 next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
-            } else if (internal_merge_order == LINEAR_MANUAL) {
-                int next_index1 = -1;
-                int next_index2 = -1;
-                if (first_merge_of_scc) {
-                    int max_num_vars = is_causally_linked.size();
-                    is_causally_linked.assign(max_num_vars, false);
-                    for (int var : current_scc_ts_indices) {
-                        if (is_goal_variable[var]) {
-                            next_index1 = var;
-                            break;
-                        }
-                    }
-                    if (next_index1 == -1) {
-                        next_index1 = current_scc_ts_indices.front();
-                    }
-                    const vector<int> &successors = cg_successors[next_index1];
-                    for (int succ : successors) {
-                        is_causally_linked[succ] = true;
-                    }
-                    const vector<int> &predecessors = cg_predecessors[next_index1];
-                    for (int pred : predecessors) {
-                        is_causally_linked[pred] = true;
-                    }
-                } else {
-                    next_index1 = most_recent_index;
-                }
-                assert(next_index1 != -1);
-                for (int var : current_scc_ts_indices) {
-                    if (var != next_index1 && is_causally_linked[var]) {
-                        next_index2 = var;
-                        break;
-                    }
-                }
-                assert(next_index2 != -1);
-                const vector<int> &successors = cg_successors[next_index2];
-                for (int succ : successors) {
-                    is_causally_linked[succ] = true;
-                }
-                const vector<int> &predecessors = cg_predecessors[next_index2];
-                for (int pred : predecessors) {
-                    is_causally_linked[pred] = true;
-                }
-                next_pair = make_pair(next_index1, next_index2);
             }
 
             // Remove the two merged indices from the current set of indices
@@ -266,7 +209,6 @@ pair<int, int> MergeSCCs::get_next(
                 }
             }
         } else {
-            assert(number_of_merges_for_scc == 1);
             assert(current_scc_ts_indices.size() == 2);
             next_pair = make_pair(current_scc_ts_indices[0],
                 current_scc_ts_indices[1]);
@@ -277,8 +219,6 @@ pair<int, int> MergeSCCs::get_next(
                 merged_all_sccs = true;
             }
         }
-
-        --number_of_merges_for_scc;
     } else {
         // TODO: now this is very similar to the phase of internally merging sccs.
         // need to reduce code duplication
@@ -345,7 +285,6 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     vector<string> internal_merge_order;
     internal_merge_order.push_back("linear");
     internal_merge_order.push_back("dfp");
-    internal_merge_order.push_back("linear_manual");
     parser.add_enum_option("internal_merge_order",
                            internal_merge_order,
                            "choose an internal merge order: linear (specify "
