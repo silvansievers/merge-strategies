@@ -3,8 +3,6 @@
 
 #include "merge_strategy.h"
 
-#include <unordered_set>
-
 class MergeDFP;
 class Options;
 
@@ -30,11 +28,9 @@ class MergeSCCs : public MergeStrategy {
     std::vector<int> linear_variable_order;
     MergeDFP *merge_dfp;
 
-    std::vector<std::unordered_set<int>> non_singleton_cg_sccs;
-    std::vector<int> current_scc_ts_indices;
-    bool merged_all_sccs;
+    std::vector<std::vector<int>> non_singleton_cg_sccs;
     std::vector<int> indices_of_merged_sccs;
-    bool start_merging_sccs;
+    std::vector<int> current_ts_indices;
 
     std::pair<int, int> get_next_linear(
         const std::shared_ptr<FactoredTransitionSystem> fts,

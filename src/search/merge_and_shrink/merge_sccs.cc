@@ -29,9 +29,7 @@ MergeSCCs::MergeSCCs(const Options &options_)
       order_of_sccs(OrderOfSCCs(options_.get_enum("order_of_sccs"))),
       internal_merge_order(InternalMergeOrder(options_.get_enum("internal_merge_order"))),
       merged_sccs_merge_order(MergedSCCsMergeOrder(options_.get_enum("merged_sccs_merge_order"))),
-      merge_dfp(nullptr),
-      merged_all_sccs(false),
-      start_merging_sccs(true) {
+      merge_dfp(nullptr) {
     options = new Options(options_);
 }
 
@@ -101,20 +99,16 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     int index = num_vars - 1;
     cout << "found cg sccs:" << endl;
     indices_of_merged_sccs.reserve(sccs.size());
-    int largest_scc_size = 0;
     for (const vector<int> &scc : sccs) {
         cout << scc << endl;
         int scc_size = scc.size();
-        if (scc_size > largest_scc_size) {
-            largest_scc_size = scc_size;
-        }
         if (scc_size == 1) {
             indices_of_merged_sccs.push_back(scc.front());
         } else {
             index += scc_size - 1;
             indices_of_merged_sccs.push_back(index);
             // only store non-singleton sccs for internal merging
-            non_singleton_cg_sccs.push_back(unordered_set<int>(scc.begin(), scc.end()));
+            non_singleton_cg_sccs.push_back(vector<int>(scc.begin(), scc.end()));
         }
     }
     if (sccs.size() == 1) {
@@ -123,10 +117,8 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     if (static_cast<int>(sccs.size()) == num_vars) {
         cout << "Only singleton SCCs" << endl;
         assert(non_singleton_cg_sccs.empty());
-        merged_all_sccs = true;
     }
 //    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
-    current_scc_ts_indices.reserve(largest_scc_size);
 }
 
 pair<int, int> MergeSCCs::get_next_linear(
@@ -172,91 +164,44 @@ pair<int, int> MergeSCCs::get_next(
 
     pair<int, int > next_pair = make_pair(-1, -1);
     int most_recent_index = fts->get_size() - 1;
-    if (!merged_all_sccs) {
-
-        bool first_merge_of_scc = false; // needed for linear merging
-        if (current_scc_ts_indices.empty()) {
-            // We did not start merging a specific SCC yet
-            first_merge_of_scc = true;
-            assert(!non_singleton_cg_sccs.empty());
-            const unordered_set<int> &current_scc = non_singleton_cg_sccs.front();
+    bool first_merge = false; // needed for linear merging
+    if (current_ts_indices.empty()) {
+        first_merge = true;
+        if (non_singleton_cg_sccs.empty()) {
+            assert(indices_of_merged_sccs.size() > 1);
+            current_ts_indices = move(indices_of_merged_sccs);
+        } else {
+            vector<int> &current_scc = non_singleton_cg_sccs.front();
             assert(current_scc.size() > 1);
-            // Initialize current transition systems with all those contained in the scc
-            current_scc_ts_indices.insert(current_scc_ts_indices.end(),
-                                          current_scc.begin(), current_scc.end());
-        } else {
-            // Add the newest transition system to the set of current ones of the scc
-            current_scc_ts_indices.push_back(most_recent_index);
-        }
-
-        if (current_scc_ts_indices.size() == 2) {
-            assert(current_scc_ts_indices.size() == 2);
-            next_pair = make_pair(current_scc_ts_indices[0],
-                current_scc_ts_indices[1]);
-
-            current_scc_ts_indices.clear();
+            current_ts_indices = move(current_scc);
             non_singleton_cg_sccs.erase(non_singleton_cg_sccs.begin());
-            if (non_singleton_cg_sccs.empty()) {
-                merged_all_sccs = true;
-            }
-        } else {
-            if (internal_merge_order == LINEAR1) {
-                next_pair = get_next_linear(fts,
-                                            current_scc_ts_indices,
-                                            most_recent_index,
-                                            first_merge_of_scc);
-            } else if (internal_merge_order == DFP1) {
-                next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
-            }
-
-            // Remove the two merged indices from the current set of indices
-            for (vector<int>::iterator it = current_scc_ts_indices.begin();
-                it != current_scc_ts_indices.end(); ) {
-                if (*it == next_pair.first || *it == next_pair.second) {
-                    it = current_scc_ts_indices.erase(it);
-                } else {
-                    ++it;
-                }
-            }
         }
     } else {
-        // TODO: now this is very similar to the phase of internally merging sccs.
-        // need to reduce code duplication
+        // Add the newest transition system to the set of current ones
+        current_ts_indices.push_back(most_recent_index);
+    }
 
-        bool first_merge_of_merged_sccs_merging = false; // needed for linear merging
-        if (start_merging_sccs) {
-            // If we end up here the first time, we have at least 2 SCCs
-            assert(indices_of_merged_sccs.size() > 1);
-            start_merging_sccs = false;
-            first_merge_of_merged_sccs_merging = true;
-        }  else {
-            // Add the newest transition system to the set of current merged
-            // sccs indices
-            indices_of_merged_sccs.push_back(most_recent_index);
+    if (current_ts_indices.size() == 2) {
+        next_pair = make_pair(current_ts_indices[0],
+            current_ts_indices[1]);
+        current_ts_indices.clear();
+    } else {
+        if (internal_merge_order == LINEAR1) {
+            next_pair = get_next_linear(fts,
+                                        current_ts_indices,
+                                        most_recent_index,
+                                        first_merge);
+        } else if (internal_merge_order == DFP1) {
+            next_pair = merge_dfp->get_next(fts, current_ts_indices);
         }
 
-        if (indices_of_merged_sccs.size() == 2) {
-            next_pair = make_pair(indices_of_merged_sccs[0],
-                indices_of_merged_sccs[1]);
-            indices_of_merged_sccs.clear();
-        } else {
-            if (merged_sccs_merge_order == LINEAR2) {
-                next_pair = get_next_linear(fts,
-                                            indices_of_merged_sccs,
-                                            most_recent_index,
-                                            first_merge_of_merged_sccs_merging);
-            } else if (merged_sccs_merge_order == DFP2) {
-                next_pair = merge_dfp->get_next(fts, indices_of_merged_sccs);
-            }
-
-            // Remove the two indices from indices_of_merged
-            for (vector<int>::iterator it = indices_of_merged_sccs.begin();
-                it != indices_of_merged_sccs.end(); ) {
-                if (*it == next_pair.first || *it == next_pair.second) {
-                    it = indices_of_merged_sccs.erase(it);
-                } else {
-                    ++it;
-                }
+        // Remove the two merged indices from the current set of indices
+        for (vector<int>::iterator it = current_ts_indices.begin();
+            it != current_ts_indices.end(); ) {
+            if (*it == next_pair.first || *it == next_pair.second) {
+                it = current_ts_indices.erase(it);
+            } else {
+                ++it;
             }
         }
     }
