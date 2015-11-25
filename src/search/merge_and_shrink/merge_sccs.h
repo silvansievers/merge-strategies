@@ -43,6 +43,12 @@ class MergeSCCs : public MergeStrategy {
     bool merged_all_sccs;
     std::vector<int> indices_of_merged_sccs;
     bool start_merging_sccs;
+
+    std::pair<int, int> get_next_linear(
+        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const std::vector<int> available_indices,
+        int most_recent_index,
+        bool two_indices) const;
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:

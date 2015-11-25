@@ -2,6 +2,7 @@
 
 #include "factored_transition_system.h"
 #include "merge_dfp.h"
+#include "transition_system.h"
 
 #include "../causal_graph.h"
 #include "../option_parser.h"
@@ -136,8 +137,45 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
         assert(cg_sccs.empty());
         merged_all_sccs = true;
     }
-//    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
+    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
     current_scc_ts_indices.reserve(largest_scc_size);
+}
+
+pair<int, int> MergeSCCs::get_next_linear(
+    const shared_ptr<FactoredTransitionSystem> fts,
+    const vector<int> available_indices,
+    int most_recent_index,
+    bool two_indices) const {
+    int next_index1 = -1;
+    if (!two_indices) {
+        next_index1 = most_recent_index;
+    }
+    int next_index2 = -1;
+    for (int var : linear_variable_order) {
+        for (int index : available_indices) {
+            if (index != next_index1) {
+                const vector<int> &incorporated_variables =
+                    fts->get_ts(index).get_incorporated_variables();
+                vector<int>::const_iterator it = find(incorporated_variables.begin(),
+                                                incorporated_variables.end(),
+                                                var);
+                if (it != incorporated_variables.end()) { // ts contains var
+                    if (next_index1 == -1) {
+                        next_index1 = index;
+                        break;
+                    } else {
+                        assert(next_index2 == -1);
+                        next_index2 = index;
+                        break;
+                    }
+                }
+            }
+        }
+        if (next_index1 != -1 && next_index2 != -1) {
+            break;
+        }
+    }
+    return make_pair(next_index1, next_index2);
 }
 
 pair<int, int> MergeSCCs::get_next(
@@ -167,28 +205,10 @@ pair<int, int> MergeSCCs::get_next(
 
         if (number_of_merges_for_scc > 1) {
             if (internal_merge_order == LINEAR1) {
-                int next_index1 = -1;
-                if (!first_merge_of_scc) {
-                    next_index1 = most_recent_index;
-                }
-                int next_index2 = -1;
-                for (int var : linear_variable_order) {
-                    for (int scc_var : current_scc_ts_indices) {
-                        if (scc_var == var) {
-                            if (next_index1 == -1) {
-                                next_index1 = var;
-                            } else {
-                                assert(next_index2 == -1);
-                                next_index2 = var;
-                                break;
-                            }
-                        }
-                    }
-                    if (next_index1 != -1 && next_index2 != -1) {
-                        break;
-                    }
-                }
-                next_pair = make_pair(next_index1, next_index2);
+                next_pair = get_next_linear(fts,
+                                            current_scc_ts_indices,
+                                            most_recent_index,
+                                            first_merge_of_scc);
             } else if (internal_merge_order == DFP1) {
                 next_pair = merge_dfp->get_next(fts, current_scc_ts_indices);
             } else if (internal_merge_order == LINEAR_MANUAL) {
@@ -281,28 +301,10 @@ pair<int, int> MergeSCCs::get_next(
             indices_of_merged_sccs.clear();
         } else {
             if (merged_sccs_merge_order == LINEAR2) {
-                int next_index1 = -1;
-                if (!first_merge_of_merged_sccs_merging) {
-                    next_index1 = most_recent_index;
-                }
-                int next_index2 = -1;
-                for (int var : linear_variable_order) {
-                    for (int scc_index : indices_of_merged_sccs) {
-                        if (scc_index == var) {
-                            if (next_index1 == -1) {
-                                next_index1 = var;
-                            } else {
-                                assert(next_index2 == -1);
-                                next_index2 = var;
-                                break;
-                            }
-                        }
-                    }
-                    if (next_index1 != -1 && next_index2 != -1) {
-                        break;
-                    }
-                }
-                next_pair = make_pair(next_index1, next_index2);
+                next_pair = get_next_linear(fts,
+                                            indices_of_merged_sccs,
+                                            most_recent_index,
+                                            first_merge_of_merged_sccs_merging);
             } else if (merged_sccs_merge_order == DFP2) {
                 next_pair = merge_dfp->get_next(fts, indices_of_merged_sccs);
             }
