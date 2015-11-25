@@ -69,7 +69,7 @@ void FactoredTransitionSystem::discard_states(int index,
     if (!silent) {
         double new_size = transition_systems[index]->get_size();
         assert(new_size <= num_states);
-        relative_pruning_per_iteration.push_back(new_size / static_cast<double>(num_states));
+        relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(num_states));
     }
 }
 
