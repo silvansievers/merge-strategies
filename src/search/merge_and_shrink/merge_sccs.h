@@ -30,8 +30,7 @@ class MergeSCCs : public MergeStrategy {
     std::vector<int> linear_variable_order;
     MergeDFP *merge_dfp;
 
-    // cg_sccs contain the sccs in order to be merged, from last to first.
-    std::vector<std::unordered_set<int>> cg_sccs;
+    std::vector<std::unordered_set<int>> non_singleton_cg_sccs;
     std::vector<int> current_scc_ts_indices;
     bool merged_all_sccs;
     std::vector<int> indices_of_merged_sccs;

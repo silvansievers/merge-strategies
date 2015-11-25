@@ -114,7 +114,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
             index += scc_size - 1;
             indices_of_merged_sccs.push_back(index);
             // only store non-singleton sccs for internal merging
-            cg_sccs.push_back(unordered_set<int>(scc.begin(), scc.end()));
+            non_singleton_cg_sccs.push_back(unordered_set<int>(scc.begin(), scc.end()));
         }
     }
     if (sccs.size() == 1) {
@@ -122,7 +122,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     }
     if (static_cast<int>(sccs.size()) == num_vars) {
         cout << "Only singleton SCCs" << endl;
-        assert(cg_sccs.empty());
+        assert(non_singleton_cg_sccs.empty());
         merged_all_sccs = true;
     }
 //    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
@@ -178,8 +178,8 @@ pair<int, int> MergeSCCs::get_next(
         if (current_scc_ts_indices.empty()) {
             // We did not start merging a specific SCC yet
             first_merge_of_scc = true;
-            assert(!cg_sccs.empty());
-            const unordered_set<int> &current_scc = cg_sccs.front();
+            assert(!non_singleton_cg_sccs.empty());
+            const unordered_set<int> &current_scc = non_singleton_cg_sccs.front();
             assert(current_scc.size() > 1);
             // Initialize current transition systems with all those contained in the scc
             current_scc_ts_indices.insert(current_scc_ts_indices.end(),
@@ -189,7 +189,17 @@ pair<int, int> MergeSCCs::get_next(
             current_scc_ts_indices.push_back(most_recent_index);
         }
 
-        if (current_scc_ts_indices.size() > 2) {
+        if (current_scc_ts_indices.size() == 2) {
+            assert(current_scc_ts_indices.size() == 2);
+            next_pair = make_pair(current_scc_ts_indices[0],
+                current_scc_ts_indices[1]);
+
+            current_scc_ts_indices.clear();
+            non_singleton_cg_sccs.erase(non_singleton_cg_sccs.begin());
+            if (non_singleton_cg_sccs.empty()) {
+                merged_all_sccs = true;
+            }
+        } else {
             if (internal_merge_order == LINEAR1) {
                 next_pair = get_next_linear(fts,
                                             current_scc_ts_indices,
@@ -207,16 +217,6 @@ pair<int, int> MergeSCCs::get_next(
                 } else {
                     ++it;
                 }
-            }
-        } else {
-            assert(current_scc_ts_indices.size() == 2);
-            next_pair = make_pair(current_scc_ts_indices[0],
-                current_scc_ts_indices[1]);
-
-            current_scc_ts_indices.clear();
-            cg_sccs.erase(cg_sccs.begin());
-            if (cg_sccs.empty()) {
-                merged_all_sccs = true;
             }
         }
     } else {
