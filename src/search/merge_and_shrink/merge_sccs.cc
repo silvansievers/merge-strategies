@@ -1,6 +1,7 @@
 #include "merge_sccs.h"
 
 #include "factored_transition_system.h"
+#include "merge_linear.h"
 #include "merge_dfp.h"
 #include "transition_system.h"
 
@@ -243,41 +244,9 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
                            "choose an ordering of the sccs",
                            "dfp");
     // linear merge strategy option
-    vector<string> variable_order;
-    variable_order.push_back("CG_GOAL_LEVEL");
-    variable_order.push_back("CG_GOAL_RANDOM");
-    variable_order.push_back("GOAL_CG_LEVEL");
-    variable_order.push_back("RANDOM");
-    variable_order.push_back("LEVEL");
-    variable_order.push_back("REVERSE_LEVEL");
-    parser.add_enum_option("variable_order",
-                           variable_order,
-                           "option useful if merge_order = linear. "
-                           "see VariableOrderFinder",
-                           "reverse_level");
+    MergeLinear::add_options_to_parser(parser);
     // dfp merge strategy options
-    vector<string> atomic_ts_order;
-    atomic_ts_order.push_back("REGULAR");
-    atomic_ts_order.push_back("INVERSE");
-    atomic_ts_order.push_back("RANDOM");
-    parser.add_enum_option("atomic_ts_order",
-                           atomic_ts_order,
-                           "order of atomic transition systems",
-                           "REGULAR");
-    vector<string> product_ts_order;
-    product_ts_order.push_back("OLD_TO_NEW");
-    product_ts_order.push_back("NEW_TO_OLD");
-    product_ts_order.push_back("RANDOM");
-    parser.add_enum_option("product_ts_order",
-                           product_ts_order,
-                           "order of product transition systems",
-                           "NEW_TO_OLD");
-    parser.add_option<bool>("atomic_before_product",
-                            "atomic ts before product ts",
-                            "false");
-    parser.add_option<bool>("randomized_order",
-                            "globally randomized order",
-                            "false");
+    MergeDFP::add_options_to_parser(parser);
     Options options = parser.parse();
     if (parser.dry_run())
         return 0;

@@ -4,6 +4,7 @@
 #include "merge_strategy.h"
 
 class Options;
+class OptionParser;
 
 class MergeDFP : public MergeStrategy {
     enum AtomicTSOrder {
@@ -40,6 +41,7 @@ public:
     std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts,
                                  const std::vector<int> &ts_indices);
     virtual std::string name() const override;
+    static void add_options_to_parser(OptionParser &parser);
 };
 
 #endif
