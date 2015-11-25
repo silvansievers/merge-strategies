@@ -99,7 +99,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     remaining_labels.push_back(labels->compute_number_active_labels());
     int iteration_counter = 0;
     bool still_perfect = true;
-    bool linear_order = true;
     vector<pair<int, int>> merge_order;
     int final_index = -1; // TODO: get rid of this
     if (fts->is_solvable()) { // All atomic transition system are solvable.
@@ -111,12 +110,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
             cout << "Next pair of indices: (" << merge_index1 << ", " << merge_index2 << ")" << endl;
             assert(merge_index1 != merge_index2);
             merge_order.push_back(merge_indices);
-            if (iteration_counter > 0 && linear_order
-                && merge_index1 != fts->get_size() - 1
-                && merge_index2 != fts->get_size()) {
-                linear_order = false;
-                cout << "Non-linear merge order" << endl;
-            }
             fts->statistics(merge_index1, timer);
             fts->statistics(merge_index2, timer);
 
@@ -204,14 +197,27 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     }
     cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
     cout << "Merge order: [";
+    bool linear_order = true;
+    int next_index = task_proxy.get_variables().size();
     for (size_t i = 0; i < merge_order.size(); ++i) {
         pair<int, int> merge = merge_order[i];
         cout << "(" << merge.first << ", " << merge.second << ")";
         if (i != merge_order.size() - 1) {
             cout << ", ";
         }
+        if (linear_order && i != 0) {
+            if (merge.first != next_index && merge.second != next_index) {
+                linear_order = false;
+            }
+            ++next_index;
+        }
     }
     cout << "]" << endl;
+    if (linear_order) {
+        cout << "Linear merge order" << endl;
+    } else {
+         cout << "Non-linear merge order" << endl;
+    }
     const vector<double> &pruning_statistics = fts->get_pruning_statistics();
     cout << "Relative pruning per iteration: " << pruning_statistics << endl;
     double summed_pruning = 0;
