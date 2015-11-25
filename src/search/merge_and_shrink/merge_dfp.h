@@ -5,19 +5,22 @@
 
 class Options;
 class OptionParser;
+class TaskProxy;
+
+enum AtomicTSOrder {
+    REGULAR,
+    INVERSE,
+    RANDOM1
+};
+
+enum ProductTSOrder {
+    OLD_TO_NEW,
+    NEW_TO_OLD,
+    RANDOM2
+};
 
 class MergeDFP : public MergeStrategy {
-    enum AtomicTSOrder {
-        REGULAR,
-        INVERSE,
-        RANDOM1
-    };
     AtomicTSOrder atomic_ts_order;
-    enum ProductTSOrder {
-        OLD_TO_NEW,
-        NEW_TO_OLD,
-        RANDOM2
-    };
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     bool randomized_order;
@@ -41,7 +44,13 @@ public:
     std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts,
                                  const std::vector<int> &ts_indices);
     virtual std::string name() const override;
-    static void add_options_to_parser(OptionParser &parser);
+    static void compute_ts_order(const TaskProxy &task_proxy,
+                                 AtomicTSOrder atomic_ts_order,
+                                 ProductTSOrder product_ts_order,
+                                 bool atomic_before_product,
+                                 bool randomized_order,
+                                 std::vector<int> &ts_order);
+    static void add_options_to_parser(OptionParser &parser, bool dfp_defaults = true);
 };
 
 #endif

@@ -1070,55 +1070,12 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
     features->initialize(*task_proxy);
 
     // Compute the ts order
-    int num_variables = task_proxy->get_variables().size();
-    int max_transition_system_count = num_variables * 2 - 1;
-    transition_system_order.reserve(max_transition_system_count);
-    if (randomized_order) {
-        for (int i = 0; i < max_transition_system_count; ++i) {
-            transition_system_order.push_back(i);
-        }
-        g_rng.shuffle(transition_system_order);
-    } else {
-
-        // Compute the order in which atomic transition systems are considered
-        vector<int> atomic_tso;
-        for (int i = 0; i < num_variables; ++i) {
-            atomic_tso.push_back(i);
-        }
-        if (atomic_ts_order == INVERSE) {
-            reverse(atomic_tso.begin(), atomic_tso.end());
-        } else if (atomic_ts_order == RANDOM1) {
-            g_rng.shuffle(atomic_tso);
-        }
-
-        // Compute the order in which product transition systems are considered
-        vector<int> product_tso;
-        for (int i = num_variables; i < max_transition_system_count; ++i) {
-            product_tso.push_back(i);
-        }
-        if (product_ts_order == NEW_TO_OLD) {
-            reverse(product_tso.begin(), product_tso.end());
-        } else if (product_ts_order == RANDOM2) {
-            g_rng.shuffle(product_tso);
-        }
-
-        // Put the orders in the correct order
-        if (atomic_before_product) {
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-        } else {
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-        }
-    }
+    MergeDFP::compute_ts_order(*task_proxy,
+                               atomic_ts_order,
+                               product_ts_order,
+                               atomic_before_product,
+                               randomized_order,
+                               transition_system_order);
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(
@@ -1176,6 +1133,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
         }
 
         // Precompute the sorted set of active transition systems
+        // TODO: code duplication from MergeDFP again
         assert(!transition_system_order.empty());
         vector<int> sorted_active_ts_indices;
         for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
@@ -1237,28 +1195,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_option<bool>("use_lr", "use label reduction", "false");
 
     // TS order options
-    vector<string> atomic_ts_order;
-    atomic_ts_order.push_back("REGULAR");
-    atomic_ts_order.push_back("INVERSE");
-    atomic_ts_order.push_back("RANDOM");
-    parser.add_enum_option("atomic_ts_order",
-                           atomic_ts_order,
-                           "order of atomic transition systems",
-                           "REGULAR");
-    vector<string> product_ts_order;
-    product_ts_order.push_back("OLD_TO_NEW");
-    product_ts_order.push_back("NEW_TO_OLD");
-    product_ts_order.push_back("RANDOM");
-    parser.add_enum_option("product_ts_order",
-                           product_ts_order,
-                           "order of product transition systems",
-                           "OLD_TO_NEW");
-    parser.add_option<bool>("atomic_before_product",
-                            "atomic ts before product ts",
-                            "true");
-    parser.add_option<bool>("randomized_order",
-                            "globally randomized order",
-                            "false");
+    MergeDFP::add_options_to_parser(parser, false);
 
     // Feature weight options
     parser.add_option<int>(

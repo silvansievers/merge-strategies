@@ -29,83 +29,27 @@ MergeDFP::MergeDFP(const Options &options)
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
     TaskProxy task_proxy(*task);
-    int num_variables = task_proxy.get_variables().size();
-    int max_transition_system_count = num_variables * 2 - 1;
+    compute_ts_order(task_proxy,
+                     atomic_ts_order,
+                     product_ts_order,
+                     atomic_before_product,
+                     randomized_order,
+                     transition_system_order);
 
-    transition_system_order.reserve(max_transition_system_count);
-    if (randomized_order) {
-        for (int i = 0; i < max_transition_system_count; ++i) {
-            transition_system_order.push_back(i);
-        }
-        g_rng.shuffle(transition_system_order);
-    } else {
-
-        // Compute the order in which atomic transition systems are considered
-        vector<int> atomic_tso;
-        for (int i = 0; i < num_variables; ++i) {
-            atomic_tso.push_back(i);
-        }
-        if (atomic_ts_order == INVERSE) {
-            reverse(atomic_tso.begin(), atomic_tso.end());
-        } else if (atomic_ts_order == RANDOM1) {
-            g_rng.shuffle(atomic_tso);
-        }
-
-        // Compute the order in which product transition systems are considered
-        vector<int> product_tso;
-        for (int i = num_variables; i < max_transition_system_count; ++i) {
-            product_tso.push_back(i);
-        }
-        if (product_ts_order == NEW_TO_OLD) {
-            reverse(product_tso.begin(), product_tso.end());
-        } else if (product_ts_order == RANDOM2) {
-            g_rng.shuffle(product_tso);
-        }
-
-        // Put the orders in the correct order
-        if (atomic_before_product) {
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-        } else {
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-        }
-
+    if (!randomized_order && (atomic_ts_order == REGULAR &&
+                              product_ts_order == NEW_TO_OLD &&
+                              !atomic_before_product)) {
+        int num_variables = task_proxy.get_variables().size();
+        int max_transition_system_count = num_variables * 2 - 1;
         vector<int> original_dfp_order;
-        vector<int> inverse_dfp_order;
-        vector<int> regular_dfp_order;
         for (int i = max_transition_system_count - 1; i >= 0; --i) {
             int corrected_index = i;
             if (i < num_variables) {
                 corrected_index = num_variables - 1 - i;
             }
             original_dfp_order.push_back(corrected_index);
-            inverse_dfp_order.push_back(i);
         }
-        for (int i = 0; i < max_transition_system_count; ++i) {
-            regular_dfp_order.push_back(i);
-        }
-
-        if (atomic_ts_order == REGULAR && product_ts_order == NEW_TO_OLD
-                && atomic_before_product == false) {
-            assert(transition_system_order == original_dfp_order);
-        }
-        if (atomic_ts_order == INVERSE && product_ts_order == NEW_TO_OLD
-                && atomic_before_product == false) {
-            assert(transition_system_order == inverse_dfp_order);
-        }
-        if (atomic_ts_order == REGULAR && product_ts_order == OLD_TO_NEW
-                && atomic_before_product == true) {
-            assert(transition_system_order == regular_dfp_order);
-        }
+        assert(transition_system_order == original_dfp_order);
     }
 }
 
@@ -297,7 +241,65 @@ string MergeDFP::name() const {
     return "dfp";
 }
 
-void MergeDFP::add_options_to_parser(OptionParser &parser) {
+void MergeDFP::compute_ts_order(const TaskProxy &task_proxy,
+                                AtomicTSOrder atomic_ts_order,
+                                ProductTSOrder product_ts_order,
+                                bool atomic_before_product,
+                                bool randomized_order,
+                                vector<int> &ts_order) {
+    int num_variables = task_proxy.get_variables().size();
+    int max_transition_system_count = num_variables * 2 - 1;
+
+    ts_order.reserve(max_transition_system_count);
+    if (randomized_order) {
+        for (int i = 0; i < max_transition_system_count; ++i) {
+            ts_order.push_back(i);
+        }
+        g_rng.shuffle(ts_order);
+    } else {
+
+        // Compute the order in which atomic transition systems are considered
+        vector<int> atomic_tso;
+        for (int i = 0; i < num_variables; ++i) {
+            atomic_tso.push_back(i);
+        }
+        if (atomic_ts_order == INVERSE) {
+            reverse(atomic_tso.begin(), atomic_tso.end());
+        } else if (atomic_ts_order == RANDOM1) {
+            g_rng.shuffle(atomic_tso);
+        }
+
+        // Compute the order in which product transition systems are considered
+        vector<int> product_tso;
+        for (int i = num_variables; i < max_transition_system_count; ++i) {
+            product_tso.push_back(i);
+        }
+        if (product_ts_order == NEW_TO_OLD) {
+            reverse(product_tso.begin(), product_tso.end());
+        } else if (product_ts_order == RANDOM2) {
+            g_rng.shuffle(product_tso);
+        }
+
+        // Put the orders in the correct order
+        if (atomic_before_product) {
+            ts_order.insert(ts_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+            ts_order.insert(ts_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+        } else {
+            ts_order.insert(ts_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+            ts_order.insert(ts_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+        }
+    }
+}
+
+void MergeDFP::add_options_to_parser(OptionParser &parser, bool dfp_defaults) {
     vector<string> atomic_ts_order;
     atomic_ts_order.push_back("REGULAR");
     atomic_ts_order.push_back("INVERSE");
@@ -310,13 +312,26 @@ void MergeDFP::add_options_to_parser(OptionParser &parser) {
     product_ts_order.push_back("OLD_TO_NEW");
     product_ts_order.push_back("NEW_TO_OLD");
     product_ts_order.push_back("RANDOM");
-    parser.add_enum_option("product_ts_order",
-                           product_ts_order,
-                           "order of product transition systems",
-                           "NEW_TO_OLD");
-    parser.add_option<bool>("atomic_before_product",
-                            "atomic ts before product ts",
-                            "false");
+    if (dfp_defaults) {
+        parser.add_enum_option("product_ts_order",
+                               product_ts_order,
+                               "order of product transition systems",
+                               "NEW_TO_OLD");
+    } else {
+        parser.add_enum_option("product_ts_order",
+                               product_ts_order,
+                               "order of product transition systems",
+                               "OLD_TO_NEW");
+    }
+    if (dfp_defaults) {
+        parser.add_option<bool>("atomic_before_product",
+                                "atomic ts before product ts",
+                                "false");
+    } else {
+        parser.add_option<bool>("atomic_before_product",
+                                "atomic ts before product ts",
+                                "true");
+    }
     parser.add_option<bool>("randomized_order",
                             "globally randomized order",
                             "false");

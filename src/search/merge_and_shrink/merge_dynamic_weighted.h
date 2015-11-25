@@ -3,6 +3,8 @@
 
 #include "merge_strategy.h"
 
+#include "merge_dfp.h"
+
 #include "../utilities_hash.h"
 
 #include <unordered_map>
@@ -323,17 +325,7 @@ public:
 class MergeDynamicWeighted : public MergeStrategy {
     const int max_states; // bisimulation option
     const bool use_lr;
-    enum AtomicTSOrder {
-        REGULAR,
-        INVERSE,
-        RANDOM1
-    };
     AtomicTSOrder atomic_ts_order;
-    enum ProductTSOrder {
-        OLD_TO_NEW,
-        NEW_TO_OLD,
-        RANDOM2
-    };
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     bool randomized_order;
