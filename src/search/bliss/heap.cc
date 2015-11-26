@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
-#include "defs.hh"
-#include "heap.hh"
+#include "defs.h"
+#include "heap.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

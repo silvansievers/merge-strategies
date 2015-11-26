@@ -6,8 +6,8 @@
 #include "../labels.h"
 #include "../transition_system.h"
 
-#include "../../bliss/graph.hh"
-#include "../../bliss/defs.hh"
+#include "../../bliss/graph.h"
+#include "../../bliss/defs.h"
 
 #include "../../globals.h"
 #include "../../option_parser.h"

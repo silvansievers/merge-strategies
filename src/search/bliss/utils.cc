@@ -1,6 +1,6 @@
 #include <cassert>
 #include <vector>
-#include "utils.hh"
+#include "utils.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

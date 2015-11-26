@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <cstdio>
-#include "defs.hh"
+#include "defs.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

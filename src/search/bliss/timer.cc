@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <sys/times.h>
-#include "timer.hh"
+#include "timer.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

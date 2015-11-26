@@ -6,11 +6,11 @@
 #include <list>
 #include <algorithm>
 
-#include "defs.hh"
-#include "timer.hh"
-#include "graph.hh"
-#include "partition.hh"
-#include "utils.hh"
+#include "defs.h"
+#include "timer.h"
+#include "graph.h"
+#include "partition.h"
+#include "utils.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

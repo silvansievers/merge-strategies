@@ -22,7 +22,7 @@
 
 
 #include <cstdlib>
-#include "defs.hh"
+#include "defs.h"
 
 namespace bliss {
 

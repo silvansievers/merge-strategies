@@ -26,7 +26,7 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include "defs.hh"
+#include "defs.h"
 
 namespace bliss {
 

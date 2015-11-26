@@ -20,7 +20,7 @@
   along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "defs.hh"
+#include "defs.h"
 
 #include <stdlib.h>
 

@@ -1,4 +1,4 @@
-#include "uintseqhash.hh"
+#include "uintseqhash.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

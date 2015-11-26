@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <vector>
 #include <list>
-#include "graph.hh"
-#include "partition.hh"
+#include "graph.h"
+#include "partition.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila

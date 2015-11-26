@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
-#include "defs.hh"
-#include "orbit.hh"
+#include "defs.h"
+#include "orbit.h"
 
 /*
   Copyright (c) 2006-2011 Tommi Junttila
