@@ -28,7 +28,7 @@ class Options;
 
 class ShrinkBucketBased : public ShrinkStrategy {
 protected:
-    typedef std::vector<AbstractStateRef> Bucket;
+    typedef std::vector<int> Bucket;
 
 private:
     void compute_abstraction(
@@ -37,11 +37,15 @@ private:
         StateEquivalenceRelation &equivalence_relation) const;
 
 protected:
-    virtual void shrink(const TransitionSystem &ts,
-                        int target,
-                        StateEquivalenceRelation &equivalence_relation);
+    virtual void compute_equivalence_relation(
+        std::shared_ptr<FactoredTransitionSystem> fts,
+        int index,
+        int target,
+        StateEquivalenceRelation &equivalence_relation) const override;
     virtual void partition_into_buckets(
-        const TransitionSystem &ts, std::vector<Bucket> &buckets) const = 0;
+        std::shared_ptr<FactoredTransitionSystem> fts,
+        int index,
+        std::vector<Bucket> &buckets) const = 0;
 
 public:
     explicit ShrinkBucketBased(const Options &opts);

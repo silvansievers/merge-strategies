@@ -58,9 +58,11 @@ void EnforcedHillClimbingSearch::initialize() {
             "ranking successors" : "pruning") << endl;
     }
 
+    bool dead_end = current_eval_context.is_heuristic_infinite(heuristic);
     statistics.inc_evaluated_states();
+    print_initial_h_values(current_eval_context);
 
-    if (current_eval_context.is_heuristic_infinite(heuristic)) {
+    if (dead_end) {
         cout << "Initial state is a dead end, no solution" << endl;
         if (heuristic->dead_ends_are_reliable())
             exit_with(EXIT_UNSOLVABLE);
@@ -68,9 +70,8 @@ void EnforcedHillClimbingSearch::initialize() {
             exit_with(EXIT_UNSOLVED_INCOMPLETE);
     }
 
-    int current_h = current_eval_context.get_heuristic_value(heuristic);
     SearchNode node = search_space.get_node(current_eval_context.get_state());
-    node.open_initial(current_h);
+    node.open_initial();
 }
 
 vector<const GlobalOperator *> EnforcedHillClimbingSearch::get_successors(
@@ -167,7 +168,7 @@ SearchStatus EnforcedHillClimbingSearch::ehc() {
             }
 
             int h = eval_context.get_heuristic_value(heuristic);
-            node.open(h, parent_node, last_op);
+            node.open(parent_node, last_op);
 
             if (h < current_eval_context.get_heuristic_value(heuristic)) {
                 ++num_ehc_phases;

@@ -5,23 +5,27 @@
 #include "utilities.h"
 
 #ifdef USE_LP
+#ifdef __GNUG__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 #include <OsiSolverInterface.hpp>
 #include <CoinPackedMatrix.hpp>
 #include <CoinPackedVector.hpp>
+#ifdef __GNUG__
 #pragma GCC diagnostic pop
+#endif
 #endif
 
 #include <cassert>
-#include <limits>
+#include <numeric>
 
 using namespace std;
 
 void add_lp_solver_option_to_parser(OptionParser &parser) {
     parser.document_note(
         "Note",
-        "to use an LP solver, you must build the planner with USE_LP=1. "
+        "to use an LP solver, you must build the planner with LP support. "
         "See LPBuildInstructions.");
     vector<string> lp_solvers;
     vector<string> lp_solvers_doc;
@@ -31,11 +35,12 @@ void add_lp_solver_option_to_parser(OptionParser &parser) {
     lp_solvers_doc.push_back("commercial solver by IBM");
     lp_solvers.push_back("GUROBI");
     lp_solvers_doc.push_back("commercial solver");
-    parser.add_enum_option("lpsolver",
-                           lp_solvers,
-                           "external solver that should be used to solve linear programs",
-                           "CPLEX",
-                           lp_solvers_doc);
+    parser.add_enum_option(
+        "lpsolver",
+        lp_solvers,
+        "external solver that should be used to solve linear programs",
+        "CPLEX",
+        lp_solvers_doc);
 }
 
 LPConstraint::LPConstraint(double lower_bound_, double upper_bound_)
@@ -71,17 +76,17 @@ LPVariable::LPVariable(double lower_bound_, double upper_bound_,
 LPVariable::~LPVariable() {
 }
 
+LPSolver::~LPSolver() {
+}
+
 #ifdef USE_LP
 
 LPSolver::LPSolver(LPSolverType solver_type)
     : is_initialized(false),
       is_solved(false),
       num_permanent_constraints(0),
-      has_temporary_constraints(false) {
+      has_temporary_constraints_(false) {
     lp_solver = create_lp_solver(solver_type);
-}
-
-LPSolver::~LPSolver() {
 }
 
 void LPSolver::clear_temporary_data() {
@@ -185,19 +190,19 @@ void LPSolver::add_temporary_constraints(const std::vector<LPConstraint> &constr
             delete row;
         }
         clear_temporary_data();
-        has_temporary_constraints = true;
+        has_temporary_constraints_ = true;
         is_solved = false;
     }
 }
 
 void LPSolver::clear_temporary_constraints() {
-    if (has_temporary_constraints) {
+    if (has_temporary_constraints_) {
         try {
             lp_solver->restoreBaseModel(num_permanent_constraints);
         } catch (CoinError &error) {
             handle_coin_error(error);
         }
-        has_temporary_constraints = false;
+        has_temporary_constraints_ = false;
         is_solved = false;
     }
 }
@@ -208,6 +213,20 @@ double LPSolver::get_infinity() const {
     } catch (CoinError &error) {
         handle_coin_error(error);
     }
+}
+
+void LPSolver::set_objective_coefficients(const vector<double> &coefficients) {
+    assert(static_cast<int>(coefficients.size()) == get_num_variables());
+    vector<int> indices(coefficients.size());
+    iota(indices.begin(), indices.end(), 0);
+    try {
+        lp_solver->setObjCoeffSet(indices.data(),
+                                  indices.data() + indices.size(),
+                                  coefficients.data());
+    } catch (CoinError &error) {
+        handle_coin_error(error);
+    }
+    is_solved = false;
 }
 
 void LPSolver::set_objective_coefficient(int index, double coefficient) {
@@ -325,6 +344,10 @@ int LPSolver::get_num_constraints() const {
     } catch (CoinError &error) {
         handle_coin_error(error);
     }
+}
+
+int LPSolver::has_temporary_constraints() const {
+    return has_temporary_constraints_;
 }
 
 void LPSolver::print_statistics() const {
