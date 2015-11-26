@@ -35,8 +35,9 @@ protected:
 public:
     explicit MergeSymmetries(const Options &options);
     virtual ~MergeSymmetries() {}
+    virtual void initialize(const std::shared_ptr<AbstractTask> task);
 
-    virtual std::pair<int, int> get_next(const std::vector<TransitionSystem *> &all_transition_systems);
+    virtual std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts);
     virtual std::string name() const;
 };
 

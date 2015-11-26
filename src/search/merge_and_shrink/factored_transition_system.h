@@ -82,6 +82,9 @@ public:
         return is_index_valid(index);
     }
     int get_num_labels() const; // used by merge_dfp
+    const std::shared_ptr<Labels> get_labels() const {
+        return labels;
+    }
 };
 
 #endif

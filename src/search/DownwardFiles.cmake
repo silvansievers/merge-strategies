@@ -273,7 +273,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_dfp.cc
         merge_and_shrink/merge_linear.cc
         merge_and_shrink/merge_strategy.cc
-        #merge_and_shrink/merge_symmetries.cc
+        merge_and_shrink/merge_symmetries.cc
         merge_and_shrink/shrink_bisimulation.cc
         merge_and_shrink/shrink_bucket_based.cc
         merge_and_shrink/shrink_fh.cc
@@ -367,10 +367,10 @@ fast_downward_plugin(
     NAME SYMMETRIES
     HELP "Plugin containing the code for symmetries"
     SOURCES
-        #merge_and_shrink/symmetries/ms_graph_creator.cc
+        merge_and_shrink/symmetries/ms_graph_creator.cc
         merge_and_shrink/symmetries/scc.cc
-        #merge_and_shrink/symmetries/symmetry_generator.cc
-        #merge_and_shrink/symmetries/symmetry_group.cc
+        merge_and_shrink/symmetries/symmetry_generator.cc
+        merge_and_shrink/symmetries/symmetry_group.cc
     DEPENDS BLISS
 )
 

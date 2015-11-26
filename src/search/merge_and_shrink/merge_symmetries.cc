@@ -1,5 +1,7 @@
 #include "merge_symmetries.h"
 
+#include "factored_transition_system.h"
+
 #include "symmetries/symmetry_group.h"
 
 #include "../globals.h"
@@ -22,13 +24,6 @@ MergeSymmetries::MergeSymmetries(const Options &options_)
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
       pure_fallback_strategy(true) {
-    if (fallback_strategy == LINEAR) {
-        VariableOrderFinder order(VariableOrderType(options.get_enum("variable_order")));
-        linear_merge_order.reserve(g_variable_domain.size());
-        while (!order.done()) {
-            linear_merge_order.push_back(order.next());
-        }
-    }
 }
 
 void MergeSymmetries::dump_statistics() {
@@ -142,7 +137,19 @@ void MergeSymmetries::dump_strategy_specific_options() const {
     cout << endl;
 }
 
-pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_transition_systems) {
+void MergeSymmetries::initialize(const shared_ptr<AbstractTask> task) {
+    MergeDFP::initialize(task);
+    if (fallback_strategy == LINEAR) {
+        VariableOrderFinder order(task,
+                                  VariableOrderType(options.get_enum("variable_order")));
+        linear_merge_order.reserve(g_variable_domain.size());
+        while (!order.done()) {
+            linear_merge_order.push_back(order.next());
+        }
+    }
+}
+
+pair<int, int> MergeSymmetries::get_next(shared_ptr<FactoredTransitionSystem> fts) {
     assert(!done());
     ++iteration_counter;
 
@@ -158,7 +165,7 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
         options.set<double>("bliss_time_limit", time_limit);
         SymmetryGroup symmetry_group(options);
         bool applied_symmetries =
-            symmetry_group.find_and_apply_symmetries(all_transition_systems, merge_order);
+            symmetry_group.find_and_apply_symmetries(fts, merge_order);
         if (applied_symmetries) {
             ++number_of_applied_symmetries;
         }
@@ -194,19 +201,19 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
             int first = linear_merge_order[0];
             linear_merge_order.erase(linear_merge_order.begin());
             int second = linear_merge_order[0];
-            linear_merge_order[0] = all_transition_systems.size();
+            linear_merge_order[0] = fts->get_size();
             cout << "Next pair (linear strategy): " << first << ", " << second << endl;
             --remaining_merges;
             return make_pair(first, second);
         } else if (fallback_strategy == DFP) {
-            return MergeDFP::get_next(all_transition_systems);
+            return MergeDFP::get_next(fts);
         } else {
             ABORT("unknown fallback merge strategy");
         }
     }
 
     pair<int, int> next_merge = merge_order.front();
-    if (!all_transition_systems[next_merge.first] || !all_transition_systems[next_merge.second]) {
+    if (!fts->is_active(next_merge.first) || !fts->is_active(next_merge.second)) {
         cerr << "Problem with the merge strategy: invalid indices" << endl;
         exit_with(EXIT_CRITICAL_ERROR);
     }
@@ -220,9 +227,9 @@ pair<int, int> MergeSymmetries::get_next(const vector<TransitionSystem *> &all_t
              it != linear_merge_order.end(); ++it) {
             if (!found_entry && (*it == next_merge.first ||
                                  *it == next_merge.second)) {
-                //cout << "updating entry " << counter << " (" << *it << ")to " << all_transition_systems.size() << endl;
+                //cout << "updating entry " << counter << " (" << *it << ")to " << fts->get_size(); << endl;
                 found_entry = true;
-                linear_merge_order[counter] = all_transition_systems.size();
+                linear_merge_order[counter] = fts->get_size();
             } else if (found_entry && (*it == next_merge.first ||
                                        *it == next_merge.second)) {
                 //cout << "erasing entry " << counter << " (" << *it << ")" << endl;
@@ -242,7 +249,7 @@ string MergeSymmetries::name() const {
     return "symmetries";
 }
 
-static MergeStrategy *_parse(OptionParser &parser) {
+static shared_ptr<MergeStrategy> _parse(OptionParser &parser) {
     // Options for symmetries computation
     parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
                            "which bliss is allowed to run.",
@@ -343,9 +350,9 @@ static MergeStrategy *_parse(OptionParser &parser) {
         exit_with(EXIT_INPUT_ERROR);
     }
     if (parser.dry_run())
-        return 0;
+        return nullptr;
     else
-        return new MergeSymmetries(options);
+        return make_shared<MergeSymmetries>(options);
 }
 
-static Plugin<MergeStrategy> _plugin("merge_symmetries", _parse);
+static PluginShared<MergeStrategy> _plugin("merge_symmetries", _parse);

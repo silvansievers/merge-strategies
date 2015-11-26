@@ -1,16 +1,16 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_MS_GRAPH_CREATOR_H
 #define MERGE_AND_SHRINK_SYMMETRIES_MS_GRAPH_CREATOR_H
 
-#include <vector>
+#include <memory>
 
 namespace bliss {
     class Digraph;
 }
+class FactoredTransitionSystem;
 class Options;
 class SymmetryGenerator;
 class SymmetryGeneratorInfo;
 class SymmetryGroup;
-class TransitionSystem;
 
 /**
  * This class is using bliss for finding symmetries of the given set of transition systems.
@@ -32,14 +32,14 @@ class MSGraphCreator {
     bool stabilize_transition_systems;
     double bliss_time_limit;
 
-    void create_bliss_directed_graph(const std::vector<TransitionSystem *>& transition_systems,
+    void create_bliss_directed_graph(std::shared_ptr<FactoredTransitionSystem> fts,
                                      bliss::Digraph &bliss_graph,
                                      SymmetryGeneratorInfo *symmetry_generator_info);
 public:
     explicit MSGraphCreator(const Options &options);
     ~MSGraphCreator();
 
-    double compute_symmetries(const std::vector<TransitionSystem *>& transition_systems,
+    double compute_symmetries(std::shared_ptr<FactoredTransitionSystem> fts,
                               SymmetryGroup *symmetry_group,
                               SymmetryGeneratorInfo *symmetry_generator_info);
 };

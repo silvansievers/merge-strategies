@@ -4,6 +4,7 @@
 #include "scc.h"
 #include "symmetry_generator.h"
 
+#include "../factored_transition_system.h"
 #include "../transition_system.h"
 
 #include "../../globals.h"
@@ -46,9 +47,9 @@ void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) 
     }
 }
 
-bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &transition_systems,
+bool SymmetryGroup::find_and_apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
                                               vector<pair<int, int> > &merge_order) {
-    bliss_time = gc->compute_symmetries(transition_systems, this, symmetry_generator_info);
+    bliss_time = gc->compute_symmetries(fts, this, symmetry_generator_info);
     delete gc;
     gc = 0;
     if (stop_after_no_symmetries && symmetry_generators.empty()) {
@@ -151,12 +152,12 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     bool applied_symmetries = false;
     if (symmetries_for_shrinking == ATOMIC && !atomic_generators.empty()) {
         cout << "Applying all atomic symmetries" << endl;
-        apply_symmetries(transition_systems, atomic_generators);
+        apply_symmetries(fts, atomic_generators);
         applied_symmetries = true;
     } else if ((symmetries_for_shrinking == LOCAL)
                && !local_generators.empty()) {
         cout << "Applying all local symmetries" << endl;
-        apply_symmetries(transition_systems, local_generators);
+        apply_symmetries(fts, local_generators);
         applied_symmetries = true;
     }
 
@@ -220,7 +221,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
           (when merging for atomic symmetries).
         */
         assert(merge_order.empty());
-        int number_of_transition_systems = transition_systems.size();
+        int number_of_transition_systems = fts->get_size();
         int number_of_merges = 0;
         vector<int> merge_linear_indices;
         for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
@@ -272,7 +273,7 @@ bool SymmetryGroup::find_and_apply_symmetries(const vector<TransitionSystem *> &
     return applied_symmetries;
 }
 
-void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transition_systems,
+void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
                                      const vector<int> &generator_indices) const {
     cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
 
@@ -293,7 +294,7 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
     vector<vector<int> > graph(num_abs_and_states, vector<int>());
     for (int index = num_transition_systems; index < num_abs_and_states; ++index) {
         int abs_index = symmetry_generator_info->get_ts_index_by_index(index);
-        if (transition_systems[abs_index]) {
+        if (fts->is_active(abs_index)) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 if (symmetry_generators[generator_indices[i]]->get_value(abs_index) == abs_index) {
                     /*
@@ -327,9 +328,10 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
       inclusion of all indices in the graph. They will be skipped when
       shrinking.
     */
-    vector<vector<forward_list<AbstractStateRef> > > equivalence_relations(transition_systems.size());
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index) {
-        if (transition_systems[ts_index])
+    vector<vector<forward_list<int> > > equivalence_relations(fts->get_size());
+    assert(fts->get_size() == num_transition_systems); // TODO: if so, do not use fts here
+    for (int ts_index = 0; ts_index < fts->get_size(); ++ts_index) {
+        if (fts->is_active(ts_index))
             equivalence_relations[ts_index].resize(sccs.size());
     }
     for (size_t i = 0; i < sccs.size(); ++i) {
@@ -341,7 +343,7 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
             continue;
         }
         int affected_ts_index = symmetry_generator_info->get_ts_index_by_index(any_index);
-        forward_list<AbstractStateRef> &equivalence_class =
+        forward_list<int> &equivalence_class =
             equivalence_relations[affected_ts_index][i];
         for (size_t j = 0; j < scc.size(); ++j) {
             int index = scc[j];
@@ -359,8 +361,8 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
       all transition systems not affected?
     */
     for (size_t i = sccs.size(); i >= 1; --i) {
-        for (size_t j = 0; j < transition_systems.size(); ++j) {
-            if (transition_systems[j]) {
+        for (int j = 0; j < fts->get_size(); ++j) {
+            if (fts->is_active(j)) {
                 if (equivalence_relations[j][i - 1].empty()) {
                     equivalence_relations[j].erase(equivalence_relations[j].begin() + i - 1);
                 }
@@ -369,17 +371,18 @@ void SymmetryGroup::apply_symmetries(const vector<TransitionSystem *> &transitio
     }
 
     cout << "Abstracting affected transition systems by the equivalence relations. [t=" << g_timer << "]" << endl;
-    for (size_t i = 0; i < transition_systems.size(); ++i) {
-        if (!transition_systems[i])
+    for (int i = 0; i < fts->get_size(); ++i) {
+        if (!fts->is_active(i))
             continue;
 
+        const TransitionSystem &ts = fts->get_ts(i);
         int equivalence_relation_size = equivalence_relations[i].size();
-        if (equivalence_relation_size > transition_systems[i]->get_size()) {
+        if (equivalence_relation_size > ts.get_size()) {
             cerr << "Equivalence relation larger than transition system!!" << endl;
             exit_with(EXIT_CRITICAL_ERROR);
         }
-        if (equivalence_relation_size != transition_systems[i]->get_size()) {
-            transition_systems[i]->apply_abstraction(equivalence_relations[i]);
+        if (equivalence_relation_size != ts.get_size()) {
+            fts->apply_abstraction(i, equivalence_relations[i]);
 //            cout << transition_systems[i]->tag() << "applying abstraction. " << endl;
         } else {
 //            cout << transition_systems[i]->tag() << "not abstracted due to symmetries." << endl;

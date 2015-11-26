@@ -1,14 +1,15 @@
 #ifndef MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
 #define MERGE_AND_SHRINK_SYMMETRIES_SYMMETRY_GROUP_H
 
+#include <memory>
 #include <vector>
 
 class Labels;
+class FactoredTransitionSystem;
 class MSGraphCreator;
 class Options;
 class SymmetryGenerator;
 class SymmetryGeneratorInfo;
-class TransitionSystem;
 
 class SymmetryGroup {
     MSGraphCreator *gc;
@@ -46,7 +47,7 @@ class SymmetryGroup {
 
     double bliss_time; // elapsed bliss time
 
-    void apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
+    void apply_symmetries(std::shared_ptr<FactoredTransitionSystem> fts,
                           const std::vector<int> &generator_indices) const;
 public:
     explicit SymmetryGroup(const Options &options);
@@ -54,7 +55,7 @@ public:
 
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
-    bool find_and_apply_symmetries(const std::vector<TransitionSystem *> &transition_systems,
+    bool find_and_apply_symmetries(std::shared_ptr<FactoredTransitionSystem> fts,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {
         return bliss_limit_reached;

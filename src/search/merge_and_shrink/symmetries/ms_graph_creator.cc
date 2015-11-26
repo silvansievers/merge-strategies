@@ -4,6 +4,7 @@
 #include "symmetry_group.h"
 
 #include "../labels.h"
+#include "../factored_transition_system.h"
 #include "../transition_system.h"
 
 #include "../../bliss/graph.h"
@@ -37,15 +38,15 @@ MSGraphCreator::MSGraphCreator(const Options &options)
 MSGraphCreator::~MSGraphCreator() {
 }
 
-double MSGraphCreator::compute_symmetries(const vector<TransitionSystem *>& transition_systems,
-                                        SymmetryGroup *symmetry_group,
-                                        SymmetryGeneratorInfo *symmetry_generator_info) {
+double MSGraphCreator::compute_symmetries(shared_ptr<FactoredTransitionSystem> fts,
+                                          SymmetryGroup *symmetry_group,
+                                          SymmetryGeneratorInfo *symmetry_generator_info) {
     Timer timer;
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
         cout << "Creating the bliss graph..." << timer << endl;
         bliss::Digraph bliss_graph = bliss::Digraph();
-        create_bliss_directed_graph(transition_systems, bliss_graph, symmetry_generator_info);
+        create_bliss_directed_graph(fts, bliss_graph, symmetry_generator_info);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
         bliss_graph.set_time_limit(bliss_time_limit);
@@ -63,9 +64,9 @@ double MSGraphCreator::compute_symmetries(const vector<TransitionSystem *>& tran
     return timer();
 }
 
-void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *> &transition_systems,
-                                               bliss::Digraph &bliss_graph,
-                                               SymmetryGeneratorInfo *symmetry_generator_info) {
+void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSystem> fts,
+                                                 bliss::Digraph &bliss_graph,
+                                                 SymmetryGeneratorInfo *symmetry_generator_info) {
     if (debug) {
         cout << "digraph pdg";
         cout << " {" << endl;
@@ -82,9 +83,10 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
       system vertices, which depends on the chosen setting and how many active
       transition systems there are.
     */
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
-        if (stabilize_transition_systems || transition_systems[ts_index] == 0) {
-            // Either the transition system is empty or all transition systems are stabilized.
+    int num_transition_systems = fts->get_size();
+    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
+        if (stabilize_transition_systems || !fts->is_active(ts_index)) {
+            // Either the transition system is inactive or all transition systems are stabilized.
             node_color_added_val++;
             /*
               NOTE: we need to add a transition system vertex for every transition
@@ -107,9 +109,6 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
         }
     }
 
-    // We need an arbitrary valid transition system to get access to the labels object.
-    const TransitionSystem *some_transition_sytem = 0;
-
     /*
       In a second step, go over all transition systems again and add a vertex
       for every abstract state of every transition system, connecting them from
@@ -118,19 +117,18 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
       own color.
       Also setup symmetry generator information data structures.
     */
-    int num_of_nodes = transition_systems.size();
+    int num_of_nodes = num_transition_systems;
     symmetry_generator_info->num_transition_systems = num_of_nodes;
     symmetry_generator_info->starting_index_by_ts_index.reserve(num_of_nodes);
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index) {
+    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
         symmetry_generator_info->starting_index_by_ts_index.push_back(num_of_nodes);
-        if (transition_systems[ts_index]) {
-            if (!some_transition_sytem)
-                some_transition_sytem = transition_systems[ts_index];
-            int num_states = transition_systems[ts_index]->get_size();
+        if (fts->is_active(ts_index)) {
+            const TransitionSystem &ts = fts->get_ts(ts_index);
+            int num_states = ts.get_size();
             num_of_nodes += num_states;
             for (int state = 0; state < num_states; ++state) {
                 symmetry_generator_info->ts_index_by_index.push_back(ts_index);
-                if (transition_systems[ts_index]->is_goal_state(state)) {
+                if (ts.is_goal_state(state)) {
                     vertex = bliss_graph.add_vertex(GOAL_VERTEX + node_color_added_val);
                 } else {
                     vertex = bliss_graph.add_vertex(ABSTRACT_STATE_VERTEX + node_color_added_val);
@@ -140,7 +138,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 if (debug) {
                     cout << "    node" << vertex << " [shape=circle, label=ts"
                          << ts_index << "_state" << state << "]; // color: "
-                         << (transition_systems[ts_index]->is_goal_state(state) ? GOAL_VERTEX : ABSTRACT_STATE_VERTEX) + node_color_added_val
+                         << (ts.is_goal_state(state) ? GOAL_VERTEX : ABSTRACT_STATE_VERTEX) + node_color_added_val
                          << endl;
                     cout << "    node" << ts_index << " -> node" << vertex << ";" << endl;
                 }
@@ -153,7 +151,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
       In a third step, go over all labels and add a vertex for every active
       label, with a fixed "label color" plus its cost.
     */
-    const Labels *labels = some_transition_sytem->get_labels();
+    shared_ptr<Labels> labels = fts->get_labels();
     int num_labels = labels->get_size();
     vector<int> label_to_vertex(num_labels, -1);
     for (int label_no = 0; label_no < num_labels; ++label_no){
@@ -182,13 +180,11 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
       have an incoming edge from their source state vertex and an outoing
       edge to their target state vertex.
     */
-    for (size_t ts_index = 0; ts_index < transition_systems.size(); ++ts_index){
-        if (!transition_systems[ts_index])
+    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
+        if (!fts->is_active(ts_index))
             continue;
-        const TransitionSystem *transition_system = transition_systems[ts_index];
-        const std::list<LabelGroup> &grouped_labels = transition_system->get_grouped_labels();
-        for (LabelGroupConstIter group_it = grouped_labels.begin();
-             group_it != grouped_labels.end(); ++group_it) {
+        const TransitionSystem &ts = fts->get_ts(ts_index);
+        for (TSConstIterator group_it = ts.begin(); group_it != ts.end(); ++group_it) {
             vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
             bliss_graph.add_edge(ts_index, vertex);
 
@@ -200,8 +196,8 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 cout << "    node" << ts_index << " -> node" << vertex << endl;
             }
 
-            for (LabelConstIter label_it = group_it->begin();
-                 label_it != group_it->end(); ++label_it) {
+            for (LabelConstIter label_it = group_it.begin();
+                 label_it != group_it.end(); ++label_it) {
                 bliss_graph.add_edge(label_to_vertex[*label_it], vertex);
 
                 if (debug) {
@@ -209,7 +205,7 @@ void MSGraphCreator::create_bliss_directed_graph(const vector<TransitionSystem *
                 }
             }
 
-            const std::vector<Transition>& transitions = group_it->get_const_transitions();
+            const std::vector<Transition>& transitions = group_it.get_transitions();
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(
