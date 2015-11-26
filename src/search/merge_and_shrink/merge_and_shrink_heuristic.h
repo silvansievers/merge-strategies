@@ -14,7 +14,6 @@ class MergeAndShrinkHeuristic : public Heuristic {
     Labels *labels;
     const bool use_expensive_statistics;
     int starting_peak_memory;
-    bool debug_transition_systems;
 
     TransitionSystem *final_transition_system;
     TransitionSystem *build_transition_system();

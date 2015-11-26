@@ -228,8 +228,7 @@ public:
 
     static void build_atomic_transition_systems(std::vector<TransitionSystem *> &result,
                                                 Labels *labels,
-                                                OperatorCost cost_type,
-                                                bool debug);
+                                                OperatorCost cost_type);
     bool apply_abstraction(const std::vector<std::forward_list<AbstractStateRef> > &collapsed_groups);
     void apply_label_reduction(const std::vector<std::pair<int, std::vector<int> > > &label_mapping,
                                bool only_equivalent_labels);
@@ -302,7 +301,7 @@ protected:
     virtual std::string description() const;
     virtual AbstractStateRef get_abstract_state(const GlobalState &state) const;
 public:
-    AtomicTransitionSystem(Labels *labels, int variable, bool debug);
+    AtomicTransitionSystem(Labels *labels, int variable);
     virtual ~AtomicTransitionSystem();
 };
 
@@ -316,7 +315,7 @@ protected:
     virtual std::string description() const;
     virtual AbstractStateRef get_abstract_state(const GlobalState &state) const;
 public:
-    CompositeTransitionSystem(Labels *labels, TransitionSystem *ts1, TransitionSystem *ts2, bool debug);
+    CompositeTransitionSystem(Labels *labels, TransitionSystem *ts1, TransitionSystem *ts2);
     virtual ~CompositeTransitionSystem();
 };
 

@@ -384,15 +384,14 @@ void TransitionSystem::compute_locally_equivalent_labels() {
 
 void TransitionSystem::build_atomic_transition_systems(vector<TransitionSystem *> &result,
                                                        Labels *labels,
-                                                       OperatorCost cost_type,
-                                                       bool debug) {
+                                                       OperatorCost cost_type) {
     assert(result.empty());
     cout << "Building atomic transition systems... " << endl;
     int var_count = g_variable_domain.size();
 
     // Step 1: Create the transition system objects without transitions.
     for (int var_no = 0; var_no < var_count; ++var_no)
-        result.push_back(new AtomicTransitionSystem(labels, var_no, debug));
+        result.push_back(new AtomicTransitionSystem(labels, var_no));
 
     // Step 2: Add transitions.
     int op_count = g_operators.size();
@@ -893,8 +892,8 @@ void TransitionSystem::dump_state() const {
 
 
 
-AtomicTransitionSystem::AtomicTransitionSystem(Labels *labels, int variable_, bool debug)
-    : TransitionSystem(labels, debug), variable(variable_) {
+AtomicTransitionSystem::AtomicTransitionSystem(Labels *labels, int variable_)
+    : TransitionSystem(labels, false), variable(variable_) {
     varset.push_back(variable);
     /*
       This generates the states of the atomic transition system, but not the
@@ -988,9 +987,8 @@ AbstractStateRef AtomicTransitionSystem::get_abstract_state(const GlobalState &s
 
 CompositeTransitionSystem::CompositeTransitionSystem(Labels *labels,
                                                      TransitionSystem *ts1,
-                                                     TransitionSystem *ts2,
-                                                     bool debug)
-    : TransitionSystem(labels, debug) {
+                                                     TransitionSystem *ts2)
+    : TransitionSystem(labels, ts1->debug) {
     cout << "Merging " << ts1->description() << " and "
          << ts2->description() << endl;
 

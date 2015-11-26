@@ -20,8 +20,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       merge_strategy(opts.get<MergeStrategy *>("merge_strategy")),
       shrink_strategy(opts.get<ShrinkStrategy *>("shrink_strategy")),
       labels(opts.get<Labels *>("label_reduction")),
-      use_expensive_statistics(opts.get<bool>("expensive_statistics")),
-      debug_transition_systems(opts.get<bool>("debug_transition_systems")) {
+      use_expensive_statistics(opts.get<bool>("expensive_statistics")) {
 }
 
 MergeAndShrinkHeuristic::~MergeAndShrinkHeuristic() {
@@ -105,7 +104,7 @@ TransitionSystem *MergeAndShrinkHeuristic::build_transition_system() {
         exit_with(EXIT_OUT_OF_MEMORY);
     all_transition_systems.reserve(g_variable_domain.size() * 2 - 1);
     cout << endl;
-    TransitionSystem::build_atomic_transition_systems(all_transition_systems, labels, cost_type, debug_transition_systems);
+    TransitionSystem::build_atomic_transition_systems(all_transition_systems, labels, cost_type);
     cout << endl;
 
     cout << "Starting merge-and-shrink main loop..." << endl;
@@ -153,7 +152,7 @@ TransitionSystem *MergeAndShrinkHeuristic::build_transition_system() {
 
         // Merging
         TransitionSystem *new_transition_system = new CompositeTransitionSystem(
-            labels, transition_system, other_transition_system, debug_transition_systems);
+            labels, transition_system, other_transition_system);
         new_transition_system->statistics(use_expensive_statistics);
         all_transition_systems.push_back(new_transition_system);
 
@@ -313,8 +312,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "prints a big warning on stderr with information on the performance "
         "impact. Don't use when benchmarking!)",
         "false");
-    parser.add_option<bool>("debug_transition_systems", "store additional information "
-                            "in transition systems for debug output.", "false");
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
