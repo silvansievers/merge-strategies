@@ -17,6 +17,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     std::shared_ptr<ShrinkStrategy> shrink_strategy;
     std::shared_ptr<Labels> labels;
     long starting_peak_memory;
+    bool debug_transition_systems;
 
     std::shared_ptr<FactoredTransitionSystem> fts;
     void build_transition_system(const Timer &timer);

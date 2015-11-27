@@ -87,12 +87,12 @@ TransitionSystem::TransitionSystem(int num_variables,
 }
 
 // atomic transition system constructor
-TransitionSystem::TransitionSystem(
-    const TaskProxy &task_proxy,
+TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
     const shared_ptr<Labels> labels,
     int var_id,
-    vector<vector<Transition>> &&transitions_by_label)
-    : TransitionSystem(task_proxy.get_variables().size(), labels, false) {
+    vector<vector<Transition>> &&transitions_by_label,
+    bool debug_transition_systems)
+    : TransitionSystem(task_proxy.get_variables().size(), labels, debug_transition_systems) {
     /*
       TODO: Once we no longer delegate to another constructor,
       the following line can be changed to an initialization:
@@ -141,7 +141,7 @@ TransitionSystem::TransitionSystem(
                     multi_vals.insert(abs_state);
                 } else {
                     // all values of var are allowed (i.e. value = -1)
-                    for (int val = 0; val < range; ++val) {
+                    for (int val = 0; val < g_variable_domain[var]; ++val) {
                         multi_vals.insert(val);
                     }
                 }
@@ -602,7 +602,6 @@ void TransitionSystem::dump_state() const {
         return;
     cout << "State dump for " << tag() << endl;
     for (int i = 0; i < num_states; ++i) {
-        cout << "Abstract state " << i << ":" << endl;
         const vector<set<int> > &var_multi_vals = abs_state_to_var_multi_vals[i];
         assert(static_cast<int>(var_multi_vals.size()) == num_variables);
         for (size_t var = 0; var < var_multi_vals.size(); ++var) {

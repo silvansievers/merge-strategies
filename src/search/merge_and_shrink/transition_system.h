@@ -159,7 +159,8 @@ public:
         const TaskProxy &task_proxy,
         const std::shared_ptr<Labels> labels,
         int var_id,
-        std::vector<std::vector<Transition>> &&transitions_by_label);
+        std::vector<std::vector<Transition>> &&transitions_by_label,
+        bool debug_transition_systems);
 
     /*
       Constructor that merges two transition systems.

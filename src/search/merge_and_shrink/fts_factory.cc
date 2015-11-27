@@ -28,6 +28,7 @@ class FTSFactory {
     vector<TransitionSystemData> transition_system_by_var;
     // see TODO in build_transitions()
     int task_has_conditional_effects;
+    bool debug_transition_systems;
 
     void build_labels();
     void initialize_transition_system_data();
@@ -50,7 +51,7 @@ class FTSFactory {
     vector<unique_ptr<HeuristicRepresentation>> create_heuristic_representations();
     vector<unique_ptr<Distances>> create_distances(vector<TransitionSystem *> &transition_systems);
 public:
-    FTSFactory(const TaskProxy &task_proxy, shared_ptr<Labels> labels);
+    FTSFactory(const TaskProxy &task_proxy, shared_ptr<Labels> labels, bool debug_transition_systems);
     ~FTSFactory();
 
     /*
@@ -61,8 +62,9 @@ public:
 };
 
 
-FTSFactory::FTSFactory(const TaskProxy &task_proxy, shared_ptr<Labels> labels)
-    : task_proxy(task_proxy), labels(labels), task_has_conditional_effects(false) {
+FTSFactory::FTSFactory(const TaskProxy &task_proxy, shared_ptr<Labels> labels, bool debug_transition_systems)
+    : task_proxy(task_proxy), labels(labels),
+      task_has_conditional_effects(false), debug_transition_systems(debug_transition_systems) {
 }
 
 FTSFactory::~FTSFactory() {
@@ -271,7 +273,7 @@ vector<TransitionSystem *> FTSFactory::create_transition_systems() {
     for (int var_no = 0; var_no < num_variables; ++var_no) {
         TransitionSystemData &ts_data = transition_system_by_var[var_no];
         TransitionSystem *ts = new TransitionSystem(
-            task_proxy, labels, var_no, move(ts_data.transitions_by_label));
+            task_proxy, labels, var_no, move(ts_data.transitions_by_label), debug_transition_systems);
         result.push_back(ts);
     }
     return result;
@@ -331,6 +333,6 @@ FactoredTransitionSystem FTSFactory::create() {
 }
 
 FactoredTransitionSystem create_factored_transition_system(
-    const TaskProxy &task_proxy, shared_ptr<Labels> labels) {
-    return FTSFactory(task_proxy, labels).create();
+    const TaskProxy &task_proxy, shared_ptr<Labels> labels, bool debug_transition_systems) {
+    return FTSFactory(task_proxy, labels, debug_transition_systems).create();
 }

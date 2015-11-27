@@ -27,6 +27,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       labels(opts.get<shared_ptr<Labels>>("label_reduction")),
       starting_peak_memory(-1),
+      debug_transition_systems(opts.get<bool>("debug_transition_systems")),
       fts(nullptr) {
     /*
       TODO: Can we later get rid of the initialize calls, after rethinking
@@ -91,8 +92,13 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
     //       Don't forget that build_atomic_transition_systems also
     //       allocates memory.
 
-    fts = make_shared<FactoredTransitionSystem>(create_factored_transition_system(task_proxy, labels));
+    fts = make_shared<FactoredTransitionSystem>(
+        create_factored_transition_system(task_proxy, labels, debug_transition_systems));
     cout << endl;
+
+    for (int ts_index = 0; ts_index < fts->get_size(); ++ts_index) {
+        fts->get_ts(ts_index).dump_state();
+    }
 
     int final_index = -1; // TODO: get rid of this
     if (fts->is_solvable()) { // All atomic transition system are solvable.
@@ -132,6 +138,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 break;
             }
             fts->statistics(final_index, timer);
+            fts->get_ts(final_index).dump_state();
 
             report_peak_memory_delta();
             cout << endl;
@@ -242,6 +249,9 @@ static Heuristic *_parse(OptionParser &parser) {
         "See detailed documentation for labels. There is currently only "
         "one 'option' to use label_reduction. Also note the interaction "
         "with shrink strategies.");
+
+    parser.add_option<bool>("debug_transition_systems", "store additional information "
+                            "in transition systems for debug output.", "false");
 
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
