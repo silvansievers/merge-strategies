@@ -96,10 +96,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
         create_factored_transition_system(task_proxy, labels, debug_transition_systems));
     cout << endl;
 
-    for (int ts_index = 0; ts_index < fts->get_size(); ++ts_index) {
-        fts->get_ts(ts_index).dump_state();
-    }
-
     int final_index = -1; // TODO: get rid of this
     if (fts->is_solvable()) { // All atomic transition system are solvable.
         while (!merge_strategy->done()) {
@@ -138,7 +134,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const Timer &timer) {
                 break;
             }
             fts->statistics(final_index, timer);
-            fts->get_ts(final_index).dump_state();
 
             report_peak_memory_delta();
             cout << endl;

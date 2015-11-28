@@ -141,7 +141,7 @@ TransitionSystem::TransitionSystem(const TaskProxy &task_proxy,
                     multi_vals.insert(abs_state);
                 } else {
                     // all values of var are allowed (i.e. value = -1)
-                    for (int val = 0; val < g_variable_domain[var]; ++val) {
+                    for (int val = 0; val < task_proxy.get_variables()[var].get_domain_size(); ++val) {
                         multi_vals.insert(val);
                     }
                 }
