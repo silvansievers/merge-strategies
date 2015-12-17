@@ -183,6 +183,13 @@ pair<int, int> MergeDFP::get_next_dfp(
             assert(first_valid_pair_index2 == -1);
             next_index1 = sorted_active_ts_indices[0];
             next_index2 = sorted_active_ts_indices[1];
+            if (sorted_active_ts_indices.size() == 2) {
+                weight_to_count[minimum_weight] = 1;
+            } else {
+                // HACK: make sure that such a chosen pair counts as one
+                // where tiebreaking played a role.
+                weight_to_count[minimum_weight] = 2;
+            }
         } else {
             assert(first_valid_pair_index1 != -1);
             assert(first_valid_pair_index2 != -1);

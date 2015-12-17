@@ -164,11 +164,12 @@ static MiasmAbstraction *_parse(OptionParser &parser) {
         "We currently recommend shrink_bisimulation.");
 
     // Label reduction option.
-    parser.add_option<shared_ptr<Labels>>(
+    parser.add_option<shared_ptr<LabelReduction>>(
         "label_reduction",
         "See detailed documentation for labels. There is currently only "
         "one 'option' to use label_reduction. Also note the interaction "
-        "with shrink strategies.");
+        "with shrink strategies.",
+        OptionParser::NONE);
 
     // For AbstractTask
     Heuristic::add_options_to_parser(parser);
