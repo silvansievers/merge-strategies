@@ -293,7 +293,8 @@ int FactoredTransitionSystem::get_init_state_goal_distance(int index) const {
 int FactoredTransitionSystem::copy(int index) {
     assert(is_active(index));
     int new_index = transition_systems.size();
-    transition_systems.push_back(Utils::make_unique_ptr<TransitionSystem>(*transition_systems[index]));
+    transition_systems.push_back(
+        Utils::make_unique_ptr<TransitionSystem>(*transition_systems[index]));
 
     unique_ptr<HeuristicRepresentation> hr = nullptr;
     if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index].get())) {
@@ -335,7 +336,6 @@ void FactoredTransitionSystem::release_copies() {
 
 void FactoredTransitionSystem::remove(int index) {
     assert(is_active(index));
-    transition_systems[index] = nullptr;
     transition_systems[index] = nullptr;
     heuristic_representations[index] = nullptr;
     distances[index] = nullptr;
