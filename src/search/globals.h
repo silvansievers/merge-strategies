@@ -11,15 +11,16 @@ class AbstractTask;
 class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
-class DomainTransitionGraph;
 class GlobalOperator;
 class GlobalState;
-class SuccessorGenerator;
 class IntPacker;
-class LegacyCausalGraph;
-class RandomNumberGenerator;
-class Timer;
 class StateRegistry;
+class SuccessorGenerator;
+
+namespace Utils {
+struct Log;
+class RandomNumberGenerator;
+}
 
 bool test_goal(const GlobalState &state);
 /*
@@ -70,13 +71,10 @@ extern std::vector<GlobalOperator> g_operators;
 extern std::vector<GlobalOperator> g_axioms;
 extern AxiomEvaluator *g_axiom_evaluator;
 extern SuccessorGenerator *g_successor_generator;
-extern std::vector<DomainTransitionGraph *> g_transition_graphs;
-extern LegacyCausalGraph *g_legacy_causal_graph;
-extern Timer g_timer;
 extern std::string g_plan_filename;
 extern int g_num_previously_generated_plans;
 extern bool g_is_part_of_anytime_portfolio;
-extern RandomNumberGenerator g_rng;
+extern Utils::RandomNumberGenerator g_rng;
 // Only one global object for now. Could later be changed to use one instance
 // for each problem in this case the method GlobalState::get_id would also have to be
 // changed.
@@ -86,5 +84,7 @@ extern const std::shared_ptr<AbstractTask> g_root_task();
 extern std::vector<std::vector<bool>> g_mutex_var_pairs;
 extern std::vector<std::vector<std::set<std::pair<int, int> > > >
 g_inconsistent_facts;
+
+extern Utils::Log g_log;
 
 #endif

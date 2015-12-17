@@ -11,12 +11,15 @@
 #include "../scc.h"
 #include "../variable_order_finder.h"
 
+#include "../utils/logging.h"
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
 
 using namespace std;
 
+namespace MergeAndShrink {
 bool compare_sccs_increasing(const vector<int> &lhs, const vector<int> &rhs) {
     return lhs.size() < rhs.size();
 }
@@ -123,7 +126,7 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
 }
 
 pair<int, int> MergeSCCs::get_next_linear(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     const vector<int> available_indices,
     int most_recent_index,
     bool two_indices) const {
@@ -136,7 +139,7 @@ pair<int, int> MergeSCCs::get_next_linear(
         for (int index : available_indices) {
             if (index != next_index1) {
                 const vector<int> &incorporated_variables =
-                    fts->get_ts(index).get_incorporated_variables();
+                    fts.get_ts(index).get_incorporated_variables();
                 vector<int>::const_iterator it = find(incorporated_variables.begin(),
                                                 incorporated_variables.end(),
                                                 var);
@@ -160,11 +163,11 @@ pair<int, int> MergeSCCs::get_next_linear(
 }
 
 pair<int, int> MergeSCCs::get_next(
-    shared_ptr<FactoredTransitionSystem> fts) {
+    FactoredTransitionSystem &fts) {
     assert(!done());
 
     pair<int, int > next_pair = make_pair(-1, -1);
-    int most_recent_index = fts->get_size() - 1;
+    int most_recent_index = fts.get_size() - 1;
     bool first_merge = false; // needed for linear merging
     if (current_ts_indices.empty()) {
         first_merge = true;
@@ -271,3 +274,4 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
 }
 
 static PluginShared<MergeStrategy> _plugin("merge_sccs", _parse);
+}

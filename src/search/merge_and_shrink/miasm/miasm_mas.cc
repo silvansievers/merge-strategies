@@ -4,14 +4,15 @@
 
 #include "../factored_transition_system.h"
 #include "../fts_factory.h"
-#include "../labels.h"
+#include "../label_reduction.h"
 #include "../merge_strategy.h"
 #include "../shrink_strategy.h"
 #include "../transition_system.h"
 
+#include "../../heuristic.h"
 #include "../../option_parser.h"
 #include "../../plugin.h"
-#include "../../utilities.h"
+//#include "../../utilities.h"
 
 #include <cassert>
 #include <iostream>
@@ -20,6 +21,8 @@
 #include <vector>
 
 using namespace std;
+
+namespace MergeAndShrink {
 using namespace mst;
 
 MiasmAbstraction::MiasmAbstraction(const Options &opts)
@@ -27,11 +30,13 @@ MiasmAbstraction::MiasmAbstraction(const Options &opts)
       task_proxy(*task),
       merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
       shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
-      labels(opts.get<shared_ptr<Labels>>("label_reduction")),
       built_atomics(false),
       fts(nullptr) {
     merge_strategy->initialize(task);
-    labels->initialize(task_proxy);
+    if (opts.contains("label_reduction")) {
+        label_reduction = opts.get<shared_ptr<LabelReduction>>("label_reduction");
+        label_reduction->initialize(task_proxy);
+    }
 }
 
 string MiasmAbstraction::option_key() {
@@ -81,7 +86,7 @@ int MiasmAbstraction::build_transition_system(
         assert(!fts);
         built_atomics = true;
         fts = make_shared<FactoredTransitionSystem>(
-            create_factored_transition_system(task_proxy, labels, false));
+            create_factored_transition_system(task_proxy, false));
 
         /* remove the atomic abstraction if its variable is not involved */
         for (var_t i = 0; i < fts->get_size(); ++i) {
@@ -177,4 +182,4 @@ static MiasmAbstraction *_parse(OptionParser &parser) {
 }
 
 static Plugin<MiasmAbstraction> _plugin(MiasmAbstraction::plugin_key(), _parse);
-
+}

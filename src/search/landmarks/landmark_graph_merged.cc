@@ -1,9 +1,17 @@
 #include "landmark_graph_merged.h"
+
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/system.h"
+
 #include <set>
 
+using namespace std;
+using Utils::ExitCode;
+
+
+namespace Landmarks {
 LandmarkGraphMerged::LandmarkGraphMerged(const Options &opts)
     : LandmarkFactory(opts),
       lm_graphs(opts.get_list<LandmarkGraph *>("lm_graphs")) {
@@ -30,7 +38,7 @@ LandmarkNode *LandmarkGraphMerged::get_matching_landmark(const LandmarkNode &lm)
             return 0;
     } else if (lm.conjunctive) {
         cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-        exit_with(EXIT_UNSUPPORTED);
+        Utils::exit_with(ExitCode::UNSUPPORTED);
     }
     return 0;
 }
@@ -75,7 +83,7 @@ void LandmarkGraphMerged::generate_landmarks() {
                 }
             } else if (node.conjunctive) {
                 cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-                exit_with(EXIT_UNSUPPORTED);
+                Utils::exit_with(ExitCode::UNSUPPORTED);
             }
         }
     }
@@ -150,3 +158,4 @@ static LandmarkGraph *_parse(OptionParser &parser) {
 
 static Plugin<LandmarkGraph> _plugin(
     "lm_merged", _parse);
+}

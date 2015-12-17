@@ -15,6 +15,7 @@
 class AbstractTask;
 class CausalGraph;
 
+namespace MergeAndShrink {
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
     ComparatorSortPacking(const std::shared_ptr<AbstractTask> task,
@@ -62,5 +63,6 @@ private:
     std::set<int> pred;
     std::set<int> goal;
 };
+}
 
 #endif // MERGE_TREE_H

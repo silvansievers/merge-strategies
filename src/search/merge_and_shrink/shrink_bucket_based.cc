@@ -1,7 +1,8 @@
 #include "shrink_bucket_based.h"
 
 #include "../globals.h"
-#include "../rng.h"
+
+#include "../utils/rng.h"
 
 #include <cassert>
 #include <iostream>
@@ -9,6 +10,8 @@
 
 using namespace std;
 
+
+namespace MergeAndShrink {
 ShrinkBucketBased::ShrinkBucketBased(const Options &opts)
     : ShrinkStrategy(opts) {
 }
@@ -90,11 +93,12 @@ void ShrinkBucketBased::compute_abstraction(
 }
 
 void ShrinkBucketBased::compute_equivalence_relation(
-    shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int index,
     int target,
     StateEquivalenceRelation &equivalence_relation) const {
     vector<Bucket> buckets;
     partition_into_buckets(fts, index, buckets);
     compute_abstraction(buckets, target, equivalence_relation);
+}
 }

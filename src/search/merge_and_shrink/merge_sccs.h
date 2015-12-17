@@ -3,9 +3,10 @@
 
 #include "merge_strategy.h"
 
-class MergeDFP;
 class Options;
 
+namespace MergeAndShrink {
+class MergeDFP;
 class MergeSCCs : public MergeStrategy {
     const Options *options;
     enum OrderOfSCCs {
@@ -33,7 +34,7 @@ class MergeSCCs : public MergeStrategy {
     std::vector<int> current_ts_indices;
 
     std::pair<int, int> get_next_linear(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<int> available_indices,
         int most_recent_index,
         bool two_indices) const;
@@ -45,10 +46,11 @@ public:
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
     virtual std::pair<int, int> get_next(
-        std::shared_ptr<FactoredTransitionSystem> fts) override;
+        FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
     virtual int get_iterations_with_tiebreaking() const override;
     virtual int get_total_tiebreaking_pair_count() const override;
 };
+}
 
 #endif

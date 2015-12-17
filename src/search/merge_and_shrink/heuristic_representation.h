@@ -8,6 +8,7 @@
 class State;
 
 
+namespace MergeAndShrink {
 class HeuristicRepresentation {
 protected:
     int domain_size;
@@ -83,6 +84,6 @@ public:
     }
     virtual void dump() const override;
 };
-
+}
 
 #endif

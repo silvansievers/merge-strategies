@@ -6,6 +6,8 @@
 #include <utility>
 
 using namespace std;
+
+namespace MergeAndShrink {
 using namespace mst;
 
 var_set_t mst::singleton(const var_t &var) {
@@ -60,4 +62,5 @@ var_relation_t mst::get_mutex_pairs_relation() {
     }
 
     return mutex_pair_relation;
+}
 }

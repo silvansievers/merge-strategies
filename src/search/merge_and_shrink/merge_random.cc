@@ -4,32 +4,36 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../rng.h"
+
+#include "../utils/collections.h"
+#include "../utils/memory.h"
+#include "../utils/rng.h"
 
 #include <cassert>
 #include <iostream>
 
 using namespace std;
 
+namespace MergeAndShrink {
 MergeRandom::MergeRandom(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
-      rng(make_unique_ptr<RandomNumberGenerator>(random_seed)) {
+      rng(Utils::make_unique_ptr<Utils::RandomNumberGenerator>(random_seed)) {
 }
 
 pair<int, int> MergeRandom::get_next(
-    shared_ptr<FactoredTransitionSystem> fts) {
+    FactoredTransitionSystem &fts) {
     assert(initialized());
     assert(!done());
-    int number_ts = fts->get_size();
+    int number_ts = fts.get_size();
     vector<int> active_count_to_ts_index;
     for (int ts_index = 0; ts_index < number_ts; ++ts_index) {
-        if (fts->is_active(ts_index)) {
+        if (fts.is_active(ts_index)) {
             active_count_to_ts_index.push_back(ts_index);
         }
     }
 
-    RandomNumberGenerator &rng_ = *rng;
+    Utils::RandomNumberGenerator &rng_ = *rng;
     int number_active_ts = active_count_to_ts_index.size();
     int active_index1 = rng_(number_active_ts);
     int active_index2 = rng_(number_active_ts);
@@ -37,8 +41,8 @@ pair<int, int> MergeRandom::get_next(
         active_index2 = rng_(number_active_ts);
     }
 
-    assert(in_bounds(active_index1, active_count_to_ts_index));
-    assert(in_bounds(active_index2, active_count_to_ts_index));
+    assert(Utils::in_bounds(active_index1, active_count_to_ts_index));
+    assert(Utils::in_bounds(active_index2, active_count_to_ts_index));
     int next_index1 = active_count_to_ts_index[active_index1];
     int next_index2 = active_count_to_ts_index[active_index2];
 
@@ -69,3 +73,4 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
 }
 
 static PluginShared<MergeStrategy> _plugin("merge_random", _parse);
+}

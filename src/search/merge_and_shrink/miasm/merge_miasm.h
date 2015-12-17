@@ -11,6 +11,7 @@
 
 class Options;
 
+namespace MergeAndShrink {
 /**
  * @brief The MIASM merging strategy
  * \nosubgrouping
@@ -49,7 +50,7 @@ protected:
 public:
     virtual std::string name() const;
     virtual std::pair<int, int> get_next(
-        std::shared_ptr<FactoredTransitionSystem> fts) override;
+        FactoredTransitionSystem &fts) override;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
     /**
      * The greedy method for computing the maximal weighted packing of
@@ -57,5 +58,6 @@ public:
      */
     void greedy_max_set_packing();
 };
+}
 
 #endif // MERGE_MIASM_H

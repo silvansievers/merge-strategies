@@ -2,19 +2,21 @@
 
 #include "util.h"
 
-#include "../timer.h"
+#include "../utils/timer.h"
 
 #include <fstream>
 #include <limits>
 
 using namespace std;
 
+
+namespace Landmarks {
 LandmarkFactory::LandmarkFactory(const Options &opts)
     : lm_graph(new LandmarkGraph(opts)) {
 }
 
 LandmarkGraph *LandmarkFactory::compute_lm_graph() {
-    Timer lm_generation_timer;
+    Utils::Timer lm_generation_timer;
     generate_landmarks();
 
     // the following replaces the old "build_lm_graph"
@@ -774,4 +776,5 @@ void LandmarkFactory::calc_achievers() {
             }
         }
     }
+}
 }

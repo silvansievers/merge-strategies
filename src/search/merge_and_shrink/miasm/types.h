@@ -4,6 +4,7 @@
 #include <set>
 #include <vector>
 
+namespace MergeAndShrink {
 /** Merge-and-Shrink Types */
 namespace mst {
 typedef int var_t;
@@ -16,6 +17,7 @@ std::set<var_set_t> get_mutex_pairs_var();
 
 typedef std::vector<std::vector<int> > var_relation_t;
 var_relation_t get_mutex_pairs_relation();
+}
 }
 
 #endif // TYPES_H

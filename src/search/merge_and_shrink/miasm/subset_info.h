@@ -15,6 +15,7 @@
 class AbstractTask;
 class TaskProxy;
 
+namespace MergeAndShrink {
 extern std::size_t combinatorial_size(const std::set<int> &varset,
                                       const TaskProxy &task_proxy);
 
@@ -117,6 +118,7 @@ public:
     virtual ~ComparatorVarSet();
     virtual bool operator()(const std::size_t i, const std::size_t j) const;
 };
+}
 
 
 #endif // SUBSET_INFO_H

@@ -1,6 +1,6 @@
 #include "merge_tree.h"
 
-#include "../../utilities.h"
+//#include "../../utilities.h"
 #include "../../causal_graph.h"
 #include "../../task_proxy.h"
 
@@ -13,6 +13,7 @@
 
 using namespace std;
 
+namespace MergeAndShrink {
 ComparatorSortPacking::ComparatorSortPacking(const shared_ptr<AbstractTask> task,
                                              const MiasmExternal &ext_,
                                              const VarSetInfoRegistry *p_si_)
@@ -227,4 +228,5 @@ void MergeTree::merge_subs(const tree<set<int> > &left,
 
     merged.append_child(merged.begin(), left.begin());
     merged.append_child(merged.begin(), right.begin());
+}
 }

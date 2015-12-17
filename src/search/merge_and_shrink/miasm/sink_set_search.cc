@@ -21,6 +21,8 @@
 
 
 using namespace std;
+
+namespace MergeAndShrink {
 using namespace mst;
 
 SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> task)
@@ -521,4 +523,5 @@ bool ComparatorSTLPriorityQueue::operator()(const size_t i,
                                             const size_t j) const {
     assert(vsir && priority);
     return !(ComparatorVarSet::operator ()(i, j));
+}
 }

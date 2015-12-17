@@ -4,11 +4,14 @@
 #include "merge_strategy.h"
 
 class Options;
-class RandomNumberGenerator;
+namespace Utils {
+    class RandomNumberGenerator;
+}
 
+namespace MergeAndShrink {
 class MergeNonLinearRandom : public MergeStrategy {
     const int random_seed;
-    std::unique_ptr<RandomNumberGenerator> rng;
+    std::unique_ptr<Utils::RandomNumberGenerator> rng;
     const int shrink_threshold;
 protected:
     virtual void dump_strategy_specific_options() const override;
@@ -17,8 +20,9 @@ public:
     virtual ~MergeNonLinearRandom() override = default;
 
     virtual std::pair<int, int> get_next(
-        std::shared_ptr<FactoredTransitionSystem> fts) override;
+        FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
 };
+}
 
 #endif

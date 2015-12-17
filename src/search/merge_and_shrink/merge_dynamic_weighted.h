@@ -5,13 +5,14 @@
 
 #include "merge_dfp.h"
 
-#include "../utilities_hash.h"
+#include "../utils/hash.h"
 
 #include <unordered_map>
 
 class Options;
 class TaskProxy;
 
+namespace MergeAndShrink {
 const int NUM_FEATURES = 7;
 
 class Feature {
@@ -21,7 +22,7 @@ class Feature {
     const bool merge_required;
     const bool minimize_value;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) = 0;
@@ -31,9 +32,9 @@ public:
     virtual ~Feature() {}
     virtual void initialize(const TaskProxy &, bool) {}
     virtual void precompute_data(
-        const std::shared_ptr<FactoredTransitionSystem>) {}
+        const FactoredTransitionSystem &) {}
     double compute_unnormalized_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index);
@@ -59,7 +60,7 @@ public:
 class CausalConnectionFeature : public Feature {
     std::vector<std::vector<int>> var_pair_causal_links;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -71,7 +72,7 @@ public:
 class BoolCausalConnectionFeature : public Feature {
     std::vector<std::vector<bool>> causally_connected_var_pairs;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -83,7 +84,7 @@ public:
 class NonAdditivityFeature : public Feature {
     std::vector<std::vector<bool>> additive_var_pairs;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -94,7 +95,7 @@ public:
 
 class SmallTransStatesQuotFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -104,7 +105,7 @@ public:
 
 class HighTransStatesQuotFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -114,7 +115,7 @@ public:
 
 class InitHImprovementFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -124,7 +125,7 @@ public:
 
 class AbsoluteInitHFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -134,7 +135,7 @@ public:
 
 class AbsoluteMaxFFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -144,7 +145,7 @@ public:
 
 class AbsoluteMaxGFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -154,7 +155,7 @@ public:
 
 class AbsoluteMaxHFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -164,7 +165,7 @@ public:
 
 class AvgHImprovementFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -174,7 +175,7 @@ public:
 
 class InitHSumFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -184,7 +185,7 @@ public:
 
 class AvgHSumFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -195,20 +196,20 @@ public:
 class DFPFeature : public Feature {
     std::vector<std::vector<int>> ts_index_to_label_ranks;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
 public:
     DFPFeature(int id, int weight);
     virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
-//    virtual void precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override;
+//    virtual void precompute_data(const FactoredTransitionSystem &fts) override;
     virtual void clear() override;
 };
 
 class GoalRelevanceFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -218,7 +219,7 @@ public:
 
 class NumVariablesFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -228,7 +229,7 @@ public:
 
 class ShrinkPerfectlyFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -238,7 +239,7 @@ public:
 
 class NumTransitionsFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -249,32 +250,32 @@ public:
 class LROpportunitiesFeatures : public Feature {
     std::unordered_map<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
 public:
     LROpportunitiesFeatures(int id, int weight);
     virtual void clear() override;
-    void precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override;
+    void precompute_data(const FactoredTransitionSystem &fts) override;
 };
 
 class MoreLROpportunitiesFeatures : public Feature {
     std::unordered_map<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
 public:
     MoreLROpportunitiesFeatures(int id, int weight);
     virtual void clear() override;
-    void precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override;
+    void precompute_data(const FactoredTransitionSystem &fts) override;
 };
 
 class MIASMFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -284,7 +285,7 @@ public:
 
 class MutexFeature : public Feature {
     virtual double compute_value(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index) override;
@@ -305,17 +306,17 @@ public:
     explicit Features(const Options opts);
     ~Features();
     void initialize(const TaskProxy &task_proxy);
-    void precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts);
+    void precompute_data(const FactoredTransitionSystem &fts);
     bool require_merge() const {
         return merge_required;
     }
     void precompute_unnormalized_values(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2,
         int merge_index);
     double compute_weighted_normalized_sum(
-        const std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int ts_index1,
         int ts_index2) const;
     void clear();
@@ -339,8 +340,9 @@ public:
     virtual ~MergeDynamicWeighted();
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
     virtual std::pair<int, int> get_next(
-        std::shared_ptr<FactoredTransitionSystem> fts) override;
+        FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
 };
+}
 
 #endif

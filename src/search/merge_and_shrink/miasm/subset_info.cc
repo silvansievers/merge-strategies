@@ -9,9 +9,11 @@
 
 #include "../transition_system.h"
 
-#include "../../utilities.h"
+//#include "../../utilities.h"
 
 using namespace std;
+
+namespace MergeAndShrink {
 using namespace mst;
 
 size_t combinatorial_size(const set<int> &varset, const TaskProxy &task_proxy) {
@@ -166,4 +168,5 @@ bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
     }
 
     return i < j;
+}
 }

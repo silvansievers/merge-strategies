@@ -5,15 +5,16 @@
 #include "landmark_graph.h"
 
 #include "../globals.h"
-#include "../utilities.h"
-#include "../utilities_hash.h"
+
+#include "../utils/hash.h"
 
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 
-typedef std::unordered_set<std::pair<int, int>> lm_set;
+namespace Landmarks {
+using lm_set = std::unordered_set<std::pair<int, int>>;
 
 class LandmarkFactoryZhuGivan : public LandmarkFactory {
 private:
@@ -78,5 +79,6 @@ public:
     LandmarkFactoryZhuGivan(const Options &opts);
     virtual ~LandmarkFactoryZhuGivan() {}
 };
+}
 
 #endif

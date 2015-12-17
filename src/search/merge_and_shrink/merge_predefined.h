@@ -4,6 +4,8 @@
 #include "merge_strategy.h"
 
 class Options;
+
+namespace MergeAndShrink {
 class BinaryTree;
 
 class MergePredefined : public MergeStrategy {
@@ -17,8 +19,9 @@ public:
     virtual void initialize(const std::shared_ptr<AbstractTask> task);
 
     virtual std::pair<int, int> get_next(
-        std::shared_ptr<FactoredTransitionSystem> fts) override;
+        FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
 };
+}
 
 #endif

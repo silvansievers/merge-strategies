@@ -8,6 +8,8 @@
 class Options;
 class OptionParser;
 
+
+namespace MergeAndShrink {
 class MergeLinear : public MergeStrategy {
     // Only needed until variable order finder is initialized.
     VariableOrderType variable_order_type;
@@ -20,9 +22,10 @@ public:
     virtual ~MergeLinear() override = default;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
-    virtual std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts) override;
+    virtual std::pair<int, int> get_next(FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
     static void add_options_to_parser(OptionParser &parser);
 };
+}
 
 #endif

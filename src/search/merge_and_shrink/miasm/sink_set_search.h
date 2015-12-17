@@ -6,7 +6,7 @@
 #include "subset_info.h"
 
 #include "../../task_proxy.h"
-#include "../../timer.h"
+#include "../../utils/timer.h"
 
 #include <cstdlib>
 
@@ -19,9 +19,7 @@
 #include <string>
 
 class CausalGraph;
-class MergeMiasm;
 class Options;
-class MiasmAbstraction;
 
 DECLARE_OPT(double, OptTimeLimit);
 
@@ -100,6 +98,9 @@ DECLARE_ENUM_OPT(EnumPrune);
 
 #undef X
 
+namespace MergeAndShrink {
+class MergeMiasm;
+class MiasmAbstraction;
 /**
  * Comparator for std::priority_queue used in the #SinkSetSearch
  */
@@ -165,7 +166,7 @@ protected:
     const EnumPrune opt_prune;
     //@}
 protected:
-    Timer timer;
+    Utils::Timer timer;
     bool time_limit_exceeded();
     bool memory_limit_exceeded();
 protected:
@@ -273,6 +274,7 @@ public:
     const VarSetInfoRegistry *get_vsir();
     //@}
 };
+}
 
 
 #endif // SINK_SET_SEARCH_H

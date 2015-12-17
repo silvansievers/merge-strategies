@@ -4,13 +4,17 @@
 
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../utilities.h"
+
+#include "../utils/logging.h"
+#include "../utils/system.h"
 
 #include <cassert>
 #include <iostream>
 
 using namespace std;
+using Utils::ExitCode;
 
+namespace MergeAndShrink {
 class BinaryTree {
     int index;
     BinaryTree *left_child;
@@ -32,7 +36,7 @@ public:
         char &c = tree_string[0];
         if (c == 'y') {
             cerr << "ill-specified string" << endl;
-            exit_with(EXIT_INPUT_ERROR);
+            Utils::exit_with(ExitCode::INPUT_ERROR);
         } else if (c == 'x') {
             assert(tree_string.size() > 5); // need to have at least two subtrees
             int parentheses_counter = 1;
@@ -151,16 +155,16 @@ void MergePredefined::initialize(const shared_ptr<AbstractTask> task) {
     if (!merge_order.empty() && static_cast<int>(merge_order.size()) != remaining_merges) {
         cout << remaining_merges << endl;
         cerr << "Invalid size of merge order" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        Utils::exit_with(ExitCode::INPUT_ERROR);
     }
     if (root && root->compute_size() != remaining_merges) {
         cerr << "Invalid size of merge tree!" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        Utils::exit_with(ExitCode::INPUT_ERROR);
     }
 }
 
 pair<int, int> MergePredefined::get_next(
-    shared_ptr<FactoredTransitionSystem> fts) {
+    FactoredTransitionSystem &fts) {
     int next_index1 = -1;
     int next_index2 = -1;
     if (!merge_order.empty()) {
@@ -170,11 +174,11 @@ pair<int, int> MergePredefined::get_next(
         next_index2 = next_pair[1];
         merge_order.erase(merge_order.begin());
     } else if (root) {
-        root->get_next_merge(fts->get_size(), next_index1, next_index2);
+        root->get_next_merge(fts.get_size(), next_index1, next_index2);
         assert(root->compute_size() == remaining_merges - 1);
     }
-    assert(fts->is_active(next_index1));
-    assert(fts->is_active(next_index2));
+    assert(fts.is_active(next_index1));
+    assert(fts.is_active(next_index2));
     --remaining_merges;
     return make_pair(next_index1, next_index2);
 }
@@ -213,23 +217,23 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     if (parser.dry_run()) {
         if (options.contains("merge_order") && options.contains("merge_tree")) {
             cerr << "Specifying a merge order and a merge tree is not possible!" << endl;
-            exit_with(EXIT_INPUT_ERROR);
+            Utils::exit_with(ExitCode::INPUT_ERROR);
         } else if (!options.contains("merge_order") && !options.contains("merge_tree")) {
             cerr << "Neither a merge order nor a merge tree was specified!" << endl;
-            exit_with(EXIT_INPUT_ERROR);
+            Utils::exit_with(ExitCode::INPUT_ERROR);
         }
         if (options.contains("merge_order")) {
             vector<vector<int>> merge_order = options.get_list<vector<int>>("merge_order");
             if (merge_order.empty()) {
                 cerr << "Got empty merge order, aborting" << endl;
-                exit_with(EXIT_INPUT_ERROR);
+                Utils::exit_with(ExitCode::INPUT_ERROR);
             }
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order must contain "
                         "exactly two elements!" << endl;
                     cout << pair << endl;
-                    exit_with(EXIT_INPUT_ERROR);
+                    Utils::exit_with(ExitCode::INPUT_ERROR);
                 }
             }
         }
@@ -240,3 +244,4 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
 }
 
 static PluginShared<MergeStrategy> _plugin("merge_predefined", _parse);
+}

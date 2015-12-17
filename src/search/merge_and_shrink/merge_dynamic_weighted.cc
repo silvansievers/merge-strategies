@@ -2,6 +2,7 @@
 
 #include "distances.h"
 #include "factored_transition_system.h"
+#include "label_equivalence_relation.h"
 #include "labels.h"
 #include "shrink_bisimulation.h"
 #include "transition_system.h"
@@ -10,12 +11,15 @@
 #include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../rng.h"
 #include "../task_proxy.h"
 
+#include "../utils/system.h"
+//#include "../utils/rng.h"
 
 using namespace std;
+using Utils::ExitCode;
 
+namespace MergeAndShrink {
 const int MINUSINF = numeric_limits<int>::min();
 
 // Helper methods to deal with transition systems
@@ -30,22 +34,19 @@ int compute_number_of_product_transitions(
       transitions in the product.
     */
     int number_of_transitions = 0;
-    for (TSConstIterator group1_it = ts1.begin();
-         group1_it != ts1.end(); ++group1_it) {
+    for (const GroupAndTransitions &gat : ts1) {
+        const LabelGroup &group1 = gat.label_group;
+        const vector<Transition> &transitions1 = gat.transitions;
+
         // Distribute the labels of this group among the "buckets"
         // corresponding to the groups of ts2.
         unordered_map<int, vector<int>> buckets;
-        for (LabelConstIter label_it = group1_it.begin();
-             label_it != group1_it.end(); ++label_it) {
-            int label_no = *label_it;
+        for (int label_no : group1) {
             int group2_id = ts2.get_group_id_for_label(label_no);
             buckets[group2_id].push_back(label_no);
         }
-        // Now buckets contains all equivalence classes that are
-        // refinements of group1.
 
         // Now create the new groups together with their transitions.
-        const vector<Transition> &transitions1 = group1_it.get_transitions();
         for (const auto &bucket : buckets) {
             const vector<Transition> &transitions2 =
                 ts2.get_transitions_for_group_id(bucket.first);
@@ -70,28 +71,28 @@ double compute_average_h_value(const Distances &distances) {
 }
 
 // TODO: exact copy from MergeDFP
-void compute_label_ranks(shared_ptr<FactoredTransitionSystem> fts,
+void compute_label_ranks(const FactoredTransitionSystem &fts,
                          int index,
-                         vector<int> &label_ranks)  {
-    const TransitionSystem &ts = fts->get_ts(index);
-    const Distances &distances = fts->get_dist(index);
-    int num_labels = fts->get_num_labels();
+                         vector<int> &label_ranks) {
+    const TransitionSystem &ts = fts.get_ts(index);
+    const Distances &distances = fts.get_dist(index);
+    int num_labels = fts.get_num_labels();
     // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
     label_ranks.resize(num_labels, -1);
 
-    for (TSConstIterator group_it = ts.begin();
-         group_it != ts.end(); ++group_it) {
+    for (const GroupAndTransitions &gat : ts) {
+        const LabelGroup &label_group = gat.label_group;
+        const vector<Transition> &transitions = gat.transitions;
         // Relevant labels with no transitions have a rank of infinity.
         int label_rank = INF;
-        const vector<Transition> &transitions = group_it.get_transitions();
         bool group_relevant = false;
         if (static_cast<int>(transitions.size()) == ts.get_size()) {
             /*
               A label group is irrelevant in the earlier notion if it has
               exactly a self loop transition for every state.
             */
-            for (size_t i = 0; i < transitions.size(); ++i) {
-                if (transitions[i].target != transitions[i].src) {
+            for (const Transition &transition : transitions) {
+                if (transition.target != transition.src) {
                     group_relevant = true;
                     break;
                 }
@@ -102,31 +103,28 @@ void compute_label_ranks(shared_ptr<FactoredTransitionSystem> fts,
         if (!group_relevant) {
             label_rank = -1;
         } else {
-            for (size_t i = 0; i < transitions.size(); ++i) {
-                const Transition &t = transitions[i];
-                label_rank = min(label_rank, distances.get_goal_distance(t.target));
+            for (const Transition &transition : transitions) {
+                label_rank = min(label_rank,
+                                 distances.get_goal_distance(transition.target));
             }
         }
-        for (LabelConstIter label_it = group_it.begin();
-             label_it != group_it.end(); ++label_it) {
-            int label_no = *label_it;
+        for (int label_no : label_group) {
             label_ranks[label_no] = label_rank;
         }
     }
 }
 
-void compute_irrelevant_labels(const shared_ptr<FactoredTransitionSystem> fts,
+void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
                                vector<vector<bool>> &ts_index_to_irrelevant_labels) {
-    int num_ts = fts->get_size();
+    int num_ts = fts.get_size();
     ts_index_to_irrelevant_labels.resize(num_ts, vector<bool>());
-    int num_labels = fts->get_labels()->get_size();
+    int num_labels = fts.get_labels().get_size();
     for (int ts_index = 0; ts_index < num_ts; ++ts_index) {
-        if (fts->is_active(ts_index)) {
+        if (fts.is_active(ts_index)) {
             vector<bool> irrelevant_labels(num_labels, false);
-            const TransitionSystem &ts = fts->get_ts(ts_index);
-            for (TSConstIterator group_it = ts.begin();
-                 group_it != ts.end(); ++group_it) {
-                const vector<Transition> &transitions = group_it.get_transitions();
+            const TransitionSystem &ts = fts.get_ts(ts_index);
+            for (const GroupAndTransitions &gat : ts) {
+                const vector<Transition> &transitions = gat.transitions;
                 bool group_relevant = false;
                 if (static_cast<int>(transitions.size()) == ts.get_size()) {
                     /*
@@ -143,9 +141,8 @@ void compute_irrelevant_labels(const shared_ptr<FactoredTransitionSystem> fts,
                     group_relevant = true;
                 }
                 if (!group_relevant) {
-                    for (LabelConstIter label_it = group_it.begin();
-                         label_it != group_it.end(); ++label_it) {
-                        int label_no = *label_it;
+                    const LabelGroup &label_group = gat.label_group;
+                    for (int label_no : label_group) {
                         irrelevant_labels[label_no] = true;
                     }
                 }
@@ -167,7 +164,7 @@ Feature::Feature(int id, int weight, string name,
 }
 
 double Feature::compute_unnormalized_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -188,13 +185,13 @@ CausalConnectionFeature::CausalConnectionFeature(int id, int weight)
 }
 
 double CausalConnectionFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity]
-    const vector<int> ts1_var_nos = fts->get_ts(ts_index1).get_incorporated_variables();
-    const vector<int> ts2_var_nos = fts->get_ts(ts_index2).get_incorporated_variables();
+    const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
+    const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
     int edge_count = 0;
     for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
@@ -239,13 +236,13 @@ BoolCausalConnectionFeature::BoolCausalConnectionFeature(int id, int weight)
 }
 
 double BoolCausalConnectionFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity]
-    const vector<int> ts1_var_nos = fts->get_ts(ts_index1).get_incorporated_variables();
-    const vector<int> ts2_var_nos = fts->get_ts(ts_index2).get_incorporated_variables();
+    const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
+    const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
     bool result = false;
     for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
@@ -291,13 +288,13 @@ NonAdditivityFeature::NonAdditivityFeature(int id, int weight)
 }
 
 double NonAdditivityFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    const vector<int> ts1_var_nos = fts->get_ts(ts_index1).get_incorporated_variables();
-    const vector<int> ts2_var_nos = fts->get_ts(ts_index2).get_incorporated_variables();
+    const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
+    const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
     int not_additive_pair_count = 0;
     for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
@@ -342,13 +339,13 @@ SmallTransStatesQuotFeature::SmallTransStatesQuotFeature(int id, int weight)
 }
 
 double SmallTransStatesQuotFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    const TransitionSystem &ts1 = fts->get_ts(ts_index1);
-    const TransitionSystem &ts2 = fts->get_ts(ts_index2);
+    const TransitionSystem &ts1 = fts.get_ts(ts_index1);
+    const TransitionSystem &ts2 = fts.get_ts(ts_index2);
     double product_states = ts1.get_size() * ts2.get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
     if (!product_states) {
@@ -362,13 +359,13 @@ HighTransStatesQuotFeature::HighTransStatesQuotFeature(int id, int weight)
 }
 
 double HighTransStatesQuotFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    const TransitionSystem &ts1 = fts->get_ts(ts_index1);
-    const TransitionSystem &ts2 = fts->get_ts(ts_index2);
+    const TransitionSystem &ts1 = fts.get_ts(ts_index1);
+    const TransitionSystem &ts2 = fts.get_ts(ts_index2);
     double product_states = ts1.get_size() * ts2.get_size();
     double product_transitions = compute_number_of_product_transitions(ts1, ts2);
     if (!product_states) {
@@ -382,21 +379,21 @@ InitHImprovementFeature::InitHImprovementFeature(int id, int weight)
 }
 
 double InitHImprovementFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
     int new_init_h;
-    if (fts->get_ts(merge_index).is_solvable()) {
-        new_init_h = fts->get_init_state_goal_distance(merge_index);
+    if (fts.get_ts(merge_index).is_solvable()) {
+        new_init_h = fts.get_init_state_goal_distance(merge_index);
     } else {
         // initial state has been pruned
         new_init_h = INF;
     }
-    int old_init_h = max(fts->get_init_state_goal_distance(ts_index1),
-                         fts->get_init_state_goal_distance(ts_index2));
+    int old_init_h = max(fts.get_init_state_goal_distance(ts_index1),
+                         fts.get_init_state_goal_distance(ts_index2));
     int difference = new_init_h - old_init_h;
     if (!difference) {
         return 0;
@@ -412,14 +409,14 @@ AbsoluteInitHFeature::AbsoluteInitHFeature(int id, int weight)
 }
 
 double AbsoluteInitHFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int,
     int,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
-        return fts->get_init_state_goal_distance(merge_index);
+    if (fts.get_ts(merge_index).is_solvable()) {
+        return fts.get_init_state_goal_distance(merge_index);
     } else {
         // initial state has been pruned
         return INF;
@@ -431,14 +428,14 @@ AbsoluteMaxFFeature::AbsoluteMaxFFeature(int id, int weight)
 }
 
 double AbsoluteMaxFFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int,
     int,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
-        return fts->get_dist(merge_index).get_max_f();
+    if (fts.get_ts(merge_index).is_solvable()) {
+        return fts.get_dist(merge_index).get_max_f();
     } else {
         // initial state has been pruned
         return INF;
@@ -450,14 +447,14 @@ AbsoluteMaxGFeature::AbsoluteMaxGFeature(int id, int weight)
 }
 
 double AbsoluteMaxGFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int,
     int,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
-        return fts->get_dist(merge_index).get_max_g();
+    if (fts.get_ts(merge_index).is_solvable()) {
+        return fts.get_dist(merge_index).get_max_g();
     } else {
         // initial state has been pruned
         return INF;
@@ -469,14 +466,14 @@ AbsoluteMaxHFeature::AbsoluteMaxHFeature(int id, int weight)
 }
 
 double AbsoluteMaxHFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int,
     int,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
-        return fts->get_dist(merge_index).get_max_h();
+    if (fts.get_ts(merge_index).is_solvable()) {
+        return fts.get_dist(merge_index).get_max_h();
     } else {
         // initial state has been pruned
         return INF;
@@ -488,15 +485,15 @@ AvgHImprovementFeature::AvgHImprovementFeature(int id, int weight)
 }
 
 double AvgHImprovementFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    double new_average_h = compute_average_h_value(fts->get_dist(merge_index));
-    double old_average_h = max(compute_average_h_value(fts->get_dist(ts_index1)),
-                               compute_average_h_value(fts->get_dist(ts_index2)));
+    double new_average_h = compute_average_h_value(fts.get_dist(merge_index));
+    double old_average_h = max(compute_average_h_value(fts.get_dist(ts_index1)),
+                               compute_average_h_value(fts.get_dist(ts_index2)));
     double difference = new_average_h - old_average_h;
     if (!difference) {
         return 0;
@@ -512,13 +509,13 @@ InitHSumFeature::InitHSumFeature(int id, int weight)
 }
 
 double InitHSumFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    int init_h_sum = fts->get_init_state_goal_distance(ts_index1) +
-                     fts->get_init_state_goal_distance(ts_index2);
+    int init_h_sum = fts.get_init_state_goal_distance(ts_index1) +
+                     fts.get_init_state_goal_distance(ts_index2);
     return init_h_sum;
 }
 
@@ -527,13 +524,13 @@ AvgHSumFeature::AvgHSumFeature(int id, int weight)
 }
 
 double AvgHSumFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    double average_h_sum = compute_average_h_value(fts->get_dist(ts_index1)) +
-                           compute_average_h_value(fts->get_dist(ts_index2));
+    double average_h_sum = compute_average_h_value(fts.get_dist(ts_index1)) +
+                           compute_average_h_value(fts.get_dist(ts_index2));
     return average_h_sum;
 }
 
@@ -545,7 +542,7 @@ void DFPFeature::initialize(const TaskProxy &task_proxy, bool) {
     ts_index_to_label_ranks.reserve(task_proxy.get_variables().size() * 2 - 1);
 }
 
-//void DFPFeature::precompute_data(const std::shared_ptr<FactoredTransitionSystem> fts) override {
+//void DFPFeature::precompute_data(const std::FactoredTransitionSystem &fts) override {
 //}
 
 void DFPFeature::clear() {
@@ -553,16 +550,16 @@ void DFPFeature::clear() {
 }
 
 double DFPFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
     if (ts_index_to_label_ranks.empty()) {
-        ts_index_to_label_ranks.assign(fts->get_size(), vector<int>());
+        ts_index_to_label_ranks.assign(fts.get_size(), vector<int>());
     }
-    const TransitionSystem &ts1 = fts->get_ts(ts_index1);
-    const TransitionSystem &ts2 = fts->get_ts(ts_index2);
+    const TransitionSystem &ts1 = fts.get_ts(ts_index1);
+    const TransitionSystem &ts2 = fts.get_ts(ts_index2);
     int pair_weight = INF;
     if (ts1.is_goal_relevant() || ts2.is_goal_relevant()) {
         vector<int> &label_ranks1 = ts_index_to_label_ranks[ts_index1];
@@ -595,16 +592,16 @@ GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
 }
 
 double GoalRelevanceFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,2]
     int pair_weight = 0;
-    if (fts->get_ts(ts_index1).is_goal_relevant()) {
+    if (fts.get_ts(ts_index1).is_goal_relevant()) {
         ++pair_weight;
     }
-    if (fts->get_ts(ts_index2).is_goal_relevant()) {
+    if (fts.get_ts(ts_index2).is_goal_relevant()) {
         ++pair_weight;
     }
     return pair_weight;
@@ -615,13 +612,13 @@ NumVariablesFeature::NumVariablesFeature(int id, int weight)
 }
 
 double NumVariablesFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [2,num_variables-1]
-    return fts->get_ts(ts_index1).get_incorporated_variables().size() +
-           fts->get_ts(ts_index2).get_incorporated_variables().size();
+    return fts.get_ts(ts_index1).get_incorporated_variables().size() +
+           fts.get_ts(ts_index2).get_incorporated_variables().size();
 }
 
 ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
@@ -629,13 +626,13 @@ ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
 }
 
 double ShrinkPerfectlyFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int,
     int ,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
+    if (fts.get_ts(merge_index).is_solvable()) {
         Options options;
         options.set<int>("max_states", INF);
         options.set<int>("max_states_before_merge", INF);
@@ -643,7 +640,7 @@ double ShrinkPerfectlyFeature::compute_value(
         options.set<bool>("greedy", false);
         options.set<int>("at_limit", 0);
         ShrinkBisimulation shrink_bisim(options);
-        int size_before = fts->get_ts(merge_index).get_size();
+        int size_before = fts.get_ts(merge_index).get_size();
         int size_after = shrink_bisim.compute_size_after_perfect_shrink(fts, merge_index);
         assert(size_after <= size_before);
         int difference = size_before - size_after;
@@ -659,12 +656,12 @@ NumTransitionsFeature::NumTransitionsFeature(int id, int weight)
 }
 
 double NumTransitionsFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity[
-    return compute_number_of_product_transitions(fts->get_ts(ts_index1), fts->get_ts(ts_index2));
+    return compute_number_of_product_transitions(fts.get_ts(ts_index1), fts.get_ts(ts_index2));
 }
 
 LROpportunitiesFeatures::LROpportunitiesFeatures(int id, int weight)
@@ -676,19 +673,19 @@ void LROpportunitiesFeatures::clear() {
 }
 
 void LROpportunitiesFeatures::precompute_data(
-    const shared_ptr<FactoredTransitionSystem> fts) {
+    const FactoredTransitionSystem &fts) {
     // Precompute the set of irrelevant labels for every transition system
     vector<vector<bool>> ts_index_to_irrelevant_labels;
     compute_irrelevant_labels(fts, ts_index_to_irrelevant_labels);
 
     // Compute the number of labels that are irrelevant in all other transition
     // systems than then current considered pair.
-    int num_ts = fts->get_size();
-    int num_labels = fts->get_labels()->get_size();
+    int num_ts = fts.get_size();
+    int num_labels = fts.get_labels().get_size();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
-        if (fts->is_active(ts_index1)) {
+        if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
-                if (fts->is_active(ts_index2)) {
+                if (fts.is_active(ts_index2)) {
                     int count_combinable_labels = 0;
                     for (int label_no = 0; label_no < num_labels; ++label_no) {
                         bool label_irrelevant_in_all_other_ts = true;
@@ -696,7 +693,7 @@ void LROpportunitiesFeatures::precompute_data(
                             if (ts_index3 == ts_index1 || ts_index3 == ts_index2) {
                                 continue;
                             }
-                            if (fts->is_active(ts_index3)) {
+                            if (fts.is_active(ts_index3)) {
                                 if (!ts_index_to_irrelevant_labels[ts_index3][label_no]) {
                                     label_irrelevant_in_all_other_ts = false;
                                     break;
@@ -716,7 +713,7 @@ void LROpportunitiesFeatures::precompute_data(
 }
 
 double LROpportunitiesFeatures::compute_value(
-    const shared_ptr<FactoredTransitionSystem>,
+    const FactoredTransitionSystem &,
     int ts_index1,
     int ts_index2,
     int) {
@@ -738,33 +735,33 @@ void MoreLROpportunitiesFeatures::clear() {
 }
 
 void MoreLROpportunitiesFeatures::precompute_data(
-    const shared_ptr<FactoredTransitionSystem> fts) {
+    const FactoredTransitionSystem &fts) {
     // Precompute the set of irrelevant labels for every transition system
     vector<vector<bool>> ts_index_to_irrelevant_labels;
     compute_irrelevant_labels(fts, ts_index_to_irrelevant_labels);
 
     // Compute the number of labels that are locally equivalent in all other
     // transition systems than then current considered pair.
-    int num_ts = fts->get_size();
-    const shared_ptr<Labels> labels = fts->get_labels();
-    int num_labels = labels->get_size();
+    int num_ts = fts.get_size();
+    const Labels &labels = fts.get_labels();
+    int num_labels = labels.get_size();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
-        if (fts->is_active(ts_index1)) {
+        if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
-                if (fts->is_active(ts_index2)) {
+                if (fts.is_active(ts_index2)) {
                     int count_combinable_label_pairs = 0;
                     for (int label_no1 = 0; label_no1 < num_labels; ++label_no1) {
-                        if (labels->is_current_label(label_no1)) {
+                        if (labels.is_current_label(label_no1)) {
                             for (int label_no2 = label_no1 + 1;
                                  label_no2 < num_labels; ++label_no2) {
-                                if (labels->is_current_label(label_no2)) {
+                                if (labels.is_current_label(label_no2)) {
                                     bool equivalent_in_all_other_ts = true;
                                     for (int ts_index3 = 0; ts_index3 < num_ts; ++ts_index3) {
                                         if (ts_index3 == ts_index1 || ts_index3 == ts_index2) {
                                             continue;
                                         }
-                                        if (fts->is_active(ts_index3)) {
-                                            const TransitionSystem &ts3 = fts->get_ts(ts_index3);
+                                        if (fts.is_active(ts_index3)) {
+                                            const TransitionSystem &ts3 = fts.get_ts(ts_index3);
                                             if (ts3.get_group_id_for_label(label_no1)
                                                 != ts3.get_group_id_for_label(label_no2)) {
                                                 equivalent_in_all_other_ts = false;
@@ -788,7 +785,7 @@ void MoreLROpportunitiesFeatures::precompute_data(
 }
 
 double MoreLROpportunitiesFeatures::compute_value(
-    const shared_ptr<FactoredTransitionSystem>,
+    const FactoredTransitionSystem &,
     int ts_index1,
     int ts_index2,
     int) {
@@ -806,16 +803,16 @@ MIASMFeature::MIASMFeature(int id, int weight)
 }
 
 double MIASMFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
-    if (fts->get_ts(merge_index).is_solvable()) {
-        int expected_size = fts->get_ts(ts_index1).get_size() * fts->get_ts(ts_index2).get_size();
+    if (fts.get_ts(merge_index).is_solvable()) {
+        int expected_size = fts.get_ts(ts_index1).get_size() * fts.get_ts(ts_index2).get_size();
         assert(expected_size);
-        int new_size = fts->get_ts(merge_index).get_size();
+        int new_size = fts.get_ts(merge_index).get_size();
         assert(new_size <= expected_size);
         return static_cast<double>(new_size) / static_cast<double>(expected_size);
     } else {
@@ -830,13 +827,13 @@ MutexFeature::MutexFeature(int id, int weight)
 }
 
 double MutexFeature::compute_value(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int) {
     // return value in [0,infinity)
-    const vector<int> ts1_var_nos = fts->get_ts(ts_index1).get_incorporated_variables();
-    const vector<int> ts2_var_nos = fts->get_ts(ts_index2).get_incorporated_variables();
+    const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
+    const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
     int mutex_pair_count = 0;
     for (int ts1_var_no : ts1_var_nos) {
         for (int ts2_var_no : ts2_var_nos) {
@@ -924,7 +921,7 @@ void Features::initialize(const TaskProxy &task_proxy) {
 }
 
 void Features::precompute_data(
-    const shared_ptr<FactoredTransitionSystem> fts) {
+    const FactoredTransitionSystem &fts) {
     for (Feature *feature : features) {
         if (feature->get_weight()) {
             feature->precompute_data(fts);
@@ -968,7 +965,7 @@ double Features::normalize_value(int feature_id, double value) const {
 }
 
 void Features::precompute_unnormalized_values(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
     int merge_index) {
@@ -990,7 +987,7 @@ void Features::precompute_unnormalized_values(
 }
 
 double Features::compute_weighted_normalized_sum(
-    const shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2) const {
     pair<int, int> next_pair = make_pair(ts_index1, ts_index2);
@@ -1001,7 +998,7 @@ double Features::compute_weighted_normalized_sum(
     double weighted_sum = 0;
     if (debug) {
         cout << "computing weighted normalized sum for "
-             << fts->get_ts(ts_index1).tag() << fts->get_ts(ts_index2).tag() << endl;
+             << fts.get_ts(ts_index1).tag() << fts.get_ts(ts_index2).tag() << endl;
     }
     for (Feature *feature : features) {
         if (feature->get_weight()) {
@@ -1050,7 +1047,7 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       randomized_order(opts.get<bool>("randomized_order")) {
     if (use_lr) {
         cerr << "Currently not implemented!" << endl;
-        exit_with(EXIT_CRITICAL_ERROR);
+        Utils::exit_with(ExitCode::CRITICAL_ERROR);
     }
     features = new Features(opts);
 }
@@ -1079,36 +1076,36 @@ void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(
-    shared_ptr<FactoredTransitionSystem> fts) {
+    FactoredTransitionSystem &fts) {
     int next_index1 = -1;
     int next_index2 = -1;
 
-    int num_ts = fts->get_size();
+    int num_ts = fts.get_size();
     if (remaining_merges == 1) {
         for (int ts_index = 0; ts_index < num_ts - 1; ++ts_index) {
-            if (fts->is_active(ts_index)) {
+            if (fts.is_active(ts_index)) {
                 next_index1 = ts_index;
                 break;
             }
         }
         next_index2 = num_ts - 1; // the previously added transition system
         assert(next_index2 != next_index1);
-        assert(fts->is_active(next_index2));
+        assert(fts.is_active(next_index2));
     } else {
         features->precompute_data(fts);
         // Go through all transitition systems and compute unnormalized feature values.
         for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
-            if (fts->is_active(ts_index1)) {
+            if (fts.is_active(ts_index1)) {
                 for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
-                    if (fts->is_active(ts_index2)) {
+                    if (fts.is_active(ts_index2)) {
                         int copy_ts_index1;
                         int copy_ts_index2;
                         int merge_index = -1;
                         if (features->require_merge()) {
                             // Output for parser
                             cout << "trying to compute the merge..." << endl;
-                            copy_ts_index1 = fts->copy(ts_index1);
-                            copy_ts_index2 = fts->copy(ts_index2);
+                            copy_ts_index1 = fts.copy(ts_index1);
+                            copy_ts_index2 = fts.copy(ts_index2);
                             Options options;
                             options.set<int>("max_states", max_states);
                             options.set<int>("max_states_before_merge", max_states);
@@ -1117,7 +1114,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
                             options.set<int>("at_limit", 0);
                             ShrinkBisimulation shrink_bisim(options);
                             shrink_bisim.shrink(fts, copy_ts_index1, copy_ts_index2, true);
-                            merge_index = fts->merge(copy_ts_index1, copy_ts_index2, true, false);
+                            merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
                             // Output for parser
                             cout << "...done computing the merge." << endl;
                         }
@@ -1125,7 +1122,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
                                                                  ts_index2, merge_index);
                         if (features->require_merge()) {
                             // delete and reset
-                            fts->release_copies();
+                            fts.release_copies();
                         }
                     }
                 }
@@ -1138,7 +1135,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
         vector<int> sorted_active_ts_indices;
         for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
             int ts_index = transition_system_order[tso_index];
-            if (fts->is_active(ts_index)) {
+            if (fts.is_active(ts_index)) {
                 sorted_active_ts_indices.push_back(ts_index);
             }
         }
@@ -1148,10 +1145,10 @@ pair<int, int> MergeDynamicWeighted::get_next(
         unordered_map<int, int> weight_to_count;
         for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
             int ts_index1 = sorted_active_ts_indices[i];
-            assert(fts->is_active(ts_index1));
+            assert(fts.is_active(ts_index1));
             for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
                 int ts_index2 = sorted_active_ts_indices[j];
-                assert(fts->is_active(ts_index2));
+                assert(fts.is_active(ts_index2));
                 int pair_weight =
                     features->compute_weighted_normalized_sum(fts,
                                                               ts_index1,
@@ -1346,7 +1343,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_miasm") == 0 &&
         opts.get<int>("w_mutex") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        Utils::exit_with(ExitCode::INPUT_ERROR);
     }
 
     if (parser.dry_run())
@@ -1356,3 +1353,4 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
 }
 
 static PluginShared<MergeStrategy> _plugin("merge_dynamic_weighted", _parse);
+}

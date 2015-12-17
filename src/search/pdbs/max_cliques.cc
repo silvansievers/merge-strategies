@@ -1,6 +1,6 @@
 #include "max_cliques.h"
 
-#include "../utilities.h"
+#include "../utils/collections.h"
 
 #include <algorithm>
 #include <cassert>
@@ -10,6 +10,8 @@
 
 using namespace std;
 
+
+namespace PDBs {
 class MaxCliqueComputer {
     const vector<vector<int>> &graph;
     vector<vector<int>> &max_cliques;
@@ -17,8 +19,8 @@ class MaxCliqueComputer {
 
     int get_maximizing_vertex(
         const vector<int> &subg, const vector<int> &cand) {
-        assert(is_sorted_unique(subg));
-        assert(is_sorted_unique(cand));
+        assert(Utils::is_sorted_unique(subg));
+        assert(Utils::is_sorted_unique(cand));
 
         //cout << "subg: " << subg << endl;
         //cout << "cand: " << cand << endl;
@@ -112,4 +114,5 @@ void compute_max_cliques(
     vector<vector<int>> &max_cliques) {
     MaxCliqueComputer clique_computer(graph, max_cliques);
     clique_computer.compute();
+}
 }

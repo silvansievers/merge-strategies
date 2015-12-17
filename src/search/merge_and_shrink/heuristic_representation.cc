@@ -4,12 +4,15 @@
 
 #include "../task_proxy.h"
 
+#include "../utils/memory.h"
+
 #include <algorithm>
 #include <numeric>
 
 using namespace std;
 
 
+namespace MergeAndShrink {
 HeuristicRepresentation::HeuristicRepresentation(int domain_size)
     : domain_size(domain_size) {
 }
@@ -83,17 +86,17 @@ HeuristicRepresentationMerge::HeuristicRepresentationMerge(const HeuristicRepres
     : HeuristicRepresentation(other->domain_size),
       lookup_table(other->lookup_table) {
     if (dynamic_cast<HeuristicRepresentationLeaf *>(other->left_child.get())) {
-        left_child = make_unique_ptr<HeuristicRepresentationLeaf>(
+        left_child = Utils::make_unique_ptr<HeuristicRepresentationLeaf>(
             dynamic_cast<HeuristicRepresentationLeaf *>(other->left_child.get()));
     } else {
-        left_child = make_unique_ptr<HeuristicRepresentationMerge>(
+        left_child = Utils::make_unique_ptr<HeuristicRepresentationMerge>(
             dynamic_cast<HeuristicRepresentationMerge *>(other->left_child.get()));
     }
     if (dynamic_cast<HeuristicRepresentationLeaf *>(other->right_child.get())) {
-        right_child = make_unique_ptr<HeuristicRepresentationLeaf>(
+        right_child = Utils::make_unique_ptr<HeuristicRepresentationLeaf>(
             dynamic_cast<HeuristicRepresentationLeaf *>(other->right_child.get()));
     } else {
-        right_child = make_unique_ptr<HeuristicRepresentationMerge>(
+        right_child = Utils::make_unique_ptr<HeuristicRepresentationMerge>(
             dynamic_cast<HeuristicRepresentationMerge *>(other->right_child.get()));
     }
 }
@@ -133,4 +136,5 @@ void HeuristicRepresentationMerge::dump() const {
     left_child->dump();
     cout << "dump right child:" << endl;
     right_child->dump();
+}
 }

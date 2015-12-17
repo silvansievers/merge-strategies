@@ -10,10 +10,12 @@
 #include <vector>
 #include <map>
 
-class FactoredTransitionSystem;
-class Labels;
-class MergeStrategy;
 class Options;
+
+namespace MergeAndShrink {
+class FactoredTransitionSystem;
+class LabelReduction;
+class MergeStrategy;
 class ShrinkStrategy;
 class TransitionSystem;
 class VarSetInfoRegistry;
@@ -23,7 +25,7 @@ class MiasmAbstraction {
     TaskProxy task_proxy;
     std::shared_ptr<MergeStrategy> merge_strategy;
     std::shared_ptr<ShrinkStrategy> shrink_strategy;
-    std::shared_ptr<Labels> labels;
+    std::shared_ptr<LabelReduction> label_reduction;
     bool built_atomics;
 public:
     MiasmAbstraction(const Options &opts);
@@ -42,5 +44,6 @@ public:
         const VarSetInfoRegistry &vsir);
 
 };
+}
 
 #endif // MIASM_MERGE_AND_SHRINK_ABSTRACTION_H
