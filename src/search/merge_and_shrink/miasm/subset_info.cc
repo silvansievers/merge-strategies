@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 using namespace mst;
 
 size_t combinatorial_size(const set<int> &varset, const TaskProxy &task_proxy) {

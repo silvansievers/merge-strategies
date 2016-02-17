@@ -19,7 +19,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 bool compare_sccs_increasing(const vector<int> &lhs, const vector<int> &rhs) {
     return lhs.size() < rhs.size();
 }

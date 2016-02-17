@@ -8,8 +8,7 @@
 
 using namespace std;
 
-
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 Labels::Labels(vector<unique_ptr<Label>> &&labels)
     : labels(move(labels)),
       max_size(0) {
@@ -23,7 +22,7 @@ Labels::Labels(const Labels &other)
     labels.reserve(other.labels.size());
     for (const unique_ptr<Label> &label : other.labels) {
         if (label) {
-            labels.push_back(Utils::make_unique_ptr<Label>(label->get_cost()));
+            labels.push_back(utils::make_unique_ptr<Label>(label->get_cost()));
         } else {
             labels.push_back(nullptr);
         }
@@ -37,7 +36,7 @@ void Labels::reduce_labels(const vector<int> &old_label_nos) {
         int old_label_no = old_label_nos[i];
         labels[old_label_no] = nullptr;
     }
-    labels.push_back(Utils::make_unique_ptr<Label>(new_label_cost));
+    labels.push_back(utils::make_unique_ptr<Label>(new_label_cost));
 }
 
 int Labels::compute_number_active_labels() const {
@@ -51,7 +50,7 @@ int Labels::compute_number_active_labels() const {
 }
 
 bool Labels::is_current_label(int label_no) const {
-    assert(Utils::in_bounds(label_no, labels));
+    assert(utils::in_bounds(label_no, labels));
     return labels[label_no] != nullptr;
 }
 

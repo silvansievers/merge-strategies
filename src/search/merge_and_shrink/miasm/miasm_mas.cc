@@ -22,7 +22,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 using namespace mst;
 
 MiasmAbstraction::MiasmAbstraction(const Options &opts)

@@ -9,9 +9,11 @@
 
 #include <set>
 
+namespace options {
 class Options;
+}
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 /**
  * @brief The MIASM merging strategy
  * \nosubgrouping
@@ -19,7 +21,7 @@ namespace MergeAndShrink {
 class MergeMiasm : public MergeStrategy {
 public:
     /** @brief The option-based constructor */
-    MergeMiasm(const Options &opts);
+    MergeMiasm(const options::Options &opts);
     virtual ~MergeMiasm();
 protected:
     /** @name Protected: Options */

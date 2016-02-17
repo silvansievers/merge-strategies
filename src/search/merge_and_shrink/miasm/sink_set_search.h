@@ -19,7 +19,9 @@
 #include <string>
 
 class CausalGraph;
+namespace options {
 class Options;
+}
 
 DECLARE_OPT(double, OptTimeLimit);
 
@@ -98,7 +100,7 @@ DECLARE_ENUM_OPT(EnumPrune);
 
 #undef X
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class MergeMiasm;
 class MiasmAbstraction;
 /**
@@ -130,7 +132,7 @@ protected:
  */
 class SinkSetSearch {
 public:
-    SinkSetSearch(const Options &opts, const std::shared_ptr<AbstractTask> task);
+    SinkSetSearch(const options::Options &opts, const std::shared_ptr<AbstractTask> task);
 public:
     /** @brief used to build the abstraction on a subset */
     MiasmAbstraction *const miasm_abstraction;
@@ -166,7 +168,7 @@ protected:
     const EnumPrune opt_prune;
     //@}
 protected:
-    Utils::Timer timer;
+    utils::Timer timer;
     bool time_limit_exceeded();
     bool memory_limit_exceeded();
 protected:

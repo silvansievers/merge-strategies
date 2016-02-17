@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 ComparatorSortPacking::ComparatorSortPacking(const shared_ptr<AbstractTask> task,
                                              const MiasmExternal &ext_,
                                              const VarSetInfoRegistry *p_si_)

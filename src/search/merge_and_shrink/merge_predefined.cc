@@ -12,9 +12,9 @@
 #include <iostream>
 
 using namespace std;
-using Utils::ExitCode;
+using utils::ExitCode;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class BinaryTree {
     int index;
     BinaryTree *left_child;
@@ -36,7 +36,7 @@ public:
         char &c = tree_string[0];
         if (c == 'y') {
             cerr << "ill-specified string" << endl;
-            Utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::INPUT_ERROR);
         } else if (c == 'x') {
             assert(tree_string.size() > 5); // need to have at least two subtrees
             int parentheses_counter = 1;
@@ -155,11 +155,11 @@ void MergePredefined::initialize(const shared_ptr<AbstractTask> task) {
     if (!merge_order.empty() && static_cast<int>(merge_order.size()) != remaining_merges) {
         cout << remaining_merges << endl;
         cerr << "Invalid size of merge order" << endl;
-        Utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
     if (root && root->compute_size() != remaining_merges) {
         cerr << "Invalid size of merge tree!" << endl;
-        Utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
 }
 
@@ -217,23 +217,23 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     if (parser.dry_run()) {
         if (options.contains("merge_order") && options.contains("merge_tree")) {
             cerr << "Specifying a merge order and a merge tree is not possible!" << endl;
-            Utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::INPUT_ERROR);
         } else if (!options.contains("merge_order") && !options.contains("merge_tree")) {
             cerr << "Neither a merge order nor a merge tree was specified!" << endl;
-            Utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::INPUT_ERROR);
         }
         if (options.contains("merge_order")) {
             vector<vector<int>> merge_order = options.get_list<vector<int>>("merge_order");
             if (merge_order.empty()) {
                 cerr << "Got empty merge order, aborting" << endl;
-                Utils::exit_with(ExitCode::INPUT_ERROR);
+                utils::exit_with(ExitCode::INPUT_ERROR);
             }
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order must contain "
                         "exactly two elements!" << endl;
                     cout << pair << endl;
-                    Utils::exit_with(ExitCode::INPUT_ERROR);
+                    utils::exit_with(ExitCode::INPUT_ERROR);
                 }
             }
         }

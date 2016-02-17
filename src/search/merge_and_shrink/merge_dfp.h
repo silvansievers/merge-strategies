@@ -3,11 +3,13 @@
 
 #include "merge_strategy.h"
 
-class Options;
+namespace options {
 class OptionParser;
+class Options;
+}
 class TaskProxy;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 enum AtomicTSOrder {
     REGULAR,
     INVERSE,
@@ -37,7 +39,7 @@ class MergeDFP : public MergeStrategy {
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:
-    MergeDFP(const Options &options);
+    MergeDFP(const options::Options &options);
     virtual ~MergeDFP() override = default;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
@@ -51,7 +53,7 @@ public:
                                  bool atomic_before_product,
                                  bool randomized_order,
                                  std::vector<int> &ts_order);
-    static void add_options_to_parser(OptionParser &parser, bool dfp_defaults = true);
+    static void add_options_to_parser(options::OptionParser &parser, bool dfp_defaults = true);
 };
 }
 

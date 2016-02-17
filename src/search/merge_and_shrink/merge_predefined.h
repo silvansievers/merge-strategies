@@ -3,9 +3,11 @@
 
 #include "merge_strategy.h"
 
+namespace options {
 class Options;
+}
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class BinaryTree;
 
 class MergePredefined : public MergeStrategy {
@@ -14,7 +16,7 @@ class MergePredefined : public MergeStrategy {
 protected:
     virtual void dump_strategy_specific_options() const override;
 public:
-    explicit MergePredefined(const Options &options);
+    explicit MergePredefined(const options::Options &options);
     virtual ~MergePredefined() override;
     virtual void initialize(const std::shared_ptr<AbstractTask> task);
 

@@ -15,7 +15,7 @@
 class AbstractTask;
 class CausalGraph;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
     ComparatorSortPacking(const std::shared_ptr<AbstractTask> task,

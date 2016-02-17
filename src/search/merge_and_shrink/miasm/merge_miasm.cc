@@ -31,7 +31,7 @@ DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
 
 #undef X
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_enum_option(MiasmInternal::option_key(),
                            MiasmInternal::S(),

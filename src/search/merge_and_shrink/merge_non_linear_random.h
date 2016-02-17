@@ -3,20 +3,22 @@
 
 #include "merge_strategy.h"
 
+namespace options {
 class Options;
-namespace Utils {
+}
+namespace utils {
     class RandomNumberGenerator;
 }
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class MergeNonLinearRandom : public MergeStrategy {
     const int random_seed;
-    std::unique_ptr<Utils::RandomNumberGenerator> rng;
+    std::unique_ptr<utils::RandomNumberGenerator> rng;
     const int shrink_threshold;
 protected:
     virtual void dump_strategy_specific_options() const override;
 public:
-    explicit MergeNonLinearRandom(const Options &options);
+    explicit MergeNonLinearRandom(const options::Options &options);
     virtual ~MergeNonLinearRandom() override = default;
 
     virtual std::pair<int, int> get_next(

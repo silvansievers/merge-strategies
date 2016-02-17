@@ -11,13 +11,14 @@ class AbstractTask;
 class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
+struct Fact;
 class GlobalOperator;
 class GlobalState;
 class IntPacker;
 class StateRegistry;
 class SuccessorGenerator;
 
-namespace Utils {
+namespace utils {
 struct Log;
 class RandomNumberGenerator;
 }
@@ -44,7 +45,7 @@ void verify_no_axioms_no_conditional_effects();
 
 void check_magic(std::istream &in, std::string magic);
 
-bool are_mutex(const std::pair<int, int> &a, const std::pair<int, int> &b);
+bool are_mutex(const Fact &a, const Fact &b);
 
 extern bool g_use_metric;
 extern int g_min_action_cost;
@@ -74,7 +75,7 @@ extern SuccessorGenerator *g_successor_generator;
 extern std::string g_plan_filename;
 extern int g_num_previously_generated_plans;
 extern bool g_is_part_of_anytime_portfolio;
-extern Utils::RandomNumberGenerator g_rng;
+extern utils::RandomNumberGenerator g_rng;
 // Only one global object for now. Could later be changed to use one instance
 // for each problem in this case the method GlobalState::get_id would also have to be
 // changed.
@@ -82,9 +83,9 @@ extern StateRegistry *g_state_registry;
 
 extern const std::shared_ptr<AbstractTask> g_root_task();
 extern std::vector<std::vector<bool>> g_mutex_var_pairs;
-extern std::vector<std::vector<std::set<std::pair<int, int> > > >
+extern std::vector<std::vector<std::set<Fact>>>
 g_inconsistent_facts;
 
-extern Utils::Log g_log;
+extern utils::Log g_log;
 
 #endif

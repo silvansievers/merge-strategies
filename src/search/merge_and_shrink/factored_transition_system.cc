@@ -12,8 +12,7 @@
 
 using namespace std;
 
-
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 FactoredTransitionSystem::FactoredTransitionSystem(
     unique_ptr<Labels> labels,
     vector<unique_ptr<TransitionSystem>> &&transition_systems,
@@ -166,7 +165,7 @@ int FactoredTransitionSystem::merge(int index1, int index2, bool invalidating_me
         transition_systems[index1] = nullptr;
         transition_systems[index2] = nullptr;
         heuristic_representations.push_back(
-            Utils::make_unique_ptr<HeuristicRepresentationMerge>(
+            utils::make_unique_ptr<HeuristicRepresentationMerge>(
                 move(heuristic_representations[index1]),
                 move(heuristic_representations[index2])));
         heuristic_representations[index1] = nullptr;
@@ -174,31 +173,31 @@ int FactoredTransitionSystem::merge(int index1, int index2, bool invalidating_me
     } else {
         unique_ptr<HeuristicRepresentation> hr1 = nullptr;
         if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index1].get())) {
-            hr1 = Utils::make_unique_ptr<HeuristicRepresentationLeaf>(
+            hr1 = utils::make_unique_ptr<HeuristicRepresentationLeaf>(
                 dynamic_cast<HeuristicRepresentationLeaf *>
                     (heuristic_representations[index1].get()));
         } else {
-            hr1 = Utils::make_unique_ptr<HeuristicRepresentationMerge>(
+            hr1 = utils::make_unique_ptr<HeuristicRepresentationMerge>(
                 dynamic_cast<HeuristicRepresentationMerge *>(
                     heuristic_representations[index1].get()));
         }
         unique_ptr<HeuristicRepresentation> hr2 = nullptr;
         if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index2].get())) {
-            hr2 = Utils::make_unique_ptr<HeuristicRepresentationLeaf>(
+            hr2 = utils::make_unique_ptr<HeuristicRepresentationLeaf>(
                         dynamic_cast<HeuristicRepresentationLeaf *>
                         (heuristic_representations[index2].get()));
         } else {
-            hr2 = Utils::make_unique_ptr<HeuristicRepresentationMerge>(
+            hr2 = utils::make_unique_ptr<HeuristicRepresentationMerge>(
                         dynamic_cast<HeuristicRepresentationMerge *>(
                             heuristic_representations[index2].get()));
         }
         heuristic_representations.push_back(
-            Utils::make_unique_ptr<HeuristicRepresentationMerge>(
+            utils::make_unique_ptr<HeuristicRepresentationMerge>(
                 move(hr1),
                 move(hr2)));
     }
     const TransitionSystem &new_ts = *transition_systems.back();
-    distances.push_back(Utils::make_unique_ptr<Distances>(new_ts));
+    distances.push_back(utils::make_unique_ptr<Distances>(new_ts));
     int new_index = transition_systems.size() - 1;
     compute_distances_and_prune(new_index, silent);
     assert(is_component_valid(new_index));
@@ -256,7 +255,7 @@ int FactoredTransitionSystem::get_cost(const State &state) const {
 }
 
 void FactoredTransitionSystem::statistics(int index,
-                                          const Utils::Timer &timer) const {
+                                          const utils::Timer &timer) const {
     assert(is_index_valid(index));
     const TransitionSystem &ts = *transition_systems[index];
     ts.statistics();
@@ -294,21 +293,21 @@ int FactoredTransitionSystem::copy(int index) {
     assert(is_active(index));
     int new_index = transition_systems.size();
     transition_systems.push_back(
-        Utils::make_unique_ptr<TransitionSystem>(*transition_systems[index]));
+        utils::make_unique_ptr<TransitionSystem>(*transition_systems[index]));
 
     unique_ptr<HeuristicRepresentation> hr = nullptr;
     if (dynamic_cast<HeuristicRepresentationLeaf *>(heuristic_representations[index].get())) {
-        hr = Utils::make_unique_ptr<HeuristicRepresentationLeaf>(
+        hr = utils::make_unique_ptr<HeuristicRepresentationLeaf>(
             dynamic_cast<HeuristicRepresentationLeaf *>
                 (heuristic_representations[index].get()));
     } else {
-        hr = Utils::make_unique_ptr<HeuristicRepresentationMerge>(
+        hr = utils::make_unique_ptr<HeuristicRepresentationMerge>(
             dynamic_cast<HeuristicRepresentationMerge *>(
                 heuristic_representations[index].get()));
     }
     heuristic_representations.push_back(move(hr));
 
-    distances.push_back(Utils::make_unique_ptr<Distances>(*transition_systems.back(),
+    distances.push_back(utils::make_unique_ptr<Distances>(*transition_systems.back(),
                                                           *distances[index]));
 
     return new_index;

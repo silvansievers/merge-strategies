@@ -7,8 +7,7 @@
 
 class State;
 
-
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class HeuristicRepresentation {
 protected:
     int domain_size;

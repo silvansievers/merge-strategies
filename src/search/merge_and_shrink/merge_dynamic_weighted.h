@@ -9,10 +9,12 @@
 
 #include <unordered_map>
 
+namespace options {
 class Options;
+}
 class TaskProxy;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 const int NUM_FEATURES = 7;
 
 class Feature {
@@ -303,7 +305,7 @@ class Features {
     void update_min_max(int feature_no, double value);
     double normalize_value(int feature_no, double value) const;
 public:
-    explicit Features(const Options opts);
+    explicit Features(const options::Options opts);
     ~Features();
     void initialize(const TaskProxy &task_proxy);
     void precompute_data(const FactoredTransitionSystem &fts);
@@ -336,7 +338,7 @@ class MergeDynamicWeighted : public MergeStrategy {
 
     virtual void dump_strategy_specific_options() const override;
 public:
-    MergeDynamicWeighted(const Options opts);
+    MergeDynamicWeighted(const options::Options opts);
     virtual ~MergeDynamicWeighted();
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
     virtual std::pair<int, int> get_next(

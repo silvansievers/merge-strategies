@@ -14,11 +14,11 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 MergeNonLinearRandom::MergeNonLinearRandom(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
-      rng(Utils::make_unique_ptr<Utils::RandomNumberGenerator>(random_seed)),
+      rng(utils::make_unique_ptr<utils::RandomNumberGenerator>(random_seed)),
       shrink_threshold(options.get<int>("shrink_threshold")) {
 }
 
@@ -27,7 +27,7 @@ pair<int, int> MergeNonLinearRandom::get_next(
     assert(initialized());
     assert(!done());
 
-    Utils::RandomNumberGenerator &rng_ = *rng;
+    utils::RandomNumberGenerator &rng_ = *rng;
 
     vector<pair<int, int>> possible_noshrink_merges;
     int number_ts = fts.get_size();

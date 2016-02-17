@@ -15,7 +15,7 @@
 class AbstractTask;
 class TaskProxy;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 extern std::size_t combinatorial_size(const std::set<int> &varset,
                                       const TaskProxy &task_proxy);
 

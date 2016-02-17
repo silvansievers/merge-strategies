@@ -8,8 +8,7 @@
 
 using namespace std;
 
-
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 MergeStrategy::MergeStrategy() : remaining_merges(UNINITIALIZED),
     iterations_with_tiebreaking(0), total_tiebreaking_pair_count(0) {
 }

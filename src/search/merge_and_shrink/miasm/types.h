@@ -4,7 +4,7 @@
 #include <set>
 #include <vector>
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 /** Merge-and-Shrink Types */
 namespace mst {
 typedef int var_t;

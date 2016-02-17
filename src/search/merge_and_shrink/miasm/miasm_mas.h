@@ -10,9 +10,11 @@
 #include <vector>
 #include <map>
 
+namespace options {
 class Options;
+}
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class FactoredTransitionSystem;
 class LabelReduction;
 class MergeStrategy;
@@ -28,7 +30,7 @@ class MiasmAbstraction {
     std::shared_ptr<LabelReduction> label_reduction;
     bool built_atomics;
 public:
-    MiasmAbstraction(const Options &opts);
+    MiasmAbstraction(const options::Options &opts);
     static std::string option_key();
     static std::string plugin_key();
 

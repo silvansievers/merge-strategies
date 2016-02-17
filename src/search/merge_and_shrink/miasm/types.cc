@@ -1,5 +1,6 @@
 #include "types.h"
 
+#include "../../abstract_task.h"
 #include "../../globals.h"
 
 #include <limits>
@@ -7,7 +8,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 using namespace mst;
 
 var_set_t mst::singleton(const var_t &var) {
@@ -22,10 +23,10 @@ set<var_set_t> mst::get_mutex_pairs_var() {
     for (size_t u = 0; u < g_inconsistent_facts.size(); ++u) {
         for (size_t value_u = 0; value_u < g_inconsistent_facts[u].size();
              ++value_u) {
-            for (set<pair<int, int> >::iterator
+            for (set<Fact>::iterator
                  i = g_inconsistent_facts[u][value_u].begin();
                  i != g_inconsistent_facts[u][value_u].end(); ++i) {
-                size_t v = i->first;
+                size_t v = i->var;
                 if (u == v)
                     continue;
 
@@ -48,15 +49,15 @@ var_relation_t mst::get_mutex_pairs_relation() {
     for (size_t u = 0; u < g_inconsistent_facts.size(); ++u) {
         for (size_t val_u = 0; val_u < g_inconsistent_facts[u].size();
              ++val_u) {
-            for (set<pair<int, int> >::iterator
+            for (set<Fact>::iterator
                  v_pair = g_inconsistent_facts[u][val_u].begin();
                  v_pair != g_inconsistent_facts[u][val_u].end();
                  ++v_pair) {
                 var_set_t p;
                 p.insert(u);
-                p.insert(v_pair->first);
-                mutex_pair_relation[u][v_pair->first]++;
-                mutex_pair_relation[v_pair->first][u]++;
+                p.insert(v_pair->var);
+                mutex_pair_relation[u][v_pair->var]++;
+                mutex_pair_relation[v_pair->var][u]++;
             }
         }
     }

@@ -3,12 +3,14 @@
 
 #include "merge_strategy.h"
 
+namespace options {
 class Options;
+}
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 class MergeDFP;
 class MergeSCCs : public MergeStrategy {
-    const Options *options;
+    const options::Options *options;
     enum OrderOfSCCs {
         TOPOLOGICAL,
         REVERSE_TOPOLOGICAL,
@@ -41,7 +43,7 @@ class MergeSCCs : public MergeStrategy {
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:
-    MergeSCCs(const Options &options);
+    MergeSCCs(const options::Options &options);
     virtual ~MergeSCCs();
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 

@@ -14,11 +14,11 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 MergeRandom::MergeRandom(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
-      rng(Utils::make_unique_ptr<Utils::RandomNumberGenerator>(random_seed)) {
+      rng(utils::make_unique_ptr<utils::RandomNumberGenerator>(random_seed)) {
 }
 
 pair<int, int> MergeRandom::get_next(
@@ -33,7 +33,7 @@ pair<int, int> MergeRandom::get_next(
         }
     }
 
-    Utils::RandomNumberGenerator &rng_ = *rng;
+    utils::RandomNumberGenerator &rng_ = *rng;
     int number_active_ts = active_count_to_ts_index.size();
     int active_index1 = rng_(number_active_ts);
     int active_index2 = rng_(number_active_ts);
@@ -41,8 +41,8 @@ pair<int, int> MergeRandom::get_next(
         active_index2 = rng_(number_active_ts);
     }
 
-    assert(Utils::in_bounds(active_index1, active_count_to_ts_index));
-    assert(Utils::in_bounds(active_index2, active_count_to_ts_index));
+    assert(utils::in_bounds(active_index1, active_count_to_ts_index));
+    assert(utils::in_bounds(active_index2, active_count_to_ts_index));
     int next_index1 = active_count_to_ts_index[active_index1];
     int next_index2 = active_count_to_ts_index[active_index2];
 

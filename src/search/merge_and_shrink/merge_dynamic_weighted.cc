@@ -17,9 +17,9 @@
 //#include "../utils/rng.h"
 
 using namespace std;
-using Utils::ExitCode;
+using utils::ExitCode;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 const int MINUSINF = numeric_limits<int>::min();
 
 // Helper methods to deal with transition systems
@@ -1047,7 +1047,7 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       randomized_order(opts.get<bool>("randomized_order")) {
     if (use_lr) {
         cerr << "Currently not implemented!" << endl;
-        Utils::exit_with(ExitCode::CRITICAL_ERROR);
+        utils::exit_with(ExitCode::CRITICAL_ERROR);
     }
     features = new Features(opts);
 }
@@ -1343,7 +1343,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         opts.get<int>("w_miasm") == 0 &&
         opts.get<int>("w_mutex") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
-        Utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
 
     if (parser.dry_run())

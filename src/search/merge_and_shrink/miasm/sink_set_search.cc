@@ -22,7 +22,7 @@
 
 using namespace std;
 
-namespace MergeAndShrink {
+namespace merge_and_shrink {
 using namespace mst;
 
 SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> task)
