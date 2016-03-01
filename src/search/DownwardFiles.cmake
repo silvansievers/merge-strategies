@@ -408,6 +408,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_linear.cc
         merge_and_shrink/merge_non_linear_random.cc
         merge_and_shrink/merge_predefined.cc
+        merge_and_shrink/merge_random_linear.cc
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_strategy.cc
