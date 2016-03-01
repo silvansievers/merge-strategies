@@ -68,7 +68,7 @@ pair<int, int> MergeRandomNonLinear::get_next(
         next_index2 = active_count_to_ts_index[active_index2];
     }
     assert(next_index1 != -1);
-    assert(next_index1 != -2);
+    assert(next_index2 != -1);
 
     --remaining_merges;
     return make_pair(next_index1, next_index2);
