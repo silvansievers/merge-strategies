@@ -1,4 +1,4 @@
-#include "merge_non_linear_random.h"
+#include "merge_random_non_linear.h"
 
 #include "factored_transition_system.h"
 #include "transition_system.h"
@@ -15,14 +15,14 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeNonLinearRandom::MergeNonLinearRandom(const Options &options)
+MergeRandomNonLinear::MergeRandomNonLinear(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
       rng(utils::make_unique_ptr<utils::RandomNumberGenerator>(random_seed)),
       shrink_threshold(options.get<int>("shrink_threshold")) {
 }
 
-pair<int, int> MergeNonLinearRandom::get_next(
+pair<int, int> MergeRandomNonLinear::get_next(
     FactoredTransitionSystem &fts) {
     assert(initialized());
     assert(!done());
@@ -74,19 +74,22 @@ pair<int, int> MergeNonLinearRandom::get_next(
     return make_pair(next_index1, next_index2);
 }
 
-void MergeNonLinearRandom::dump_strategy_specific_options() const {
+void MergeRandomNonLinear::dump_strategy_specific_options() const {
     cout << "random seed: " << random_seed << endl;
 }
 
-string MergeNonLinearRandom::name() const {
-    return "non linear random";
+string MergeRandomNonLinear::name() const {
+    return "random non linear";
 }
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.document_synopsis(
-        "Random merge strategy.",
-        "This merge strategy randomly selects the two next transition systems"
-        "to merge.");
+        "Random non-linear merge strategy.",
+        "This merge strategy randomly selects the two next transition systems "
+        "among those that can be merged without shrinking (thus forcing a "
+        "non-linear order on the atomic variables), before randomly "
+        "merging all remaining transition systems once this is no longer "
+        "possible.");
     parser.add_option<int>("random_seed", "random seed", "2015");
     parser.add_option<int>("shrink_threshold", "shrink threshold", "50000");
 
@@ -94,8 +97,8 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<MergeNonLinearRandom>(opts);
+        return make_shared<MergeRandomNonLinear>(opts);
 }
 
-static PluginShared<MergeStrategy> _plugin("merge_non_linear_random", _parse);
+static PluginShared<MergeStrategy> _plugin("merge_random_non_linear", _parse);
 }
