@@ -2,19 +2,20 @@
 
 #include "util.h"
 
-#include "../timer.h"
+#include "../utils/timer.h"
 
 #include <fstream>
 #include <limits>
 
 using namespace std;
 
+namespace landmarks {
 LandmarkFactory::LandmarkFactory(const Options &opts)
     : lm_graph(new LandmarkGraph(opts)) {
 }
 
 LandmarkGraph *LandmarkFactory::compute_lm_graph() {
-    Timer lm_generation_timer;
+    utils::Timer lm_generation_timer;
     generate_landmarks();
 
     // the following replaces the old "build_lm_graph"
@@ -318,7 +319,8 @@ bool LandmarkFactory::interferes(const LandmarkNode *node_a,
             }
 
             // 1. a, b mutex
-            if (are_mutex(a, b))
+            // TODO(issue635): Use Fact struct right away.
+            if (are_mutex(Fact(a.first, a.second), Fact(b.first, b.second)))
                 return true;
 
             // 2. Shared effect e in all operators reaching a, and e, b are mutex
@@ -372,7 +374,7 @@ bool LandmarkFactory::interferes(const LandmarkNode *node_a,
             }
             // Test whether one of the shared effects is inconsistent with b
             for (const auto &eff : shared_eff)
-                if (eff != a && eff != b && are_mutex(eff, b))
+                if (eff != a && eff != b && are_mutex(Fact(eff.first, eff.second), Fact(b.first, b.second)))
                     return true;
         }
 
@@ -774,4 +776,5 @@ void LandmarkFactory::calc_achievers() {
             }
         }
     }
+}
 }

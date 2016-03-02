@@ -5,7 +5,6 @@
 
 class State;
 
-
 namespace potentials {
 /*
   A potential function calculates the sum of potentials in a given state.

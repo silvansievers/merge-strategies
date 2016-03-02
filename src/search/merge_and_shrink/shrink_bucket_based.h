@@ -5,6 +5,11 @@
 
 #include <vector>
 
+namespace options {
+class Options;
+}
+
+namespace merge_and_shrink {
 /* A base class for bucket-based shrink strategies.
 
    A bucket-based strategy partitions the states into an ordered
@@ -22,10 +27,8 @@
    number of buckets, this works out in such a way that the
    high-priority buckets are not abstracted at all, the low-priority
    buckets are abstracted by combining all states in each bucket, and
-   (up to) one bucket "in the middle" is partially abstracted. */
-
-class Options;
-
+   (up to) one bucket "in the middle" is partially abstracted.
+*/
 class ShrinkBucketBased : public ShrinkStrategy {
 protected:
     typedef std::vector<int> Bucket;
@@ -38,18 +41,19 @@ private:
 
 protected:
     virtual void compute_equivalence_relation(
-        std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int index,
         int target,
         StateEquivalenceRelation &equivalence_relation) const override;
     virtual void partition_into_buckets(
-        std::shared_ptr<FactoredTransitionSystem> fts,
+        const FactoredTransitionSystem &fts,
         int index,
         std::vector<Bucket> &buckets) const = 0;
 
 public:
-    explicit ShrinkBucketBased(const Options &opts);
-    virtual ~ShrinkBucketBased();
+    explicit ShrinkBucketBased(const options::Options &opts);
+    virtual ~ShrinkBucketBased() override;
 };
+}
 
 #endif

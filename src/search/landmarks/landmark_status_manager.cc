@@ -2,6 +2,7 @@
 
 using namespace std;
 
+namespace landmarks {
 LandmarkStatusManager::LandmarkStatusManager(LandmarkGraph &graph)
     : lm_graph(graph) {
     do_intersection = true;
@@ -200,4 +201,5 @@ bool LandmarkStatusManager::landmark_is_leaf(const LandmarkNode &node,
     }
     //cout << "all parents are in reached" << endl;
     return true;
+}
 }

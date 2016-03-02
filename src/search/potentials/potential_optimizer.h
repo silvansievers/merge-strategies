@@ -1,15 +1,18 @@
 #ifndef POTENTIALS_POTENTIAL_OPTIMIZER_H
 #define POTENTIALS_POTENTIAL_OPTIMIZER_H
 
-#include "../lp_solver.h"
 #include "../task_proxy.h"
+
+#include "../lp/lp_solver.h"
 
 #include <memory>
 #include <vector>
 
-class Options;
 class State;
 
+namespace options {
+class Options;
+}
 
 namespace potentials {
 class PotentialFunction;
@@ -43,7 +46,7 @@ class PotentialFunction;
 class PotentialOptimizer {
     std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
-    LPSolver lp_solver;
+    lp::LPSolver lp_solver;
     const double max_potential;
     int num_lp_vars;
     std::vector<std::vector<int>> lp_var_ids;
@@ -56,7 +59,7 @@ class PotentialOptimizer {
     void extract_lp_solution();
 
 public:
-    explicit PotentialOptimizer(const Options &opts);
+    explicit PotentialOptimizer(const options::Options &opts);
     ~PotentialOptimizer() = default;
 
     const std::shared_ptr<AbstractTask> get_task() const;

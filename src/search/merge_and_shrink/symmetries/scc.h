@@ -20,6 +20,7 @@
 
 #include <vector>
 
+namespace merge_and_shrink {
 class SCC {
     const std::vector<std::vector<int> > &graph;
 
@@ -38,4 +39,6 @@ public:
     SCC(const std::vector<std::vector<int> > &graph);
     const std::vector<std::vector<int> > &get_result();
 };
+}
+
 #endif

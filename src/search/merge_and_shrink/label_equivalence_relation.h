@@ -1,16 +1,14 @@
 #ifndef MERGE_AND_SHRINK_LABEL_EQUIVALENCE_RELATION_H
 #define MERGE_AND_SHRINK_LABEL_EQUIVALENCE_RELATION_H
 
-#include <limits>
+#include "types.h"
+
 #include <list>
-#include <memory>
+#include <unordered_set>
 #include <vector>
 
-
+namespace merge_and_shrink {
 class Labels;
-
-typedef std::list<int>::iterator LabelIter;
-typedef std::list<int>::const_iterator LabelConstIter;
 
 class LabelGroup {
     /*
@@ -20,40 +18,37 @@ class LabelGroup {
     std::list<int> labels;
     int cost;
 public:
-    LabelGroup()
-    // TODO: duplication of INF in transition_system.h
-        : cost(std::numeric_limits<int>::max()) {
+    LabelGroup() : cost(INF) {
     }
+
     void set_cost(int cost_) {
         cost = cost_;
     }
+
     LabelIter insert(int label) {
         return labels.insert(labels.end(), label);
     }
+
     void erase(LabelIter pos) {
         labels.erase(pos);
     }
+
     void clear() {
         labels.clear();
     }
-    LabelIter begin() {
-        return labels.begin();
-    }
+
     LabelConstIter begin() const {
         return labels.begin();
     }
-    LabelIter end() {
-        return labels.end();
-    }
+
     LabelConstIter end() const {
         return labels.end();
     }
+
     bool empty() const {
         return labels.empty();
     }
-    int size() const {
-        return labels.size();
-    }
+
     int get_cost() const {
         return cost;
     }
@@ -61,10 +56,13 @@ public:
 
 class LabelEquivalenceRelation {
     /*
-      There should only be one instance of Labels at runtime. It is created
-      and managed by MergeAndShrinkHeuristic.
+      This class groups labels together and allows easy acces to the group
+      and position within a group for every label. It is used by the class
+      TransitionSystem to group locally equivalent labels. Label groups
+      have implicit ids defined by their index in grouped_labels.
     */
-    const std::shared_ptr<Labels> labels;
+
+    const Labels &labels;
 
     /*
       NOTE: it is somewhat dangerous to use lists inside vectors and storing
@@ -78,24 +76,46 @@ class LabelEquivalenceRelation {
 
     void add_label_to_group(int group_id, int label_no);
 public:
-    explicit LabelEquivalenceRelation(const std::shared_ptr<Labels> labels);
-    virtual ~LabelEquivalenceRelation() = default;
+    /*
+      Constructs an empty label equivalence relation. It can be filled using
+      the public add_label_group method below.
+    */
+    explicit LabelEquivalenceRelation(const Labels &labels);
+    ~LabelEquivalenceRelation() = default;
 
-    void recompute_group_cost();
-    void replace_labels_by_label(
-        const std::vector<int> &old_label_nos, int new_label_no);
+    /*
+      The given label mappings (from label reduction) contain the new label
+      and the old label that were reduced to the new one.
+
+      If affected_group_ids is not given, then all old labels must have been
+      in the same group before, and the new labels are added to this group.
+      Otherwise, all old labels are removed from their group(s) and the new
+      label is added to a new group. Furthermore, the costs of the affected
+      groups are recomputed.
+    */
+    void apply_label_mapping(
+        const std::vector<std::pair<int, std::vector<int>>> &label_mapping,
+        const std::unordered_set<int> *affected_group_ids = nullptr);
+    // Moves all labels from one goup into the other
     void move_group_into_group(int from_group_id, int to_group_id);
-    bool erase(int label_no);
     int add_label_group(const std::vector<int> &new_labels);
+
+    bool is_empty_group(int group_id) const {
+        return grouped_labels[group_id].empty();
+    }
+
     int get_group_id(int label_no) const {
         return label_to_positions[label_no].first;
     }
+
     int get_size() const {
         return grouped_labels.size();
     }
-    const LabelGroup &operator[](int group_id) {
-        return grouped_labels[group_id];
+
+    const LabelGroup &get_group(int group_id) const {
+        return grouped_labels.at(group_id);
     }
 };
+}
 
 #endif

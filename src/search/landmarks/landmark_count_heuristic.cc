@@ -1,15 +1,20 @@
 #include "landmark_count_heuristic.h"
 
-#include "../lp_solver.h"
 #include "../plugin.h"
 #include "../successor_generator.h"
+
+#include "../lp/lp_solver.h"
+
+#include "../utils/system.h"
 
 #include <cmath>
 #include <limits>
 #include <unordered_map>
 
 using namespace std;
+using utils::ExitCode;
 
+namespace landmarks {
 LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
     : Heuristic(opts),
       lgraph(*opts.get<LandmarkGraph *>("lm_graph")),
@@ -26,19 +31,19 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
         use_cost_sharing = true;
         if (lgraph.is_using_reasonable_orderings()) {
             cerr << "Reasonable orderings should not be used for admissible heuristics" << endl;
-            exit_with(EXIT_INPUT_ERROR);
+            utils::exit_with(ExitCode::INPUT_ERROR);
         } else if (has_axioms()) {
             cerr << "cost partitioning does not support axioms" << endl;
-            exit_with(EXIT_UNSUPPORTED);
+            utils::exit_with(ExitCode::UNSUPPORTED);
         } else if (has_conditional_effects() && !lgraph.supports_conditional_effects()) {
             cerr << "conditional effects not supported by the landmark generation method" << endl;
-            exit_with(EXIT_UNSUPPORTED);
+            utils::exit_with(ExitCode::UNSUPPORTED);
         }
         if (opts.get<bool>("optimal")) {
             lm_cost_assignment = new LandmarkEfficientOptimalSharedCostAssignment(
                 lgraph,
                 OperatorCost(opts.get_enum("cost_type")),
-                LPSolverType(opts.get_enum("lpsolver")));
+                lp::LPSolverType(opts.get_enum("lpsolver")));
         } else {
             lm_cost_assignment = new LandmarkUniformSharedCostAssignment(
                 lgraph, opts.get<bool>("alm"),
@@ -188,9 +193,8 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const GlobalState &state,
         for (size_t j = 0; j < effects.size(); ++j) {
             if (!effects[j].does_fire(state))
                 continue;
-            const pair<int, int> varval = make_pair(effects[j].var,
-                                                    effects[j].val);
-            LandmarkNode *lm_p = lgraph.get_landmark(varval);
+            const Fact fact(effects[j].var, effects[j].val);
+            LandmarkNode *lm_p = lgraph.get_landmark(fact);
             if (lm_p != 0 && landmark_is_interesting(state, reached, *lm_p)) {
                 if (lm_p->disjunctive) {
                     ha_disj.push_back(all_operators[i]);
@@ -318,7 +322,7 @@ static Heuristic *_parse(OptionParser &parser) {
                             "(see OptionCaveats#Using_preferred_operators_"
                             "with_the_lmcount_heuristic)", "false");
     parser.add_option<bool>("alm", "use action landmarks", "true");
-    add_lp_solver_option_to_parser(parser);
+    lp::add_lp_solver_option_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
@@ -330,3 +334,4 @@ static Heuristic *_parse(OptionParser &parser) {
 
 static Plugin<Heuristic> _plugin(
     "lmcount", _parse);
+}

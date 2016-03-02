@@ -1,11 +1,9 @@
 #ifndef MERGE_AND_SHRINK_DISTANCES_H
 #define MERGE_AND_SHRINK_DISTANCES_H
 
-class TransitionSystem;
+#include "types.h"
 
-#include <forward_list>
 #include <vector>
-
 
 /*
   TODO: Possible interface improvements for this class:
@@ -39,6 +37,9 @@ class TransitionSystem;
     usually preserve, wouldn't it be better to invalidate g values
     then?)
 */
+
+namespace merge_and_shrink {
+class TransitionSystem;
 
 class Distances {
     static const int DISTANCE_UNKNOWN = -1;
@@ -77,7 +78,7 @@ public:
       out of date.)
     */
     bool apply_abstraction(
-        const std::vector<std::forward_list<int>> &collapsed_groups);
+        const StateEquivalenceRelation &state_equivalence_relation);
 
     int get_max_f() const { // used by shrink_fh
         return max_f;
@@ -96,5 +97,6 @@ public:
     }
     void dump() const;
 };
+}
 
 #endif

@@ -5,6 +5,7 @@
 
 using namespace std;
 
+namespace merge_and_shrink {
 SCC::SCC(const vector<vector<int> > &graph_)
     : graph(graph_) {
 }
@@ -53,4 +54,5 @@ void SCC::dfs(int vertex) {
         stack.erase(stack.begin() + stack_index, stack.end());
         sccs.push_back(scc);
     }
+}
 }

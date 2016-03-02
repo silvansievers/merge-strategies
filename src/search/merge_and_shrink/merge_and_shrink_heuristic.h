@@ -5,22 +5,28 @@
 
 #include <memory>
 
+namespace utils {
+class Timer;
+}
+
+namespace merge_and_shrink {
 class FactoredTransitionSystem;
-class Labels;
+class LabelReduction;
 class MergeStrategy;
 class ShrinkStrategy;
-class Timer;
 class TransitionSystem;
 
 class MergeAndShrinkHeuristic : public Heuristic {
+    // TODO: when the option parser supports it, the following should become
+    // unique pointers.
     std::shared_ptr<MergeStrategy> merge_strategy;
     std::shared_ptr<ShrinkStrategy> shrink_strategy;
-    std::shared_ptr<Labels> labels;
+    std::shared_ptr<LabelReduction> label_reduction;
     long starting_peak_memory;
     bool debug_transition_systems;
 
-    std::shared_ptr<FactoredTransitionSystem> fts;
-    void build_transition_system(const Timer &timer);
+    std::unique_ptr<FactoredTransitionSystem> fts;
+    void build_transition_system(const utils::Timer &timer);
 
     void report_peak_memory_delta(bool final = false) const;
     void dump_options() const;
@@ -29,8 +35,9 @@ protected:
     virtual void initialize() override;
     virtual int compute_heuristic(const GlobalState &global_state) override;
 public:
-    explicit MergeAndShrinkHeuristic(const Options &opts);
+    explicit MergeAndShrinkHeuristic(const options::Options &opts);
     ~MergeAndShrinkHeuristic() = default;
 };
+}
 
 #endif

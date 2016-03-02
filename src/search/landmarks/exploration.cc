@@ -2,8 +2,9 @@
 #include "../global_operator.h"
 #include "../global_state.h"
 #include "../globals.h"
-#include "../utilities.h"
-#include "../utilities_hash.h"
+
+#include "../utils/collections.h"
+#include "../utils/hash.h"
 
 #include <algorithm>
 #include <cassert>
@@ -11,6 +12,7 @@
 
 using namespace std;
 
+namespace landmarks {
 /* Integration Note: this class is the same as (rich man's) FF heuristic
    (taken from hector branch) except for the following:
    - Added-on functionality for excluding certain operators from the relaxed
@@ -29,7 +31,7 @@ using namespace std;
 */
 
 // Construction and destruction
-Exploration::Exploration(const Options &opts)
+Exploration::Exploration(const options::Options &opts)
     : Heuristic(opts),
       did_write_overflow_warning(false) {
     cout << "Initializing Exploration..." << endl;
@@ -126,18 +128,18 @@ void Exploration::build_unary_operators(const GlobalOperator &op) {
     vector<pair<int, int>> precondition_var_vals1;
 
     for (size_t i = 0; i < preconditions.size(); ++i) {
-        assert(in_bounds(preconditions[i].var, g_variable_domain));
+        assert(utils::in_bounds(preconditions[i].var, g_variable_domain));
         assert(preconditions[i].val >= 0 && preconditions[i].val < g_variable_domain[preconditions[i].var]);
         precondition_var_vals1.push_back(make_pair(preconditions[i].var, preconditions[i].val));
     }
     for (size_t i = 0; i < effects.size(); ++i) {
         vector<pair<int, int>> precondition_var_vals2(precondition_var_vals1);
-        assert(in_bounds(effects[i].var, g_variable_domain));
+        assert(utils::in_bounds(effects[i].var, g_variable_domain));
         assert(effects[i].val >= 0 && effects[i].val < g_variable_domain[effects[i].var]);
         ExProposition *effect = &propositions[effects[i].var][effects[i].val];
         const vector<GlobalCondition> &eff_conds = effects[i].conditions;
         for (size_t j = 0; j < eff_conds.size(); ++j) {
-            assert(in_bounds(eff_conds[j].var, g_variable_domain));
+            assert(utils::in_bounds(eff_conds[j].var, g_variable_domain));
             assert(eff_conds[j].val >= 0 && eff_conds[j].val < g_variable_domain[eff_conds[j].var]);
             precondition_var_vals2.push_back(make_pair(eff_conds[j].var, eff_conds[j].val));
         }
@@ -466,4 +468,5 @@ bool Exploration::plan_for_disj(vector<pair<int, int>> &landmarks,
         }
     }
     return true;
+}
 }

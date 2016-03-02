@@ -15,6 +15,7 @@
 
 using namespace std;
 
+namespace landmarks {
 LandmarkGraph::LandmarkGraph(const Options &opts)
     : exploration(opts.get<Exploration *>("explor")),
       landmarks_count(0), conj_lms(0) {
@@ -45,11 +46,13 @@ void LandmarkGraph::generate_operators_lookups() {
     }
 }
 
-LandmarkNode *LandmarkGraph::get_landmark(const pair<int, int> &prop) const {
+LandmarkNode *LandmarkGraph::get_landmark(const Fact &fact) const {
     /* Return pointer to landmark node that corresponds to the given fact, or 0 if no such
      landmark exists.
      */
     LandmarkNode *node_p = 0;
+    // TODO(issue635): Use Fact struct for landmarks.
+    pair<int, int> prop(fact.var, fact.value);
     auto it = simple_lms_to_nodes.find(prop);
     if (it != simple_lms_to_nodes.end())
         node_p = it->second;
@@ -351,3 +354,4 @@ static PluginTypePlugin<LandmarkGraph> _type_plugin(
     "This page describes how one can specify a new landmark graph instance. "
     "For re-using landmark graphs, see OptionSyntax#Landmark_Predefinitions.\n\n"
     "**Warning:** See OptionCaveats for using cost types with Landmarks");
+}

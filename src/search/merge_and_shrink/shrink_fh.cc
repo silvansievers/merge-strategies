@@ -7,6 +7,9 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/collections.h"
+#include "../utils/markup.h"
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -16,7 +19,7 @@
 
 using namespace std;
 
-
+namespace merge_and_shrink {
 ShrinkFH::ShrinkFH(const Options &opts)
     : ShrinkBucketBased(opts),
       f_start(HighLow(opts.get_enum("shrink_f"))),
@@ -27,12 +30,12 @@ ShrinkFH::~ShrinkFH() {
 }
 
 void ShrinkFH::partition_into_buckets(
-    shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int index,
     vector<Bucket> &buckets) const {
     assert(buckets.empty());
-    const TransitionSystem &ts = fts->get_ts(index);
-    const Distances &distances = fts->get_dist(index);
+    const TransitionSystem &ts = fts.get_ts(index);
+    const Distances &distances = fts.get_dist(index);
     int max_f = distances.get_max_f();
     // Calculate with double to avoid overflow.
     if (static_cast<double>(max_f) * max_f / 2.0 > ts.get_size()) {
@@ -75,11 +78,11 @@ static void collect_f_h_buckets(
 }
 
 void ShrinkFH::ordered_buckets_use_map(
-    shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int index,
     vector<Bucket> &buckets) const {
-    const TransitionSystem &ts = fts->get_ts(index);
-    const Distances &distances = fts->get_dist(index);
+    const TransitionSystem &ts = fts.get_ts(index);
+    const Distances &distances = fts.get_dist(index);
     map<int, map<int, Bucket>> states_by_f_and_h;
     int bucket_count = 0;
     int num_states = ts.get_size();
@@ -109,11 +112,11 @@ void ShrinkFH::ordered_buckets_use_map(
 }
 
 void ShrinkFH::ordered_buckets_use_vector(
-    shared_ptr<FactoredTransitionSystem> fts,
+    const FactoredTransitionSystem &fts,
     int index,
     vector<Bucket> &buckets) const {
-    const TransitionSystem &ts = fts->get_ts(index);
-    const Distances &distances = fts->get_dist(index);
+    const TransitionSystem &ts = fts.get_ts(index);
+    const Distances &distances = fts.get_dist(index);
     vector<vector<Bucket>> states_by_f_and_h;
     states_by_f_and_h.resize(distances.get_max_f() + 1);
     for (int f = 0; f <= distances.get_max_f(); ++f)
@@ -125,8 +128,8 @@ void ShrinkFH::ordered_buckets_use_vector(
         int h = distances.get_goal_distance(state);
         if (g != INF && h != INF) {
             int f = g + h;
-            assert(in_bounds(f, states_by_f_and_h));
-            assert(in_bounds(h, states_by_f_and_h[f]));
+            assert(utils::in_bounds(f, states_by_f_and_h));
+            assert(utils::in_bounds(h, states_by_f_and_h[f]));
             Bucket &bucket = states_by_f_and_h[f][h];
             if (bucket.empty())
                 ++bucket_count;
@@ -167,12 +170,15 @@ void ShrinkFH::dump_strategy_specific_options() const {
 static shared_ptr<ShrinkStrategy>_parse(OptionParser &parser) {
     parser.document_synopsis(
         "f-preserving shrink strategy",
-        "This shrink strategy implements the algorithm described in the paper:\n\n"
-        " * Malte Helmert, Patrik Haslum and Joerg Hoffmann.<<BR>>\n"
-        " [Flexible Abstraction Heuristics for Optimal Sequential Planning "
-        "http://ai.cs.unibas.ch/papers/helmert-et-al-icaps2007.pdf].<<BR>>\n "
-        "In //Proceedings of the Seventeenth International Conference on "
-        "Automated Planning and Scheduling (ICAPS 2007)//, pp. 176-183. 2007. ");
+        "This shrink strategy implements the algorithm described in"
+        " the paper:" + utils::format_paper_reference(
+            {"Malte Helmert", "Patrik Haslum", "Joerg Hoffmann"},
+            "Flexible Abstraction Heuristics for Optimal Sequential Planning",
+            "http://ai.cs.unibas.ch/papers/helmert-et-al-icaps2007.pdf",
+            "Proceedings of the Seventeenth International Conference on"
+            " Automated Planning and Scheduling (ICAPS 2007)",
+            "176-183",
+            "2007"));
     parser.document_note(
         "shrink_fh(max_states=N)",
         "f-preserving shrinking of transition systems "
@@ -210,3 +216,4 @@ static shared_ptr<ShrinkStrategy>_parse(OptionParser &parser) {
 }
 
 static PluginShared<ShrinkStrategy> _plugin("shrink_fh", _parse);
+}

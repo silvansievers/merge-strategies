@@ -5,6 +5,7 @@
 
 #include "../option_parser.h"
 
+namespace merge_and_shrink {
 class MergeSymmetries : public MergeDFP {
     // options
     Options options;
@@ -31,14 +32,15 @@ class MergeSymmetries : public MergeDFP {
 
     void dump_statistics();
 protected:
-    virtual void dump_strategy_specific_options() const;
+    virtual void dump_strategy_specific_options() const override;
 public:
     explicit MergeSymmetries(const Options &options);
     virtual ~MergeSymmetries() {}
-    virtual void initialize(const std::shared_ptr<AbstractTask> task);
+    virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
 
-    virtual std::pair<int, int> get_next(std::shared_ptr<FactoredTransitionSystem> fts);
+    virtual std::pair<int, int> get_next(FactoredTransitionSystem &fts) override;
     virtual std::string name() const;
 };
+}
 
 #endif

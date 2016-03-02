@@ -3,8 +3,10 @@
 
 #include "landmark_factory.h"
 #include "landmark_graph.h"
+
 #include <vector>
 
+namespace landmarks {
 class LandmarkGraphMerged : public LandmarkFactory {
     std::vector<LandmarkGraph *> lm_graphs;
     void generate_landmarks();
@@ -13,5 +15,6 @@ public:
     LandmarkGraphMerged(const Options &opts);
     virtual ~LandmarkGraphMerged();
 };
+}
 
 #endif

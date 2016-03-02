@@ -13,6 +13,7 @@
 
 using namespace std;
 
+namespace merge_and_shrink {
 MergeSymmetries::MergeSymmetries(const Options &options_)
     : MergeDFP(),
       options(options_),
@@ -149,7 +150,7 @@ void MergeSymmetries::initialize(const shared_ptr<AbstractTask> task) {
     }
 }
 
-pair<int, int> MergeSymmetries::get_next(shared_ptr<FactoredTransitionSystem> fts) {
+pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
     assert(!done());
     ++iteration_counter;
 
@@ -201,7 +202,7 @@ pair<int, int> MergeSymmetries::get_next(shared_ptr<FactoredTransitionSystem> ft
             int first = linear_merge_order[0];
             linear_merge_order.erase(linear_merge_order.begin());
             int second = linear_merge_order[0];
-            linear_merge_order[0] = fts->get_size();
+            linear_merge_order[0] = fts.get_size();
             cout << "Next pair (linear strategy): " << first << ", " << second << endl;
             --remaining_merges;
             return make_pair(first, second);
@@ -213,9 +214,9 @@ pair<int, int> MergeSymmetries::get_next(shared_ptr<FactoredTransitionSystem> ft
     }
 
     pair<int, int> next_merge = merge_order.front();
-    if (!fts->is_active(next_merge.first) || !fts->is_active(next_merge.second)) {
+    if (!fts.is_active(next_merge.first) || !fts.is_active(next_merge.second)) {
         cerr << "Problem with the merge strategy: invalid indices" << endl;
-        exit_with(EXIT_CRITICAL_ERROR);
+        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
     merge_order.erase(merge_order.begin());
 
@@ -227,9 +228,9 @@ pair<int, int> MergeSymmetries::get_next(shared_ptr<FactoredTransitionSystem> ft
              it != linear_merge_order.end(); ++it) {
             if (!found_entry && (*it == next_merge.first ||
                                  *it == next_merge.second)) {
-                //cout << "updating entry " << counter << " (" << *it << ")to " << fts->get_size(); << endl;
+                //cout << "updating entry " << counter << " (" << *it << ")to " << fts.get_size(); << endl;
                 found_entry = true;
-                linear_merge_order[counter] = fts->get_size();
+                linear_merge_order[counter] = fts.get_size();
             } else if (found_entry && (*it == next_merge.first ||
                                        *it == next_merge.second)) {
                 //cout << "erasing entry " << counter << " (" << *it << ")" << endl;
@@ -342,12 +343,12 @@ static shared_ptr<MergeStrategy> _parse(OptionParser &parser) {
             && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limit or "
                 "bliss_total_time_budget but not both" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
     if (options.get_enum("symmetries_for_shrinking") == 0
             && options.get_enum("symmetries_for_merging") == 0) {
         cerr << "Please use symmetries at least for shrinking or merging." << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
     if (parser.dry_run())
         return nullptr;
@@ -356,3 +357,4 @@ static shared_ptr<MergeStrategy> _parse(OptionParser &parser) {
 }
 
 static PluginShared<MergeStrategy> _plugin("merge_symmetries", _parse);
+}

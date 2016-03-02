@@ -6,7 +6,6 @@
 
 using namespace std;
 
-
 namespace potentials {
 PotentialMaxHeuristic::PotentialMaxHeuristic(
     const Options &opts,

@@ -8,8 +8,9 @@
 #include "../option_parser.h"
 #include "../plugin.h"
 
-using namespace std;
+#include "../utils/system.h"
 
+using namespace std;
 
 namespace potentials {
 enum class OptimizeFor {

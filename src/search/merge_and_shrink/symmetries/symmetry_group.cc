@@ -7,10 +7,10 @@
 #include "../factored_transition_system.h"
 #include "../transition_system.h"
 
-#include "../../globals.h"
 #include "../../option_parser.h"
-#include "../../timer.h"
-#include "../../utilities.h"
+
+#include "../../utils/system.h"
+#include "../../utils/timer.h"
 
 #include <cassert>
 #include <iostream>
@@ -18,6 +18,7 @@
 
 using namespace std;
 
+namespace merge_and_shrink {
 SymmetryGroup::SymmetryGroup(const Options &options)
     : bliss_limit_reached(false),
       stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
@@ -47,7 +48,7 @@ void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) 
     }
 }
 
-bool SymmetryGroup::find_and_apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
+bool SymmetryGroup::find_and_apply_symmetries(FactoredTransitionSystem &fts,
                                               vector<pair<int, int> > &merge_order) {
     bliss_time = gc->compute_symmetries(fts, this, symmetry_generator_info);
     delete gc;
@@ -83,7 +84,7 @@ bool SymmetryGroup::find_and_apply_symmetries(shared_ptr<FactoredTransitionSyste
         int number_overall_affected_transition_systems = overall_affected_transition_systems.size();
         if (number_overall_affected_transition_systems < 1) {
             cerr << "Something is wrong! The generator is the identity generator." << endl;
-            exit_with(EXIT_CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         if (number_overall_affected_transition_systems == 1) {
             atomic_generators.push_back(generator_index);
@@ -221,7 +222,7 @@ bool SymmetryGroup::find_and_apply_symmetries(shared_ptr<FactoredTransitionSyste
           (when merging for atomic symmetries).
         */
         assert(merge_order.empty());
-        int number_of_transition_systems = fts->get_size();
+        int number_of_transition_systems = fts.get_size();
         int number_of_merges = 0;
         vector<int> merge_linear_indices;
         for (size_t cycle_no = 0; cycle_no < cycles.size(); ++cycle_no) {
@@ -273,9 +274,9 @@ bool SymmetryGroup::find_and_apply_symmetries(shared_ptr<FactoredTransitionSyste
     return applied_symmetries;
 }
 
-void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
+void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
                                      const vector<int> &generator_indices) const {
-    cout << "Creating equivalence relations from symmetries. [t=" << g_timer << "]" << endl;
+    cout << "Creating equivalence relations from symmetries." << endl;
 
     /*
       Create a graph with the nodes being the abstract states of all transition
@@ -294,7 +295,7 @@ void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
     vector<vector<int> > graph(num_abs_and_states, vector<int>());
     for (int index = num_transition_systems; index < num_abs_and_states; ++index) {
         int abs_index = symmetry_generator_info->get_ts_index_by_index(index);
-        if (fts->is_active(abs_index)) {
+        if (fts.is_active(abs_index)) {
             for (size_t i = 0; i < generator_indices.size(); ++i) {
                 if (symmetry_generators[generator_indices[i]]->get_value(abs_index) == abs_index) {
                     /*
@@ -328,10 +329,10 @@ void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
       inclusion of all indices in the graph. They will be skipped when
       shrinking.
     */
-    vector<vector<forward_list<int> > > equivalence_relations(fts->get_size());
-    assert(fts->get_size() == num_transition_systems); // TODO: if so, do not use fts here
-    for (int ts_index = 0; ts_index < fts->get_size(); ++ts_index) {
-        if (fts->is_active(ts_index))
+    vector<StateEquivalenceRelation> equivalence_relations(fts.get_size());
+    assert(fts.get_size() == num_transition_systems); // TODO: if so, do not use fts here
+    for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
+        if (fts.is_active(ts_index))
             equivalence_relations[ts_index].resize(sccs.size());
     }
     for (size_t i = 0; i < sccs.size(); ++i) {
@@ -361,8 +362,8 @@ void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
       all transition systems not affected?
     */
     for (size_t i = sccs.size(); i >= 1; --i) {
-        for (int j = 0; j < fts->get_size(); ++j) {
-            if (fts->is_active(j)) {
+        for (int j = 0; j < fts.get_size(); ++j) {
+            if (fts.is_active(j)) {
                 if (equivalence_relations[j][i - 1].empty()) {
                     equivalence_relations[j].erase(equivalence_relations[j].begin() + i - 1);
                 }
@@ -370,23 +371,24 @@ void SymmetryGroup::apply_symmetries(shared_ptr<FactoredTransitionSystem> fts,
         }
     }
 
-    cout << "Abstracting affected transition systems by the equivalence relations. [t=" << g_timer << "]" << endl;
-    for (int i = 0; i < fts->get_size(); ++i) {
-        if (!fts->is_active(i))
+    cout << "Abstracting affected transition systems by the equivalence relations. " << endl;
+    for (int i = 0; i < fts.get_size(); ++i) {
+        if (!fts.is_active(i))
             continue;
 
-        const TransitionSystem &ts = fts->get_ts(i);
+        const TransitionSystem &ts = fts.get_ts(i);
         int equivalence_relation_size = equivalence_relations[i].size();
         if (equivalence_relation_size > ts.get_size()) {
             cerr << "Equivalence relation larger than transition system!!" << endl;
-            exit_with(EXIT_CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         if (equivalence_relation_size != ts.get_size()) {
-            fts->apply_abstraction(i, equivalence_relations[i]);
+            fts.apply_abstraction(i, equivalence_relations[i]);
 //            cout << transition_systems[i]->tag() << "applying abstraction. " << endl;
         } else {
 //            cout << transition_systems[i]->tag() << "not abstracted due to symmetries." << endl;
         }
     }
-    cout << "Done abstracting. [t=" << g_timer << "]" << endl;
+    cout << "Done abstracting. " << endl;
+}
 }

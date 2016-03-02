@@ -5,8 +5,9 @@
 #include "landmark_graph.h"
 #include "../globals.h"
 
-typedef std::pair<int, int> Fluent;
-typedef std::vector<Fluent> FluentSet;
+namespace landmarks {
+using Fluent = std::pair<int, int>;
+using FluentSet = std::vector<Fluent>;
 
 std::ostream &
 operator<<(std::ostream &os, const Fluent &p);
@@ -144,5 +145,6 @@ private:
                           const FluentSet &superset1, const FluentSet &superset2);
     void print_proposition(const std::pair<int, int> &fluent) const;
 };
+}
 
 #endif

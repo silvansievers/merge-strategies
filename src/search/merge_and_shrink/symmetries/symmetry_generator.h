@@ -11,6 +11,7 @@
   0, ..., #ts - 1, abs-state-0 of ts0, ..., #abs-states of ts0 - 1, abs-state-0 of ts1, ...
   The total range goes from 0 to num_ts_and_states - 1.
 */
+namespace merge_and_shrink {
 struct SymmetryGeneratorInfo {
     int num_transition_systems;
     int num_ts_and_states;
@@ -98,5 +99,6 @@ public:
     void dump_value() const;
     void dump_all() const;
 };
+}
 
 #endif

@@ -23,7 +23,6 @@
 
 // Silvan Sievers
 #include <iostream>
-#include "../utilities.h"
 
 namespace bliss {
 

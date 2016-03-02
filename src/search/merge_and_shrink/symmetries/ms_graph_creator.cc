@@ -3,8 +3,9 @@
 #include "symmetry_generator.h"
 #include "symmetry_group.h"
 
-#include "../labels.h"
 #include "../factored_transition_system.h"
+#include "../label_equivalence_relation.h"
+#include "../labels.h"
 #include "../transition_system.h"
 
 #include "../../bliss/graph.h"
@@ -12,14 +13,15 @@
 
 #include "../../globals.h"
 #include "../../option_parser.h"
-#include "../../timer.h"
-#include "../../utilities.h"
+
+#include "../../utils/timer.h"
 
 #include <cassert>
 #include <iostream>
 
 using namespace std;
 
+namespace merge_and_shrink {
 static void out_of_memory_handler() {
     throw bliss::BlissMemoryOut();
 }
@@ -38,10 +40,10 @@ MSGraphCreator::MSGraphCreator(const Options &options)
 MSGraphCreator::~MSGraphCreator() {
 }
 
-double MSGraphCreator::compute_symmetries(shared_ptr<FactoredTransitionSystem> fts,
+double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
                                           SymmetryGroup *symmetry_group,
                                           SymmetryGeneratorInfo *symmetry_generator_info) {
-    Timer timer;
+    utils::Timer timer;
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
         cout << "Creating the bliss graph..." << timer << endl;
@@ -64,7 +66,7 @@ double MSGraphCreator::compute_symmetries(shared_ptr<FactoredTransitionSystem> f
     return timer();
 }
 
-void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSystem> fts,
+void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem &fts,
                                                  bliss::Digraph &bliss_graph,
                                                  SymmetryGeneratorInfo *symmetry_generator_info) {
     if (debug) {
@@ -83,9 +85,9 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
       system vertices, which depends on the chosen setting and how many active
       transition systems there are.
     */
-    int num_transition_systems = fts->get_size();
+    int num_transition_systems = fts.get_size();
     for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
-        if (stabilize_transition_systems || !fts->is_active(ts_index)) {
+        if (stabilize_transition_systems || !fts.is_active(ts_index)) {
             // Either the transition system is inactive or all transition systems are stabilized.
             node_color_added_val++;
             /*
@@ -122,8 +124,8 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
     symmetry_generator_info->starting_index_by_ts_index.reserve(num_of_nodes);
     for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
         symmetry_generator_info->starting_index_by_ts_index.push_back(num_of_nodes);
-        if (fts->is_active(ts_index)) {
-            const TransitionSystem &ts = fts->get_ts(ts_index);
+        if (fts.is_active(ts_index)) {
+            const TransitionSystem &ts = fts.get_ts(ts_index);
             int num_states = ts.get_size();
             num_of_nodes += num_states;
             for (int state = 0; state < num_states; ++state) {
@@ -151,14 +153,14 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
       In a third step, go over all labels and add a vertex for every active
       label, with a fixed "label color" plus its cost.
     */
-    shared_ptr<Labels> labels = fts->get_labels();
-    int num_labels = labels->get_size();
+    const Labels &labels = fts.get_labels();
+    int num_labels = labels.get_size();
     vector<int> label_to_vertex(num_labels, -1);
     for (int label_no = 0; label_no < num_labels; ++label_no){
-        if (!labels->is_current_label(label_no))
+        if (!labels.is_current_label(label_no))
             continue;
 
-        int label_cost = labels->get_label_cost(label_no);
+        int label_cost = labels.get_label_cost(label_no);
         label_to_vertex[label_no] = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 
         if (debug) {
@@ -181,10 +183,10 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
       edge to their target state vertex.
     */
     for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
-        if (!fts->is_active(ts_index))
+        if (!fts.is_active(ts_index))
             continue;
-        const TransitionSystem &ts = fts->get_ts(ts_index);
-        for (TSConstIterator group_it = ts.begin(); group_it != ts.end(); ++group_it) {
+        const TransitionSystem &ts = fts.get_ts(ts_index);
+        for (const GroupAndTransitions &gat : ts) {
             vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
             bliss_graph.add_edge(ts_index, vertex);
 
@@ -196,16 +198,16 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
                 cout << "    node" << ts_index << " -> node" << vertex << endl;
             }
 
-            for (LabelConstIter label_it = group_it.begin();
-                 label_it != group_it.end(); ++label_it) {
-                bliss_graph.add_edge(label_to_vertex[*label_it], vertex);
+            const LabelGroup &label_group = gat.label_group;
+            for (int label_no : label_group) {
+                bliss_graph.add_edge(label_to_vertex[label_no], vertex);
 
                 if (debug) {
-                    cout << "    node" << label_to_vertex[*label_it] << " -> node" << vertex << ";" << endl;
+                    cout << "    node" << label_to_vertex[label_no] << " -> node" << vertex << ";" << endl;
                 }
             }
 
-            const std::vector<Transition>& transitions = group_it.get_transitions();
+            const vector<Transition>& transitions = gat.transitions;
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(
@@ -234,4 +236,5 @@ void MSGraphCreator::create_bliss_directed_graph(shared_ptr<FactoredTransitionSy
     if (debug) {
         cout << "}" << endl;
     }
+}
 }
