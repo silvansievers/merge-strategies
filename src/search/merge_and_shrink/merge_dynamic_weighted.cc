@@ -1103,7 +1103,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
                         int merge_index = -1;
                         if (features->require_merge()) {
                             // Output for parser
-                            cout << "trying to compute the merge..." << endl;
+//                            cout << "trying to compute the merge..." << endl;
                             copy_ts_index1 = fts.copy(ts_index1);
                             copy_ts_index2 = fts.copy(ts_index2);
                             Options options;
@@ -1116,7 +1116,7 @@ pair<int, int> MergeDynamicWeighted::get_next(
                             shrink_bisim.shrink(fts, copy_ts_index1, copy_ts_index2, true);
                             merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
                             // Output for parser
-                            cout << "...done computing the merge." << endl;
+//                            cout << "...done computing the merge." << endl;
                         }
                         features->precompute_unnormalized_values(fts, ts_index1,
                                                                  ts_index2, merge_index);
