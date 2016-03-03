@@ -27,7 +27,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-merge_and_shrinkHeuristic::merge_and_shrinkHeuristic(const Options &opts)
+MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
     : Heuristic(opts),
       merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
       shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
@@ -45,7 +45,7 @@ merge_and_shrinkHeuristic::merge_and_shrinkHeuristic(const Options &opts)
     }
 }
 
-void merge_and_shrinkHeuristic::report_peak_memory_delta(bool final) const {
+void MergeAndShrinkHeuristic::report_peak_memory_delta(bool final) const {
     if (final)
         cout << "Final";
     else
@@ -55,7 +55,7 @@ void merge_and_shrinkHeuristic::report_peak_memory_delta(bool final) const {
          << endl;
 }
 
-void merge_and_shrinkHeuristic::dump_options() const {
+void MergeAndShrinkHeuristic::dump_options() const {
     merge_strategy->dump_options();
     shrink_strategy->dump_options();
     if (label_reduction) {
@@ -65,7 +65,7 @@ void merge_and_shrinkHeuristic::dump_options() const {
     }
 }
 
-void merge_and_shrinkHeuristic::warn_on_unusual_options() const {
+void MergeAndShrinkHeuristic::warn_on_unusual_options() const {
     string dashes(79, '=');
     if (!label_reduction) {
         cerr << dashes << endl
@@ -100,7 +100,7 @@ void merge_and_shrinkHeuristic::warn_on_unusual_options() const {
     }
 }
 
-void merge_and_shrinkHeuristic::build_transition_system(const utils::Timer &timer) {
+void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer) {
     // TODO: We're leaking memory here in various ways. Fix this.
     //       Don't forget that build_atomic_transition_systems also
     //       allocates memory.
@@ -273,7 +273,7 @@ void merge_and_shrinkHeuristic::build_transition_system(const utils::Timer &time
     label_reduction = nullptr;
 }
 
-void merge_and_shrinkHeuristic::initialize() {
+void MergeAndShrinkHeuristic::initialize() {
     utils::Timer timer;
     cout << "Initializing merge-and-shrink heuristic..." << endl;
     starting_peak_memory = utils::get_peak_memory_in_kb();
@@ -289,7 +289,7 @@ void merge_and_shrinkHeuristic::initialize() {
     cout << endl;
 }
 
-int merge_and_shrinkHeuristic::compute_heuristic(const GlobalState &global_state) {
+int MergeAndShrinkHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     int cost = fts->get_cost(state);
     if (cost == -1)
@@ -372,7 +372,7 @@ static Heuristic *_parse(OptionParser &parser) {
     if (parser.dry_run()) {
         return nullptr;
     } else {
-        return new merge_and_shrinkHeuristic(opts);
+        return new MergeAndShrinkHeuristic(opts);
     }
 }
 

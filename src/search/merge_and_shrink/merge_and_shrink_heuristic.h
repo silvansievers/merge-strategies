@@ -16,7 +16,7 @@ class MergeStrategy;
 class ShrinkStrategy;
 class TransitionSystem;
 
-class merge_and_shrinkHeuristic : public Heuristic {
+class MergeAndShrinkHeuristic : public Heuristic {
     // TODO: when the option parser supports it, the following should become
     // unique pointers.
     std::shared_ptr<MergeStrategy> merge_strategy;
@@ -34,8 +34,8 @@ protected:
     virtual void initialize() override;
     virtual int compute_heuristic(const GlobalState &global_state) override;
 public:
-    explicit merge_and_shrinkHeuristic(const options::Options &opts);
-    ~merge_and_shrinkHeuristic() = default;
+    explicit MergeAndShrinkHeuristic(const options::Options &opts);
+    ~MergeAndShrinkHeuristic() = default;
 };
 }
 
