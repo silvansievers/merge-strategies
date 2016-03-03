@@ -108,6 +108,13 @@ void merge_and_shrinkHeuristic::build_transition_system(const utils::Timer &time
     fts = utils::make_unique_ptr<FactoredTransitionSystem>(
         create_factored_transition_system(task_proxy));
     cout << endl;
+    int maximum_intermediate_size = 0;
+    for (int i = 0; i < fts->get_size(); ++i) {
+        int size = fts->get_ts(i).get_size();
+        if (size > maximum_intermediate_size) {
+            maximum_intermediate_size = size;
+        }
+    }
 
     vector<int> init_hvalue_increase;
     vector<int> remaining_labels;
@@ -164,6 +171,10 @@ void merge_and_shrinkHeuristic::build_transition_system(const utils::Timer &time
 
             // Merging
             final_index = fts->merge(merge_index1, merge_index2);
+            int abs_size = fts->get_ts(final_index).get_size();
+            if (abs_size > maximum_intermediate_size) {
+                maximum_intermediate_size = abs_size;
+            }
             /*
               NOTE: both the shrinking strategy classes and the construction of
               the composite require input transition systems to be solvable.
@@ -199,6 +210,8 @@ void merge_and_shrinkHeuristic::build_transition_system(const utils::Timer &time
         cout << "Abstract problem is unsolvable!" << endl;
     }
 
+    cout << "Maximum intermediate abstraction size: "
+         << maximum_intermediate_size << endl;
     cout << "Init h value improvements: " << init_hvalue_increase << endl;
     cout << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
