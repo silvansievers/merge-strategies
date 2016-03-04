@@ -172,16 +172,18 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
 
             // Merging
             final_index = fts->merge(merge_index1, merge_index2);
-            int abs_size = fts->get_ts(final_index).get_size();
-            if (abs_size > maximum_intermediate_size) {
-                maximum_intermediate_size = abs_size;
-            }
+
             /*
               NOTE: both the shrinking strategy classes and the construction of
               the composite require input transition systems to be solvable.
             */
             if (!fts->is_solvable()) {
                 break;
+            }
+
+            int abs_size = fts->get_ts(final_index).get_size();
+            if (abs_size > maximum_intermediate_size) {
+                maximum_intermediate_size = abs_size;
             }
 
             fts->statistics(final_index, timer);
