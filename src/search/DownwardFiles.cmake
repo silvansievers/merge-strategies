@@ -412,6 +412,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_random_non_linear.cc
         merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_strategy.cc
+        #merge_and_shrink/merge_symmetries.cc
         merge_and_shrink/shrink_bisimulation.cc
         merge_and_shrink/shrink_bucket_based.cc
         merge_and_shrink/shrink_fh.cc
@@ -502,6 +503,34 @@ fast_downward_plugin(
         potentials/single_potential_heuristics.cc
         potentials/util.cc
     DEPENDS LP_SOLVER
+)
+
+fast_downward_plugin(
+    NAME BLISS
+    HELP "Pluging containing the code for computing symmetries with Bliss"
+    SOURCES
+        bliss/bignum.cc
+        bliss/defs.cc
+        bliss/graph.cc
+        bliss/heap.cc
+        bliss/kqueue.cc
+        bliss/kstack.cc
+        bliss/orbit.cc
+        bliss/partition.cc
+        bliss/timer.cc
+        bliss/uintseqhash.cc
+        bliss/utils.cc
+)
+
+fast_downward_plugin(
+    NAME SYMMETRIES
+    HELP "Plugin containing the code for symmetries"
+    SOURCES
+        merge_and_shrink/symmetries/ms_graph_creator.cc
+        merge_and_shrink/symmetries/scc.cc
+        merge_and_shrink/symmetries/symmetry_generator.cc
+        merge_and_shrink/symmetries/symmetry_group.cc
+    DEPENDS BLISS
 )
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
