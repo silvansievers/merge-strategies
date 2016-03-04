@@ -1,13 +1,13 @@
 #include "symmetry_group.h"
 
 #include "ms_graph_creator.h"
-#include "scc.h"
 #include "symmetry_generator.h"
 
 #include "../factored_transition_system.h"
 #include "../transition_system.h"
 
 #include "../../option_parser.h"
+#include "../../scc.h"
 
 #include "../../utils/system.h"
 #include "../../utils/timer.h"

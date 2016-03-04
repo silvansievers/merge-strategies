@@ -392,6 +392,13 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME SCC
+    HELP "Tarjan's algorithm for finding maximal SCCs"
+    SOURCES
+        scc.cc
+)
+
+fast_downward_plugin(
     NAME MAS_HEURISTIC
     HELP "The Merge-and-Shrink heuristic"
     SOURCES
@@ -420,7 +427,6 @@ fast_downward_plugin(
         merge_and_shrink/shrink_strategy.cc
         merge_and_shrink/transition_system.cc
         merge_and_shrink/types.cc
-        scc.cc
         merge_and_shrink/miasm/merge_miasm.cc
         merge_and_shrink/miasm/merge_miasm_parameters.cc
         merge_and_shrink/miasm/merge_tree.cc
@@ -428,6 +434,7 @@ fast_downward_plugin(
         merge_and_shrink/miasm/sink_set_search.cc
         merge_and_shrink/miasm/subset_info.cc
         merge_and_shrink/miasm/types.cc
+    DEPENDS SCC
 )
 
 fast_downward_plugin(
@@ -527,10 +534,9 @@ fast_downward_plugin(
     HELP "Plugin containing the code for symmetries"
     SOURCES
         merge_and_shrink/symmetries/ms_graph_creator.cc
-        merge_and_shrink/symmetries/scc.cc
         merge_and_shrink/symmetries/symmetry_generator.cc
         merge_and_shrink/symmetries/symmetry_group.cc
-    DEPENDS BLISS
+    DEPENDS BLISS SCC
 )
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
