@@ -1,11 +1,11 @@
 #ifndef MERGE_AND_SHRINK_MERGE_MIASM_H
 #define MERGE_AND_SHRINK_MERGE_MIASM_H
 
-#include "merge_miasm_parameters.h"
+#include "merge_strategy.h"
 
-#include "../merge_strategy.h"
+#include "miasm/merge_miasm_parameters.h"
 
-#include "../../option_parser.h"
+#include "../option_parser.h"
 
 #include <set>
 

@@ -1,7 +1,7 @@
 #include "sink_set_search.h"
 
 #include "miasm_mas.h"
-#include "merge_miasm.h"
+#include "../merge_miasm.h"
 
 #include "../factored_transition_system.h"
 #include "../transition_system.h"

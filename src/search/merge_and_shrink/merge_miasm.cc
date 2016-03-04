@@ -1,12 +1,12 @@
 #include "merge_miasm.h"
 
-#include "sink_set_search.h"
-#include "miasm_mas.h"
-#include "merge_tree.h"
+#include "factored_transition_system.h"
 
-#include "../factored_transition_system.h"
+#include "miasm/sink_set_search.h"
+#include "miasm/miasm_mas.h"
+#include "miasm/merge_tree.h"
 
-#include "../../plugin.h"
+#include "../plugin.h"
 
 #include <iostream>
 #include <algorithm>
