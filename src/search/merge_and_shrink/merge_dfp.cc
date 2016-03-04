@@ -221,6 +221,7 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts) {
     assert(!transition_system_order.empty());
     vector<int> sorted_active_ts_indices;
     vector<vector<int>> transition_system_label_ranks;
+    // TODO: we do not need label ranks here, do we?!
     for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
         int ts_index = transition_system_order[tso_index];
         if (fts.is_active(ts_index)) {

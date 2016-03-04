@@ -107,7 +107,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
     //       allocates memory.
 
     fts = utils::make_unique_ptr<FactoredTransitionSystem>(
-        create_factored_transition_system(task_proxy, debug_transition_systems));
+        create_factored_transition_system(task_proxy, true, debug_transition_systems));
     cout << endl;
     int maximum_intermediate_size = 0;
     for (int i = 0; i < fts->get_size(); ++i) {

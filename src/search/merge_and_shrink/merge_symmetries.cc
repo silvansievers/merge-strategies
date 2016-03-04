@@ -1,10 +1,12 @@
 #include "merge_symmetries.h"
 
 #include "factored_transition_system.h"
+#include "merge_linear.h"
+#include "merge_dfp.h"
 
 #include "symmetries/symmetry_group.h"
 
-#include "../globals.h"
+#include "../option_parser.h"
 #include "../plugin.h"
 #include "../variable_order_finder.h"
 
@@ -15,16 +17,21 @@ using namespace std;
 
 namespace merge_and_shrink {
 MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeDFP(),
-      options(options_),
-      max_bliss_iterations(options.get<int>("max_bliss_iterations")),
-      bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
-      bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
-      fallback_strategy(FallbackStrategy(options.get_enum("fallback_strategy"))),
+    : MergeStrategy(),
+      max_bliss_iterations(options_.get<int>("max_bliss_iterations")),
+      bliss_call_time_limit(options_.get<int>("bliss_call_time_limit")),
+      bliss_remaining_time_budget(options_.get<int>("bliss_total_time_budget")),
+      fallback_strategy(FallbackStrategy(options_.get_enum("fallback_strategy"))),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
       pure_fallback_strategy(true) {
+    options = new Options(options_);
+}
+
+MergeSymmetries::~MergeSymmetries() {
+    delete merge_dfp;
+    delete options;
 }
 
 void MergeSymmetries::dump_statistics() {
@@ -57,7 +64,7 @@ void MergeSymmetries::dump_statistics() {
 void MergeSymmetries::dump_strategy_specific_options() const {
     cout << "Options for merge symmetries:" << endl;
     cout << "    symmetries for shrinking: ";
-    int symmetries_for_shrinking = options.get_enum("symmetries_for_shrinking");
+    int symmetries_for_shrinking = options->get_enum("symmetries_for_shrinking");
     switch (symmetries_for_shrinking) {
         case 0: {
             cout << "none";
@@ -74,7 +81,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
     }
     cout << endl;
     cout << "    symmetries for merging: ";
-    int symmetries_for_merging = options.get_enum("symmetries_for_merging");
+    int symmetries_for_merging = options->get_enum("symmetries_for_merging");
     switch (symmetries_for_merging) {
         case 0: {
             cout << "none";
@@ -92,7 +99,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
     cout << endl;
     if (symmetries_for_merging) {
         cout << "    external merging: ";
-        switch (options.get_enum("external_merging")) {
+        switch (options->get_enum("external_merging")) {
             case 0: {
                 cout << "merge for atomic symmetry";
                 break;
@@ -104,7 +111,7 @@ void MergeSymmetries::dump_strategy_specific_options() const {
         }
         cout << endl;
         cout << "    internal merging: ";
-        switch (options.get_enum("internal_merging")) {
+        switch (options->get_enum("internal_merging")) {
             case 0: {
                 cout << "linear";
                 break;
@@ -121,11 +128,11 @@ void MergeSymmetries::dump_strategy_specific_options() const {
     cout << "    time limit for single bliss calls (0 means unlimited): "
          << bliss_call_time_limit << endl;
     cout << "    total time budget for bliss (0 means unlimited): "
-         << options.get<int>("bliss_total_time_budget") << endl;
+         << options->get<int>("bliss_total_time_budget") << endl;
     cout << "    stop searching for symmetries once no symmetry was found: "
-         << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
+         << (options->get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
     cout << "    stabilize transition systems: "
-         << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
+         << (options->get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
     cout << "    fallback merge strategy: ";
     switch (fallback_strategy) {
     case LINEAR:
@@ -139,14 +146,19 @@ void MergeSymmetries::dump_strategy_specific_options() const {
 }
 
 void MergeSymmetries::initialize(const shared_ptr<AbstractTask> task) {
-    MergeDFP::initialize(task);
+    MergeStrategy::initialize(task);
     if (fallback_strategy == LINEAR) {
+        TaskProxy task_proxy(*task);
         VariableOrderFinder order(task,
-                                  VariableOrderType(options.get_enum("variable_order")));
-        linear_merge_order.reserve(g_variable_domain.size());
+                                  VariableOrderType(options->get_enum("variable_order")));
+        linear_merge_order.reserve(task_proxy.get_variables().size());
         while (!order.done()) {
             linear_merge_order.push_back(order.next());
         }
+    } else {
+        assert(fallback_strategy == DFP);
+        merge_dfp = new MergeDFP(*options);
+        merge_dfp->initialize(task);
     }
 }
 
@@ -163,8 +175,8 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
             time_limit = bliss_call_time_limit;
         }
         cout << "Setting bliss time limit to " << time_limit << endl;
-        options.set<double>("bliss_time_limit", time_limit);
-        SymmetryGroup symmetry_group(options);
+        options->set<double>("bliss_time_limit", time_limit);
+        SymmetryGroup symmetry_group(*options);
         bool applied_symmetries =
             symmetry_group.find_and_apply_symmetries(fts, merge_order);
         if (applied_symmetries) {
@@ -207,7 +219,8 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
             --remaining_merges;
             return make_pair(first, second);
         } else if (fallback_strategy == DFP) {
-            return MergeDFP::get_next(fts);
+            --remaining_merges;
+            return merge_dfp->get_next(fts);
         } else {
             ABORT("unknown fallback merge strategy");
         }
@@ -325,18 +338,11 @@ static shared_ptr<MergeStrategy> _parse(OptionParser &parser) {
                            "choose a merge strategy: linear (specify "
                            "variable_order) or dfp.",
                            "dfp");
-    vector<string> variable_order;
-    variable_order.push_back("CG_GOAL_LEVEL");
-    variable_order.push_back("CG_GOAL_RANDOM");
-    variable_order.push_back("GOAL_CG_LEVEL");
-    variable_order.push_back("RANDOM");
-    variable_order.push_back("LEVEL");
-    variable_order.push_back("REVERSE_LEVEL");
-    parser.add_enum_option("variable_order",
-                           variable_order,
-                           "option useful if merge_order = linear. "
-                           "see VariableOrderFinder",
-                           "reverse_level");
+
+    // linear merge strategy option
+    MergeLinear::add_options_to_parser(parser);
+    // dfp merge strategy options
+    MergeDFP::add_options_to_parser(parser);
 
     Options options = parser.parse();
     if (options.get<int>("bliss_call_time_limit")
