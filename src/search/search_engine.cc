@@ -1,16 +1,21 @@
 #include "search_engine.h"
 
-#include "countdown_timer.h"
 #include "evaluation_context.h"
 #include "globals.h"
 #include "operator_cost.h"
 #include "option_parser.h"
+#include "plugin.h"
+
+#include "utils/countdown_timer.h"
+#include "utils/system.h"
+#include "utils/timer.h"
 
 #include <cassert>
 #include <iostream>
 #include <limits>
 
 using namespace std;
+using utils::ExitCode;
 
 
 SearchEngine::SearchEngine(const Options &opts)
@@ -21,7 +26,7 @@ SearchEngine::SearchEngine(const Options &opts)
       max_time(opts.get<double>("max_time")) {
     if (opts.get<int>("bound") < 0) {
         cerr << "error: negative cost bound " << opts.get<int>("bound") << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
     bound = opts.get<int>("bound");
 }
@@ -52,7 +57,7 @@ void SearchEngine::set_plan(const Plan &p) {
 
 void SearchEngine::search() {
     initialize();
-    CountdownTimer timer(max_time);
+    utils::CountdownTimer timer(max_time);
     while (status == IN_PROGRESS) {
         status = step();
         if (timer.is_expired()) {
@@ -62,7 +67,7 @@ void SearchEngine::search() {
         }
     }
     cout << "Actual search time: " << timer
-         << " [t=" << g_timer << "]" << endl;
+         << " [t=" << utils::g_timer << "]" << endl;
 }
 
 bool SearchEngine::check_goal_and_set_plan(const GlobalState &state) {
@@ -104,14 +109,20 @@ void SearchEngine::add_options_to_parser(OptionParser &parser) {
 
 void print_initial_h_values(const EvaluationContext &eval_context) {
     eval_context.get_cache().for_each_heuristic_value(
-        [] (const Heuristic * heur, const EvaluationResult &result) {
-            cout << "Initial heuristic value for "
-                 << heur->get_description() << ": ";
-            if (result.is_infinite())
-                cout << "infinity";
-            else
-                cout << result.get_h_value();
-            cout << endl;
-        }
+        [] (const Heuristic *heur, const EvaluationResult &result) {
+        cout << "Initial heuristic value for "
+             << heur->get_description() << ": ";
+        if (result.is_infinite())
+            cout << "infinity";
+        else
+            cout << result.get_h_value();
+        cout << endl;
+    }
         );
 }
+
+
+static PluginTypePlugin<SearchEngine> _type_plugin(
+    "SearchEngine",
+    // TODO: Replace empty string by synopsis for the wiki page.
+    "");

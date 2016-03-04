@@ -3,31 +3,40 @@
 
 #include "../heuristic.h"
 
-class Labels;
+#include <memory>
+
+namespace utils {
+class Timer;
+}
+
+namespace merge_and_shrink {
+class FactoredTransitionSystem;
+class LabelReduction;
 class MergeStrategy;
 class ShrinkStrategy;
-class Timer;
 class TransitionSystem;
 
 class MergeAndShrinkHeuristic : public Heuristic {
-    MergeStrategy *const merge_strategy;
-    ShrinkStrategy *const shrink_strategy;
-    Labels *labels;
-    const bool use_expensive_statistics;
-    int starting_peak_memory;
+    // TODO: when the option parser supports it, the following should become
+    // unique pointers.
+    std::shared_ptr<MergeStrategy> merge_strategy;
+    std::shared_ptr<ShrinkStrategy> shrink_strategy;
+    std::shared_ptr<LabelReduction> label_reduction;
+    long starting_peak_memory;
 
-    TransitionSystem *final_transition_system;
-    TransitionSystem *build_transition_system(const Timer &timer);
+    std::unique_ptr<FactoredTransitionSystem> fts;
+    void build_transition_system(const utils::Timer &timer);
 
     void report_peak_memory_delta(bool final = false) const;
     void dump_options() const;
     void warn_on_unusual_options() const;
 protected:
-    virtual void initialize();
-    virtual int compute_heuristic(const GlobalState &global_state);
+    virtual void initialize() override;
+    virtual int compute_heuristic(const GlobalState &global_state) override;
 public:
-    MergeAndShrinkHeuristic(const Options &opts);
-    ~MergeAndShrinkHeuristic();
+    explicit MergeAndShrinkHeuristic(const options::Options &opts);
+    ~MergeAndShrinkHeuristic() = default;
 };
+}
 
 #endif

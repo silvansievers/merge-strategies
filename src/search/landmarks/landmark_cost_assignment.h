@@ -2,12 +2,14 @@
 #define LANDMARKS_LANDMARK_COST_ASSIGNMENT_H
 
 #include "../globals.h"
-#include "../lp_solver.h"
 #include "../operator_cost.h"
+
+#include "../lp/lp_solver.h"
 
 #include <set>
 #include <vector>
 
+namespace landmarks {
 class LandmarkGraph;
 class LandmarkNode;
 
@@ -36,22 +38,22 @@ public:
 };
 
 class LandmarkEfficientOptimalSharedCostAssignment : public LandmarkCostAssignment {
-    LPSolver lp_solver;
+    lp::LPSolver lp_solver;
     /*
       We keep the vectors for LP variables and constraints around instead of
       recreating them for every state. The actual constraints have to be
       recreated because the coefficient matrix of the LP changes from state to
       state. Reusing the vectors still saves some dynamic allocation overhead.
      */
-    std::vector<LPVariable> lp_variables;
-    std::vector<LPConstraint> lp_constraints;
-    std::vector<LPConstraint> non_empty_lp_constraints;
+    std::vector<lp::LPVariable> lp_variables;
+    std::vector<lp::LPConstraint> lp_constraints;
+    std::vector<lp::LPConstraint> non_empty_lp_constraints;
 public:
-    LandmarkEfficientOptimalSharedCostAssignment(LandmarkGraph &graph, OperatorCost cost_type, LPSolverType solver_type);
+    LandmarkEfficientOptimalSharedCostAssignment(LandmarkGraph &graph, OperatorCost cost_type, lp::LPSolverType solver_type);
     virtual ~LandmarkEfficientOptimalSharedCostAssignment();
 
     virtual double cost_sharing_h_value();
 };
-
+}
 
 #endif

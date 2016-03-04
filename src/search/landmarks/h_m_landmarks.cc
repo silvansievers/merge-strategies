@@ -1,9 +1,15 @@
 #include "h_m_landmarks.h"
+
 #include "../plugin.h"
-#include "../exact_timer.h"
 
+#include "../utils/collections.h"
+#include "../utils/system.h"
 
-std::ostream & operator<<(std::ostream &os, const Fluent &p) {
+using namespace std;
+using utils::ExitCode;
+
+namespace landmarks {
+std::ostream &operator<<(std::ostream &os, const Fluent &p) {
     return os << "(" << p.first << ", " << p.second << ")";
 }
 
@@ -313,8 +319,8 @@ void HMLandmarks::get_m_sets(int m,
 
 void HMLandmarks::print_proposition(const pair<int, int> &fluent) const {
     cout << g_fact_names[fluent.first][fluent.second]
-    << " (" << g_variable_name[fluent.first] << "(" << fluent.first << ")"
-    << "->" << fluent.second << ")";
+         << " (" << g_variable_name[fluent.first] << "(" << fluent.first << ")"
+         << "->" << fluent.second << ")";
 }
 
 void get_operator_precondition(int op_index, FluentSet &pc) {
@@ -352,7 +358,7 @@ void get_operator_postcondition(int op_index, FluentSet &post) {
 
 void HMLandmarks::print_pm_op(const PMOp &op) {
     std::set<Fluent> pcs, effs, cond_pc, cond_eff;
-    std::vector<std::pair<std::set<Fluent>, std::set<Fluent> > > conds;
+    std::vector<std::pair<std::set<Fluent>, std::set<Fluent>>> conds;
     std::set<Fluent>::iterator it;
 
     std::vector<int>::const_iterator v_it;
@@ -456,7 +462,8 @@ bool HMLandmarks::possible_noop_set(const FluentSet &fs1, const FluentSet &fs2) 
 
     for (fs1it = fs1.begin(); fs1it != fs1.end(); ++fs1it) {
         for (fs2it = fs2.begin(); fs2it != fs2.end(); ++fs2it) {
-            if (are_mutex(make_pair(fs1it->first, fs1it->second), make_pair(fs2it->first, fs2it->second)))
+            // TODO(issue635): Use Fact struct right away.
+            if (are_mutex(Fact(fs1it->first, fs1it->second), Fact(fs2it->first, fs2it->second)))
                 return false;
         }
     }
@@ -577,7 +584,7 @@ void HMLandmarks::build_pm_ops() {
 
 bool HMLandmarks::interesting(int var1, int val1, int var2, int val2) {
     // mutexes can always be safely pruned
-    return !are_mutex(make_pair(var1, val1), make_pair(var2, val2));
+    return !are_mutex(Fact(var1, val1), Fact(var2, val2));
 }
 
 HMLandmarks::HMLandmarks(const Options &opts)
@@ -586,7 +593,7 @@ HMLandmarks::HMLandmarks(const Options &opts)
     std::cout << "H_m_Landmarks(" << m_ << ")" << std::endl;
     if (!g_axioms.empty()) {
         cerr << "H_m_Landmarks do not support axioms" << endl;
-        exit_with(EXIT_UNSUPPORTED);
+        utils::exit_with(ExitCode::UNSUPPORTED);
     }
     // need this to be able to print propositions for debugging
     // already called in global.cc
@@ -598,7 +605,7 @@ HMLandmarks::HMLandmarks(const Options &opts)
 
 void HMLandmarks::init() {
     // get all the m or less size subsets in the domain
-    std::vector<std::vector<Fluent> > msets;
+    std::vector<std::vector<Fluent>> msets;
     get_m_sets(m_, msets);
     //  std::cout << "P^m index\tP fluents" << std::endl;
 
@@ -614,7 +621,7 @@ void HMLandmarks::init() {
          */
     }
     std::cout << "Using " << h_m_table_.size() << " P^m fluents."
-    << std::endl;
+              << std::endl;
 
     // unsatisfied pc counts are now in build pm ops
 
@@ -655,7 +662,10 @@ void HMLandmarks::calc_achievers() {
                     continue;
                 size_t k;
                 for (k = 0; k < post.size(); ++k) {
-                    if (are_mutex(post[k], lm_val)) {
+                    if (are_mutex(
+                            // TODO(issue635): Use Fact struct right away.
+                            Fact(post[k].first, post[k].second),
+                            Fact(lm_val.first, lm_val.second))) {
                         break;
                     }
                 }
@@ -665,7 +675,10 @@ void HMLandmarks::calc_achievers() {
                 for (k = 0; k < pre.size(); ++k) {
                     // we know that lm_val is not added by the operator
                     // so if it incompatible with the pc, this can't be an achiever
-                    if (are_mutex(pre[k], lm_val)) {
+                    if (are_mutex(
+                            // TODO(issue635): Use Fact struct right away.
+                            Fact(pre[k].first, pre[k].second),
+                            Fact(lm_val.first, lm_val.second))) {
                         break;
                     }
                 }
@@ -682,10 +695,10 @@ void HMLandmarks::calc_achievers() {
 }
 
 void HMLandmarks::free_unneeded_memory() {
-    release_vector_memory(h_m_table_);
-    release_vector_memory(pm_ops_);
-    release_vector_memory(interesting_);
-    release_vector_memory(unsat_pc_count_);
+    utils::release_vector_memory(h_m_table_);
+    utils::release_vector_memory(pm_ops_);
+    utils::release_vector_memory(interesting_);
+    utils::release_vector_memory(unsat_pc_count_);
 
     set_indices_.clear();
     lm_node_table_.clear();
@@ -918,7 +931,7 @@ void HMLandmarks::compute_noop_landmarks(
 }
 
 void HMLandmarks::add_lm_node(int set_index, bool goal) {
-    std::set<std::pair<int, int> > lm;
+    std::set<std::pair<int, int>> lm;
 
     std::map<int, LandmarkNode *>::iterator it = lm_node_table_.find(set_index);
 
@@ -1058,3 +1071,4 @@ static LandmarkGraph *_parse(OptionParser &parser) {
 
 static Plugin<LandmarkGraph> _plugin(
     "lm_hm", _parse);
+}

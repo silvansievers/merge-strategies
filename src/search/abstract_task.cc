@@ -4,11 +4,14 @@
 #include "globals.h"
 #include "operator_cost.h"
 #include "option_parser_util.h"
-#include "utilities.h"
+#include "plugin.h"
+
+#include "utils/system.h"
 
 #include <iostream>
 
 using namespace std;
+using utils::ExitCode;
 
 const shared_ptr<AbstractTask> get_task_from_options(const Options &opts) {
     /*
@@ -26,14 +29,14 @@ const shared_ptr<AbstractTask> get_task_from_options(const Options &opts) {
         cerr << "You may specify either the cost_type option (deprecated) or "
              << "use transform=adapt_costs(...) (recommended), but not both."
              << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
     shared_ptr<AbstractTask> task;
     if (opts.contains("transform")) {
-        task = opts.get<shared_ptr<AbstractTask> >("transform");
+        task = opts.get<shared_ptr<AbstractTask>>("transform");
     } else if (cost_type != NORMAL) {
         Options options;
-        options.set<shared_ptr<AbstractTask> >("transform", g_root_task());
+        options.set<shared_ptr<AbstractTask>>("transform", g_root_task());
         options.set<int>("cost_type", cost_type);
         task = make_shared<CostAdaptedTask>(options);
     } else {
@@ -41,3 +44,9 @@ const shared_ptr<AbstractTask> get_task_from_options(const Options &opts) {
     }
     return task;
 }
+
+
+static PluginTypePlugin<AbstractTask> _type_plugin(
+    "AbstractTask",
+    // TODO: Replace empty string by synopsis for the wiki page.
+    "");

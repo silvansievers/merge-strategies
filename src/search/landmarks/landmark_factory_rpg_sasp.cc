@@ -3,20 +3,75 @@
 #include "landmark_graph.h"
 #include "util.h"
 
-#include "../domain_transition_graph.h"
 #include "../global_operator.h"
 #include "../global_state.h"
 #include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../task_proxy.h"
+
+#include "../utils/system.h"
 
 #include <cassert>
 #include <limits>
 
 using namespace std;
+using utils::ExitCode;
 
+namespace landmarks {
 LandmarkFactoryRpgSasp::LandmarkFactoryRpgSasp(const Options &opts)
     : LandmarkFactory(opts) {
+}
+
+void LandmarkFactoryRpgSasp::build_dtg_successors() {
+    // TODO: use given task proxy once this class is adapted for abstract tasks
+    const std::shared_ptr<AbstractTask> task(g_root_task());
+    TaskProxy task_proxy(*task);
+
+    // resize data structure
+    VariablesProxy variables = task_proxy.get_variables();
+    dtg_successors.resize(variables.size());
+    for (VariableProxy var : variables)
+        dtg_successors[var.get_id()].resize(var.get_domain_size());
+
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        // build map for precondition
+        std::unordered_map<int, int> precondition;
+        for (FactProxy pre : op.get_preconditions())
+            precondition[pre.get_variable().get_id()] = pre.get_value();
+
+        for (EffectProxy eff : op.get_effects()) {
+            // build map for effect condition
+            std::unordered_map<int, int> eff_condition;
+            for (FactProxy cond : eff.get_conditions())
+                eff_condition[cond.get_variable().get_id()] = cond.get_value();
+
+            // whenever the operator can change the value of a variable from pre to
+            // post, we insert post into dtg_successors[var_id][pre]
+            FactProxy fact = eff.get_fact();
+            int var_id = fact.get_variable().get_id();
+            int post = fact.get_value();
+            if (precondition.count(var_id)) {
+                int pre = precondition[var_id];
+                if (eff_condition.count(var_id) && eff_condition[var_id] != pre)
+                    continue; // confliction pre- and effect condition
+                add_dtg_successor(var_id, pre, post);
+            } else {
+                if (eff_condition.count(var_id)) {
+                    add_dtg_successor(var_id, eff_condition[var_id], post);
+                } else {
+                    int dom_size = fact.get_variable().get_domain_size();
+                    for (int pre = 0; pre < dom_size; ++pre)
+                        add_dtg_successor(var_id, pre, post);
+                }
+            }
+        }
+    }
+}
+
+void LandmarkFactoryRpgSasp::add_dtg_successor(int var_id, int pre, int post) {
+    if (pre != post)
+        dtg_successors[var_id][pre].insert(post);
 }
 
 void LandmarkFactoryRpgSasp::get_greedy_preconditions_for_lm(
@@ -88,7 +143,7 @@ void LandmarkFactoryRpgSasp::get_greedy_preconditions_for_lm(
 }
 
 int LandmarkFactoryRpgSasp::min_cost_for_landmark(LandmarkNode *bp, vector<vector<
-                                                                               int> > &lvl_var) {
+                                                                               int>> &lvl_var) {
     int min_cost = numeric_limits<int>::max();
     // For each proposition in bp...
     for (size_t i = 0; i < bp->vars.size(); ++i) {
@@ -121,7 +176,7 @@ void LandmarkFactoryRpgSasp::found_simple_lm_and_order(const pair<int, int> a,
         edge_add(*new_lm, b, t);
         return;
     }
-    set<pair<int, int> > a_set;
+    set<pair<int, int>> a_set;
     a_set.insert(a);
     if (lm_graph->disj_landmark_exists(a_set)) {
         // Simple landmarks are more informative than disjunctive ones,
@@ -172,12 +227,12 @@ void LandmarkFactoryRpgSasp::found_simple_lm_and_order(const pair<int, int> a,
     }
 }
 
-void LandmarkFactoryRpgSasp::found_disj_lm_and_order(const set<pair<int, int> > a,
+void LandmarkFactoryRpgSasp::found_disj_lm_and_order(const set<pair<int, int>> a,
                                                      LandmarkNode &b, edge_type t) {
     bool simple_lm_exists = false;
     pair<int, int> lm_prop;
     const GlobalState &initial_state = g_initial_state();
-    for (set<pair<int, int> >::iterator it = a.begin(); it != a.end(); ++it) {
+    for (set<pair<int, int>>::iterator it = a.begin(); it != a.end(); ++it) {
         if (initial_state[it->first] == it->second) {
             //cout << endl << "not adding LM that's true in initial state: "
             //<< g_variable_name[it->first] << " -> " << it->second << endl;
@@ -211,7 +266,7 @@ void LandmarkFactoryRpgSasp::found_disj_lm_and_order(const set<pair<int, int> > 
 }
 
 void LandmarkFactoryRpgSasp::compute_shared_preconditions(
-    unordered_map<int, int> &shared_pre, vector<vector<int> > &lvl_var,
+    unordered_map<int, int> &shared_pre, vector<vector<int>> &lvl_var,
     LandmarkNode *bp) {
     /* Compute the shared preconditions of all operators that can potentially
      achieve landmark bp, given lvl_var (reachability in relaxed planning graph) */
@@ -252,7 +307,7 @@ static string get_predicate_for_fact(int var_no, int value) {
     if (predicate_pos == 0 || paren_pos == string::npos) {
         cerr << "error: cannot extract predicate from fact: "
              << fact_name << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
     return string(fact_name.begin() + predicate_pos, fact_name.begin() + paren_pos);
 }
@@ -304,7 +359,7 @@ void LandmarkFactoryRpgSasp::build_disjunction_classes() {
 }
 
 void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<int,
-                                                                               int> > > &disjunctive_pre, vector<vector<int> > &lvl_var,
+                                                                               int>>> &disjunctive_pre, vector<vector<int>> &lvl_var,
                                                                LandmarkNode *bp) {
     /* Compute disjunctive preconditions from all operators than can potentially
      achieve landmark bp, given lvl_var (reachability in relaxed planning graph).
@@ -320,9 +375,9 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
             ops.push_back(tmp_ops[j]);
     }
     int num_ops = 0;
-    unordered_map<int, vector<pair<int, int> > > preconditions; // maps from
+    unordered_map<int, vector<pair<int, int>>> preconditions;   // maps from
     // pddl_proposition_indeces to props
-    unordered_map<int, set<int> > used_operators; // tells for each
+    unordered_map<int, set<int>> used_operators;  // tells for each
     // proposition which operators use it
     for (size_t i = 0; i < ops.size(); ++i) {
         const GlobalOperator &op = lm_graph->get_operator_for_lookup_index(ops[i]);
@@ -349,7 +404,7 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
     }
     for (const auto &pre : preconditions) {
         if (static_cast<int>(used_operators[pre.first].size()) == num_ops) {
-            set<pair<int, int> > pre_set; // the set gets rid of duplicate predicates
+            set<pair<int, int>> pre_set;  // the set gets rid of duplicate predicates
             pre_set.insert(pre.second.begin(), pre.second.end());
             if (pre_set.size() > 1) { // otherwise this LM is not actually a disjunctive LM
                 disjunctive_pre.push_back(pre_set);
@@ -360,6 +415,7 @@ void LandmarkFactoryRpgSasp::compute_disjunctive_preconditions(vector<set<pair<i
 
 void LandmarkFactoryRpgSasp::generate_landmarks() {
     cout << "Generating landmarks using the RPG/SAS+ approach\n";
+    build_dtg_successors();
     build_disjunction_classes();
 
     for (size_t i = 0; i < g_goal.size(); ++i) {
@@ -378,8 +434,8 @@ void LandmarkFactoryRpgSasp::generate_landmarks() {
             // Firstly, collect information about the earliest possible time step in a
             // relaxed plan that propositions are achieved (in lvl_var) and operators
             // applied (in lvl_ops).
-            vector<vector<int> > lvl_var;
-            vector<unordered_map<pair<int, int>, int> > lvl_op;
+            vector<vector<int>> lvl_var;
+            vector<unordered_map<pair<int, int>, int>> lvl_op;
             compute_predecessor_information(bp, lvl_var, lvl_op);
             // Use this information to determine all operators that can possibly achieve bp
             // for the first time, and collect any precondition propositions that all such
@@ -396,7 +452,7 @@ void LandmarkFactoryRpgSasp::generate_landmarks() {
             bp->min_cost = min_cost_for_landmark(bp, lvl_var);
 
             // Process achieving operators again to find disj. LMs
-            vector<set<pair<int, int> > > disjunctive_pre;
+            vector<set<pair<int, int>>> disjunctive_pre;
             compute_disjunctive_preconditions(disjunctive_pre, lvl_var, bp);
             for (size_t i = 0; i < disjunctive_pre.size(); ++i)
                 if (disjunctive_pre[i].size() < 5) { // We don't want disj. LMs to get too big
@@ -409,7 +465,7 @@ void LandmarkFactoryRpgSasp::generate_landmarks() {
 }
 
 void LandmarkFactoryRpgSasp::approximate_lookahead_orders(
-    const vector<vector<int> > &lvl_var, LandmarkNode *lmp) {
+    const vector<vector<int>> &lvl_var, LandmarkNode *lmp) {
     // Find all var-val pairs that can only be reached after the landmark
     // (according to relaxed plan graph as captured in lvl_var)
     // the result is saved in the node member variable forward_orders, and will be
@@ -454,36 +510,36 @@ bool LandmarkFactoryRpgSasp::domain_connectivity(const pair<int, int> &landmark,
      is crucial for achieving the landmark (i.e. is on every path to the LM).
      */
     const GlobalState &initial_state = g_initial_state();
-    assert(landmark.second != initial_state[landmark.first]); // no initial state landmarks
+    int var = landmark.first;
+    assert(landmark.second != initial_state[var]); // no initial state landmarks
     // The value that we want to achieve must not be excluded:
     assert(exclude.find(landmark.second) == exclude.end());
     // If the value in the initial state is excluded, we won't achieve our goal value:
-    if (exclude.find(initial_state[landmark.first]) != exclude.end())
+    if (exclude.find(initial_state[var]) != exclude.end())
         return false;
     list<int> open;
-    unordered_set<int> closed(g_variable_domain[landmark.first]);
+    unordered_set<int> closed(g_variable_domain[var]);
     closed = exclude;
-    open.push_back(initial_state[landmark.first]);
-    closed.insert(initial_state[landmark.first]);
+    open.push_back(initial_state[var]);
+    closed.insert(initial_state[var]);
+    const vector<std::unordered_set<int>> &successors = dtg_successors[var];
     while (closed.find(landmark.second) == closed.end()) {
         if (open.empty()) // landmark not in closed and nothing more to insert
             return false;
         const int c = open.front();
         open.pop_front();
-        vector<int> succ;
-        g_transition_graphs[landmark.first]->get_successors(c, succ);
-        for (size_t i = 0; i < succ.size(); ++i)
-            if (closed.find(succ[i]) == closed.end()) {
-                open.push_back(succ[i]);
-                closed.insert(succ[i]);
+        for (int val : successors[c]) {
+            if (closed.find(val) == closed.end()) {
+                open.push_back(val);
+                closed.insert(val);
             }
-
+        }
     }
     return true;
 }
 
 void LandmarkFactoryRpgSasp::find_forward_orders(
-    const vector<vector<int> > &lvl_var, LandmarkNode *lmp) {
+    const vector<vector<int>> &lvl_var, LandmarkNode *lmp) {
     /* lmp is ordered before any var-val pair that cannot be reached before lmp according to
      relaxed planning graph (as captured in lvl_var).
      These orders are saved in the node member variable "forward_orders".
@@ -563,3 +619,4 @@ static LandmarkGraph *_parse(OptionParser &parser) {
 }
 
 static Plugin<LandmarkGraph> _plugin("lm_rhw", _parse);
+}

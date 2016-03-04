@@ -1,18 +1,23 @@
 #include "shrink_strategy.h"
 
+#include "factored_transition_system.h"
 #include "transition_system.h"
 
 #include "../option_parser.h"
-#include "../utilities.h"
+#include "../plugin.h"
+
+#include "../utils/math.h"
+#include "../utils/system.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <limits>
 
 using namespace std;
+using utils::ExitCode;
 
+namespace merge_and_shrink {
 ShrinkStrategy::ShrinkStrategy(const Options &opts)
     : max_states(opts.get<int>("max_states")),
       max_states_before_merge(opts.get<int>("max_states_before_merge")),
@@ -25,35 +30,25 @@ ShrinkStrategy::ShrinkStrategy(const Options &opts)
 ShrinkStrategy::~ShrinkStrategy() {
 }
 
-bool ShrinkStrategy::abstract_transition_system(TransitionSystem &ts, int new_size) {
+bool ShrinkStrategy::shrink_transition_system(
+    FactoredTransitionSystem &fts,
+    int index,
+    int new_size) const {
+    const TransitionSystem &ts = fts.get_ts(index);
     assert(ts.is_solvable());
-    /*
-      If the current size of the transition is larger than the given
-      new_size or the threshold shrink_threshold_before_merge, then the
-      shrink strategy computes an abstraction of size at most new_size.
-
-      This means that if the current size of the transition system already
-      respects the imposed limit new_size but is larger than the threshold
-      parameter, the shrink strategy nevertheless computes an abstraction
-      (of size at most new_size). This can be useful for the bisimulation
-      shrink strategy which may compute a perfect bisimulation also in cases
-      where the size limit would not require to shrink the transition system.
-    */
     int num_states = ts.get_size();
     if (num_states > min(new_size, shrink_threshold_before_merge)) {
         cout << ts.tag() << "current size: " << num_states;
         if (new_size < num_states)
             cout << " (new size limit: " << new_size;
-        else {
-            assert(shrink_threshold_before_merge < num_states);
+        else
             cout << " (shrink threshold: " << shrink_threshold_before_merge;
-        }
         cout << ")" << endl;
         StateEquivalenceRelation equivalence_relation;
-        shrink(ts, new_size, equivalence_relation);
+        compute_equivalence_relation(fts, index, new_size, equivalence_relation);
         // TODO: We currently violate this; see issue250
         //assert(equivalence_relation.size() <= new_size);
-        return ts.apply_abstraction(equivalence_relation);
+        return fts.apply_abstraction(index, equivalence_relation);
     }
     return false;
 }
@@ -65,7 +60,7 @@ pair<size_t, size_t> ShrinkStrategy::compute_shrink_sizes(
     size_t new_size1 = min(size1, max_before_merge);
     size_t new_size2 = min(size2, max_before_merge);
 
-    if (!is_product_within_limit(new_size1, new_size2, max_states)) {
+    if (!utils::is_product_within_limit(new_size1, new_size2, max_states)) {
         size_t balanced_size = size_t(sqrt(max_states));
 
         if (new_size1 <= balanced_size) {
@@ -94,8 +89,11 @@ pair<size_t, size_t> ShrinkStrategy::compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
-pair<bool, bool> ShrinkStrategy::shrink_before_merge(TransitionSystem &ts1,
-                                                     TransitionSystem &ts2) {
+pair<bool, bool> ShrinkStrategy::shrink(FactoredTransitionSystem &fts,
+                                        int index1,
+                                        int index2) const {
+    const TransitionSystem &ts1 = fts.get_ts(index1);
+    const TransitionSystem &ts2 = fts.get_ts(index2);
     /*
       Compute the size limit for both transition systems as imposed by
       max_states and max_states_before_merge.
@@ -106,9 +104,12 @@ pair<bool, bool> ShrinkStrategy::shrink_before_merge(TransitionSystem &ts1,
     /*
       For both transition systems, possibly compute and apply an
       abstraction.
+      TODO: we could better use the given limit by increasing the size limit
+      for the second shrinking if the first shrinking was larger than
+      required.
     */
-    bool shrunk2 = abstract_transition_system(ts2, new_sizes.second);
-    bool shrunk1 = abstract_transition_system(ts1, new_sizes.first);
+    bool shrunk1 = shrink_transition_system(fts, index1, new_sizes.first);
+    bool shrunk2 = shrink_transition_system(fts, index2, new_sizes.second);
     return make_pair(shrunk1, shrunk2);
 }
 
@@ -160,10 +161,10 @@ void ShrinkStrategy::handle_option_defaults(Options &opts) {
         max_states_before_merge = max_states;
     } else if (max_states == -1) {
         int n = max_states_before_merge;
-        if (is_product_within_limit(n, n, numeric_limits<int>::max())) {
+        if (utils::is_product_within_limit(n, n, INF)) {
             max_states = n * n;
         } else {
-            max_states = numeric_limits<int>::max();
+            max_states = INF;
         }
     }
 
@@ -175,13 +176,13 @@ void ShrinkStrategy::handle_option_defaults(Options &opts) {
 
     if (max_states < 1) {
         cerr << "error: transition system size must be at least 1" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
 
     if (max_states_before_merge < 1) {
         cerr << "error: transition system size before merge must be at least 1"
              << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
 
     if (threshold == -1) {
@@ -189,7 +190,7 @@ void ShrinkStrategy::handle_option_defaults(Options &opts) {
     }
     if (threshold < 1) {
         cerr << "error: threshold must be at least 1" << endl;
-        exit_with(EXIT_INPUT_ERROR);
+        utils::exit_with(ExitCode::INPUT_ERROR);
     }
     if (threshold > max_states) {
         cerr << "warning: threshold exceeds max_states, correcting" << endl;
@@ -199,4 +200,15 @@ void ShrinkStrategy::handle_option_defaults(Options &opts) {
     opts.set<int>("max_states", max_states);
     opts.set<int>("max_states_before_merge", max_states_before_merge);
     opts.set<int>("threshold", threshold);
+}
+
+
+static PluginTypePlugin<ShrinkStrategy> _type_plugin(
+    "ShrinkStrategy",
+    /*
+      TODO: Replace by better documentation. The text below is just
+      to test the plug-in feature.
+    */
+    "This page describes the various shrink strategies supported "
+    "by the planner.");
 }

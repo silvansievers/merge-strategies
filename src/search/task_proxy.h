@@ -2,7 +2,9 @@
 #define TASK_PROXY_H
 
 #include "abstract_task.h"
-#include "utilities.h"
+
+#include "utils/hash.h"
+#include "utils/system.h"
 
 #include <cassert>
 #include <cstddef>
@@ -125,29 +127,33 @@ inline ProxyIterator<ProxyCollection> end(ProxyCollection &collection) {
 
 class FactProxy {
     const AbstractTask *task;
-    int var_id;
-    int value;
+    Fact fact;
 public:
     FactProxy(const AbstractTask &task, int var_id, int value);
+    FactProxy(const AbstractTask &task, const Fact &fact);
     ~FactProxy() = default;
 
     VariableProxy get_variable() const;
 
     int get_value() const {
-        return value;
+        return fact.value;
     }
 
     const std::string &get_name() const {
-        return task->get_fact_name(var_id, value);
+        return task->get_fact_name(fact);
     }
 
-    bool operator==(FactProxy const &other) const {
+    bool operator==(const FactProxy &other) const {
         assert(task == other.task);
-        return var_id == other.var_id && value == other.value;
+        return fact == other.fact;
     }
 
-    bool operator!=(FactProxy other) const {
+    bool operator!=(const FactProxy &other) const {
         return !(*this == other);
+    }
+
+    bool is_mutex(const FactProxy &other) const {
+        return task->are_facts_mutex(fact, other.fact);
     }
 };
 
@@ -301,9 +307,8 @@ public:
 
     FactProxy operator[](std::size_t fact_index) const override {
         assert(fact_index < size());
-        std::pair<int, int> fact =
-            task->get_operator_precondition(op_index, fact_index, is_axiom);
-        return FactProxy(*task, fact.first, fact.second);
+        return FactProxy(*task, task->get_operator_precondition(
+                             op_index, fact_index, is_axiom));
     }
 };
 
@@ -324,9 +329,8 @@ public:
 
     FactProxy operator[](std::size_t index) const override {
         assert(index < size());
-        std::pair<int, int> fact =
-            task->get_operator_effect_condition(op_index, eff_index, index, is_axiom);
-        return FactProxy(*task, fact.first, fact.second);
+        return FactProxy(*task, task->get_operator_effect_condition(
+                             op_index, eff_index, index, is_axiom));
     }
 };
 
@@ -346,9 +350,8 @@ public:
     }
 
     FactProxy get_fact() const {
-        std::pair<int, int> fact =
-            task->get_operator_effect(op_index, eff_index, is_axiom);
-        return FactProxy(*task, fact.first, fact.second);
+        return FactProxy(*task, task->get_operator_effect(
+                             op_index, eff_index, is_axiom));
     }
 };
 
@@ -480,8 +483,7 @@ public:
 
     FactProxy operator[](std::size_t index) const override {
         assert(index < size());
-        std::pair<int, int> fact = task->get_goal_fact(index);
-        return FactProxy(*task, fact.first, fact.second);
+        return FactProxy(*task, task->get_goal_fact(index));
     }
 };
 
@@ -494,23 +496,37 @@ class State {
     std::vector<int> values;
 public:
     using ItemType = FactProxy;
-    State(const AbstractTask &task, std::vector<int> && values)
+    State(const AbstractTask &task, std::vector<int> &&values)
         : task(&task), values(std::move(values)) {
         assert(static_cast<int>(size()) == this->task->get_num_variables());
     }
     ~State() = default;
     State(const State &) = default;
 
-    State(State && other)
+    State(State &&other)
         : task(other.task), values(std::move(other.values)) {
         other.task = nullptr;
     }
 
-    State &operator=(const State && other) {
+    State &operator=(const State &&other) {
         if (this != &other) {
             values = std::move(other.values);
         }
         return *this;
+    }
+
+    bool operator==(const State &other) const {
+        assert(task == other.task);
+        return values == other.values;
+    }
+
+    bool operator!=(const State &other) const {
+        return !(*this == other);
+    }
+
+    std::size_t hash() const {
+        std::hash<std::vector<int>> hasher;
+        return hasher(values);
     }
 
     std::size_t size() const {
@@ -542,6 +558,16 @@ public:
         return State(*task, std::move(new_values));
     }
 };
+
+
+namespace std {
+template<>
+struct hash<State> {
+    size_t operator()(const State &state) const {
+        return state.hash();
+    }
+};
+}
 
 
 class TaskProxy {
@@ -579,15 +605,19 @@ public:
 };
 
 
+inline FactProxy::FactProxy(const AbstractTask &task, const Fact &fact)
+    : task(&task), fact(fact) {
+    assert(fact.var >= 0 && fact.var < task.get_num_variables());
+    assert(fact.value >= 0 && fact.value < get_variable().get_domain_size());
+}
+
 inline FactProxy::FactProxy(const AbstractTask &task, int var_id, int value)
-    : task(&task), var_id(var_id), value(value) {
-    assert(var_id >= 0 && var_id < task.get_num_variables());
-    assert(value >= 0 && value < get_variable().get_domain_size());
+    : FactProxy(task, Fact(var_id, value)) {
 }
 
 
 inline VariableProxy FactProxy::get_variable() const {
-    return VariableProxy(*task, var_id);
+    return VariableProxy(*task, fact.var);
 }
 
 inline bool does_fire(EffectProxy effect, const State &state) {

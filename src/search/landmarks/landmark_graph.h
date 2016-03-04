@@ -1,6 +1,13 @@
 #ifndef LANDMARKS_LANDMARK_GRAPH_H
 #define LANDMARKS_LANDMARK_GRAPH_H
 
+#include "exploration.h"
+
+#include "../global_operator.h"
+#include "../option_parser.h"
+
+#include "../utils/hash.h"
+
 #include <cassert>
 #include <list>
 #include <map>
@@ -9,12 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "exploration.h"
-#include "landmark_types.h"
-#include "../global_operator.h"
-#include "../option_parser.h"
-#include "../utilities_hash.h"
-
+namespace landmarks {
 enum edge_type {
     /* NOTE: The code relies on the fact that larger numbers are
        stronger in the sense that, e.g., every greedy-necessary
@@ -54,7 +56,7 @@ public:
     landmark_status status;
     bool is_derived;
 
-    std::unordered_set<std::pair<int, int> > forward_orders;
+    std::unordered_set<std::pair<int, int>> forward_orders;
     std::set<int> first_achievers;
     std::set<int> possible_achievers;
 
@@ -132,7 +134,7 @@ public:
     LandmarkNode *get_lm_for_index(int);
     int get_needed_cost() const {return needed_cost; }
     int get_reached_cost() const {return reached_cost; }
-    LandmarkNode *get_landmark(const std::pair<int, int> &prop) const;
+    LandmarkNode *get_landmark(const Fact &fact) const;
 
     // TODO: the following method should not exist. Ideally, we want the
     // information about support for conditional effects to reside in the
@@ -157,7 +159,23 @@ public:
         assert(landmarks_count == static_cast<int>(nodes.size()));
         return landmarks_count;
     }
-    Exploration *get_exploration() const {return exploration; }
+
+    Exploration *get_exploration() const {
+        assert(exploration);
+        return exploration;
+    }
+
+    /*
+      The CEGAR code creates a landmark graph with an exploration that
+      goes out of scope after the graph has been created. To safeguard
+      against code that accidentally accesses the exploration, we
+      explicitly invalidate it and assert that we never return an
+      invalidated exploration above.
+    */
+    void invalidate_exploration_for_cegar() {
+        exploration = nullptr;
+    }
+
     bool is_using_reasonable_orderings() const {return reasonable_orders; }
 
     // ------------------------------------------------------------------------------
@@ -198,13 +216,13 @@ public:
     }
 
     bool simple_landmark_exists(const std::pair<int, int> &lm) const; // not needed by HMLandmark
-    bool disj_landmark_exists(const std::set<std::pair<int, int> > &lm) const; // not needed by HMLandmark
+    bool disj_landmark_exists(const std::set<std::pair<int, int>> &lm) const;  // not needed by HMLandmark
     bool landmark_exists(const std::pair<int, int> &lm) const; // not needed by HMLandmark
-    bool exact_same_disj_landmark_exists(const std::set<std::pair<int, int> > &lm) const;
+    bool exact_same_disj_landmark_exists(const std::set<std::pair<int, int>> &lm) const;
 
     LandmarkNode &landmark_add_simple(const std::pair<int, int> &lm);
-    LandmarkNode &landmark_add_disjunctive(const std::set<std::pair<int, int> > &lm);
-    LandmarkNode &landmark_add_conjunctive(const std::set<std::pair<int, int> > &lm);
+    LandmarkNode &landmark_add_disjunctive(const std::set<std::pair<int, int>> &lm);
+    LandmarkNode &landmark_add_conjunctive(const std::set<std::pair<int, int>> &lm);
     void rm_landmark_node(LandmarkNode *node);
     LandmarkNode &make_disj_node_simple(std::pair<int, int> lm); // only needed by LandmarkFactorySasp
     void set_landmark_ids();
@@ -232,7 +250,8 @@ private:
     std::unordered_map<std::pair<int, int>, LandmarkNode *> disj_lms_to_nodes;
     std::set<LandmarkNode *> nodes;
     std::vector<LandmarkNode *> ordered_nodes;
-    std::vector<std::vector<std::vector<int> > > operators_eff_lookup;
+    std::vector<std::vector<std::vector<int>>> operators_eff_lookup;
 };
+}
 
 #endif

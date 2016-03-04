@@ -2,6 +2,7 @@
 #define HEURISTIC_H
 
 #include "operator_cost.h"
+#include "per_state_information.h"
 #include "scalar_evaluator.h"
 #include "task_proxy.h"
 
@@ -10,11 +11,20 @@
 
 class GlobalOperator;
 class GlobalState;
-class OptionParser;
-class Options;
 class TaskProxy;
 
+namespace options {
+class OptionParser;
+class Options;
+}
+
 class Heuristic : public ScalarEvaluator {
+    struct HEntry {
+        int h : 31;
+        bool dirty : 1;
+        HEntry(int h, bool dirty) : h(h), dirty(dirty) {}
+    };
+
     std::string description;
     bool initialized;
 
@@ -31,13 +41,23 @@ class Heuristic : public ScalarEvaluator {
     */
     std::vector<const GlobalOperator *> preferred_operators;
 protected:
+    /*
+      Cache for saving h values
+      Before accessing this cache always make sure that the cache_h_values
+      flag is set to true - as soon as the cache is accessed it will create
+      entries for all existing states
+    */
+    PerStateInformation<HEntry> heuristic_cache;
+    bool cache_h_values;
+
     // Hold a reference to the task implementation and pass it to objects that need it.
     const std::shared_ptr<AbstractTask> task;
     // Use task_proxy to access task information.
     TaskProxy task_proxy;
     OperatorCost cost_type;
-    enum {DEAD_END = -1};
+    enum {DEAD_END = -1, NO_VALUE = -2};
     virtual void initialize() {}
+    bool is_initialized() const {return initialized; }
     // TODO: Call with State directly once all heuristics support it.
     virtual int compute_heuristic(const GlobalState &state) = 0;
     // Usage note: It's OK to set the same operator as preferred
@@ -52,7 +72,7 @@ protected:
     State convert_global_state(const GlobalState &global_state) const;
 
 public:
-    Heuristic(const Options &options);
+    Heuristic(const options::Options &options);
     virtual ~Heuristic() override;
 
     virtual bool reach_state(
@@ -65,13 +85,16 @@ public:
 
     OperatorCost get_cost_type() const {return cost_type; }
 
-    static void add_options_to_parser(OptionParser &parser);
-    static Options default_options();
+    static void add_options_to_parser(options::OptionParser &parser);
+    static options::Options default_options();
 
     virtual EvaluationResult compute_result(
         EvaluationContext &eval_context) override;
 
     std::string get_description() const;
+    bool is_h_dirty(GlobalState &state) {
+        return heuristic_cache[state].dirty;
+    }
 };
 
 #endif

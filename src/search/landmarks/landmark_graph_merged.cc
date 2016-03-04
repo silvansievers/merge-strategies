@@ -1,9 +1,16 @@
 #include "landmark_graph_merged.h"
+
 #include "../option_parser.h"
 #include "../plugin.h"
 
+#include "../utils/system.h"
+
 #include <set>
 
+using namespace std;
+using utils::ExitCode;
+
+namespace landmarks {
 LandmarkGraphMerged::LandmarkGraphMerged(const Options &opts)
     : LandmarkFactory(opts),
       lm_graphs(opts.get_list<LandmarkGraph *>("lm_graphs")) {
@@ -20,7 +27,7 @@ LandmarkNode *LandmarkGraphMerged::get_matching_landmark(const LandmarkNode &lm)
         else
             return 0;
     } else if (lm.disjunctive) {
-        set<pair<int, int> > lm_facts;
+        set<pair<int, int>> lm_facts;
         for (size_t i = 0; i < lm.vars.size(); ++i) {
             lm_facts.insert(make_pair(lm.vars[i], lm.vals[i]));
         }
@@ -30,7 +37,7 @@ LandmarkNode *LandmarkGraphMerged::get_matching_landmark(const LandmarkNode &lm)
             return 0;
     } else if (lm.conjunctive) {
         cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-        exit_with(EXIT_UNSUPPORTED);
+        utils::exit_with(ExitCode::UNSUPPORTED);
     }
     return 0;
 }
@@ -59,7 +66,7 @@ void LandmarkGraphMerged::generate_landmarks() {
         for (it = nodes.begin(); it != nodes.end(); ++it) {
             const LandmarkNode &node = **it;
             if (node.disjunctive) {
-                set<pair<int, int> > lm_facts;
+                set<pair<int, int>> lm_facts;
                 bool exists = false;
                 for (size_t j = 0; j < node.vars.size(); ++j) {
                     pair<int, int> lm_fact = make_pair(node.vars[j], node.vals[j]);
@@ -75,7 +82,7 @@ void LandmarkGraphMerged::generate_landmarks() {
                 }
             } else if (node.conjunctive) {
                 cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-                exit_with(EXIT_UNSUPPORTED);
+                utils::exit_with(ExitCode::UNSUPPORTED);
             }
         }
     }
@@ -150,3 +157,4 @@ static LandmarkGraph *_parse(OptionParser &parser) {
 
 static Plugin<LandmarkGraph> _plugin(
     "lm_merged", _parse);
+}
