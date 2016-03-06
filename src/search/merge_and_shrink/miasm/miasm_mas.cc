@@ -44,7 +44,7 @@ string MiasmAbstraction::option_key() {
 }
 
 string MiasmAbstraction::plugin_key() {
-    return "merge_and_shrink";
+    return "miasm_merge_and_shrink";
 }
 
 void MiasmAbstraction::release_cache(const var_set_t &var_set) {
