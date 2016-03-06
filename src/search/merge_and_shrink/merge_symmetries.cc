@@ -221,11 +221,8 @@ void MergeSymmetries::update_miasm_merge_tree(
     FactoredTransitionSystem &fts,
     const pair<int, int> &next_merge) {
     tree<set<int>> &merge_tree = miasm_merge_tree->get_tree();
-    // Upate merge tree:
-//    cout << "tree before update" << endl;
-//    cout << miasm_merge_tree << endl;
 
-    // 1) Find the two indices in the tree
+    // Find the two indices in the tree
     int first_index = next_merge.first;
     int second_index = next_merge.second;
     tree<set<int>>::pre_order_iterator *first_index_it = 0;
@@ -260,8 +257,6 @@ void MergeSymmetries::update_miasm_merge_tree(
         assert(*first_index_it != root);
         assert(*second_index_it != root);
 
-        // TODO: probably need to find existing node fts.get_size(); or is it in parent?
-
         tree<set<int>>::pre_order_iterator *chosen_survivor_node;
         if (*first_index_it == root) {
             chosen_survivor_node = first_index_it;
@@ -273,34 +268,30 @@ void MergeSymmetries::update_miasm_merge_tree(
             chosen_survivor_node = second_index_it;
         } else {
             int random = g_rng(2);
-            cout << "random: " << random << endl;
             chosen_survivor_node = (random ? second_index_it : first_index_it);
         }
         tree<set<int>>::pre_order_iterator *to_be_erased_node =
                 (chosen_survivor_node == first_index_it ? second_index_it : first_index_it);
-//        cout << "chosen survivor: " << *((*chosen_survivor_node)->begin())
-//             << " with depth " << tree.depth(*chosen_survivor_node) << endl;
-//        cout << "chosen to be deleted: " << *((*to_be_erased_node)->begin())
-//             << " with depth " << tree.depth(*to_be_erased_node) << endl;
 
         assert(merge_tree.depth(*to_be_erased_node) >= 2);
 
         // update survivor node
         (*chosen_survivor_node)->clear();
-        (*chosen_survivor_node)->insert(fts.get_size());
+        (*chosen_survivor_node)->insert(merged_index);
 
-        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parent = merge_tree.parent(*to_be_erased_node);
-        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parents_parent = merge_tree.parent(to_be_erased_nodes_parent);
-        merge_tree.erase((*to_be_erased_node));
+        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parent
+            = merge_tree.parent(*to_be_erased_node);
+        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parents_parent
+            = merge_tree.parent(to_be_erased_nodes_parent);
+        merge_tree.erase(*to_be_erased_node);
+        // move all children of to_be_erased_nodes_parent to be children of
+        // to_be_erased_nodes_parents_parent
         merge_tree.reparent(to_be_erased_nodes_parents_parent, to_be_erased_nodes_parent);
         merge_tree.erase(to_be_erased_nodes_parent);
     }
 
     delete first_index_it;
     delete second_index_it;
-
-//    cout << "tree after update" << endl;
-//    cout << miasm_merge_tree << endl;
 }
 
 pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
@@ -369,8 +360,6 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
             ABORT("unknown fallback merge strategy");
         }
     }
-
-    assert(false);
 
     pair<int, int> next_merge = merge_order.front();
     if (!fts.is_active(next_merge.first) || !fts.is_active(next_merge.second)) {
