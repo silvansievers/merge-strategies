@@ -32,6 +32,9 @@ class MergeTree {
 public:
     void get_order(std::vector<std::pair<int, int> > &merge_next_, int num_vars);
     int get_slot(const tree<std::set<int> >::iterator ti);
+    tree<std::set<int>> &get_tree() {
+        return merge_tree;
+    }
 protected:
     tree<std::set<int> > merge_tree;
     int slot_count;

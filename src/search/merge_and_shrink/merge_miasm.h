@@ -14,6 +14,8 @@ class Options;
 }
 
 namespace merge_and_shrink {
+class MiasmMergeTree;
+
 /**
  * @brief The MIASM merging strategy
  * \nosubgrouping
@@ -54,11 +56,13 @@ public:
     virtual std::pair<int, int> get_next(
         FactoredTransitionSystem &fts) override;
     virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
+    MiasmMergeTree *compute_merge_tree(const std::shared_ptr<AbstractTask> task);
     /**
      * The greedy method for computing the maximal weighted packing of
      * the family of subsets
      */
     void greedy_max_set_packing();
+    static void add_options_to_parser(OptionParser &parser);
 };
 }
 

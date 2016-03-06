@@ -9,6 +9,7 @@ class Options;
 
 namespace merge_and_shrink {
 class MergeDFP;
+class MiasmMergeTree;
 
 class MergeSymmetries : public MergeStrategy {
     options::Options *options;
@@ -18,7 +19,8 @@ class MergeSymmetries : public MergeStrategy {
 
     enum FallbackStrategy {
         LINEAR,
-        DFP
+        DFP,
+        MIASM
     };
     FallbackStrategy fallback_strategy;
 
@@ -33,8 +35,13 @@ class MergeSymmetries : public MergeStrategy {
 
     std::vector<int> linear_merge_order;
     MergeDFP *merge_dfp;
+    MiasmMergeTree *miasm_merge_tree;
 
     void dump_statistics();
+    std::pair<int, int> get_next_miasm(FactoredTransitionSystem &fts);
+    void update_miasm_merge_tree(
+        FactoredTransitionSystem &fts,
+        const std::pair<int, int> &next_merge);
 protected:
     virtual void dump_strategy_specific_options() const override;
 public:

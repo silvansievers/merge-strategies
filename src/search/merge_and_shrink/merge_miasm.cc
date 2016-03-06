@@ -32,7 +32,7 @@ DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
 #undef X
 
 namespace merge_and_shrink {
-static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
+void MergeMiasm::add_options_to_parser(OptionParser &parser) {
     parser.add_enum_option(MiasmInternal::option_key(),
                            MiasmInternal::S(),
                            "",
@@ -82,6 +82,10 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.add_enum_option(EnumPrune::option_key(), EnumPrune::S(),
                            "",
                            EnumPrune::default_value());
+}
+
+static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
+    MergeMiasm::add_options_to_parser(parser);
 
     Options opts = parser.parse();
 
@@ -144,6 +148,27 @@ void MergeMiasm::initialize(const shared_ptr<AbstractTask> task) {
      * for the convenience of of the generic MergeStrategy::get_next
      * function */
     miasm_tree.get_order(miasm_next, TaskProxy(*task).get_variables().size());
+}
+
+MiasmMergeTree *MergeMiasm::compute_merge_tree(const shared_ptr<AbstractTask> task) {
+    /* search for sink sets */
+    SinkSetSearch sink_set_search(options, task);
+    sink_set_search.search();
+    sink_set_search.get_sink_set(sink_sets);
+
+    sink_set_search.miasm_abstraction->release_cache();
+
+    /* find the maximal weighted set packing of the priority sets */
+    greedy_max_set_packing();
+//    cerr << "max packing" << max_packing << endl;
+    /* construct the merge tree based on the max packing
+     * using the internal and external merging strategy
+     * specified in the options for the current MIASM */
+    MiasmMergeTree *miasm_tree = new MiasmMergeTree(
+        max_packing, miasm_internal, miasm_external,
+        sink_set_search.get_vsir(),
+        task);
+    return miasm_tree;
 }
 
 string MergeMiasm::name() const {
