@@ -44,10 +44,11 @@ void MergeMiasm::add_options_to_parser(OptionParser &parser) {
                            MiasmExternal::default_value());
 
     //SinkSetSearch options
+    // this is a required option, even if it is optional for the option parser
     parser.add_option<MiasmAbstraction *>(
         MiasmAbstraction::option_key(),
         "",
-        "miasm_merge_and_shrink(shrink_strategy=shrink_bisimulation(max_states=50000,threshold=1,greedy=false),merge_strategy=merge_dfp,label_reduction=exact(before_shrinking=true,before_merging=false))");
+        OptionParser::NONE);
 
     parser.add_option<double>(OptTimeLimit::opt_key(),
                               "",

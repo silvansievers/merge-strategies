@@ -26,9 +26,7 @@ namespace merge_and_shrink {
 using namespace mst;
 
 SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> task)
-    : miasm_abstraction(
-          opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key())),
-      task(task),
+    : task(task),
       task_proxy(*task),
       causal_graph(task_proxy.get_causal_graph()),
       time_limit(opts.get<double>(OptTimeLimit::opt_key())),
@@ -42,6 +40,12 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
       pq(ComparatorSTLPriorityQueue(task, &vsir, &opt_prior)) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
 //    dump_options(cerr, "\n    ");
+    if (!opts.contains(MiasmAbstraction::option_key())) {
+        cerr << "Must specify 'miasm_merge_and_shrink' option for merge_miasm" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+    } else {
+        miasm_abstraction = opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key());
+    }
 }
 
 bool SinkSetSearch::time_limit_exceeded() {
