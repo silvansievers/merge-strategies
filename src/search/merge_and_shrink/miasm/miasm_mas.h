@@ -16,18 +16,17 @@ class Options;
 
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
-class LabelReduction;
-class MergeStrategy;
-class ShrinkStrategy;
-class TransitionSystem;
+//class LabelReduction;
+//class MergeStrategy;
+//class ShrinkStrategy;
 class VarSetInfoRegistry;
 
 class MiasmAbstraction {
     const std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
-    std::shared_ptr<MergeStrategy> merge_strategy;
-    std::shared_ptr<ShrinkStrategy> shrink_strategy;
-    std::shared_ptr<LabelReduction> label_reduction;
+//    std::shared_ptr<MergeStrategy> merge_strategy;
+//    std::shared_ptr<ShrinkStrategy> shrink_strategy;
+//    std::shared_ptr<LabelReduction> label_reduction;
     bool built_atomics;
 public:
     MiasmAbstraction(const options::Options &opts);

@@ -28,15 +28,15 @@ using namespace mst;
 MiasmAbstraction::MiasmAbstraction(const Options &opts)
     : task(get_task_from_options(opts)),
       task_proxy(*task),
-      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
-      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+//      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
+//      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       built_atomics(false),
       fts(nullptr) {
-    merge_strategy->initialize(task);
-    if (opts.contains("label_reduction")) {
-        label_reduction = opts.get<shared_ptr<LabelReduction>>("label_reduction");
-        label_reduction->initialize(task_proxy);
-    }
+//    merge_strategy->initialize(task);
+//    if (opts.contains("label_reduction")) {
+//        label_reduction = opts.get<shared_ptr<LabelReduction>>("label_reduction");
+//        label_reduction->initialize(task_proxy);
+//    }
 }
 
 string MiasmAbstraction::option_key() {
@@ -152,24 +152,24 @@ int MiasmAbstraction::build_transition_system(
 
 static MiasmAbstraction *_parse(OptionParser &parser) {
     // Merge strategy option.
-    parser.add_option<shared_ptr<MergeStrategy>>(
-        "merge_strategy",
-        "See detailed documentation for merge strategies. "
-        "We currently recommend merge_dfp.");
+//    parser.add_option<shared_ptr<MergeStrategy>>(
+//        "merge_strategy",
+//        "See detailed documentation for merge strategies. "
+//        "We currently recommend merge_dfp.");
 
-    // Shrink strategy option.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "See detailed documentation for shrink strategies. "
-        "We currently recommend shrink_bisimulation.");
+//    // Shrink strategy option.
+//    parser.add_option<shared_ptr<ShrinkStrategy>>(
+//        "shrink_strategy",
+//        "See detailed documentation for shrink strategies. "
+//        "We currently recommend shrink_bisimulation.");
 
     // Label reduction option.
-    parser.add_option<shared_ptr<LabelReduction>>(
-        "label_reduction",
-        "See detailed documentation for labels. There is currently only "
-        "one 'option' to use label_reduction. Also note the interaction "
-        "with shrink strategies.",
-        OptionParser::NONE);
+//    parser.add_option<shared_ptr<LabelReduction>>(
+//        "label_reduction",
+//        "See detailed documentation for labels. There is currently only "
+//        "one 'option' to use label_reduction. Also note the interaction "
+//        "with shrink strategies.",
+//        OptionParser::NONE);
 
     // For AbstractTask
     Heuristic::add_options_to_parser(parser);

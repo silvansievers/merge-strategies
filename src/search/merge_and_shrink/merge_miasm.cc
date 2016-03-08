@@ -43,8 +43,12 @@ void MergeMiasm::add_options_to_parser(OptionParser &parser) {
                            "",
                            MiasmExternal::default_value());
 
-    //SinkSetSearch options
-    // this is a required option, even if it is optional for the option parser
+    /*
+      SinkSetSearch options
+      This is a required option, even if it is optional for the option parser.
+      This is for merge_symmetries, to avoid creating a MiasmAbstraction if
+      miasm is not the fallback strategy.
+    */
     parser.add_option<MiasmAbstraction *>(
         MiasmAbstraction::option_key(),
         "",
