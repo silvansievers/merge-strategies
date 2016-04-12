@@ -49,11 +49,11 @@ void MergeSCCs::initialize(const std::shared_ptr<AbstractTask> task) {
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
 
-    if (internal_merge_order == DFP1 || merged_sccs_merge_order == DFP2) {
+    if (internal_merge_order == InternalMergeOrder::DFP || merged_sccs_merge_order == MergedSCCsMergeOrder::DFP) {
         merge_dfp = new MergeDFP(*options);
         merge_dfp->initialize(task);
     }
-    if (internal_merge_order == LINEAR1 || merged_sccs_merge_order == LINEAR2) {
+    if (internal_merge_order == InternalMergeOrder::LINEAR || merged_sccs_merge_order == MergedSCCsMergeOrder::LINEAR) {
         VariableOrderFinder vof(task, VariableOrderType(options->get_enum("variable_order")));
         linear_variable_order.reserve(num_vars);
         while (!vof.done()) {
@@ -141,8 +141,8 @@ pair<int, int> MergeSCCs::get_next_linear(
                 const vector<int> &incorporated_variables =
                     fts.get_ts(index).get_incorporated_variables();
                 vector<int>::const_iterator it = find(incorporated_variables.begin(),
-                                                incorporated_variables.end(),
-                                                var);
+                                                      incorporated_variables.end(),
+                                                      var);
                 if (it != incorporated_variables.end()) { // ts contains var
                     if (next_index1 == -1) {
                         next_index1 = index;
@@ -187,21 +187,21 @@ pair<int, int> MergeSCCs::get_next(
 
     if (current_ts_indices.size() == 2) {
         next_pair = make_pair(current_ts_indices[0],
-            current_ts_indices[1]);
+                              current_ts_indices[1]);
         current_ts_indices.clear();
     } else {
-        if (internal_merge_order == LINEAR1) {
+        if (internal_merge_order == InternalMergeOrder::LINEAR) {
             next_pair = get_next_linear(fts,
                                         current_ts_indices,
                                         most_recent_index,
                                         first_merge);
-        } else if (internal_merge_order == DFP1) {
+        } else if (internal_merge_order == InternalMergeOrder::DFP) {
             next_pair = merge_dfp->get_next(fts, current_ts_indices);
         }
 
         // Remove the two merged indices from the current set of indices
         for (vector<int>::iterator it = current_ts_indices.begin();
-            it != current_ts_indices.end(); ) {
+             it != current_ts_indices.end();) {
             if (*it == next_pair.first || *it == next_pair.second) {
                 it = current_ts_indices.erase(it);
             } else {

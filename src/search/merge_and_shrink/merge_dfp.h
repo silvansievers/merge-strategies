@@ -10,16 +10,16 @@ class Options;
 class TaskProxy;
 
 namespace merge_and_shrink {
-enum AtomicTSOrder {
+enum class AtomicTSOrder {
     REGULAR,
     INVERSE,
-    RANDOM1
+    RANDOM
 };
 
-enum ProductTSOrder {
+enum class ProductTSOrder {
     OLD_TO_NEW,
     NEW_TO_OLD,
-    RANDOM2
+    RANDOM
 };
 
 class MergeDFP : public MergeStrategy {
@@ -30,11 +30,11 @@ class MergeDFP : public MergeStrategy {
 
     // Store the "DFP" ordering in which transition systems should be considered.
     std::vector<int> transition_system_order;
-    void compute_label_ranks(FactoredTransitionSystem &fts,
+    void compute_label_ranks(const FactoredTransitionSystem &fts,
                              int index,
                              std::vector<int> &label_ranks) const;
     std::pair<int, int> get_next_dfp(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<int> &sorted_active_ts_indices);
 protected:
     virtual void dump_strategy_specific_options() const override {}

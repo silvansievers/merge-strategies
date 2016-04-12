@@ -41,8 +41,8 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
                      randomized_order,
                      transition_system_order);
 
-    if (!randomized_order && (atomic_ts_order == REGULAR &&
-                              product_ts_order == NEW_TO_OLD &&
+    if (!randomized_order && (atomic_ts_order == AtomicTSOrder::REGULAR &&
+                              product_ts_order == ProductTSOrder::NEW_TO_OLD &&
                               !atomic_before_product)) {
         int num_variables = task_proxy.get_variables().size();
         int max_transition_system_count = num_variables * 2 - 1;
@@ -58,7 +58,7 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     }
 }
 
-void MergeDFP::compute_label_ranks(FactoredTransitionSystem &fts,
+void MergeDFP::compute_label_ranks(const FactoredTransitionSystem &fts,
                                    int index,
                                    vector<int> &label_ranks) const {
     const TransitionSystem &ts = fts.get_ts(index);
@@ -102,7 +102,7 @@ void MergeDFP::compute_label_ranks(FactoredTransitionSystem &fts,
 }
 
 pair<int, int> MergeDFP::get_next_dfp(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<int> &sorted_active_ts_indices) {
     int next_index1 = -1;
     int next_index2 = -1;
@@ -140,7 +140,7 @@ pair<int, int> MergeDFP::get_next_dfp(
                 vector<int> &label_ranks2 = transition_system_label_ranks[j];
                 if (label_ranks2.empty()) {
                     compute_label_ranks(fts, ts_index2, label_ranks2);
-                };
+                }
                 assert(label_ranks1.size() == label_ranks2.size());
                 int pair_weight = INF;
                 for (size_t k = 0; k < label_ranks1.size(); ++k) {
@@ -215,20 +215,14 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts) {
     assert(!done());
 
     /*
-      Precompute a vector sorted_active_ts_indices which contains all exisiting
-      transition systems in the given order and compute label ranks.
+      Precompute a vector sorted_active_ts_indices which contains all active
+      transition system indices in the correct order.
     */
     assert(!transition_system_order.empty());
     vector<int> sorted_active_ts_indices;
-    vector<vector<int>> transition_system_label_ranks;
-    // TODO: we do not need label ranks here, do we?!
-    for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
-        int ts_index = transition_system_order[tso_index];
+    for (int ts_index : transition_system_order) {
         if (fts.is_active(ts_index)) {
             sorted_active_ts_indices.push_back(ts_index);
-            transition_system_label_ranks.push_back(vector<int>());
-            vector<int> &label_ranks = transition_system_label_ranks.back();
-            compute_label_ranks(fts, ts_index, label_ranks);
         }
     }
 
@@ -244,17 +238,17 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts,
     assert(!done());
 
     /*
-      Precompute a vector sorted_active_ts_indices which contains all exisiting
-      transition systems in the given order and compute label ranks.
+      Precompute a vector sorted_active_ts_indices which contains all given
+      transition system indices in the correct order.
     */
     assert(!transition_system_order.empty());
     vector<int> sorted_active_ts_indices;
-    for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
-        int ts_index = transition_system_order[tso_index];
+    for (int ts_index : transition_system_order) {
         for (int given_index : ts_indices) {
             if (ts_index == given_index) {
                 assert(fts.is_active(ts_index));
                 sorted_active_ts_indices.push_back(ts_index);
+                break;
             }
         }
     }
@@ -285,15 +279,14 @@ void MergeDFP::compute_ts_order(const TaskProxy &task_proxy,
         }
         g_rng.shuffle(ts_order);
     } else {
-
         // Compute the order in which atomic transition systems are considered
         vector<int> atomic_tso;
         for (int i = 0; i < num_variables; ++i) {
             atomic_tso.push_back(i);
         }
-        if (atomic_ts_order == INVERSE) {
+        if (atomic_ts_order == AtomicTSOrder::INVERSE) {
             reverse(atomic_tso.begin(), atomic_tso.end());
-        } else if (atomic_ts_order == RANDOM1) {
+        } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
             g_rng.shuffle(atomic_tso);
         }
 
@@ -302,27 +295,27 @@ void MergeDFP::compute_ts_order(const TaskProxy &task_proxy,
         for (int i = num_variables; i < max_transition_system_count; ++i) {
             product_tso.push_back(i);
         }
-        if (product_ts_order == NEW_TO_OLD) {
+        if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
             reverse(product_tso.begin(), product_tso.end());
-        } else if (product_ts_order == RANDOM2) {
+        } else if (product_ts_order == ProductTSOrder::RANDOM) {
             g_rng.shuffle(product_tso);
         }
 
         // Put the orders in the correct order
         if (atomic_before_product) {
             ts_order.insert(ts_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
+                            atomic_tso.begin(),
+                            atomic_tso.end());
             ts_order.insert(ts_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
+                            product_tso.begin(),
+                            product_tso.end());
         } else {
             ts_order.insert(ts_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
+                            product_tso.begin(),
+                            product_tso.end());
             ts_order.insert(ts_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
+                            atomic_tso.begin(),
+                            atomic_tso.end());
         }
     }
 }

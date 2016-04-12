@@ -18,14 +18,14 @@ class MergeSCCs : public MergeStrategy {
         INCREASING
     };
     OrderOfSCCs order_of_sccs;
-    enum InternalMergeOrder {
-        LINEAR1,
-        DFP1
+    enum class InternalMergeOrder {
+        LINEAR,
+        DFP
     };
     InternalMergeOrder internal_merge_order;
-    enum MergedSCCsMergeOrder {
-        LINEAR2,
-        DFP2
+    enum class MergedSCCsMergeOrder {
+        LINEAR,
+        DFP
     };
     MergedSCCsMergeOrder merged_sccs_merge_order;
     std::vector<int> linear_variable_order;
