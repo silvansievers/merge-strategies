@@ -15,8 +15,8 @@ class MergeStrategy {
     const int UNINITIALIZED = -1;
 protected:
     int remaining_merges;
-    int iterations_with_tiebreaking;
-    int total_tiebreaking_pair_count;
+    mutable int iterations_with_tiebreaking;
+    mutable int total_tiebreaking_pair_count;
     bool initialized() const;
     virtual void dump_strategy_specific_options() const = 0;
 public:

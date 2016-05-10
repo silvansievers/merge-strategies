@@ -332,9 +332,16 @@ class MergeDynamicWeighted : public MergeStrategy {
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     bool randomized_order;
-    std::vector<int> transition_system_order;
     Features *features;
     TaskProxy *task_proxy;
+
+    // TS order as in DFP
+    std::vector<int> transition_system_order;
+    void compute_ts_order(const std::shared_ptr<AbstractTask> task,
+                          AtomicTSOrder atomic_ts_order,
+                          ProductTSOrder product_ts_order,
+                          bool atomic_before_product,
+                          bool randomized_order);
 
     virtual void dump_strategy_specific_options() const override;
 public:

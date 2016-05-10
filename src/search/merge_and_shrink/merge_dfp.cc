@@ -31,19 +31,74 @@ MergeDFP::MergeDFP(const Options &options)
       randomized_order(options.get<bool>("randomized_order")) {
 }
 
+void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
+                                AtomicTSOrder atomic_ts_order,
+                                ProductTSOrder product_ts_order,
+                                bool atomic_before_product,
+                                bool randomized_order) {
+    TaskProxy task_proxy(*task);
+    int num_variables = task_proxy.get_variables().size();
+    int max_transition_system_count = num_variables * 2 - 1;
+    transition_system_order.reserve(max_transition_system_count);
+    if (randomized_order) {
+        for (int i = 0; i < max_transition_system_count; ++i) {
+            transition_system_order.push_back(i);
+        }
+        g_rng()->shuffle(transition_system_order);
+    } else {
+        // Compute the order in which atomic transition systems are considered
+        vector<int> atomic_tso;
+        for (int i = 0; i < num_variables; ++i) {
+            atomic_tso.push_back(i);
+        }
+        if (atomic_ts_order == AtomicTSOrder::INVERSE) {
+            reverse(atomic_tso.begin(), atomic_tso.end());
+        } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
+            g_rng()->shuffle(atomic_tso);
+        }
+
+        // Compute the order in which product transition systems are considered
+        vector<int> product_tso;
+        for (int i = num_variables; i < max_transition_system_count; ++i) {
+            product_tso.push_back(i);
+        }
+        if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
+            reverse(product_tso.begin(), product_tso.end());
+        } else if (product_ts_order == ProductTSOrder::RANDOM) {
+            g_rng()->shuffle(product_tso);
+        }
+
+        // Put the orders in the correct order
+        if (atomic_before_product) {
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+        } else {
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+        }
+    }
+}
+
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
-    TaskProxy task_proxy(*task);
-    compute_ts_order(task_proxy,
+    compute_ts_order(task,
                      atomic_ts_order,
                      product_ts_order,
                      atomic_before_product,
-                     randomized_order,
-                     transition_system_order);
+                     randomized_order);
 
     if (!randomized_order && (atomic_ts_order == AtomicTSOrder::REGULAR &&
                               product_ts_order == ProductTSOrder::NEW_TO_OLD &&
                               !atomic_before_product)) {
+        TaskProxy task_proxy(*task);
         int num_variables = task_proxy.get_variables().size();
         int max_transition_system_count = num_variables * 2 - 1;
         vector<int> original_dfp_order;
@@ -56,6 +111,16 @@ void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
         }
         assert(transition_system_order == original_dfp_order);
     }
+}
+
+bool MergeDFP::is_goal_relevant(const TransitionSystem &ts) const {
+    int num_states = ts.get_size();
+    for (int state = 0; state < num_states; ++state) {
+        if (!ts.is_goal_state(state)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void MergeDFP::compute_label_ranks(const FactoredTransitionSystem &fts,
@@ -101,9 +166,21 @@ void MergeDFP::compute_label_ranks(const FactoredTransitionSystem &fts,
     }
 }
 
-pair<int, int> MergeDFP::get_next_dfp(
+pair<int, int> MergeDFP::compute_next_pair(
     const FactoredTransitionSystem &fts,
-    const vector<int> &sorted_active_ts_indices) {
+    const vector<int> &sorted_active_ts_indices) const {
+    assert(initialized());
+    assert(!done());
+
+    vector<bool> goal_relevant(sorted_active_ts_indices.size(), false);
+    for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
+        int ts_index = sorted_active_ts_indices[i];
+        const TransitionSystem &ts = fts.get_ts(ts_index);
+        if (is_goal_relevant(ts)) {
+            goal_relevant[i] = true;
+        }
+    }
+
     int next_index1 = -1;
     int next_index2 = -1;
     int first_valid_pair_index1 = -1;
@@ -122,8 +199,7 @@ pair<int, int> MergeDFP::get_next_dfp(
         for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
             int ts_index2 = sorted_active_ts_indices[j];
             assert(fts.is_active(ts_index2));
-            if (fts.get_ts(ts_index1).is_goal_relevant()
-                || fts.get_ts(ts_index2).is_goal_relevant()) {
+            if (goal_relevant[i] || goal_relevant[j]) {
                 // Only consider pairs where at least one component is goal relevant.
 
                 // TODO: the 'old' code that took the 'first' pair in case of
@@ -174,15 +250,17 @@ pair<int, int> MergeDFP::get_next_dfp(
           least one goal relevant transition system which we compute in the
           loop before. There always exists such a pair assuming that the
           global goal specification is non-empty.
+
+          TODO: exception! with the definition of goal relevance w.r.t.
+          existence of a non-goal state, there might be no such pair!
         */
         assert(next_index2 == -1);
         assert(minimum_weight == INF);
-        // The above text is *not* true if only called for a subset of
-        // transition systems!
         if (first_valid_pair_index1 == -1) {
             assert(first_valid_pair_index2 == -1);
             next_index1 = sorted_active_ts_indices[0];
             next_index2 = sorted_active_ts_indices[1];
+            cout << "found no goal relevant pair" << endl;
             if (sorted_active_ts_indices.size() == 2) {
                 weight_to_count[minimum_weight] = 1;
             } else {
@@ -191,7 +269,6 @@ pair<int, int> MergeDFP::get_next_dfp(
                 weight_to_count[minimum_weight] = 2;
             }
         } else {
-            assert(first_valid_pair_index1 != -1);
             assert(first_valid_pair_index2 != -1);
             next_index1 = first_valid_pair_index1;
             next_index2 = first_valid_pair_index2;
@@ -226,7 +303,7 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts) {
         }
     }
 
-    pair<int, int> next_merge = get_next_dfp(fts, sorted_active_ts_indices);
+    pair<int, int> next_merge = compute_next_pair(fts, sorted_active_ts_indices);
 
     --remaining_merges;
     return next_merge;
@@ -253,7 +330,7 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts,
         }
     }
 
-    pair<int, int> next_merge = get_next_dfp(fts, sorted_active_ts_indices);
+    pair<int, int> next_merge = compute_next_pair(fts, sorted_active_ts_indices);
 
     --remaining_merges;
     return next_merge;
@@ -261,63 +338,6 @@ pair<int, int> MergeDFP::get_next(FactoredTransitionSystem &fts,
 
 string MergeDFP::name() const {
     return "dfp";
-}
-
-void MergeDFP::compute_ts_order(const TaskProxy &task_proxy,
-                                AtomicTSOrder atomic_ts_order,
-                                ProductTSOrder product_ts_order,
-                                bool atomic_before_product,
-                                bool randomized_order,
-                                vector<int> &ts_order) {
-    int num_variables = task_proxy.get_variables().size();
-    int max_transition_system_count = num_variables * 2 - 1;
-
-    ts_order.reserve(max_transition_system_count);
-    if (randomized_order) {
-        for (int i = 0; i < max_transition_system_count; ++i) {
-            ts_order.push_back(i);
-        }
-        g_rng.shuffle(ts_order);
-    } else {
-        // Compute the order in which atomic transition systems are considered
-        vector<int> atomic_tso;
-        for (int i = 0; i < num_variables; ++i) {
-            atomic_tso.push_back(i);
-        }
-        if (atomic_ts_order == AtomicTSOrder::INVERSE) {
-            reverse(atomic_tso.begin(), atomic_tso.end());
-        } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
-            g_rng.shuffle(atomic_tso);
-        }
-
-        // Compute the order in which product transition systems are considered
-        vector<int> product_tso;
-        for (int i = num_variables; i < max_transition_system_count; ++i) {
-            product_tso.push_back(i);
-        }
-        if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
-            reverse(product_tso.begin(), product_tso.end());
-        } else if (product_ts_order == ProductTSOrder::RANDOM) {
-            g_rng.shuffle(product_tso);
-        }
-
-        // Put the orders in the correct order
-        if (atomic_before_product) {
-            ts_order.insert(ts_order.end(),
-                            atomic_tso.begin(),
-                            atomic_tso.end());
-            ts_order.insert(ts_order.end(),
-                            product_tso.begin(),
-                            product_tso.end());
-        } else {
-            ts_order.insert(ts_order.end(),
-                            product_tso.begin(),
-                            product_tso.end());
-            ts_order.insert(ts_order.end(),
-                            atomic_tso.begin(),
-                            atomic_tso.end());
-        }
-    }
 }
 
 void MergeDFP::add_options_to_parser(OptionParser &parser, bool dfp_defaults) {

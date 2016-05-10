@@ -1,6 +1,7 @@
 #ifndef CEGAR_ABSTRACT_STATE_H
 #define CEGAR_ABSTRACT_STATE_H
 
+#include "arc.h"
 #include "domains.h"
 
 #include "../task_proxy.h"
@@ -13,12 +14,48 @@ namespace cegar {
 class AbstractState;
 class Node;
 
-// Transitions are pairs of operator index and AbstractState pointers.
-using Arc = std::pair<int, AbstractState *>;
 using Arcs = std::vector<Arc>;
 
 // To save space we store self-loops (operator indices) separately.
 using Loops = std::vector<int>;
+
+class AbstractSearchInfo {
+    int g;
+    Arc incoming_arc;
+
+    static const int UNDEFINED_OPERATOR;
+
+public:
+    AbstractSearchInfo()
+        : incoming_arc(UNDEFINED_OPERATOR, nullptr) {
+        reset();
+    }
+
+    ~AbstractSearchInfo() = default;
+
+    void reset() {
+        g = std::numeric_limits<int>::max();
+        incoming_arc = Arc(UNDEFINED_OPERATOR, nullptr);
+    }
+
+    void decrease_g_value_to(int new_g) {
+        assert(new_g <= g);
+        g = new_g;
+    }
+
+    int get_g_value() const {
+        return g;
+    }
+
+    void set_incoming_arc(const Arc &arc) {
+        incoming_arc = arc;
+    }
+
+    const Arc &get_incoming_arc() const {
+        assert(incoming_arc.op_id != UNDEFINED_OPERATOR && incoming_arc.target);
+        return incoming_arc;
+    }
+};
 
 class AbstractState {
 private:
@@ -37,6 +74,8 @@ private:
 
     // Self-loops.
     Loops loops;
+
+    AbstractSearchInfo search_info;
 
     // Construct instances with factory methods.
     AbstractState(
@@ -89,6 +128,8 @@ public:
     const Arcs &get_outgoing_arcs() const {return outgoing_arcs; }
     const Arcs &get_incoming_arcs() const {return incoming_arcs; }
     const Loops &get_loops() const {return loops; }
+
+    AbstractSearchInfo &get_search_info() {return search_info; }
 
     friend std::ostream &operator<<(std::ostream &os, const AbstractState &state) {
         return os << state.domains;

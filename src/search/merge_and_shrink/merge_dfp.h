@@ -10,6 +10,7 @@ class Options;
 class TaskProxy;
 
 namespace merge_and_shrink {
+class TransitionSystem;
 enum class AtomicTSOrder {
     REGULAR,
     INVERSE,
@@ -30,12 +31,18 @@ class MergeDFP : public MergeStrategy {
 
     // Store the "DFP" ordering in which transition systems should be considered.
     std::vector<int> transition_system_order;
+    void compute_ts_order(const std::shared_ptr<AbstractTask> task,
+                          AtomicTSOrder atomic_ts_order,
+                          ProductTSOrder product_ts_order,
+                          bool atomic_before_product,
+                          bool randomized_order);
+    bool is_goal_relevant(const TransitionSystem &ts) const;
     void compute_label_ranks(const FactoredTransitionSystem &fts,
                              int index,
                              std::vector<int> &label_ranks) const;
-    std::pair<int, int> get_next_dfp(
+    std::pair<int, int> compute_next_pair(
         const FactoredTransitionSystem &fts,
-        const std::vector<int> &sorted_active_ts_indices);
+        const std::vector<int> &sorted_active_ts_indices) const;
 protected:
     virtual void dump_strategy_specific_options() const override {}
 public:
@@ -47,12 +54,6 @@ public:
     std::pair<int, int> get_next(FactoredTransitionSystem &fts,
                                  const std::vector<int> &sorted_indices);
     virtual std::string name() const override;
-    static void compute_ts_order(const TaskProxy &task_proxy,
-                                 AtomicTSOrder atomic_ts_order,
-                                 ProductTSOrder product_ts_order,
-                                 bool atomic_before_product,
-                                 bool randomized_order,
-                                 std::vector<int> &ts_order);
     static void add_options_to_parser(options::OptionParser &parser, bool dfp_defaults = true);
 };
 }

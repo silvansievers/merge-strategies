@@ -267,7 +267,7 @@ void MergeSymmetries::update_miasm_merge_tree(
         } else if (merge_tree.depth(*first_index_it) > merge_tree.depth(*second_index_it)) {
             chosen_survivor_node = second_index_it;
         } else {
-            int random = g_rng(2);
+            int random = (*g_rng())(2);
             chosen_survivor_node = (random ? second_index_it : first_index_it);
         }
         tree<set<int>>::pre_order_iterator *to_be_erased_node =

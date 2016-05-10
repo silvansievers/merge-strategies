@@ -1,12 +1,10 @@
 #include "transition_system.h"
 
 #include "distances.h"
-#include "heuristic_representation.h"
 #include "label_equivalence_relation.h"
 #include "labels.h"
 
 #include "../globals.h"
-#include "../task_proxy.h"
 
 #include "../utils/collections.h"
 #include "../utils/memory.h"
@@ -14,9 +12,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cctype>
 #include <iostream>
-#include <iterator>
 #include <set>
 #include <sstream>
 #include <string>
@@ -66,8 +62,6 @@ GroupAndTransitions TSConstIterator::operator*() const {
 }
 
 
-const int TransitionSystem::PRUNED_STATE = -1;
-
 /*
   Implementation note: Transitions are grouped by their label groups,
   not by source state or any such thing. Such a grouping is beneficial
@@ -90,7 +84,6 @@ TransitionSystem::TransitionSystem(int num_variables,
     int num_states,
     vector<bool> &&goal_states,
     int init_state,
-    bool goal_relevant,
     bool compute_label_equivalence_relation,
     vector<vector<set<int>>> &&abs_state_to_var_multi_vals)
     : num_variables(num_variables),
@@ -100,7 +93,6 @@ TransitionSystem::TransitionSystem(int num_variables,
       num_states(num_states),
       goal_states(move(goal_states)),
       init_state(init_state),
-      goal_relevant(goal_relevant),
       abs_state_to_var_multi_vals(move(abs_state_to_var_multi_vals)) {
     if (compute_label_equivalence_relation) {
         compute_locally_equivalent_labels();
@@ -117,7 +109,6 @@ TransitionSystem::TransitionSystem(const TransitionSystem &other)
       num_states(other.num_states),
       goal_states(other.goal_states),
       init_state(other.init_state),
-      goal_relevant(other.goal_relevant),
       abs_state_to_var_multi_vals(other.abs_state_to_var_multi_vals) {
     assert(*this == other);
 }
@@ -152,7 +143,6 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
     int ts2_size = ts2.get_size();
     int num_states = ts1_size * ts2_size;
     vector<bool> goal_states(num_states, false);
-    bool goal_relevant = (ts1.goal_relevant || ts2.goal_relevant);
     int init_state = -1;
     vector<vector<set<int>>> abs_state_to_var_multi_vals;
 
@@ -268,7 +258,6 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
         num_states,
         move(goal_states),
         init_state,
-        goal_relevant,
         false,
         move(abs_state_to_var_multi_vals)
         );
@@ -605,15 +594,13 @@ bool TransitionSystem::operator==(const TransitionSystem &other) const {
     assert(num_states == other.num_states);
     assert(goal_states == other.goal_states);
     assert(init_state == other.init_state);
-    assert(goal_relevant == other.goal_relevant);
     return num_variables == other.num_variables &&
            incorporated_variables == other.incorporated_variables &&
            *label_equivalence_relation.get() == *other.label_equivalence_relation.get() &&
            transitions_by_group_id == other.transitions_by_group_id &&
            num_states == other.num_states &&
            goal_states == other.goal_states &&
-           init_state == other.init_state &&
-           goal_relevant == other.goal_relevant;
+           init_state == other.init_state;
 }
 
 // TODO: HACK! using g_variable_*

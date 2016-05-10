@@ -27,6 +27,10 @@
 using namespace std;
 
 namespace merge_and_shrink {
+void print_time(const utils::Timer &timer, string text) {
+    cout << "t=" << timer << " (" << text << ")" << endl;
+}
+
 MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
     : Heuristic(opts),
       merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
@@ -108,6 +112,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
 
     fts = utils::make_unique_ptr<FactoredTransitionSystem>(
         create_factored_transition_system(task_proxy, true, debug_transition_systems));
+    print_time(timer, "after computation of atomic transition systems");
     cout << endl;
     int maximum_intermediate_size = 0;
     for (int i = 0; i < fts->get_size(); ++i) {
@@ -133,21 +138,31 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
             cout << "Next pair of indices: (" << merge_index1 << ", " << merge_index2 << ")" << endl;
             assert(merge_index1 != merge_index2);
             merge_order.push_back(merge_indices);
-            fts->statistics(merge_index1, timer);
-            fts->statistics(merge_index2, timer);
+            fts->statistics(merge_index1);
+            fts->statistics(merge_index2);
+            print_time(timer, "after computation of next merge");
 
+            // Label reduction (before shrinking)
             if (label_reduction && label_reduction->reduce_before_shrinking()) {
-                label_reduction->reduce(merge_indices, *fts);
+                bool reduced = label_reduction->reduce(merge_indices, *fts);
+                if (reduced) {
+                    print_time(timer, "after label reduction");
+                }
                 remaining_labels.push_back(fts->get_labels().compute_number_active_labels());
             }
 
             // Shrinking
             pair<bool, bool> shrunk = shrink_strategy->shrink(
                 *fts, merge_index1, merge_index2);
-            if (shrunk.first)
-                fts->statistics(merge_index1, timer);
-            if (shrunk.second)
-                fts->statistics(merge_index2, timer);
+            if (shrunk.first) {
+                fts->statistics(merge_index1);
+            }
+            if (shrunk.second) {
+                fts->statistics(merge_index2);
+            }
+            if (shrunk.first || shrunk.second) {
+                print_time(timer, "after shrinking");
+            }
 
             const vector<double> &miss_qualified_states_ratios =
                 shrink_strategy->get_miss_qualified_states_ratios();
@@ -162,9 +177,12 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
                 still_perfect = false;
             }
 
+            // Label reduction (before merging)
             if (label_reduction && label_reduction->reduce_before_merging()) {
-                label_reduction->reduce(merge_indices, *fts);
-                remaining_labels.push_back(fts->get_labels().compute_number_active_labels());
+                bool reduced = label_reduction->reduce(merge_indices, *fts);
+                if (reduced) {
+                    print_time(timer, "after label reduction");
+                }
             }
 
             int init_dist1 = fts->get_init_state_goal_distance(merge_index1);
@@ -186,7 +204,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
                 maximum_intermediate_size = abs_size;
             }
 
-            fts->statistics(final_index, timer);
+            fts->statistics(final_index);
+            print_time(timer, "after merging");
 
             int new_init_dist = fts->get_init_state_goal_distance(final_index);
             int difference = new_init_dist - max(init_dist1, init_dist2);

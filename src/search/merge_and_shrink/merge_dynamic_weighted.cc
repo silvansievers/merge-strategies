@@ -14,7 +14,7 @@
 #include "../task_proxy.h"
 
 #include "../utils/system.h"
-//#include "../utils/rng.h"
+#include "../utils/rng.h"
 
 using namespace std;
 using utils::ExitCode;
@@ -23,6 +23,17 @@ namespace merge_and_shrink {
 const int MINUSINF = numeric_limits<int>::min();
 
 // Helper methods to deal with transition systems
+
+// TODO: copied from DFP
+bool is_goal_relevant(const TransitionSystem &ts) {
+    int num_states = ts.get_size();
+    for (int state = 0; state < num_states; ++state) {
+        if (!ts.is_goal_state(state)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 int compute_number_of_product_transitions(
     const TransitionSystem &ts1, const TransitionSystem &ts2) {
@@ -561,7 +572,7 @@ double DFPFeature::compute_value(
     const TransitionSystem &ts1 = fts.get_ts(ts_index1);
     const TransitionSystem &ts2 = fts.get_ts(ts_index2);
     int pair_weight = INF;
-    if (ts1.is_goal_relevant() || ts2.is_goal_relevant()) {
+    if (is_goal_relevant(ts1) || is_goal_relevant(ts2)) {
         vector<int> &label_ranks1 = ts_index_to_label_ranks[ts_index1];
         if (label_ranks1.empty()) {
             compute_label_ranks(fts, ts_index1, label_ranks1);
@@ -598,10 +609,10 @@ double GoalRelevanceFeature::compute_value(
     int) {
     // return value in [0,2]
     int pair_weight = 0;
-    if (fts.get_ts(ts_index1).is_goal_relevant()) {
+    if (is_goal_relevant(fts.get_ts(ts_index1))) {
         ++pair_weight;
     }
-    if (fts.get_ts(ts_index2).is_goal_relevant()) {
+    if (is_goal_relevant(fts.get_ts(ts_index2))) {
         ++pair_weight;
     }
     return pair_weight;
@@ -1061,18 +1072,75 @@ void MergeDynamicWeighted::dump_strategy_specific_options() const {
     features->dump_weights();
 }
 
+// TODO: copied from DFP
+void MergeDynamicWeighted::compute_ts_order(
+    const shared_ptr<AbstractTask> task,
+    AtomicTSOrder atomic_ts_order,
+    ProductTSOrder product_ts_order,
+    bool atomic_before_product,
+    bool randomized_order) {
+    TaskProxy task_proxy(*task);
+    int num_variables = task_proxy.get_variables().size();
+    int max_transition_system_count = num_variables * 2 - 1;
+    transition_system_order.reserve(max_transition_system_count);
+    if (randomized_order) {
+        for (int i = 0; i < max_transition_system_count; ++i) {
+            transition_system_order.push_back(i);
+        }
+        g_rng()->shuffle(transition_system_order);
+    } else {
+        // Compute the order in which atomic transition systems are considered
+        vector<int> atomic_tso;
+        for (int i = 0; i < num_variables; ++i) {
+            atomic_tso.push_back(i);
+        }
+        if (atomic_ts_order == AtomicTSOrder::INVERSE) {
+            reverse(atomic_tso.begin(), atomic_tso.end());
+        } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
+            g_rng()->shuffle(atomic_tso);
+        }
+
+        // Compute the order in which product transition systems are considered
+        vector<int> product_tso;
+        for (int i = num_variables; i < max_transition_system_count; ++i) {
+            product_tso.push_back(i);
+        }
+        if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
+            reverse(product_tso.begin(), product_tso.end());
+        } else if (product_ts_order == ProductTSOrder::RANDOM) {
+            g_rng()->shuffle(product_tso);
+        }
+
+        // Put the orders in the correct order
+        if (atomic_before_product) {
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+        } else {
+            transition_system_order.insert(transition_system_order.end(),
+                                           product_tso.begin(),
+                                           product_tso.end());
+            transition_system_order.insert(transition_system_order.end(),
+                                           atomic_tso.begin(),
+                                           atomic_tso.end());
+        }
+    }
+}
+
 void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
     task_proxy = new TaskProxy(*task);
     features->initialize(*task_proxy);
 
     // Compute the ts order
-    MergeDFP::compute_ts_order(*task_proxy,
-                               atomic_ts_order,
-                               product_ts_order,
-                               atomic_before_product,
-                               randomized_order,
-                               transition_system_order);
+    compute_ts_order(task,
+                     atomic_ts_order,
+                     product_ts_order,
+                     atomic_before_product,
+                     randomized_order);
 }
 
 pair<int, int> MergeDynamicWeighted::get_next(
