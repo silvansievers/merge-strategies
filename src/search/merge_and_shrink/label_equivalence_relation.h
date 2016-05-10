@@ -136,9 +136,6 @@ public:
     const LabelGroup &get_group(int group_id) const {
         return grouped_labels.at(group_id);
     }
-    const Labels &get_labels() const { // for MergeDynamicWeighted
-        return labels;
-    }
     bool consistent();
     bool operator==(const LabelEquivalenceRelation &other) const;
     void dump() const;

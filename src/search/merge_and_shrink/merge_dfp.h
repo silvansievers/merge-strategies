@@ -7,7 +7,6 @@ namespace options {
 class OptionParser;
 class Options;
 }
-class TaskProxy;
 
 namespace merge_and_shrink {
 class TransitionSystem;

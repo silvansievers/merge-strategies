@@ -183,6 +183,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
                 if (reduced) {
                     print_time(timer, "after label reduction");
                 }
+                remaining_labels.push_back(fts->get_labels().compute_number_active_labels());
             }
 
             int init_dist1 = fts->get_init_state_goal_distance(merge_index1);
@@ -190,7 +191,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
 
             // Merging
             final_index = fts->merge(merge_index1, merge_index2);
-
             /*
               NOTE: both the shrinking strategy classes and the construction of
               the composite require input transition systems to be solvable.
