@@ -32,11 +32,7 @@ MergeDFP::MergeDFP(const Options &options)
     rng = utils::parse_rng_from_options(options);
 }
 
-void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
-                                AtomicTSOrder atomic_ts_order,
-                                ProductTSOrder product_ts_order,
-                                bool atomic_before_product,
-                                bool randomized_order) {
+void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
     int max_transition_system_count = num_variables * 2 - 1;
@@ -90,11 +86,7 @@ void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
 
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
-    compute_ts_order(task,
-                     atomic_ts_order,
-                     product_ts_order,
-                     atomic_before_product,
-                     randomized_order);
+    compute_ts_order(task);
 
     if (!randomized_order && (atomic_ts_order == AtomicTSOrder::REGULAR &&
                               product_ts_order == ProductTSOrder::NEW_TO_OLD &&
