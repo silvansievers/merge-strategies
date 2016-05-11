@@ -8,6 +8,7 @@
 
 #include "../utils/memory.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <iostream>
@@ -18,8 +19,8 @@ namespace merge_and_shrink {
 MergeRandomNonLinear::MergeRandomNonLinear(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
-      rng(utils::make_unique_ptr<utils::RandomNumberGenerator>(random_seed)),
       shrink_threshold(options.get<int>("shrink_threshold")) {
+    rng = utils::parse_rng_from_options(options);
 }
 
 pair<int, int> MergeRandomNonLinear::get_next(
@@ -90,7 +91,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "non-linear order on the atomic variables), before randomly "
         "merging all remaining transition systems once this is no longer "
         "possible.");
-    parser.add_option<int>("random_seed", "random seed", "2015");
+    utils::add_rng_options(parser);
     parser.add_option<int>("shrink_threshold", "shrink threshold", "50000");
 
     Options opts = parser.parse();

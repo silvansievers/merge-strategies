@@ -15,6 +15,7 @@
 
 #include "../utils/system.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 using namespace std;
 using utils::ExitCode;
@@ -1056,6 +1057,7 @@ MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
       product_ts_order(ProductTSOrder(opts.get_enum("product_ts_order"))),
       atomic_before_product(opts.get<bool>("atomic_before_product")),
       randomized_order(opts.get<bool>("randomized_order")) {
+    rng = utils::parse_rng_from_options(opts);
     if (use_lr) {
         cerr << "Currently not implemented!" << endl;
         utils::exit_with(ExitCode::CRITICAL_ERROR);
@@ -1087,7 +1089,7 @@ void MergeDynamicWeighted::compute_ts_order(
         for (int i = 0; i < max_transition_system_count; ++i) {
             transition_system_order.push_back(i);
         }
-        g_rng()->shuffle(transition_system_order);
+        rng->shuffle(transition_system_order);
     } else {
         // Compute the order in which atomic transition systems are considered
         vector<int> atomic_tso;
@@ -1097,7 +1099,7 @@ void MergeDynamicWeighted::compute_ts_order(
         if (atomic_ts_order == AtomicTSOrder::INVERSE) {
             reverse(atomic_tso.begin(), atomic_tso.end());
         } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
-            g_rng()->shuffle(atomic_tso);
+            rng->shuffle(atomic_tso);
         }
 
         // Compute the order in which product transition systems are considered
@@ -1108,7 +1110,7 @@ void MergeDynamicWeighted::compute_ts_order(
         if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
             reverse(product_tso.begin(), product_tso.end());
         } else if (product_ts_order == ProductTSOrder::RANDOM) {
-            g_rng()->shuffle(product_tso);
+            rng->shuffle(product_tso);
         }
 
         // Put the orders in the correct order

@@ -6,10 +6,14 @@
 namespace options {
 class Options;
 }
+namespace utils {
+    class RandomNumberGenerator;
+}
 
 namespace merge_and_shrink {
 class MergeRandomLinear : public MergeStrategy {
-    const int random_seed;
+    int random_seed;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
     bool need_first_index;
     std::vector<int> randomized_variable_order;
 protected:

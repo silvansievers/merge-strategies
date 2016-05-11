@@ -12,8 +12,8 @@ class RandomNumberGenerator;
 
 namespace merge_and_shrink {
 class MergeRandom : public MergeStrategy {
-    const int random_seed;
-    std::unique_ptr<utils::RandomNumberGenerator> rng;
+    int random_seed;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
 protected:
     virtual void dump_strategy_specific_options() const override;
 public:

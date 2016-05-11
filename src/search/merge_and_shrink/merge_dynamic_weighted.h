@@ -332,6 +332,7 @@ class MergeDynamicWeighted : public MergeStrategy {
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     bool randomized_order;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
     Features *features;
     TaskProxy *task_proxy;
 

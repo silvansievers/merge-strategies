@@ -12,8 +12,8 @@ namespace utils {
 
 namespace merge_and_shrink {
 class MergeRandomNonLinear : public MergeStrategy {
-    const int random_seed;
-    std::unique_ptr<utils::RandomNumberGenerator> rng;
+    int random_seed;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
     const int shrink_threshold;
 protected:
     virtual void dump_strategy_specific_options() const override;

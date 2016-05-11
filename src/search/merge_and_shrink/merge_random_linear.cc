@@ -9,6 +9,7 @@
 #include "../utils/collections.h"
 #include "../utils/memory.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <iostream>
@@ -20,6 +21,7 @@ MergeRandomLinear::MergeRandomLinear(const Options &options)
     : MergeStrategy(),
       random_seed(options.get<int>("random_seed")),
       need_first_index(true) {
+    rng = utils::parse_rng_from_options(options);
 }
 
 void MergeRandomLinear::initialize(const shared_ptr<AbstractTask> task) {
@@ -29,10 +31,9 @@ void MergeRandomLinear::initialize(const shared_ptr<AbstractTask> task) {
     vector<int> variables(num_variables, -1);
     iota(variables.begin(), variables.end(), 0);
 
-    utils::RandomNumberGenerator rng(random_seed);
     randomized_variable_order.reserve(num_variables);
     for (int i = 0; i < num_variables; ++i) {
-        int random_index = rng(variables.size());
+        int random_index = (*rng)(variables.size());
         randomized_variable_order.push_back(variables[random_index]);
         variables.erase(variables.begin() + random_index);
     }
@@ -75,7 +76,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     parser.document_synopsis(
         "Random linear merge strategy.",
         "This merge strategy randomly computes a variable order for merging.");
-    parser.add_option<int>("random_seed", "random seed", "2015");
+    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

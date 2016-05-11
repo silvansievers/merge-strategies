@@ -8,6 +8,7 @@
 #include "../utils/collections.h"
 #include "../utils/memory.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,8 +18,8 @@ using namespace std;
 namespace merge_and_shrink {
 MergeRandom::MergeRandom(const Options &options)
     : MergeStrategy(),
-      random_seed(options.get<int>("random_seed")),
-      rng(utils::make_unique_ptr<utils::RandomNumberGenerator>(random_seed)) {
+      random_seed(options.get<int>("random_seed")) {
+    rng = utils::parse_rng_from_options(options);
 }
 
 pair<int, int> MergeRandom::get_next(
@@ -63,7 +64,7 @@ static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
         "Random merge strategy.",
         "This merge strategy randomly selects the two next transition systems"
         "to merge.");
-    parser.add_option<int>("random_seed", "random seed", "2015");
+    utils::add_rng_options(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())

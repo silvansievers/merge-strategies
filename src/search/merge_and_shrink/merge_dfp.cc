@@ -6,7 +6,6 @@
 #include "transition_system.h"
 #include "types.h"
 
-#include "../globals.h"
 #include "../option_parser.h"
 #include "../option_parser_util.h"
 #include "../plugin.h"
@@ -14,6 +13,7 @@
 
 #include "../utils/markup.h"
 #include "../utils/rng.h"
+#include "../utils/rng_options.h"
 
 #include <algorithm>
 #include <cassert>
@@ -29,6 +29,7 @@ MergeDFP::MergeDFP(const Options &options)
       product_ts_order(ProductTSOrder(options.get_enum("product_ts_order"))),
       atomic_before_product(options.get<bool>("atomic_before_product")),
       randomized_order(options.get<bool>("randomized_order")) {
+    rng = utils::parse_rng_from_options(options);
 }
 
 void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
@@ -44,7 +45,7 @@ void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
         for (int i = 0; i < max_transition_system_count; ++i) {
             transition_system_order.push_back(i);
         }
-        g_rng()->shuffle(transition_system_order);
+        rng->shuffle(transition_system_order);
     } else {
         // Compute the order in which atomic transition systems are considered
         vector<int> atomic_tso;
@@ -54,7 +55,7 @@ void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
         if (atomic_ts_order == AtomicTSOrder::INVERSE) {
             reverse(atomic_tso.begin(), atomic_tso.end());
         } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
-            g_rng()->shuffle(atomic_tso);
+            rng->shuffle(atomic_tso);
         }
 
         // Compute the order in which product transition systems are considered
@@ -65,7 +66,7 @@ void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task,
         if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
             reverse(product_tso.begin(), product_tso.end());
         } else if (product_ts_order == ProductTSOrder::RANDOM) {
-            g_rng()->shuffle(product_tso);
+            rng->shuffle(product_tso);
         }
 
         // Put the orders in the correct order
@@ -380,6 +381,8 @@ void MergeDFP::add_options_to_parser(OptionParser &parser, bool dfp_defaults) {
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     MergeDFP::add_options_to_parser(parser);
+    utils::add_rng_options(parser);
+
     Options options = parser.parse();
     parser.document_synopsis(
         "Merge strategy DFP",

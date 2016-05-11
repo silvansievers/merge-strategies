@@ -8,6 +8,10 @@ class OptionParser;
 class Options;
 }
 
+namespace utils {
+class RandomNumberGenerator;
+}
+
 namespace merge_and_shrink {
 class TransitionSystem;
 enum class AtomicTSOrder {
@@ -27,6 +31,7 @@ class MergeDFP : public MergeStrategy {
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     bool randomized_order;
+    std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     // Store the "DFP" ordering in which transition systems should be considered.
     std::vector<int> transition_system_order;
