@@ -369,11 +369,11 @@ void MergeDFP::add_options_to_parser(OptionParser &parser, bool dfp_defaults) {
     parser.add_option<bool>("randomized_order",
                             "globally randomized order",
                             "false");
+    utils::add_rng_options(parser);
 }
 
 static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
     MergeDFP::add_options_to_parser(parser);
-    utils::add_rng_options(parser);
 
     Options options = parser.parse();
     parser.document_synopsis(
