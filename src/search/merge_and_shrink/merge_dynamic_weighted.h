@@ -344,6 +344,8 @@ class MergeDynamicWeighted : public MergeStrategy {
                           bool atomic_before_product,
                           bool randomized_order);
 
+    std::pair<int, int> compute_shrink_sizes(int size1, int size2) const;
+
     virtual void dump_strategy_specific_options() const override;
 public:
     MergeDynamicWeighted(const options::Options opts);

@@ -87,23 +87,6 @@ void MergeDFP::compute_ts_order(const shared_ptr<AbstractTask> task) {
 void MergeDFP::initialize(const shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
     compute_ts_order(task);
-
-    if (!randomized_order && (atomic_ts_order == AtomicTSOrder::REGULAR &&
-                              product_ts_order == ProductTSOrder::NEW_TO_OLD &&
-                              !atomic_before_product)) {
-        TaskProxy task_proxy(*task);
-        int num_variables = task_proxy.get_variables().size();
-        int max_transition_system_count = num_variables * 2 - 1;
-        vector<int> original_dfp_order;
-        for (int i = max_transition_system_count - 1; i >= 0; --i) {
-            int corrected_index = i;
-            if (i < num_variables) {
-                corrected_index = num_variables - 1 - i;
-            }
-            original_dfp_order.push_back(corrected_index);
-        }
-        assert(transition_system_order == original_dfp_order);
-    }
 }
 
 bool MergeDFP::is_goal_relevant(const TransitionSystem &ts) const {
@@ -335,40 +318,49 @@ string MergeDFP::name() const {
 
 void MergeDFP::add_options_to_parser(OptionParser &parser, bool dfp_defaults) {
     vector<string> atomic_ts_order;
-    atomic_ts_order.push_back("REGULAR");
-    atomic_ts_order.push_back("INVERSE");
-    atomic_ts_order.push_back("RANDOM");
-    parser.add_enum_option("atomic_ts_order",
-                           atomic_ts_order,
-                           "order of atomic transition systems",
-                           "REGULAR");
+    vector<string> atomic_ts_order_documentation;
+    atomic_ts_order.push_back("regular");
+    atomic_ts_order_documentation.push_back("the variable order of Fast Downward");
+    atomic_ts_order.push_back("inverse");
+    atomic_ts_order_documentation.push_back("opposite of regular");
+    atomic_ts_order.push_back("random");
+    atomic_ts_order_documentation.push_back("a randomized order");
+    parser.add_enum_option(
+        "atomic_ts_order",
+        atomic_ts_order,
+        "The order in which atomic transition systems are considered when "
+        "considering pairs of potential merges.",
+        "regular",
+        atomic_ts_order_documentation);
+
     vector<string> product_ts_order;
-    product_ts_order.push_back("OLD_TO_NEW");
-    product_ts_order.push_back("NEW_TO_OLD");
-    product_ts_order.push_back("RANDOM");
-    if (dfp_defaults) {
-        parser.add_enum_option("product_ts_order",
-                               product_ts_order,
-                               "order of product transition systems",
-                               "NEW_TO_OLD");
-    } else {
-        parser.add_enum_option("product_ts_order",
-                               product_ts_order,
-                               "order of product transition systems",
-                               "OLD_TO_NEW");
-    }
-    if (dfp_defaults) {
-        parser.add_option<bool>("atomic_before_product",
-                                "atomic ts before product ts",
-                                "false");
-    } else {
-        parser.add_option<bool>("atomic_before_product",
-                                "atomic ts before product ts",
-                                "true");
-    }
-    parser.add_option<bool>("randomized_order",
-                            "globally randomized order",
-                            "false");
+    vector<string> product_ts_order_documentation;
+    product_ts_order.push_back("old_to_new");
+    product_ts_order_documentation.push_back(
+        "consider composite transition systems from most recent to oldest, "
+        "that is in decreasing index order");
+    product_ts_order.push_back("new_to_old");
+    product_ts_order_documentation.push_back("opposite of old_to_new");
+    product_ts_order.push_back("random");
+    product_ts_order_documentation.push_back("a randomized order");
+    parser.add_enum_option(
+        "product_ts_order",
+        product_ts_order,
+        "The order in which product transition systems are considered when "
+        "considering pairs of potential merges.",
+        (dfp_defaults ? "new_to_old" : "old_to_new"),
+        product_ts_order_documentation);
+
+    parser.add_option<bool>(
+        "atomic_before_product",
+        "Consider atomic transition systems before composite ones iff true.",
+        (dfp_defaults ? "false" : "true"));
+    parser.add_option<bool>(
+        "randomized_order",
+        "If true, use a 'globally' randomized order, i.e. all transition "
+        "systems are considered in an arbitrary order. This renders all other "
+        "ordering options void.",
+        "false");
     utils::add_rng_options(parser);
 }
 
