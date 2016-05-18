@@ -641,15 +641,12 @@ ShrinkPerfectlyFeature::ShrinkPerfectlyFeature(int id, int weight)
 double ShrinkPerfectlyFeature::compute_value(
     const FactoredTransitionSystem &fts,
     int,
-    int ,
+    int,
     int merge_index) {
     // return value in [0,infinity)
     assert(merge_index != -1);
     if (fts.get_ts(merge_index).is_solvable()) {
         Options options;
-        options.set<int>("max_states", INF);
-        options.set<int>("max_states_before_merge", INF);
-        options.set<int>("threshold", 1);
         options.set<bool>("greedy", false);
         options.set<int>("at_limit", 0);
         ShrinkBisimulation shrink_bisim(options);
@@ -1222,9 +1219,10 @@ pair<int, int> MergeDynamicWeighted::get_next(
                             Options options;
                             options.set<bool>("greedy", false);
                             options.set<int>("at_limit", 0);
+                            bool silent = true;
                             ShrinkBisimulation shrink_bisim(options);
-                            shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first);
-                            shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second);
+                            shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, silent);
+                            shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, silent);
 
                             merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
                             // Output for parser

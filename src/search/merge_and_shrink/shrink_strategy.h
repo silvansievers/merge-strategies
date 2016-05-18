@@ -39,7 +39,8 @@ public:
       system. However, it may attempt to e.g. shrink the transition system in
       an information preserving way.
     */
-    bool shrink(FactoredTransitionSystem &fts, int index, int target);
+    bool shrink(FactoredTransitionSystem &fts, int index, int target,
+                bool silent = false);
 
     std::vector<double> &get_miss_qualified_states_ratios() {
         return miss_qualified_states_ratios;
