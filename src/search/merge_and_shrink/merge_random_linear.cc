@@ -2,14 +2,8 @@
 
 #include "factored_transition_system.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-#include "../task_proxy.h"
-
 #include "../utils/collections.h"
-#include "../utils/memory.h"
 #include "../utils/rng.h"
-#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,33 +11,15 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeRandomLinear::MergeRandomLinear(const Options &options)
-    : MergeStrategy(),
-      random_seed(options.get<int>("random_seed")),
+MergeRandomLinear::MergeRandomLinear(
+    FactoredTransitionSystem &fts,
+    vector<int> &&randomized_variable_order)
+    : MergeStrategy(fts),
+      randomized_variable_order(move(randomized_variable_order)),
       need_first_index(true) {
-    rng = utils::parse_rng_from_options(options);
 }
 
-void MergeRandomLinear::initialize(const shared_ptr<AbstractTask> task) {
-    MergeStrategy::initialize(task);
-    TaskProxy task_proxy(*task);
-    int num_variables = task_proxy.get_variables().size();
-    vector<int> variables(num_variables, -1);
-    iota(variables.begin(), variables.end(), 0);
-
-    randomized_variable_order.reserve(num_variables);
-    for (int i = 0; i < num_variables; ++i) {
-        int random_index = (*rng)(variables.size());
-        randomized_variable_order.push_back(variables[random_index]);
-        variables.erase(variables.begin() + random_index);
-    }
-}
-
-pair<int, int> MergeRandomLinear::get_next(
-    FactoredTransitionSystem &fts) {
-    assert(initialized());
-    assert(!done());
-
+pair<int, int> MergeRandomLinear::get_next() {
     int next_index1;
     if (need_first_index) {
         need_first_index = false;
@@ -60,30 +36,6 @@ pair<int, int> MergeRandomLinear::get_next(
     cout << "Next variable: " << next_index2 << endl;
     assert(fts.is_active(next_index1));
     assert(fts.is_active(next_index2));
-    --remaining_merges;
     return make_pair(next_index1, next_index2);
 }
-
-void MergeRandomLinear::dump_strategy_specific_options() const {
-    cout << "random seed: " << random_seed << endl;
-}
-
-string MergeRandomLinear::name() const {
-    return "random linear";
-}
-
-static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Random linear merge strategy.",
-        "This merge strategy randomly computes a variable order for merging.");
-    utils::add_rng_options(parser);
-
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeRandomLinear>(opts);
-}
-
-static PluginShared<MergeStrategy> _plugin("merge_random_linear", _parse);
 }

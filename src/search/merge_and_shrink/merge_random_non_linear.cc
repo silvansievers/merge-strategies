@@ -3,31 +3,21 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
-#include "../option_parser.h"
-#include "../plugin.h"
-
-#include "../utils/memory.h"
 #include "../utils/rng.h"
-#include "../utils/rng_options.h"
 
 #include <cassert>
 #include <iostream>
-
 using namespace std;
 
 namespace merge_and_shrink {
-MergeRandomNonLinear::MergeRandomNonLinear(const Options &options)
-    : MergeStrategy(),
-      random_seed(options.get<int>("random_seed")),
-      shrink_threshold(options.get<int>("shrink_threshold")) {
-    rng = utils::parse_rng_from_options(options);
+MergeRandomNonLinear::MergeRandomNonLinear(
+    FactoredTransitionSystem &fts,
+    shared_ptr<utils::RandomNumberGenerator> rng,
+    int shrink_threshold)
+    : MergeStrategy(fts), rng(move(rng)), shrink_threshold(shrink_threshold) {
 }
 
-pair<int, int> MergeRandomNonLinear::get_next(
-    FactoredTransitionSystem &fts) {
-    assert(initialized());
-    assert(!done());
-
+pair<int, int> MergeRandomNonLinear::get_next() {
     utils::RandomNumberGenerator &rng_ = *rng;
 
     vector<pair<int, int>> possible_noshrink_merges;
@@ -71,35 +61,6 @@ pair<int, int> MergeRandomNonLinear::get_next(
     assert(next_index1 != -1);
     assert(next_index2 != -1);
 
-    --remaining_merges;
     return make_pair(next_index1, next_index2);
 }
-
-void MergeRandomNonLinear::dump_strategy_specific_options() const {
-    cout << "random seed: " << random_seed << endl;
-}
-
-string MergeRandomNonLinear::name() const {
-    return "random non linear";
-}
-
-static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    parser.document_synopsis(
-        "Random non-linear merge strategy.",
-        "This merge strategy randomly selects the two next transition systems "
-        "among those that can be merged without shrinking (thus forcing a "
-        "non-linear order on the atomic variables), before randomly "
-        "merging all remaining transition systems once this is no longer "
-        "possible.");
-    utils::add_rng_options(parser);
-    parser.add_option<int>("shrink_threshold", "shrink threshold", "50000");
-
-    Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeRandomNonLinear>(opts);
-}
-
-static PluginShared<MergeStrategy> _plugin("merge_random_non_linear", _parse);
 }

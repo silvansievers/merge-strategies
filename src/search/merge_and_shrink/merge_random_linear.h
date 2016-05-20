@@ -3,29 +3,22 @@
 
 #include "merge_strategy.h"
 
-namespace options {
-class Options;
-}
+#include <memory>
+#include <vector>
+
 namespace utils {
-    class RandomNumberGenerator;
+class RandomNumberGenerator;
 }
 
 namespace merge_and_shrink {
 class MergeRandomLinear : public MergeStrategy {
-    int random_seed;
-    std::shared_ptr<utils::RandomNumberGenerator> rng;
-    bool need_first_index;
     std::vector<int> randomized_variable_order;
-protected:
-    virtual void dump_strategy_specific_options() const override;
+    bool need_first_index;
 public:
-    explicit MergeRandomLinear(const options::Options &options);
+    MergeRandomLinear(FactoredTransitionSystem &fts,
+        std::vector<int> &&randomized_variable_order);
     virtual ~MergeRandomLinear() override = default;
-    virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
-
-    virtual std::pair<int, int> get_next(
-        FactoredTransitionSystem &fts) override;
-    virtual std::string name() const override;
+    virtual std::pair<int, int> get_next() override;
 };
 }
 
