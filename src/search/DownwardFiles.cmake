@@ -423,7 +423,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_random_linear.cc
         merge_and_shrink/merge_random_non_linear.cc
-        #merge_and_shrink/merge_sccs.cc
+        merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_strategy.cc
         merge_and_shrink/merge_strategy_factory.cc
         merge_and_shrink/merge_strategy_factory_dfp.cc
@@ -431,6 +431,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_strategy_factory_random.cc
         merge_and_shrink/merge_strategy_factory_random_linear.cc
         merge_and_shrink/merge_strategy_factory_random_non_linear.cc
+        merge_and_shrink/merge_strategy_factory_sccs.cc
         #merge_and_shrink/merge_symmetries.cc
         merge_and_shrink/shrink_bisimulation.cc
         merge_and_shrink/shrink_bucket_based.cc

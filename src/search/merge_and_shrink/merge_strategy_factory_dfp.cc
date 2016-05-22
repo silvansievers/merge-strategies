@@ -18,7 +18,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeStrategyFactoryDFP::MergeStrategyFactoryDFP(options::Options &options)
+MergeStrategyFactoryDFP::MergeStrategyFactoryDFP(const options::Options &options)
     : MergeStrategyFactory(),
       atomic_ts_order(AtomicTSOrder(options.get_enum("atomic_ts_order"))),
       product_ts_order(ProductTSOrder(options.get_enum("product_ts_order"))),
@@ -28,6 +28,13 @@ MergeStrategyFactoryDFP::MergeStrategyFactoryDFP(options::Options &options)
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryDFP::compute_merge_strategy(
+    const shared_ptr<AbstractTask> task,
+    FactoredTransitionSystem &fts) {
+    vector<int> transition_system_order = compute_ts_order(task);
+    return utils::make_unique_ptr<MergeDFP>(fts, move(transition_system_order));
+}
+
+unique_ptr<MergeDFP> MergeStrategyFactoryDFP::compute_merge_strategy_dfp(
     const shared_ptr<AbstractTask> task,
     FactoredTransitionSystem &fts) {
     vector<int> transition_system_order = compute_ts_order(task);
