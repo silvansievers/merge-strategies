@@ -418,7 +418,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_dfp.cc
         #merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_linear.cc
-        #merge_and_shrink/merge_miasm.cc
+        merge_and_shrink/merge_miasm.cc
         #merge_and_shrink/merge_predefined.cc
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_random_linear.cc
@@ -428,6 +428,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_strategy_factory.cc
         merge_and_shrink/merge_strategy_factory_dfp.cc
         merge_and_shrink/merge_strategy_factory_linear.cc
+        merge_and_shrink/merge_strategy_factory_miasm.cc
         merge_and_shrink/merge_strategy_factory_random.cc
         merge_and_shrink/merge_strategy_factory_random_linear.cc
         merge_and_shrink/merge_strategy_factory_random_non_linear.cc
@@ -440,10 +441,9 @@ fast_downward_plugin(
         merge_and_shrink/shrink_strategy.cc
         merge_and_shrink/transition_system.cc
         merge_and_shrink/types.cc
-        merge_and_shrink/miasm/merge_miasm_parameters.cc
         merge_and_shrink/miasm/merge_tree.cc
         merge_and_shrink/miasm/miasm_mas.cc
-        #merge_and_shrink/miasm/sink_set_search.cc
+        merge_and_shrink/miasm/sink_set_search.cc
         merge_and_shrink/miasm/subset_info.cc
         merge_and_shrink/miasm/types.cc
     DEPENDS SCC

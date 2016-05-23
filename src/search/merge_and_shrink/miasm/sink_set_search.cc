@@ -29,14 +29,14 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
     : task(task),
       task_proxy(*task),
       causal_graph(task_proxy.get_causal_graph()),
-      time_limit(opts.get<double>(OptTimeLimit::opt_key())),
-      memory_limit(opts.get<int>(OptMemoryLimit::opt_key())),
-      size_limit(opts.get<int>(OptSizeLimit::opt_key())),
-      clique_limit(opts.get<int>(OptCliqueLimit::opt_key())),
-      opt_prior(opts.get_enum(EnumPriority::option_key())),
-      opt_expa(opts.get_enum(EnumExpand::option_key())),
-      opt_gain(opts.get_enum(EnumGain::option_key())),
-      opt_prune(opts.get_enum(EnumPrune::option_key())),
+      time_limit(opts.get<double>("time_limit")),
+      memory_limit(opts.get<int>("memory_limit")),
+      size_limit(opts.get<int>("size_limit")),
+      clique_limit(opts.get<int>("clique_limit")),
+      opt_prior(EnumPriority(opts.get_enum("priority"))),
+      opt_expa(EnumExpand(opts.get_enum("expand"))),
+      opt_gain(EnumGain(opts.get_enum("gain"))),
+      opt_prune(EnumPrune(opts.get_enum("prune"))),
       pq(ComparatorSTLPriorityQueue(task, &vsir, &opt_prior)) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
 //    dump_options(cerr, "\n    ");
@@ -53,23 +53,23 @@ bool SinkSetSearch::time_limit_exceeded() {
 }
 
 bool SinkSetSearch::memory_limit_exceeded() {
-    return getCurrentRSS() > memory_limit;
+    return static_cast<int>(getCurrentRSS()) > memory_limit;
 }
 
 void SinkSetSearch::dump_options(ostream &os, const string sep) const {
-    os << sep << OptTimeLimit::opt_key() << " = " << time_limit
-       << sep << OptSizeLimit::opt_key() << " = " << size_limit
-       << sep << OptCliqueLimit::opt_key() << " = " << clique_limit
+    os << sep << "time_limit" << " = " << time_limit
+       << sep << "size_limit" << " = " << size_limit
+       << sep << "clique_limit" << " = " << clique_limit
        << sep << endl;
-    os << sep << EnumPriority::option_key() << " = "
-       << EnumPriority::C[opt_prior]
-       << sep << EnumExpand::option_key() << " = "
-       << EnumExpand::C[opt_expa]
-       << sep << EnumGain::option_key() << " = "
-       << EnumGain::C[opt_gain]
-       << sep << EnumPrune::option_key() << " = "
-       << EnumPrune::C[opt_prune]
-       << sep << endl;
+//    os << sep << "priority" << " = "
+//       << EnumPriority::C[opt_prior]
+//       << sep << "expand" << " = "
+//       << EnumExpand::C[opt_expa]
+//       << sep << "gain" << " = "
+//       << EnumGain::C[opt_gain]
+//       << sep << "prune" << " = "
+//       << EnumPrune::C[opt_prune]
+//       << sep << endl;
 }
 
 void SinkSetSearch::get_sink_set(vector<var_set_t> &sink_set) {

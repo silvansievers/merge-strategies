@@ -2,7 +2,6 @@
 #define SINK_SET_SEARCH_H
 
 #include "types.h"
-#include "option_struct.h"
 #include "subset_info.h"
 
 #include "../../task_proxy.h"
@@ -23,85 +22,66 @@ namespace options {
 class Options;
 }
 
-DECLARE_OPT(double, OptTimeLimit);
-
-DECLARE_OPT(std::size_t, OptMemoryLimit);
-
-/** @brief An \link #DECLARE_INT_OPT int wrapper struct \endlink
- * that provides the limit on the size of an abstraction on a subset
- * that can be "enqueued" in #SinkSetSearch */
-DECLARE_OPT(int, OptSizeLimit);
-
-DECLARE_OPT(int, OptCliqueLimit);
-
-#define X(a) a
-
-#define EnumPriorityTable \
-    /** first-in-first-out */ \
-    X(FIFO), \
-    /** dequeue the subset with the lowest ratio first */ \
-    X(RATIO), \
-    /** dequeue the subset with the highest gain first */ \
-    X(GAIN)
-
+namespace merge_and_shrink {
 /** @brief An \link #DECLARE_ENUM_OPT enum wrapper struct \endlink
  * defines the priority in priority queue used
  * in #SinkSetSearch */
-DECLARE_ENUM_OPT(EnumPriority);
-
-#define EnumExpandTable \
-    /** expand a set by adding a new variable to it; <br> */ \
-    /** (Complexity: linear in the number of variables) */ \
-    X(SINGLE), \
-    /** no expansion */ \
-    X(NONE)
+enum class EnumPriority {
+    /** first-in-first-out */
+    FIFO,
+    /** dequeue the subset with the lowest ratio first */
+    RATIO,
+    /** dequeue the subset with the highest gain first */
+    GAIN
+};
 
 /** @brief An \link #DECLARE_ENUM_OPT enum wrapper struct \endlink
  * defines how to expand a subset in #SinkSetSearch */
-DECLARE_ENUM_OPT(EnumExpand);
-
-#define EnumGainTable \
-    /** check each subset \a K in the pool (merge-tree) of the M&S */ \
-    /** abstraction on set \a S. <br> */ \
-    /** if \a r(\a S - \a K) is not known, then use 1.00. */ \
-    X(POOL_GUESS), \
-    /** check each subset \a K in the pool (merge-tree) of the M&S */ \
-    /** abstraction on set \a S. <br> */ \
-    /** if \a r(\a S - \a K) is not known, then compute it. */ \
-    X(POOL_ACCUR), \
-    /** check every subset \a K of set \a S, */ \
-    /** s.t. |\a K| <= |\a S| / 2. <br> */ \
-    /** if \a r(\a K) is not known, then use 1.00. <br> */ \
-    /** if \a r(\a S - \a K) is not known, then use 1.00. */ \
-    X(ALL_GUESS), \
-    /** check every subset \a K of set \a S, */ \
-    /** s.t. |\a K| <= |\a S| / 2. <br> */ \
-    /** if \a r(\a K) is not known, then compute it. <br> */ \
-    /** if \a r(\a S - \a K) is not known, then compute it. */ \
-    X(ALL_ACCUR)
+enum class EnumExpand {
+    /** expand a set by adding a new variable to it; <br> */
+    /** (Complexity: linear in the number of variables) */
+    SINGLE,
+    /** no expansion */
+    NONE
+};
 
 /** @brief An \link #DECLARE_ENUM_OPT enum wrapper struct \endlink
  * defines the methods used to update the ratio gain */
-DECLARE_ENUM_OPT(EnumGain);
-
-#define EnumPruneTable \
-    /** no pruning */ \
-    X(NONE), \
-    /** skip a variable set \a G = \a S + \a A if <br> */ \
-    /** the sub-causal-graphs of \a S and \a A are not weakly connected */ \
-    /** and <br>*/ \
-    /** there is no mutex pair on \a u and \a v s.t. */ \
-    /** \a u in \a S and \a v in \a A */ \
-    X(CGWC_MUTEX)
+enum class EnumGain {
+    /** check each subset \a K in the pool (merge-tree) of the M&S */
+    /** abstraction on set \a S. <br> */
+    /** if \a r(\a S - \a K) is not known, then use 1.00. */
+    POOL_GUESS,
+    /** check each subset \a K in the pool (merge-tree) of the M&S */
+    /** abstraction on set \a S. <br> */
+    /** if \a r(\a S - \a K) is not known, then compute it. */
+    POOL_ACCUR,
+    /** check every subset \a K of set \a S, */
+    /** s.t. |\a K| <= |\a S| / 2. <br> */
+    /** if \a r(\a K) is not known, then use 1.00. <br> */
+    /** if \a r(\a S - \a K) is not known, then use 1.00. */
+    ALL_GUESS,
+    /** check every subset \a K of set \a S, */
+    /** s.t. |\a K| <= |\a S| / 2. <br> */
+    /** if \a r(\a K) is not known, then compute it. <br> */
+    /** if \a r(\a S - \a K) is not known, then compute it. */
+    ALL_ACCUR
+};
 
 /** @brief An \link #DECLARE_ENUM_OPT enum wrapper struct \endlink
  * defines what are variable sets can be pruned (ie, not enqueue) */
-DECLARE_ENUM_OPT(EnumPrune);
+enum class EnumPrune {
+    /** no pruning */
+    NONE,
+    /** skip a variable set \a G = \a S + \a A if <br> */
+    /** the sub-causal-graphs of \a S and \a A are not weakly connected */
+    /** and <br>*/
+    /** there is no mutex pair on \a u and \a v s.t. */
+    /** \a u in \a S and \a v in \a A */
+    CGWC_MUTEX
+};
 
-#undef X
 
-namespace merge_and_shrink {
-class MergeMiasm;
 class MiasmAbstraction;
 /**
  * Comparator for std::priority_queue used in the #SinkSetSearch
@@ -143,17 +123,17 @@ protected:
     TaskProxy task_proxy;
     const CausalGraph &causal_graph;
     /** @brief the time limit for sink-set search */
-    const OptTimeLimit time_limit;
+    const double time_limit;
     /** @brief the memory limit for the process,
      * sink set search stopping caching more abstractions
      * if the current RSS (resident set size) exceeds the limit */
-    const OptMemoryLimit memory_limit;
+    const int memory_limit;
     /** @brief the limit on the size (the number of all states) of
      * an abstraction on a subset that is allowed to be enqueued */
-    const OptSizeLimit size_limit;
+    const int size_limit;
     /** @brief the limit on the number of variables of mutex pair cliques
      * that can be enqueued */
-    const OptCliqueLimit clique_limit;
+    const int clique_limit;
     //@}
     /** @name Search Options */
     //@{

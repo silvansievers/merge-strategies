@@ -1,8 +1,6 @@
 #ifndef MERGE_TREE_H
 #define MERGE_TREE_H
 
-#include "merge_miasm_parameters.h"
-
 #include "subset_info.h"
 
 #include "../../ext/tree.hh"
@@ -16,6 +14,30 @@ class AbstractTask;
 class CausalGraph;
 
 namespace merge_and_shrink {
+/** @brief \link #DECLARE_ENUM_OPT Enum-Option-Struct \endlink
+ * defines MIASM's internal merging strategies */
+enum class MiasmInternal {
+    /** by variable level */
+    LEVEL,
+    /** by reverse variable level */
+    REVERSE_LEVEL
+};
+
+/** @brief \link #DECLARE_ENUM_OPT Enum-Option-Struct \endlink
+ * defines MIASM's external merging strategies */
+enum class MiasmExternal {
+    /** non-singleton set before singleton set; <br> */
+    /** causal graph predecssor before goal; <br> */
+    /** incresing number of variables; <br> */
+    /** level of the smallest variable */
+    NUM_VAR_CGL,
+    /** TODO */
+    RNR_SIZE_CGL,
+    /** causal graph predecssor before goal; <br> */
+    /** reverse level of the smallest variable */
+    CGRL
+};
+
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
     ComparatorSortPacking(const std::shared_ptr<AbstractTask> task,
