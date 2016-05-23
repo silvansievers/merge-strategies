@@ -25,6 +25,8 @@ MergeStrategyFactoryMiasm::MergeStrategyFactoryMiasm(const options::Options &opt
       miasm_internal(MiasmInternal(opts.get_enum("miasm_internal"))),
       miasm_external(MiasmExternal(opts.get_enum("miasm_external"))) {
     options = new options::Options(opts);
+    // TODO: We would like to store sink_set_search instead of options here,
+    // but it requires a task object.
 }
 
 MergeStrategyFactoryMiasm::~MergeStrategyFactoryMiasm() {
