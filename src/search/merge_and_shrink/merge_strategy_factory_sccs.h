@@ -17,7 +17,7 @@ public:
     MergeStrategyFactorySCCs(const options::Options &options);
     virtual ~MergeStrategyFactorySCCs();
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
-        const std::shared_ptr<AbstractTask> task,
+        const std::shared_ptr<AbstractTask> &task,
         FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
 };

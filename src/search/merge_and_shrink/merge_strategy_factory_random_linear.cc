@@ -25,7 +25,7 @@ MergeStrategyFactoryRandomLinear::MergeStrategyFactoryRandomLinear(
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryRandomLinear::compute_merge_strategy(
-    const std::shared_ptr<AbstractTask> task,
+    const std::shared_ptr<AbstractTask> &task,
     FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();

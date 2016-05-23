@@ -24,7 +24,7 @@ MergeStrategyFactoryRandomNonLinear::MergeStrategyFactoryRandomNonLinear(
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryRandomNonLinear::compute_merge_strategy(
-    const std::shared_ptr<AbstractTask>,
+    const std::shared_ptr<AbstractTask> &,
     FactoredTransitionSystem &fts) {
     return utils::make_unique_ptr<MergeRandomNonLinear>(fts, move(rng), shrink_threshold);
 }

@@ -6,8 +6,6 @@
 #include "transition_system.h"
 #include "types.h"
 
-#include "../task_proxy.h"
-
 #include "../utils/rng.h"
 #include "../utils/rng_options.h"
 
@@ -19,7 +17,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeDFP::MergeDFP(FactoredTransitionSystem &fts, vector<int> &&transition_system_order)
+MergeDFP::MergeDFP(FactoredTransitionSystem &fts, vector<int> transition_system_order)
     : MergeStrategy(fts), transition_system_order(move(transition_system_order)) {
 }
 
@@ -33,13 +31,12 @@ bool MergeDFP::is_goal_relevant(const TransitionSystem &ts) const {
     return false;
 }
 
-void MergeDFP::compute_label_ranks(
-    int index, vector<int> &label_ranks) const {
+vector<int> MergeDFP::compute_label_ranks(int index) const {
     const TransitionSystem &ts = fts.get_ts(index);
     const Distances &distances = fts.get_dist(index);
     int num_labels = fts.get_num_labels();
     // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
-    label_ranks.resize(num_labels, -1);
+    vector<int> label_ranks(num_labels, -1);
 
     for (const GroupAndTransitions &gat : ts) {
         const LabelGroup &label_group = gat.label_group;
@@ -73,11 +70,12 @@ void MergeDFP::compute_label_ranks(
             label_ranks[label_no] = label_rank;
         }
     }
+
+    return label_ranks;
 }
 
 pair<int, int> MergeDFP::compute_next_pair(
     const vector<int> &sorted_active_ts_indices) const {
-
     vector<bool> goal_relevant(sorted_active_ts_indices.size(), false);
     for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
         int ts_index = sorted_active_ts_indices[i];
@@ -100,7 +98,7 @@ pair<int, int> MergeDFP::compute_next_pair(
         assert(fts.is_active(ts_index1));
         vector<int> &label_ranks1 = transition_system_label_ranks[i];
         if (label_ranks1.empty()) {
-            compute_label_ranks(ts_index1, label_ranks1);
+            label_ranks1 = move(compute_label_ranks(ts_index1));
         }
         for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
             int ts_index2 = sorted_active_ts_indices[j];
@@ -121,7 +119,7 @@ pair<int, int> MergeDFP::compute_next_pair(
                 // Compute the weight associated with this pair
                 vector<int> &label_ranks2 = transition_system_label_ranks[j];
                 if (label_ranks2.empty()) {
-                    compute_label_ranks(ts_index2, label_ranks2);
+                    label_ranks2 = move(compute_label_ranks(ts_index2));
                 }
                 assert(label_ranks1.size() == label_ranks2.size());
                 int pair_weight = INF;

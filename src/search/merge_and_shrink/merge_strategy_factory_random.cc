@@ -23,7 +23,7 @@ MergeStrategyFactoryRandom::MergeStrategyFactoryRandom(
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryRandom::compute_merge_strategy(
-    const std::shared_ptr<AbstractTask>,
+    const std::shared_ptr<AbstractTask> &,
     FactoredTransitionSystem &fts) {
     return utils::make_unique_ptr<MergeRandom>(fts, move(rng));
 }

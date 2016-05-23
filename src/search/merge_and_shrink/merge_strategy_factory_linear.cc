@@ -16,13 +16,14 @@ MergeStrategyFactoryLinear::MergeStrategyFactoryLinear(
     options::Options &options)
     : MergeStrategyFactory(),
       variable_order_type(static_cast<VariableOrderType>(
-                            options.get_enum("variable_order"))) {
+                              options.get_enum("variable_order"))) {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryLinear::compute_merge_strategy(
-    const shared_ptr<AbstractTask> task,
+    const shared_ptr<AbstractTask> &task,
     FactoredTransitionSystem &fts) {
-    return utils::make_unique_ptr<MergeLinear>(fts,
+    return utils::make_unique_ptr<MergeLinear>(
+        fts,
         utils::make_unique_ptr<VariableOrderFinder>(task, variable_order_type));
 }
 
