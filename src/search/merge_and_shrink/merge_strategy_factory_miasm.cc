@@ -5,10 +5,8 @@
 
 #include "miasm/sink_set_search.h"
 #include "miasm/miasm_mas.h"
-//#include "miasm/merge_tree.h"
 
 #include "../options/option_parser.h"
-#include "../options/options.h"
 #include "../options/plugin.h"
 
 #include "../utils/system.h"
@@ -22,21 +20,17 @@ using namespace std;
 namespace merge_and_shrink {
 MergeStrategyFactoryMiasm::MergeStrategyFactoryMiasm(const options::Options &opts)
     : MergeStrategyFactory(),
+      options(opts),
       miasm_internal(MiasmInternal(opts.get_enum("miasm_internal"))),
       miasm_external(MiasmExternal(opts.get_enum("miasm_external"))) {
-    options = new options::Options(opts);
     // TODO: We would like to store sink_set_search instead of options here,
     // but it requires a task object.
-}
-
-MergeStrategyFactoryMiasm::~MergeStrategyFactoryMiasm() {
-    delete options;
 }
 
 MiasmMergeTree *MergeStrategyFactoryMiasm::compute_merge_tree(
     const shared_ptr<AbstractTask> &task) {
     /* search for sink sets */
-    SinkSetSearch sink_set_search(*options, task);
+    SinkSetSearch sink_set_search(options, task);
     sink_set_search.search();
     sink_set_search.get_sink_set(sink_sets);
 

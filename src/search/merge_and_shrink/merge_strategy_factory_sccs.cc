@@ -12,7 +12,6 @@
 #include "../variable_order_finder.h"
 
 #include "../options/option_parser.h"
-#include "../options/options.h"
 #include "../options/plugin.h"
 
 #include "../utils/logging.h"
@@ -32,20 +31,15 @@ bool compare_sccs_decreasing(const vector<int> &lhs, const vector<int> &rhs) {
     return lhs.size() > rhs.size();
 }
 
-MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &options_)
-    : MergeStrategyFactory() {
-    options = new options::Options(options_);
-}
-
-MergeStrategyFactorySCCs::~MergeStrategyFactorySCCs() {
-    delete options;
+MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &options)
+    : MergeStrategyFactory(), options(options) {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
         const shared_ptr<AbstractTask> &task,
         FactoredTransitionSystem &fts) {
-    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options->get_enum("order_of_sccs")));
-    InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(options->get_enum("internal_merge_order")));
+    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs")));
+    InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(options.get_enum("internal_merge_order")));
     vector<int> linear_variable_order;
     vector<vector<int>> non_singleton_cg_sccs;
     vector<int> indices_of_merged_sccs;
@@ -56,19 +50,17 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
 
     unique_ptr<MergeDFP> merge_dfp = nullptr;
     if (internal_merge_order == InternalMergeOrder::DFP) {
-        MergeStrategyFactoryDFP factory(*options);
+        MergeStrategyFactoryDFP factory(options);
         merge_dfp = factory.compute_merge_strategy_dfp(task, fts);
     }
     if (internal_merge_order == InternalMergeOrder::LINEAR) {
-        VariableOrderFinder vof(task, VariableOrderType(options->get_enum("variable_order")));
+        VariableOrderFinder vof(task, VariableOrderType(options.get_enum("variable_order")));
         linear_variable_order.reserve(num_vars);
         while (!vof.done()) {
             linear_variable_order.push_back(vof.next());
         }
         cout << "linear variable order: " << linear_variable_order << endl;
     }
-    delete options;
-    options = nullptr;
 
     // Compute SCCs of the causal graph
     vector<vector<int>> cg;
@@ -140,7 +132,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
 }
 
 void MergeStrategyFactorySCCs::dump_strategy_specific_options() const {
-    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options->get_enum("order_of_sccs")));
+    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs")));
     cout << "Merge order of sccs: ";
     switch (order_of_sccs) {
     case OrderOfSCCs::TOPOLOGICAL:
@@ -159,7 +151,7 @@ void MergeStrategyFactorySCCs::dump_strategy_specific_options() const {
     cout << endl;
 
     InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(
-        options->get_enum("internal_merge_order")));
+        options.get_enum("internal_merge_order")));
     cout << "Internal merge order for sccs: ";
     switch (internal_merge_order) {
     case InternalMergeOrder::LINEAR:

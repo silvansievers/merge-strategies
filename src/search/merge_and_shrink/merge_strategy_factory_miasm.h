@@ -5,12 +5,13 @@
 
 #include "miasm/merge_tree.h"
 
+#include "../options/options.h"
+
 #include <vector>
 #include <set>
 
 namespace options {
 class OptionParser;
-class Options;
 }
 
 namespace merge_and_shrink {
@@ -28,7 +29,7 @@ private:
      */
     void greedy_max_set_packing();
     /** @name Protected: Options */
-    options::Options *options;
+    options::Options options;
     //@{
     /** @brief The enum option that specifies the internal merging strategy */
     const MiasmInternal miasm_internal;
@@ -50,7 +51,7 @@ protected:
 public:
     /** @brief The option-based constructor */
     explicit MergeStrategyFactoryMiasm(const options::Options &opts);
-    virtual ~MergeStrategyFactoryMiasm() override;
+    virtual ~MergeStrategyFactoryMiasm() override = default;
     virtual std::string name() const;
     MiasmMergeTree *compute_merge_tree(const std::shared_ptr<AbstractTask> &task);
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
