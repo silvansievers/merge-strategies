@@ -1,19 +1,16 @@
 #include "merge_symmetries.h"
 
 #include "factored_transition_system.h"
-#include "merge_linear.h"
 #include "merge_dfp.h"
-#include "merge_miasm.h"
 #include "transition_system.h"
 
 #include "miasm/merge_tree.h"
 
 #include "symmetries/symmetry_group.h"
 
+#include "../options/options.h"
+
 #include "../globals.h"
-#include "../option_parser.h"
-#include "../plugin.h"
-#include "../variable_order_finder.h"
 
 #include "../utils/logging.h"
 #include "../utils/rng.h"
@@ -24,24 +21,30 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSymmetries::MergeSymmetries(const Options &options_)
-    : MergeStrategy(),
-      max_bliss_iterations(options_.get<int>("max_bliss_iterations")),
-      bliss_call_time_limit(options_.get<int>("bliss_call_time_limit")),
-      bliss_remaining_time_budget(options_.get<int>("bliss_total_time_budget")),
-      fallback_strategy(FallbackStrategy(options_.get_enum("fallback_strategy"))),
+MergeSymmetries::MergeSymmetries(
+    FactoredTransitionSystem &fts,
+    const options::Options &options,
+    int num_merges,
+    std::vector<int> linear_merge_order,
+    std::unique_ptr<MergeDFP> merge_dfp,
+    MiasmMergeTree *miasm_merge_tree)
+    : MergeStrategy(fts),
+      options(options),
+      num_merges(num_merges),
+      linear_merge_order(move(linear_merge_order)),
+      merge_dfp(move(merge_dfp)),
+      miasm_merge_tree(miasm_merge_tree),
+      max_bliss_iterations(options.get<int>("max_bliss_iterations")),
+      bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
+      bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
+      fallback_strategy(FallbackStrategy(options.get_enum("fallback_strategy"))),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
-      pure_fallback_strategy(true),
-      merge_dfp(nullptr),
-      miasm_merge_tree(nullptr) {
-    options = new Options(options_);
+      pure_fallback_strategy(true) {
 }
 
 MergeSymmetries::~MergeSymmetries() {
-    delete merge_dfp;
-    delete options;
     delete miasm_merge_tree;
 }
 
@@ -72,115 +75,7 @@ void MergeSymmetries::dump_statistics() {
     }
 }
 
-void MergeSymmetries::dump_strategy_specific_options() const {
-    cout << "Options for merge symmetries:" << endl;
-    cout << "    symmetries for shrinking: ";
-    int symmetries_for_shrinking = options->get_enum("symmetries_for_shrinking");
-    switch (symmetries_for_shrinking) {
-        case 0: {
-            cout << "none";
-            break;
-        }
-        case 1: {
-            cout << "atomic";
-            break;
-        }
-        case 2: {
-            cout << "local";
-            break;
-        }
-    }
-    cout << endl;
-    cout << "    symmetries for merging: ";
-    int symmetries_for_merging = options->get_enum("symmetries_for_merging");
-    switch (symmetries_for_merging) {
-        case 0: {
-            cout << "none";
-            break;
-        }
-        case 1: {
-            cout << "smallest";
-            break;
-        }
-        case 2: {
-            cout << "largest";
-            break;
-        }
-    }
-    cout << endl;
-    if (symmetries_for_merging) {
-        cout << "    external merging: ";
-        switch (options->get_enum("external_merging")) {
-            case 0: {
-                cout << "merge for atomic symmetry";
-                break;
-            }
-            case 1: {
-                cout << "merge for local symmetry";
-                break;
-            }
-        }
-        cout << endl;
-        cout << "    internal merging: ";
-        switch (options->get_enum("internal_merging")) {
-            case 0: {
-                cout << "linear";
-                break;
-            }
-            case 1: {
-                cout << "non linear";
-                break;
-            }
-        }
-        cout << endl;
-    }
-    cout << "    maxium number of m&s iterations with bliss: "
-         << max_bliss_iterations << endl;
-    cout << "    time limit for single bliss calls (0 means unlimited): "
-         << bliss_call_time_limit << endl;
-    cout << "    total time budget for bliss (0 means unlimited): "
-         << options->get<int>("bliss_total_time_budget") << endl;
-    cout << "    stop searching for symmetries once no symmetry was found: "
-         << (options->get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
-    cout << "    stabilize transition systems: "
-         << (options->get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
-    cout << "    fallback merge strategy: ";
-    switch (fallback_strategy) {
-    case LINEAR:
-        cout << "linear";
-        break;
-    case DFP:
-        cout << "dfp";
-        break;
-    case MIASM:
-        cout << "miasm";
-        break;
-    }
-    cout << endl;
-}
-
-void MergeSymmetries::initialize(const shared_ptr<AbstractTask> task) {
-    MergeStrategy::initialize(task);
-    if (fallback_strategy == LINEAR) {
-        TaskProxy task_proxy(*task);
-        VariableOrderFinder order(task,
-                                  VariableOrderType(options->get_enum("variable_order")));
-        linear_merge_order.reserve(task_proxy.get_variables().size());
-        while (!order.done()) {
-            linear_merge_order.push_back(order.next());
-        }
-    } else if (fallback_strategy == DFP) {
-        merge_dfp = new MergeDFP(*options);
-        merge_dfp->initialize(task);
-    } else if (fallback_strategy == MIASM) {
-        MergeMiasm merge_miasm(*options);
-        miasm_merge_tree = merge_miasm.compute_merge_tree(task);
-    } else {
-        ABORT("unknown fallback merge strategy");
-    }
-}
-
-pair<int, int> MergeSymmetries::get_next_miasm(FactoredTransitionSystem &fts) {
+pair<int, int> MergeSymmetries::get_next_miasm() {
     tree<set<int>> &merge_tree = miasm_merge_tree->get_tree();
     pair<int, int> next_indices;
 
@@ -217,9 +112,7 @@ pair<int, int> MergeSymmetries::get_next_miasm(FactoredTransitionSystem &fts) {
     return next_indices;
 }
 
-void MergeSymmetries::update_miasm_merge_tree(
-    FactoredTransitionSystem &fts,
-    const pair<int, int> &next_merge) {
+void MergeSymmetries::update_miasm_merge_tree(const pair<int, int> &next_merge) {
     tree<set<int>> &merge_tree = miasm_merge_tree->get_tree();
 
     // Find the two indices in the tree
@@ -267,7 +160,7 @@ void MergeSymmetries::update_miasm_merge_tree(
         } else if (merge_tree.depth(*first_index_it) > merge_tree.depth(*second_index_it)) {
             chosen_survivor_node = second_index_it;
         } else {
-            int random = (*g_rng())(2);
+            int random = (*g_rng())(2); // TODO: use rng_options.h!
             chosen_survivor_node = (random ? second_index_it : first_index_it);
         }
         tree<set<int>>::pre_order_iterator *to_be_erased_node =
@@ -294,8 +187,7 @@ void MergeSymmetries::update_miasm_merge_tree(
     delete second_index_it;
 }
 
-pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
-    assert(!done());
+pair<int, int> MergeSymmetries::get_next() {
     ++iteration_counter;
 
     if (!bliss_limit_reached && iteration_counter <= max_bliss_iterations && merge_order.empty()) {
@@ -307,8 +199,8 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
             time_limit = bliss_call_time_limit;
         }
         cout << "Setting bliss time limit to " << time_limit << endl;
-        options->set<double>("bliss_time_limit", time_limit);
-        SymmetryGroup symmetry_group(*options);
+        options.set<double>("bliss_time_limit", time_limit);
+        SymmetryGroup symmetry_group(options);
         bool applied_symmetries =
             symmetry_group.find_and_apply_symmetries(fts, merge_order);
         if (applied_symmetries) {
@@ -336,7 +228,7 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
         cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }
 
-    if (remaining_merges == 1) {
+    if (iteration_counter == num_merges) { // TODO: check correctness
         dump_statistics();
     }
 
@@ -348,14 +240,11 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
             int second = linear_merge_order[0];
             linear_merge_order[0] = fts.get_size();
             cout << "Next pair (linear strategy): " << first << ", " << second << endl;
-            --remaining_merges;
             return make_pair(first, second);
         } else if (fallback_strategy == DFP) {
-            --remaining_merges;
-            return merge_dfp->get_next(fts);
+            return merge_dfp->get_next();
         } else if (fallback_strategy == MIASM) {
-            --remaining_merges;
-            return get_next_miasm(fts);
+            return get_next_miasm();
         } else {
             ABORT("unknown fallback merge strategy");
         }
@@ -390,115 +279,9 @@ pair<int, int> MergeSymmetries::get_next(FactoredTransitionSystem &fts) {
         assert(found_entry);
     } else if (fallback_strategy == MIASM) {
         // Update miasm merge order for future fallback cases
-        update_miasm_merge_tree(fts, next_merge);
+        update_miasm_merge_tree(next_merge);
     }
 
-    --remaining_merges;
     return next_merge;
 }
-
-string MergeSymmetries::name() const {
-    return "symmetries";
-}
-
-static shared_ptr<MergeStrategy> _parse(OptionParser &parser) {
-    // Options for symmetries computation
-    parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
-                           "which bliss is allowed to run.",
-                           "infinity");
-    parser.add_option<int>("bliss_call_time_limit", "time in seconds one bliss "
-                           "run is allowed to last at most (0 means no limit)",
-                           "0");
-    parser.add_option<int>("bliss_total_time_budget", "time in seconds bliss is "
-                           "allowed to run overall (0 means no limit)",
-                           "0");
-    parser.add_option<bool>("stop_after_no_symmetries", "stop calling bliss "
-                            "after unsuccesfull previous bliss call.",
-                           "False");
-    vector<string> symmetries_for_shrinking;
-    symmetries_for_shrinking.push_back("NO_SHRINKING");
-    symmetries_for_shrinking.push_back("ATOMIC");
-    symmetries_for_shrinking.push_back("LOCAL");
-    parser.add_enum_option("symmetries_for_shrinking",
-                           symmetries_for_shrinking,
-                           "choose the type of symmetries used for shrinking: "
-                           "no shrinking, "
-                           "only atomic symmetries, "
-                           "local symmetries.",
-                           "NO_SHRINKING");
-    vector<string> symmetries_for_merging;
-    symmetries_for_merging.push_back("NO_MERGING");
-    symmetries_for_merging.push_back("SMALLEST");
-    symmetries_for_merging.push_back("LARGEST");
-    parser.add_enum_option("symmetries_for_merging",
-                           symmetries_for_merging,
-                           "choose the type of symmetries that should determine "
-                           "the set of transition systems to be merged: "
-                           "the smallest or the largest",
-                           "SMALLEST");
-    vector<string> external_merging;
-    external_merging.push_back("MERGE_FOR_ATOMIC");
-    external_merging.push_back("MERGE_FOR_LOCAL");
-    parser.add_enum_option("external_merging",
-                           external_merging,
-                           "choose the set of transition systems to be merged: "
-                           "merge for atomic: merge all transition systems affected "
-                           "by the chosen symmetry, or "
-                           "merge for local: merge only the transition systems "
-                           "mapped (in cycles) to others. only merge every "
-                           "cycle separately.",
-                           "MERGE_FOR_ATOMIC");
-    vector<string> internal_merging;
-    internal_merging.push_back("LINEAR");
-    internal_merging.push_back("NON_LINEAR");
-    parser.add_enum_option("internal_merging",
-                           internal_merging,
-                           "choose the order in which to merge the set of "
-                           "transition systems to be merged (only useful with "
-                           "MERGE_FOR_ATOMIC): "
-                           "linear (obvious), "
-                           "non linear, which means to first merge every cycle, "
-                           "and then the resulting intermediate transition systems.",
-                           "LINEAR");
-
-    // Options for GraphCreator
-    parser.add_option<bool>("stabilize_transition_systems", "compute symmetries that "
-                            "stabilize transition systems, i.e. that are local.", "false");
-    parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
-                            "from the graph generating methods", "false");
-
-    // Options for fallback merge strategy
-    vector<string> fallback_strategy;
-    fallback_strategy.push_back("linear");
-    fallback_strategy.push_back("dfp");
-    fallback_strategy.push_back("miasm");
-    parser.add_enum_option("fallback_strategy",
-                           fallback_strategy,
-                           "choose a merge strategy: linear (specify "
-                           "variable_order), dfp, or miasm.",
-                           "dfp");
-
-    MergeLinear::add_options_to_parser(parser);
-    MergeDFP::add_options_to_parser(parser);
-    MergeMiasm::add_options_to_parser(parser);
-
-    Options options = parser.parse();
-    if (options.get<int>("bliss_call_time_limit")
-            && options.get<int>("bliss_total_time_budget")) {
-        cerr << "Please only specify bliss_call_time_limit or "
-                "bliss_total_time_budget but not both" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-    if (options.get_enum("symmetries_for_shrinking") == 0
-            && options.get_enum("symmetries_for_merging") == 0) {
-        cerr << "Please use symmetries at least for shrinking or merging." << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeSymmetries>(options);
-}
-
-static PluginShared<MergeStrategy> _plugin("merge_symmetries", _parse);
 }

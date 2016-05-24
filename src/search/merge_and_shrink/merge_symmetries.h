@@ -3,6 +3,11 @@
 
 #include "merge_strategy.h"
 
+#include "../options/options.h"
+
+#include <memory>
+#include <vector>
+
 namespace options {
 class Options;
 }
@@ -11,17 +16,21 @@ namespace merge_and_shrink {
 class MergeDFP;
 class MiasmMergeTree;
 
+enum FallbackStrategy {
+    LINEAR,
+    DFP,
+    MIASM
+};
+
 class MergeSymmetries : public MergeStrategy {
-    options::Options *options;
+    options::Options options;
+    int num_merges;
+    std::vector<int> linear_merge_order;
+    std::unique_ptr<MergeDFP> merge_dfp;
+    MiasmMergeTree *miasm_merge_tree;
     int max_bliss_iterations;
     int bliss_call_time_limit;
     double bliss_remaining_time_budget;
-
-    enum FallbackStrategy {
-        LINEAR,
-        DFP,
-        MIASM
-    };
     FallbackStrategy fallback_strategy;
 
     // statistics
@@ -31,26 +40,22 @@ class MergeSymmetries : public MergeStrategy {
     std::vector<double> bliss_times;
     bool pure_fallback_strategy;
 
-    std::vector<std::pair<int, int> > merge_order; // TODO: change to from last to first?
-
-    std::vector<int> linear_merge_order;
-    MergeDFP *merge_dfp;
-    MiasmMergeTree *miasm_merge_tree;
+    // current merge_order
+    std::vector<std::pair<int, int>> merge_order;
 
     void dump_statistics();
-    std::pair<int, int> get_next_miasm(FactoredTransitionSystem &fts);
-    void update_miasm_merge_tree(
-        FactoredTransitionSystem &fts,
-        const std::pair<int, int> &next_merge);
-protected:
-    virtual void dump_strategy_specific_options() const override;
+    std::pair<int, int> get_next_miasm();
+    void update_miasm_merge_tree(const std::pair<int, int> &next_merge);
 public:
-    explicit MergeSymmetries(const options::Options &options);
-    virtual ~MergeSymmetries();
-    virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
-
-    virtual std::pair<int, int> get_next(FactoredTransitionSystem &fts) override;
-    virtual std::string name() const;
+    MergeSymmetries(
+        FactoredTransitionSystem &fts,
+        const options::Options &options,
+        int num_merges,
+        std::vector<int> linear_merge_order,
+        std::unique_ptr<MergeDFP> merge_dfp,
+        MiasmMergeTree *miasm_merge_tree);
+    virtual ~MergeSymmetries() override;
+    virtual std::pair<int, int> get_next() override;
 };
 }
 
