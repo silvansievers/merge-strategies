@@ -53,9 +53,9 @@ public:
     explicit MergeStrategyFactoryMiasm(const options::Options &opts);
     virtual ~MergeStrategyFactoryMiasm() override = default;
     virtual std::string name() const;
-    MiasmMergeTree *compute_merge_tree(const std::shared_ptr<AbstractTask> &task);
+    MiasmMergeTree *compute_merge_tree(std::shared_ptr<AbstractTask> task);
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
-        const std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) override;
     static void add_options_to_parser(options::OptionParser &parser);
 };

@@ -95,7 +95,7 @@ public:
      * @param vsir_ - the variable subset registry
      * @param priority_ - the priority type
      */
-    ComparatorSTLPriorityQueue(const std::shared_ptr<AbstractTask> task,
+    ComparatorSTLPriorityQueue(std::shared_ptr<AbstractTask> task,
                                const VarSetInfoRegistry *vsir_ = 0,
                                const EnumPriority *priority_ = 0);
     virtual ~ComparatorSTLPriorityQueue();
@@ -112,14 +112,14 @@ protected:
  */
 class SinkSetSearch {
 public:
-    SinkSetSearch(const options::Options &opts, const std::shared_ptr<AbstractTask> task);
+    SinkSetSearch(const options::Options &opts, std::shared_ptr<AbstractTask> task);
 public:
     /** @brief used to build the abstraction on a subset */
     MiasmAbstraction *miasm_abstraction;
     /** @name Search Limit Options */
     //@{
 protected:
-    const std::shared_ptr<AbstractTask> task;
+    std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
     const CausalGraph &causal_graph;
     /** @brief the time limit for sink-set search */

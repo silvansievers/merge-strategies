@@ -28,7 +28,7 @@ MergeStrategyFactoryMiasm::MergeStrategyFactoryMiasm(const options::Options &opt
 }
 
 MiasmMergeTree *MergeStrategyFactoryMiasm::compute_merge_tree(
-    const shared_ptr<AbstractTask> &task) {
+    shared_ptr<AbstractTask> task) {
     /* search for sink sets */
     SinkSetSearch sink_set_search(options, task);
     sink_set_search.search();
@@ -50,7 +50,7 @@ MiasmMergeTree *MergeStrategyFactoryMiasm::compute_merge_tree(
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryMiasm::compute_merge_strategy(
-    const shared_ptr<AbstractTask> &task,
+    shared_ptr<AbstractTask> task,
     FactoredTransitionSystem &fts) {
     MiasmMergeTree *miasm_tree = compute_merge_tree(task);
     /* convert the merge tree into the merge order

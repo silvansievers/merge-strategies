@@ -14,7 +14,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-ComparatorSortPacking::ComparatorSortPacking(const shared_ptr<AbstractTask> task,
+ComparatorSortPacking::ComparatorSortPacking(shared_ptr<AbstractTask> task,
                                              const MiasmExternal &ext_,
                                              const VarSetInfoRegistry *p_si_)
     : ComparatorVarSet(task, p_si_),
@@ -96,7 +96,7 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
                                const MiasmInternal internal_,
                                const MiasmExternal external_,
                                const VarSetInfoRegistry *p_si,
-                               const shared_ptr<AbstractTask> task)
+                               shared_ptr<AbstractTask> task)
     : packing(packing_),
       internal(internal_),
       external(external_),

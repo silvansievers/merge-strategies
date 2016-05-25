@@ -154,7 +154,7 @@ MergeStrategyFactoryPredefined::~MergeStrategyFactoryPredefined() {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryPredefined::compute_merge_strategy(
-    const shared_ptr<AbstractTask> &,
+    shared_ptr<AbstractTask>,
     FactoredTransitionSystem &fts) {
     int num_ts = fts.get_size();
     int num_merges = num_ts - 1;

@@ -28,21 +28,21 @@ MergeStrategyFactoryDFP::MergeStrategyFactoryDFP(const options::Options &options
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryDFP::compute_merge_strategy(
-    const std::shared_ptr<AbstractTask> &task,
+    std::shared_ptr<AbstractTask> task,
     FactoredTransitionSystem &fts) {
     vector<int> transition_system_order = compute_ts_order(task);
     return utils::make_unique_ptr<MergeDFP>(fts, move(transition_system_order));
 }
 
 unique_ptr<MergeDFP> MergeStrategyFactoryDFP::compute_merge_strategy_dfp(
-    const shared_ptr<AbstractTask> &task,
+    shared_ptr<AbstractTask> task,
     FactoredTransitionSystem &fts) {
     vector<int> transition_system_order = compute_ts_order(task);
     return utils::make_unique_ptr<MergeDFP>(fts, move(transition_system_order));
 }
 
 vector<int> MergeStrategyFactoryDFP::compute_ts_order(
-    const shared_ptr<AbstractTask> &task) {
+    shared_ptr<AbstractTask> task) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
     int max_transition_system_count = num_variables * 2 - 1;

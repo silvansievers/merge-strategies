@@ -36,7 +36,7 @@ MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &optio
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
-        const shared_ptr<AbstractTask> &task,
+        shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) {
     OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs")));
     InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(options.get_enum("internal_merge_order")));

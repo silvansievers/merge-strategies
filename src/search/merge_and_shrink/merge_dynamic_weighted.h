@@ -338,7 +338,7 @@ class MergeDynamicWeighted : public MergeStrategy {
 
     // TS order as in DFP
     std::vector<int> transition_system_order;
-    void compute_ts_order(const std::shared_ptr<AbstractTask> task,
+    void compute_ts_order(shared_ptr<AbstractTask> task,
                           AtomicTSOrder atomic_ts_order,
                           ProductTSOrder product_ts_order,
                           bool atomic_before_product,
@@ -350,7 +350,7 @@ class MergeDynamicWeighted : public MergeStrategy {
 public:
     MergeDynamicWeighted(const options::Options opts);
     virtual ~MergeDynamicWeighted();
-    virtual void initialize(const std::shared_ptr<AbstractTask> task) override;
+    virtual void initialize(shared_ptr<AbstractTask> task) override;
     virtual std::pair<int, int> get_next(
         FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;

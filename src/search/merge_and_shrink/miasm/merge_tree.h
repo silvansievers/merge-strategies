@@ -40,7 +40,7 @@ enum class MiasmExternal {
 
 class ComparatorSortPacking : public ComparatorVarSet {
 public:
-    ComparatorSortPacking(const std::shared_ptr<AbstractTask> task,
+    ComparatorSortPacking(std::shared_ptr<AbstractTask> task,
                           const MiasmExternal &ext_,
                           const VarSetInfoRegistry *p_si_ = 0);
     virtual ~ComparatorSortPacking();
@@ -73,12 +73,12 @@ public:
                    const MiasmInternal internal_,
                    const MiasmExternal external_,
                    const VarSetInfoRegistry *p_si,
-                   const std::shared_ptr<AbstractTask> task);
+                   std::shared_ptr<AbstractTask> task);
 private:
     std::vector<std::set<int> > packing;
     const MiasmInternal internal;
     const MiasmExternal external;
-    const std::shared_ptr<AbstractTask> task;
+    std::shared_ptr<AbstractTask> task;
     const CausalGraph &causal_graph;
 private:
     void get_internal_tree(const std::set<int> &varset,

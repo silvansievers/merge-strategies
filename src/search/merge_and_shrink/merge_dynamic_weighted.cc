@@ -1074,7 +1074,7 @@ void MergeDynamicWeighted::dump_strategy_specific_options() const {
 
 // TODO: copied from DFP
 void MergeDynamicWeighted::compute_ts_order(
-    const shared_ptr<AbstractTask> task,
+    shared_ptr<AbstractTask> task,
     AtomicTSOrder atomic_ts_order,
     ProductTSOrder product_ts_order,
     bool atomic_before_product,
@@ -1166,7 +1166,7 @@ pair<int, int> MergeDynamicWeighted::compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
-void MergeDynamicWeighted::initialize(const shared_ptr<AbstractTask> task) {
+void MergeDynamicWeighted::initialize(shared_ptr<AbstractTask> task) {
     MergeStrategy::initialize(task);
     task_proxy = new TaskProxy(*task);
     features->initialize(*task_proxy);

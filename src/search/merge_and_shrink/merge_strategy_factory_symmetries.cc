@@ -122,7 +122,7 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy(
-        const std::shared_ptr<AbstractTask> &task,
+        shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();

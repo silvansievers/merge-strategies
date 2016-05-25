@@ -22,7 +22,7 @@ class FactoredTransitionSystem;
 class VarSetInfoRegistry;
 
 class MiasmAbstraction {
-    const std::shared_ptr<AbstractTask> task;
+    std::shared_ptr<AbstractTask> task;
     TaskProxy task_proxy;
 //    std::shared_ptr<MergeStrategy> merge_strategy;
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
