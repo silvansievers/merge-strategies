@@ -3,10 +3,9 @@
 
 #include "merge_strategy.h"
 
-#include "merge_dfp.h"
-
 #include "../utils/hash.h"
 
+#include <memory>
 #include <unordered_map>
 
 namespace options {
@@ -326,34 +325,21 @@ public:
 };
 
 class MergeDynamicWeighted : public MergeStrategy {
-    const int max_states; // bisimulation option
+    std::unique_ptr<Features> features;
+    std::vector<int> transition_system_order; // TS order as in DFP
+    const int max_states; // limit to compute shrink sizes
     const bool use_lr;
-    AtomicTSOrder atomic_ts_order;
-    ProductTSOrder product_ts_order;
-    bool atomic_before_product;
-    bool randomized_order;
-    std::shared_ptr<utils::RandomNumberGenerator> rng;
-    Features *features;
-    TaskProxy *task_proxy;
-
-    // TS order as in DFP
-    std::vector<int> transition_system_order;
-    void compute_ts_order(shared_ptr<AbstractTask> task,
-                          AtomicTSOrder atomic_ts_order,
-                          ProductTSOrder product_ts_order,
-                          bool atomic_before_product,
-                          bool randomized_order);
 
     std::pair<int, int> compute_shrink_sizes(int size1, int size2) const;
-
-    virtual void dump_strategy_specific_options() const override;
 public:
-    MergeDynamicWeighted(const options::Options opts);
-    virtual ~MergeDynamicWeighted();
-    virtual void initialize(shared_ptr<AbstractTask> task) override;
-    virtual std::pair<int, int> get_next(
-        FactoredTransitionSystem &fts) override;
-    virtual std::string name() const override;
+    MergeDynamicWeighted(
+        FactoredTransitionSystem &fts,
+        std::unique_ptr<Features> features,
+        std::vector<int> transition_system_order,
+        const int max_states,
+        const bool use_lr);
+    virtual ~MergeDynamicWeighted() override = default;
+    virtual std::pair<int, int> get_next() override;
 };
 }
 

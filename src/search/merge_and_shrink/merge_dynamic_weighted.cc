@@ -9,14 +9,13 @@
 
 #include "../causal_graph.h"
 #include "../globals.h"
-#include "../option_parser.h"
-#include "../plugin.h"
 #include "../task_proxy.h"
 
+#include "../options/options.h"
+
 #include "../utils/math.h"
-#include "../utils/system.h"
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
+
+#include <limits>
 
 using namespace std;
 using utils::ExitCode;
@@ -646,7 +645,7 @@ double ShrinkPerfectlyFeature::compute_value(
     // return value in [0,infinity)
     assert(merge_index != -1);
     if (fts.get_ts(merge_index).is_solvable()) {
-        Options options;
+        options::Options options;
         options.set<bool>("greedy", false);
         options.set<int>("at_limit", 0);
         ShrinkBisimulation shrink_bisim(options);
@@ -859,7 +858,7 @@ double MutexFeature::compute_value(
 
 // ========================= FEATURES ====================================
 
-Features::Features(const Options opts)
+Features::Features(const options::Options opts)
     : debug(opts.get<bool>("debug")),
       merge_required(false) {
     int id = 0;
@@ -1004,6 +1003,7 @@ double Features::compute_weighted_normalized_sum(
     if (!unnormalized_values.count(next_pair)) {
         next_pair = make_pair(ts_index2, ts_index1);
     }
+    assert(unnormalized_values.count(next_pair));
     const vector<double> &values = unnormalized_values.at(next_pair);
     double weighted_sum = 0;
     if (debug) {
@@ -1047,86 +1047,20 @@ void Features::dump_weights() const {
 
 // ========================= MERGE STRATEGY ===============================
 
-MergeDynamicWeighted::MergeDynamicWeighted(const Options opts)
-    : MergeStrategy(),
-      max_states(opts.get<int>("max_states")),
-      use_lr(opts.get<bool>("use_lr")),
-      atomic_ts_order(AtomicTSOrder(opts.get_enum("atomic_ts_order"))),
-      product_ts_order(ProductTSOrder(opts.get_enum("product_ts_order"))),
-      atomic_before_product(opts.get<bool>("atomic_before_product")),
-      randomized_order(opts.get<bool>("randomized_order")) {
-    rng = utils::parse_rng_from_options(opts);
+MergeDynamicWeighted::MergeDynamicWeighted(
+    FactoredTransitionSystem &fts,
+    std::unique_ptr<Features> features,
+    std::vector<int> transition_system_order,
+    const int max_states,
+    const bool use_lr)
+    : MergeStrategy(fts),
+      features(move(features)),
+      transition_system_order(move(transition_system_order)),
+      max_states(max_states),
+      use_lr(use_lr) {
     if (use_lr) {
         cerr << "Currently not implemented!" << endl;
         utils::exit_with(ExitCode::CRITICAL_ERROR);
-    }
-    features = new Features(opts);
-}
-
-MergeDynamicWeighted::~MergeDynamicWeighted() {
-    delete task_proxy;
-    delete features;
-}
-
-void MergeDynamicWeighted::dump_strategy_specific_options() const {
-    features->dump_weights();
-}
-
-// TODO: copied from DFP
-void MergeDynamicWeighted::compute_ts_order(
-    shared_ptr<AbstractTask> task,
-    AtomicTSOrder atomic_ts_order,
-    ProductTSOrder product_ts_order,
-    bool atomic_before_product,
-    bool randomized_order) {
-    TaskProxy task_proxy(*task);
-    int num_variables = task_proxy.get_variables().size();
-    int max_transition_system_count = num_variables * 2 - 1;
-    transition_system_order.reserve(max_transition_system_count);
-    if (randomized_order) {
-        for (int i = 0; i < max_transition_system_count; ++i) {
-            transition_system_order.push_back(i);
-        }
-        rng->shuffle(transition_system_order);
-    } else {
-        // Compute the order in which atomic transition systems are considered
-        vector<int> atomic_tso;
-        for (int i = 0; i < num_variables; ++i) {
-            atomic_tso.push_back(i);
-        }
-        if (atomic_ts_order == AtomicTSOrder::INVERSE) {
-            reverse(atomic_tso.begin(), atomic_tso.end());
-        } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
-            rng->shuffle(atomic_tso);
-        }
-
-        // Compute the order in which product transition systems are considered
-        vector<int> product_tso;
-        for (int i = num_variables; i < max_transition_system_count; ++i) {
-            product_tso.push_back(i);
-        }
-        if (product_ts_order == ProductTSOrder::NEW_TO_OLD) {
-            reverse(product_tso.begin(), product_tso.end());
-        } else if (product_ts_order == ProductTSOrder::RANDOM) {
-            rng->shuffle(product_tso);
-        }
-
-        // Put the orders in the correct order
-        if (atomic_before_product) {
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-        } else {
-            transition_system_order.insert(transition_system_order.end(),
-                                           product_tso.begin(),
-                                           product_tso.end());
-            transition_system_order.insert(transition_system_order.end(),
-                                           atomic_tso.begin(),
-                                           atomic_tso.end());
-        }
     }
 }
 
@@ -1166,301 +1100,114 @@ pair<int, int> MergeDynamicWeighted::compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
-void MergeDynamicWeighted::initialize(shared_ptr<AbstractTask> task) {
-    MergeStrategy::initialize(task);
-    task_proxy = new TaskProxy(*task);
-    features->initialize(*task_proxy);
-
-    // Compute the ts order
-    compute_ts_order(task,
-                     atomic_ts_order,
-                     product_ts_order,
-                     atomic_before_product,
-                     randomized_order);
-}
-
-pair<int, int> MergeDynamicWeighted::get_next(
-    FactoredTransitionSystem &fts) {
+pair<int, int> MergeDynamicWeighted::get_next() {
     int next_index1 = -1;
     int next_index2 = -1;
 
+    features->precompute_data(fts);
+    // Go through all transitition systems and compute unnormalized feature values.
     int num_ts = fts.get_size();
-    if (remaining_merges == 1) {
-        for (int ts_index = 0; ts_index < num_ts - 1; ++ts_index) {
-            if (fts.is_active(ts_index)) {
-                next_index1 = ts_index;
-                break;
-            }
-        }
-        next_index2 = num_ts - 1; // the previously added transition system
-        assert(next_index2 != next_index1);
-        assert(fts.is_active(next_index2));
-    } else {
-        features->precompute_data(fts);
-        // Go through all transitition systems and compute unnormalized feature values.
-        for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
-            if (fts.is_active(ts_index1)) {
-                for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
-                    if (fts.is_active(ts_index2)) {
-                        int copy_ts_index1;
-                        int copy_ts_index2;
-                        int merge_index = -1;
-                        if (features->require_merge()) {
-                            // Output for parser
+    for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
+        if (fts.is_active(ts_index1)) {
+            for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
+                if (fts.is_active(ts_index2)) {
+                    int copy_ts_index1;
+                    int copy_ts_index2;
+                    int merge_index = -1;
+                    if (features->require_merge()) {
+                        // Output for parser
 //                            cout << "trying to compute the merge..." << endl;
-                            copy_ts_index1 = fts.copy(ts_index1);
-                            copy_ts_index2 = fts.copy(ts_index2);
-                            pair<int, int> shrink_sizes =
-                                compute_shrink_sizes(fts.get_ts(copy_ts_index1).get_size(),
-                                                     fts.get_ts(copy_ts_index2).get_size());
+                        copy_ts_index1 = fts.copy(ts_index1);
+                        copy_ts_index2 = fts.copy(ts_index2);
+                        pair<int, int> shrink_sizes =
+                            compute_shrink_sizes(fts.get_ts(copy_ts_index1).get_size(),
+                                                 fts.get_ts(copy_ts_index2).get_size());
 
-                            // shrink before merge (with implicit threshold = 1,
-                            // i.e. always try to shrink)
-                            Options options;
-                            options.set<bool>("greedy", false);
-                            options.set<int>("at_limit", 0);
-                            bool silent = true;
-                            ShrinkBisimulation shrink_bisim(options);
-                            shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, silent);
-                            shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, silent);
+                        // shrink before merge (with implicit threshold = 1,
+                        // i.e. always try to shrink)
+                        options::Options options;
+                        options.set<bool>("greedy", false);
+                        options.set<int>("at_limit", 0);
+                        bool silent = true;
+                        ShrinkBisimulation shrink_bisim(options);
+                        shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, silent);
+                        shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, silent);
 
-                            merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
-                            // Output for parser
+                        merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
+                        // Output for parser
 //                            cout << "...done computing the merge." << endl;
-                        }
-                        features->precompute_unnormalized_values(fts, ts_index1,
-                                                                 ts_index2, merge_index);
-                        if (features->require_merge()) {
-                            // delete and reset
-                            fts.release_copies();
-                        }
+                    }
+                    features->precompute_unnormalized_values(fts, ts_index1,
+                                                             ts_index2, merge_index);
+                    if (features->require_merge()) {
+                        // delete and reset
+                        fts.release_copies();
                     }
                 }
             }
         }
+    }
 
-        // Precompute the sorted set of active transition systems
-        // TODO: code duplication from MergeDFP again
-        assert(!transition_system_order.empty());
-        vector<int> sorted_active_ts_indices;
-        for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
-            int ts_index = transition_system_order[tso_index];
-            if (fts.is_active(ts_index)) {
-                sorted_active_ts_indices.push_back(ts_index);
+    // Precompute the sorted set of active transition systems
+    // TODO: code duplication from MergeDFP again
+    assert(!transition_system_order.empty());
+    vector<int> sorted_active_ts_indices;
+    for (size_t tso_index = 0; tso_index < transition_system_order.size(); ++tso_index) {
+        int ts_index = transition_system_order[tso_index];
+        if (fts.is_active(ts_index)) {
+            sorted_active_ts_indices.push_back(ts_index);
+        }
+    }
+
+    // Go through all transition systems again and normalize feature values.
+    int max_weight = -1;
+    unordered_map<int, int> weight_to_count;
+    for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
+        int ts_index1 = sorted_active_ts_indices[i];
+        assert(fts.is_active(ts_index1));
+        for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
+            int ts_index2 = sorted_active_ts_indices[j];
+            assert(fts.is_active(ts_index2));
+            int pair_weight =
+                features->compute_weighted_normalized_sum(fts,
+                                                          ts_index1,
+                                                          ts_index2);
+            if (!weight_to_count.count(pair_weight)) {
+                weight_to_count[pair_weight] = 1;
+            } else {
+                weight_to_count[pair_weight] += 1;
+            }
+            if (pair_weight > max_weight) {
+                max_weight = pair_weight;
+                next_index1 = ts_index1;
+                next_index2 = ts_index2;
             }
         }
+    }
+    assert(max_weight != -1);
+    /*
+      TODO: cache results for all transition systems? only two of the
+      transition systems disappear each merge, and only one new arises.
+      However, we would need to remove all pairs that the merge transition
+      systems were part of, and compute all the pairs with the new one.
 
-        // Go through all transition systems again and normalize feature values.
-        int max_weight = -1;
-        unordered_map<int, int> weight_to_count;
-        for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
-            int ts_index1 = sorted_active_ts_indices[i];
-            assert(fts.is_active(ts_index1));
-            for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
-                int ts_index2 = sorted_active_ts_indices[j];
-                assert(fts.is_active(ts_index2));
-                int pair_weight =
-                    features->compute_weighted_normalized_sum(fts,
-                                                              ts_index1,
-                                                              ts_index2);
-                if (!weight_to_count.count(pair_weight)) {
-                    weight_to_count[pair_weight] = 1;
-                } else {
-                    weight_to_count[pair_weight] += 1;
-                }
-                if (pair_weight > max_weight) {
-                    max_weight = pair_weight;
-                    next_index1 = ts_index1;
-                    next_index2 = ts_index2;
-                }
-            }
-        }
-        assert(max_weight != -1);
-        /*
-          TODO: cache results for all transition systems? only two of the
-          transition systems disappear each merge, and only one new arises.
-          However, we would need to remove all pairs that the merge transition
-          systems were part of, and compute all the pairs with the new one.
+      Also, we would need to make sure that at the time that the
+      merge strategy is asked for the next pair, the cached results are
+      correct, i.e. the transition systems cannot have been shrunk in
+      the meantime.
+    */
+    features->clear();
 
-          Also, we would need to make sure that at the time that the
-          merge strategy is asked for the next pair, the cached results are
-          correct, i.e. the transition systems cannot have been shrunk in
-          the meantime.
-        */
-        features->clear();
-
-        int maximum_weight_pair_count = weight_to_count[max_weight];
-        assert(maximum_weight_pair_count >= 1);
-        if (maximum_weight_pair_count > 1) {
-            ++iterations_with_tiebreaking;
-            total_tiebreaking_pair_count += maximum_weight_pair_count;
-        }
+    int maximum_weight_pair_count = weight_to_count[max_weight];
+    assert(maximum_weight_pair_count >= 1);
+    if (maximum_weight_pair_count > 1) {
+        ++iterations_with_tiebreaking;
+        total_tiebreaking_pair_count += maximum_weight_pair_count;
     }
 
     assert(next_index1 != -1);
     assert(next_index2 != -1);
 
-    --remaining_merges;
     return make_pair(next_index1, next_index2);
 }
-
-string MergeDynamicWeighted::name() const {
-    return "dynamic merging";
-}
-
-static shared_ptr<MergeStrategy>_parse(OptionParser &parser) {
-    parser.add_option<bool>(
-        "debug", "debug", "false");
-    parser.add_option<int>("max_states", "shrink strategy option", "50000");
-    parser.add_option<bool>("use_lr", "use label reduction", "false");
-
-    // TS order options
-    MergeDFP::add_options_to_parser(parser, false);
-
-    // Feature weight options
-    parser.add_option<int>(
-        "w_causally_connected_vars",
-        "prefer merging variables that are causally connected ",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_bool_causally_connected_vars",
-        "prefer merging variables that are causally connected ",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_nonadditive_vars",
-        "avoid merging additive variables",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_small_transitions_states_quotient",
-        "prefer merging 'sparse' transition systems",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_transitions_states_quotient",
-        "prefer merging 'dense' transition systems",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_initial_h_value_improvement",
-        "prefer merging transition systems with high initial h value improvement",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_absolute_initial_h_value",
-        "prefer merging transition systems with high absolute initial h value",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_absolute_max_f_value",
-        "prefer merging transition systems with high absolute max f value",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_absolute_max_g_value",
-        "prefer merging transition systems with high absolute max g value",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_absolute_max_h_value",
-        "prefer merging transition systems with high absolute max h value",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_average_h_value_improvement",
-        "prefer merging transition systems with high average h value",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_initial_h_value_sum",
-        "prefer merging transition systems with large number of states",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_high_average_h_value_sum",
-        "prefer merging transition systems with large number of edges",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_dfp",
-        "merge according to DFP merge strategy",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_goal_relevance",
-        "prefer goal relevant transition systems",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_num_variables",
-        "prefer transition systems with many incorporated variables",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_shrink_perfectly",
-        "prefer merges which allow shrinking perfectly",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_num_trans",
-        "prefer transition systems with few transitions",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_lr_opp",
-        "prefer transition systems that allow for most label reductions",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_more_lr_opp",
-        "prefer transition systems that allow for most label reductions",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_miasm",
-        "prefer transition systems that allow for most unreachable and irrelevant pruning",
-        "0",
-        Bounds("0", "100"));
-    parser.add_option<int>(
-        "w_mutex",
-        "prefer transition systems that have facts mutex to each other",
-        "0",
-        Bounds("0", "100"));
-
-    Options opts = parser.parse();
-    if (opts.get<int>("w_causally_connected_vars") == 0 &&
-        opts.get<int>("w_bool_causally_connected_vars") == 0 &&
-        opts.get<int>("w_nonadditive_vars") == 0 &&
-        opts.get<int>("w_small_transitions_states_quotient") == 0 &&
-        opts.get<int>("w_high_transitions_states_quotient") == 0 &&
-        opts.get<int>("w_high_initial_h_value_improvement") == 0 &&
-        opts.get<int>("w_high_absolute_initial_h_value") == 0 &&
-        opts.get<int>("w_high_absolute_max_f_value") == 0 &&
-        opts.get<int>("w_high_absolute_max_g_value") == 0 &&
-        opts.get<int>("w_high_absolute_max_h_value") == 0 &&
-        opts.get<int>("w_high_average_h_value_improvement") == 0 &&
-        opts.get<int>("w_high_initial_h_value_sum") == 0 &&
-        opts.get<int>("w_high_average_h_value_sum") == 0 &&
-        opts.get<int>("w_dfp") == 0 &&
-        opts.get<int>("w_goal_relevance") == 0 &&
-        opts.get<int>("w_num_variables") == 0 &&
-        opts.get<int>("w_shrink_perfectly") == 0 &&
-        opts.get<int>("w_num_trans") == 0 &&
-        opts.get<int>("w_lr_opp") == 0 &&
-        opts.get<int>("w_more_lr_opp") == 0 &&
-        opts.get<int>("w_miasm") == 0 &&
-        opts.get<int>("w_mutex") == 0) {
-        cerr << "you must specify at least one non-zero weight!" << endl;
-        utils::exit_with(ExitCode::INPUT_ERROR);
-    }
-
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeDynamicWeighted>(opts);
-}
-
-static PluginShared<MergeStrategy> _plugin("merge_dynamic_weighted", _parse);
 }
