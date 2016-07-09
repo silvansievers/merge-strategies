@@ -1,7 +1,7 @@
 #include "merge_sccs.h"
 
 #include "factored_transition_system.h"
-#include "merge_dfp.h"
+#include "merge_selector_score_based_filtering.h"
 #include "transition_system.h"
 
 #include <algorithm>
@@ -14,13 +14,13 @@ namespace merge_and_shrink {
 MergeSCCs::MergeSCCs(FactoredTransitionSystem &fts,
     InternalMergeOrder internal_merge_order,
     std::vector<int> &&linear_variable_order,
-    std::unique_ptr<MergeDFP> merge_dfp,
+    std::shared_ptr<MergeSelectorScoreBasedFiltering> merge_dfp,
     std::vector<std::vector<int>> &&non_singleton_cg_sccs,
     std::vector<int> &&indices_of_merged_sccs)
     : MergeStrategy(fts),
       internal_merge_order(internal_merge_order),
       linear_variable_order(move(linear_variable_order)),
-      merge_dfp(move(merge_dfp)),
+      dfp_selector(merge_dfp),
       non_singleton_cg_sccs(move(non_singleton_cg_sccs)),
       indices_of_merged_sccs(move(indices_of_merged_sccs)) {
 }
@@ -91,7 +91,7 @@ pair<int, int> MergeSCCs::get_next() {
                                         most_recent_index,
                                         first_merge);
         } else if (internal_merge_order == InternalMergeOrder::DFP) {
-            next_pair = merge_dfp->get_next(current_ts_indices);
+            next_pair = dfp_selector->select_merge(fts, current_ts_indices);
         }
 
         // Remove the two merged indices from the current set of indices
@@ -110,19 +110,11 @@ pair<int, int> MergeSCCs::get_next() {
     return next_pair;
 }
 
-int MergeSCCs::get_iterations_with_tiebreaking() const {
-    if (merge_dfp) {
-        return merge_dfp->get_iterations_with_tiebreaking();
+pair<int, int> MergeSCCs::get_dfp_tiebreaking_statistics() const {
+    if (dfp_selector) {
+        return dfp_selector->get_dfp_tiebreaking_statistics();
     } else {
-        return 0;
-    }
-}
-
-int MergeSCCs::get_total_tiebreaking_pair_count() const {
-    if (merge_dfp) {
-        return merge_dfp->get_total_tiebreaking_pair_count();
-    } else {
-        return 0;
+        return make_pair(0, 0);
     }
 }
 }

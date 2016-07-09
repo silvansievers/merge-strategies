@@ -1,10 +1,13 @@
 #include "merge_strategy_factory_sccs.h"
 
 #include "factored_transition_system.h"
-#include "merge_dfp.h"
 #include "merge_sccs.h"
-#include "merge_strategy_factory_dfp.h"
-#include "merge_strategy_factory_linear.h"
+#include "merge_scoring_function_dfp.h"
+#include "merge_scoring_function_goal_relevance.h"
+#include "merge_scoring_function_single_random.h"
+#include "merge_scoring_function_total_order.h"
+#include "merge_selector_score_based_filtering.h"
+#include "merge_tree_factory_linear.h"
 #include "transition_system.h"
 
 #include "../causal_graph.h"
@@ -48,10 +51,25 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
 
-    unique_ptr<MergeDFP> merge_dfp = nullptr;
+    shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector = nullptr;
     if (internal_merge_order == InternalMergeOrder::DFP) {
-        MergeStrategyFactoryDFP factory(options);
-        merge_dfp = factory.compute_merge_strategy_dfp(task, fts);
+        vector<shared_ptr<MergeScoringFunction>> scoring_functions;
+        scoring_functions.push_back(make_shared<MergeScoringFunctionGoalRelevance>());
+        scoring_functions.push_back(make_shared<MergeScoringFunctionDFP>());
+
+        bool randomized_order = options.get<bool>("randomized_order");
+        if (randomized_order) {
+            shared_ptr<MergeScoringFunctionSingleRandom> scoring_random =
+                make_shared<MergeScoringFunctionSingleRandom>(options);
+            scoring_functions.push_back(scoring_random);
+        } else {
+            shared_ptr<MergeScoringFunctionTotalOrder> scoring_total_order =
+                make_shared<MergeScoringFunctionTotalOrder>(options);
+            scoring_functions.push_back(scoring_total_order);
+        }
+        dfp_selector = make_shared<MergeSelectorScoreBasedFiltering>(
+            move(scoring_functions));
+        dfp_selector->initialize(task);
     }
     if (internal_merge_order == InternalMergeOrder::LINEAR) {
         VariableOrderFinder vof(task, VariableOrderType(options.get_enum("variable_order")));
@@ -126,7 +144,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
         fts,
         internal_merge_order,
         move(linear_variable_order),
-        move(merge_dfp),
+        dfp_selector,
         move(non_singleton_cg_sccs),
         move(indices_of_merged_sccs));
 }
@@ -188,10 +206,18 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
                            "variable_order) or dfp (specify dfp order options).",
                            "dfp");
 
-    // linear merge strategy option
-    MergeStrategyFactoryLinear::add_options_to_parser(parser);
-    // dfp merge strategy options
-    MergeStrategyFactoryDFP::add_options_to_parser(parser);
+    // linear
+    MergeTreeFactoryLinear::add_options_to_parser(parser);
+
+    // dfp
+    MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
+    parser.add_option<bool>(
+        "randomized_order",
+        "If true, use a 'globally' randomized order, i.e. all transition "
+        "systems are considered in an arbitrary order. This renders all other "
+        "ordering options void.",
+        "false");
+
     options::Options options = parser.parse();
     if (parser.dry_run())
         return 0;

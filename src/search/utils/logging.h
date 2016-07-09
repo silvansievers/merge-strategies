@@ -57,6 +57,12 @@ ostream &operator<<(ostream &stream, const set<T> &set_) {
     stream << "}";
     return stream;
 }
+
+template<class T>
+ostream &operator<<(ostream &stream, const pair<T, T> &pair_) {
+    stream << "(" << pair_.first << ", " << pair_.second << ")";
+    return stream;
+}
 }
 
 #endif

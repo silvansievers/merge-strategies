@@ -13,7 +13,7 @@ class Options;
 }
 
 namespace merge_and_shrink {
-class MergeDFP;
+class MergeSelectorScoreBasedFiltering;
 class MiasmMergeTree;
 
 enum FallbackStrategy {
@@ -26,7 +26,7 @@ class MergeSymmetries : public MergeStrategy {
     options::Options options;
     int num_merges;
     std::vector<int> linear_merge_order;
-    std::unique_ptr<MergeDFP> merge_dfp;
+    std::shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector;
     MiasmMergeTree *miasm_merge_tree;
     int max_bliss_iterations;
     int bliss_call_time_limit;
@@ -52,7 +52,7 @@ public:
         const options::Options &options,
         int num_merges,
         std::vector<int> linear_merge_order,
-        std::unique_ptr<MergeDFP> merge_dfp,
+        std::shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector,
         MiasmMergeTree *miasm_merge_tree);
     virtual ~MergeSymmetries() override;
     virtual std::pair<int, int> get_next() override;

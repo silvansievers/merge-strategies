@@ -1,225 +1,75 @@
-#include "merge_dfp.h"
+#include "merge_scoring_function_dfp.h"
+#include "merge_scoring_function_goal_relevance.h"
+#include "merge_scoring_function_single_random.h"
+#include "merge_scoring_function_total_order.h"
+#include "merge_selector_score_based_filtering.h"
+#include "merge_strategy_factory_stateless.h"
 
-#include "distances.h"
-#include "factored_transition_system.h"
-#include "label_equivalence_relation.h"
-#include "transition_system.h"
-#include "types.h"
+#include "../options/option_parser.h"
+#include "../options/options.h"
+#include "../options/plugin.h"
 
-#include "../utils/rng.h"
-#include "../utils/rng_options.h"
-
-#include <algorithm>
-#include <cassert>
-#include <iostream>
-#include <unordered_map>
+#include "../utils/markup.h"
 
 using namespace std;
 
 namespace merge_and_shrink {
-MergeDFP::MergeDFP(FactoredTransitionSystem &fts, vector<int> transition_system_order)
-    : MergeStrategy(fts), transition_system_order(move(transition_system_order)) {
+static shared_ptr<MergeStrategyFactory>_parse_dfp(options::OptionParser &parser) {
+    parser.document_synopsis(
+        "Merge strategy DFP",
+        "This merge strategy implements the algorithm originally described in the "
+        "paper \"Directed model checking with distance-preserving abstractions\" "
+        "by Draeger, Finkbeiner and Podelski (SPIN 2006), adapted to planning in "
+        "the following paper:" + utils::format_paper_reference(
+            {"Silvan Sievers", "Martin Wehrle", "Malte Helmert"},
+            "Generalized Label Reduction for Merge-and-Shrink Heuristics",
+            "http://ai.cs.unibas.ch/papers/sievers-et-al-aaai2014.pdf",
+            "Proceedings of the 28th AAAI Conference on Artificial"
+            " Intelligence (AAAI 2014)",
+            "2358-2366",
+            "AAAI Press 2014"));
+    // this also includes the rng option for MergeScoringFunctionSingleRandom.
+    MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
+    parser.add_option<bool>(
+        "randomized_order",
+        "If true, use a 'globally' randomized order, i.e. all transition "
+        "systems are considered in an arbitrary order. This renders all other "
+        "ordering options void.",
+        "false");
+    options::Options options = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+
+    vector<shared_ptr<MergeScoringFunction>> scoring_functions;
+    scoring_functions.push_back(make_shared<MergeScoringFunctionGoalRelevance>());
+    scoring_functions.push_back(make_shared<MergeScoringFunctionDFP>());
+
+    bool randomized_order = options.get<bool>("randomized_order");
+    if (randomized_order) {
+        shared_ptr<MergeScoringFunctionSingleRandom> scoring_random =
+            make_shared<MergeScoringFunctionSingleRandom>(options);
+        scoring_functions.push_back(scoring_random);
+    } else {
+        shared_ptr<MergeScoringFunctionTotalOrder> scoring_total_order =
+            make_shared<MergeScoringFunctionTotalOrder>(options);
+        scoring_functions.push_back(scoring_total_order);
+    }
+
+    // TODO: the option parser does not handle this
+//    options::Options selector_options;
+//    selector_options.set<vector<shared_ptr<MergeScoringFunction>>(
+//        "scoring_functions",
+//        scoring_functions);
+    shared_ptr<MergeSelector> selector =
+        make_shared<MergeSelectorScoreBasedFiltering>(move(scoring_functions));
+
+    options::Options strategy_options;
+    strategy_options.set<shared_ptr<MergeSelector>>(
+        "merge_selector",
+        selector);
+
+    return make_shared<MergeStrategyFactoryStateless>(strategy_options);
 }
 
-bool MergeDFP::is_goal_relevant(const TransitionSystem &ts) const {
-    int num_states = ts.get_size();
-    for (int state = 0; state < num_states; ++state) {
-        if (!ts.is_goal_state(state)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-vector<int> MergeDFP::compute_label_ranks(int index) const {
-    const TransitionSystem &ts = fts.get_ts(index);
-    const Distances &distances = fts.get_dist(index);
-    int num_labels = fts.get_num_labels();
-    // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
-    vector<int> label_ranks(num_labels, -1);
-
-    for (const GroupAndTransitions &gat : ts) {
-        const LabelGroup &label_group = gat.label_group;
-        const vector<Transition> &transitions = gat.transitions;
-        // Relevant labels with no transitions have a rank of infinity.
-        int label_rank = INF;
-        bool group_relevant = false;
-        if (static_cast<int>(transitions.size()) == ts.get_size()) {
-            /*
-              A label group is irrelevant in the earlier notion if it has
-              exactly a self loop transition for every state.
-            */
-            for (const Transition &transition : transitions) {
-                if (transition.target != transition.src) {
-                    group_relevant = true;
-                    break;
-                }
-            }
-        } else {
-            group_relevant = true;
-        }
-        if (!group_relevant) {
-            label_rank = -1;
-        } else {
-            for (const Transition &transition : transitions) {
-                label_rank = min(label_rank,
-                                 distances.get_goal_distance(transition.target));
-            }
-        }
-        for (int label_no : label_group) {
-            label_ranks[label_no] = label_rank;
-        }
-    }
-
-    return label_ranks;
-}
-
-pair<int, int> MergeDFP::compute_next_pair(
-    const vector<int> &sorted_active_ts_indices) const {
-    vector<bool> goal_relevant(sorted_active_ts_indices.size(), false);
-    for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
-        int ts_index = sorted_active_ts_indices[i];
-        const TransitionSystem &ts = fts.get_ts(ts_index);
-        if (is_goal_relevant(ts)) {
-            goal_relevant[i] = true;
-        }
-    }
-
-    int next_index1 = -1;
-    int next_index2 = -1;
-    int first_valid_pair_index1 = -1;
-    int first_valid_pair_index2 = -1;
-    int minimum_weight = INF;
-    vector<vector<int>> transition_system_label_ranks(sorted_active_ts_indices.size());
-    unordered_map<int, int> weight_to_count;
-    // Go over all pairs of transition systems and compute their weight.
-    for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
-        int ts_index1 = sorted_active_ts_indices[i];
-        assert(fts.is_active(ts_index1));
-        vector<int> &label_ranks1 = transition_system_label_ranks[i];
-        if (label_ranks1.empty()) {
-            label_ranks1 = compute_label_ranks(ts_index1);
-        }
-        for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
-            int ts_index2 = sorted_active_ts_indices[j];
-            assert(fts.is_active(ts_index2));
-            if (goal_relevant[i] || goal_relevant[j]) {
-                // Only consider pairs where at least one component is goal relevant.
-
-                // Remember the first such pair
-                if (first_valid_pair_index1 == -1) {
-                    assert(first_valid_pair_index2 == -1);
-                    first_valid_pair_index1 = ts_index1;
-                    first_valid_pair_index2 = ts_index2;
-                }
-
-                // Compute the weight associated with this pair
-                vector<int> &label_ranks2 = transition_system_label_ranks[j];
-                if (label_ranks2.empty()) {
-                    label_ranks2 = compute_label_ranks(ts_index2);
-                }
-                assert(label_ranks1.size() == label_ranks2.size());
-                int pair_weight = INF;
-                for (size_t k = 0; k < label_ranks1.size(); ++k) {
-                    if (label_ranks1[k] != -1 && label_ranks2[k] != -1) {
-                        // label is relevant in both transition_systems
-                        int max_label_rank = max(label_ranks1[k], label_ranks2[k]);
-                        pair_weight = min(pair_weight, max_label_rank);
-                    }
-                }
-                if (!weight_to_count.count(pair_weight)) {
-                    weight_to_count[pair_weight] = 1;
-                } else {
-                    weight_to_count[pair_weight] += 1;
-                }
-                if (pair_weight < minimum_weight) {
-                    minimum_weight = pair_weight;
-                    next_index1 = ts_index1;
-                    next_index2 = ts_index2;
-                }
-            }
-        }
-    }
-
-    if (next_index1 == -1) {
-        /*
-          No pair with finite weight has been found. In this case, we simply
-          take the first pair according to our ordering consisting of at
-          least one goal relevant transition system which we compute in the
-          loop before. There always exists such a pair assuming that the
-          global goal specification is non-empty.
-
-          TODO: exception! with the definition of goal relevance w.r.t.
-          existence of a non-goal state, there might be no such pair!
-        */
-        assert(next_index2 == -1);
-        assert(minimum_weight == INF);
-        if (first_valid_pair_index1 == -1) {
-            assert(first_valid_pair_index2 == -1);
-            next_index1 = sorted_active_ts_indices[0];
-            next_index2 = sorted_active_ts_indices[1];
-            cout << "found no goal relevant pair" << endl;
-            if (sorted_active_ts_indices.size() == 2) {
-                weight_to_count[minimum_weight] = 1;
-            } else {
-                // HACK: make sure that such a chosen pair counts as one
-                // where tiebreaking played a role.
-                weight_to_count[minimum_weight] = 2;
-            }
-        } else {
-            assert(first_valid_pair_index2 != -1);
-            next_index1 = first_valid_pair_index1;
-            next_index2 = first_valid_pair_index2;
-        }
-    }
-
-    int minimum_weight_pair_count = weight_to_count[minimum_weight];
-    assert(minimum_weight_pair_count >= 1);
-    if (minimum_weight_pair_count > 1) {
-        ++iterations_with_tiebreaking;
-        total_tiebreaking_pair_count += minimum_weight_pair_count;
-    }
-
-    assert(next_index1 != -1);
-    assert(next_index2 != -1);
-    return make_pair(next_index1, next_index2);
-}
-
-pair<int, int> MergeDFP::get_next() {
-    /*
-      Precompute a vector sorted_active_ts_indices which contains all active
-      transition system indices in the correct order.
-    */
-    assert(!transition_system_order.empty());
-    vector<int> sorted_active_ts_indices;
-    for (int ts_index : transition_system_order) {
-        if (fts.is_active(ts_index)) {
-            sorted_active_ts_indices.push_back(ts_index);
-        }
-    }
-
-    pair<int, int> next_merge = compute_next_pair(sorted_active_ts_indices);
-    return next_merge;
-}
-
-pair<int, int> MergeDFP::get_next(const vector<int> &ts_indices) {
-    /*
-      Precompute a vector sorted_active_ts_indices which contains all given
-      transition system indices in the correct order.
-    */
-    assert(!transition_system_order.empty());
-    vector<int> sorted_active_ts_indices;
-    for (int ts_index : transition_system_order) {
-        for (int given_index : ts_indices) {
-            if (ts_index == given_index) {
-                assert(fts.is_active(ts_index));
-                sorted_active_ts_indices.push_back(ts_index);
-                break;
-            }
-        }
-    }
-
-    pair<int, int> next_merge = compute_next_pair(sorted_active_ts_indices);
-    return next_merge;
-}
+static options::PluginShared<MergeStrategyFactory> _plugin_dfp("merge_dfp", _parse_dfp);
 }

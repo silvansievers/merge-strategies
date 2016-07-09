@@ -1,7 +1,7 @@
 #include "merge_symmetries.h"
 
 #include "factored_transition_system.h"
-#include "merge_dfp.h"
+#include "merge_selector_score_based_filtering.h"
 #include "transition_system.h"
 
 #include "miasm/merge_tree.h"
@@ -21,18 +21,17 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSymmetries::MergeSymmetries(
-    FactoredTransitionSystem &fts,
+MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
     const options::Options &options,
     int num_merges,
-    std::vector<int> linear_merge_order,
-    std::unique_ptr<MergeDFP> merge_dfp,
+    vector<int> linear_merge_order,
+    shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector,
     MiasmMergeTree *miasm_merge_tree)
     : MergeStrategy(fts),
       options(options),
       num_merges(num_merges),
       linear_merge_order(move(linear_merge_order)),
-      merge_dfp(move(merge_dfp)),
+      dfp_selector(dfp_selector),
       miasm_merge_tree(miasm_merge_tree),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
@@ -242,7 +241,7 @@ pair<int, int> MergeSymmetries::get_next() {
             cout << "Next pair (linear strategy): " << first << ", " << second << endl;
             return make_pair(first, second);
         } else if (fallback_strategy == DFP) {
-            return merge_dfp->get_next();
+            return dfp_selector->select_merge(fts);
         } else if (fallback_strategy == MIASM) {
             return get_next_miasm();
         } else {

@@ -6,7 +6,6 @@
 #include "../options/options.h"
 
 namespace merge_and_shrink {
-class MergeDFP;
 class MergeStrategyFactorySCCs : public MergeStrategyFactory {
     const options::Options options;
 protected:

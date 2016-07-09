@@ -416,27 +416,38 @@ fast_downward_plugin(
         merge_and_shrink/labels.cc
         merge_and_shrink/merge_and_shrink_heuristic.cc
         merge_and_shrink/merge_dfp.cc
-        merge_and_shrink/merge_dynamic_weighted.cc
-        merge_and_shrink/merge_linear.cc
+        #merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_miasm.cc
         merge_and_shrink/merge_predefined.cc
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_random_linear.cc
         merge_and_shrink/merge_random_non_linear.cc
         merge_and_shrink/merge_sccs.cc
+        merge_and_shrink/merge_scoring_function.cc
+        merge_and_shrink/merge_scoring_function_dfp.cc
+        merge_and_shrink/merge_scoring_function_goal_relevance.cc
+        merge_and_shrink/merge_scoring_function_single_random.cc
+        merge_and_shrink/merge_scoring_function_total_order.cc
+        merge_and_shrink/merge_selector.cc
+        merge_and_shrink/merge_selector_score_based_filtering.cc
         merge_and_shrink/merge_strategy.cc
         merge_and_shrink/merge_strategy_factory.cc
-        merge_and_shrink/merge_strategy_factory_dfp.cc
-        merge_and_shrink/merge_strategy_factory_dynamic_weighted.cc
-        merge_and_shrink/merge_strategy_factory_linear.cc
+        #merge_and_shrink/merge_strategy_factory_dynamic_weighted.cc
         merge_and_shrink/merge_strategy_factory_miasm.cc
+        merge_and_shrink/merge_strategy_factory_precomputed.cc
         merge_and_shrink/merge_strategy_factory_predefined.cc
         merge_and_shrink/merge_strategy_factory_random.cc
         merge_and_shrink/merge_strategy_factory_random_linear.cc
         merge_and_shrink/merge_strategy_factory_random_non_linear.cc
         merge_and_shrink/merge_strategy_factory_sccs.cc
+        merge_and_shrink/merge_strategy_factory_stateless.cc
         merge_and_shrink/merge_strategy_factory_symmetries.cc
+        merge_and_shrink/merge_strategy_precomputed.cc
+        merge_and_shrink/merge_strategy_stateless.cc
         merge_and_shrink/merge_symmetries.cc
+        merge_and_shrink/merge_tree.cc
+        merge_and_shrink/merge_tree_factory.cc
+        merge_and_shrink/merge_tree_factory_linear.cc
         merge_and_shrink/shrink_bisimulation.cc
         merge_and_shrink/shrink_bucket_based.cc
         merge_and_shrink/shrink_fh.cc

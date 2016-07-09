@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace merge_and_shrink {
-class MergeDFP;
+class MergeSelectorScoreBasedFiltering;
 
 enum class OrderOfSCCs {
     TOPOLOGICAL,
@@ -25,7 +25,7 @@ class MergeSCCs : public MergeStrategy {
 
     InternalMergeOrder internal_merge_order;
     std::vector<int> linear_variable_order;
-    std::unique_ptr<MergeDFP> merge_dfp;
+    std::shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector;
     std::vector<std::vector<int>> non_singleton_cg_sccs;
     std::vector<int> indices_of_merged_sccs;
     std::vector<int> current_ts_indices;
@@ -37,13 +37,12 @@ public:
     MergeSCCs(FactoredTransitionSystem &fts,
         InternalMergeOrder internal_merge_order,
         std::vector<int> &&linear_variable_order,
-        std::unique_ptr<MergeDFP> merge_dfp,
+        std::shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector,
         std::vector<std::vector<int>> &&non_singleton_cg_sccs,
         std::vector<int> &&indices_of_merged_sccs);
     virtual ~MergeSCCs() override = default;
     virtual std::pair<int, int> get_next() override;
-    virtual int get_iterations_with_tiebreaking() const override;
-    virtual int get_total_tiebreaking_pair_count() const override;
+    virtual std::pair<int, int> get_dfp_tiebreaking_statistics() const override;
 };
 }
 
