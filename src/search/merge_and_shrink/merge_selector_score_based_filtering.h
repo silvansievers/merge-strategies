@@ -20,9 +20,6 @@ class MergeSelectorScoreBasedFiltering : public MergeSelector {
     std::vector<std::pair<int, int>> get_remaining_candidates(
         const std::vector<std::pair<int, int>> &merge_candidates,
         const std::vector<int> &scores) const;
-    std::pair<int, int> _select_merge(
-        FactoredTransitionSystem &fts,
-        std::vector<std::pair<int, int>> &merge_candidates);
 protected:
     virtual std::string name() const override {
         return "score based merge selector";
@@ -35,7 +32,7 @@ public:
         std::vector<std::shared_ptr<MergeScoringFunction>> scoring_functions);
     virtual std::pair<int, int> select_merge(
         FactoredTransitionSystem &fts) override;
-    std::pair<int, int> select_merge(
+    std::pair<int, int> select_merge_dfp_sccs(
         FactoredTransitionSystem &fts,
         const std::vector<int> &indices_subset);
     virtual void initialize(std::shared_ptr<AbstractTask> task) override;

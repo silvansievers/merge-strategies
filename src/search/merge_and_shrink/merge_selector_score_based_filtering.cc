@@ -46,9 +46,20 @@ vector<pair<int, int>> MergeSelectorScoreBasedFiltering::get_remaining_candidate
     return result;
 }
 
-pair<int, int> MergeSelectorScoreBasedFiltering::_select_merge(
-    FactoredTransitionSystem &fts,
-    vector<pair<int, int>> &merge_candidates) {
+pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
+    FactoredTransitionSystem &fts) {
+    vector<pair<int, int>> merge_candidates;
+    for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
+        if (fts.is_active(ts_index1)) {
+            for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
+                 ++ts_index2) {
+                if (fts.is_active(ts_index2)) {
+                    merge_candidates.emplace_back(ts_index1, ts_index2);
+                }
+            }
+        }
+    }
+
     for (shared_ptr<MergeScoringFunction> &scoring_function :
          merge_scoring_functions) {
         vector<int> scores = scoring_function->compute_scores(fts,
@@ -75,24 +86,7 @@ pair<int, int> MergeSelectorScoreBasedFiltering::_select_merge(
     return merge_candidates.front();
 }
 
-pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
-    FactoredTransitionSystem &fts) {
-    vector<pair<int, int>> merge_candidates;
-    for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
-        if (fts.is_active(ts_index1)) {
-            for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
-                 ++ts_index2) {
-                if (fts.is_active(ts_index2)) {
-                    merge_candidates.emplace_back(ts_index1, ts_index2);
-                }
-            }
-        }
-    }
-
-    return _select_merge(fts, merge_candidates);
-}
-
-pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
+pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
     FactoredTransitionSystem &fts,
     const vector<int> &indices_subset) {
     vector<pair<int, int>> merge_candidates;
@@ -106,7 +100,44 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
         }
     }
 
-    return _select_merge(fts, merge_candidates);
+    for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
+        shared_ptr<MergeScoringFunction> &scoring_function =
+            merge_scoring_functions[i];
+        vector<int> scores = scoring_function->compute_scores(fts,
+                                                              merge_candidates);
+        cout << "computed scores using " << scoring_function->name() << endl;
+        int old_size = merge_candidates.size();
+        merge_candidates = get_remaining_candidates(merge_candidates, scores);
+        int new_size = merge_candidates.size();
+        cout << old_size << " - " << new_size << endl;
+        if (new_size - old_size == 0 && scoring_function->name() == "goal relevance") {
+            // "skip" computation of dfp if no goal relevance pair has been
+            // found to mimic previous MergeDFP behavior.
+            assert(i < merge_scoring_functions.size() - 1);
+            assert(merge_scoring_functions[i + 1]->name() == "dfp");
+            ++i;
+            cout << "skipping" << endl;
+            continue;
+        }
+
+        if (scoring_function->name() == "dfp" && merge_candidates.size() != 1) {
+            ++iterations_with_tiebreaking;
+            total_tiebreaking_pair_count += merge_candidates.size();
+        }
+
+        if (merge_candidates.size() == 1) {
+            break;
+        }
+    }
+
+    if (merge_candidates.size() > 1) {
+        cerr << "More than one merge candidate remained after computing all "
+                "scores! Did you forget to include a randomizing scoring "
+                "function?" << endl;
+        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
+
+    return merge_candidates.front();
 }
 
 void MergeSelectorScoreBasedFiltering::initialize(shared_ptr<AbstractTask> task) {

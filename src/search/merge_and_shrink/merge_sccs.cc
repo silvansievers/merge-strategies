@@ -91,7 +91,7 @@ pair<int, int> MergeSCCs::get_next() {
                                         most_recent_index,
                                         first_merge);
         } else if (internal_merge_order == InternalMergeOrder::DFP) {
-            next_pair = dfp_selector->select_merge(fts, current_ts_indices);
+            next_pair = dfp_selector->select_merge_dfp_sccs(fts, current_ts_indices);
         }
 
         // Remove the two merged indices from the current set of indices
