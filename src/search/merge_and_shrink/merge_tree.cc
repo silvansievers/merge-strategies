@@ -29,6 +29,53 @@ MergeTreeNode::MergeTreeNode(
     right_child->parent = this;
 }
 
+MergeTreeNode::MergeTreeNode(string tree_string)
+    : left_child(nullptr),
+      right_child(nullptr),
+      ts_index(-1) {
+    assert(!tree_string.empty());
+//        cout << "building tree for string " << tree_string << endl;
+    char &c = tree_string[0];
+    if (c == 'y') {
+        ABORT("ill-specified string");
+    } else if (c == 'x') {
+        assert(tree_string.size() > 5); // need to have at least two subtrees
+        int parentheses_counter = 1;
+        string::size_type index = 1;
+        while (parentheses_counter != 0) {
+            if (tree_string[index] == 'x') {
+                ++parentheses_counter;
+            } else if (tree_string[index] == 'y') {
+                --parentheses_counter;
+            }
+            ++index;
+        }
+        string left_sub_tree_string = tree_string.substr(1, index - 2);
+        left_child = new MergeTreeNode(left_sub_tree_string);
+
+        assert(tree_string[index] == 'x');
+        parentheses_counter = 1;
+        ++index;
+        int right_index = index;
+        while (parentheses_counter != 0) {
+            if (tree_string[index] == 'x') {
+                ++parentheses_counter;
+            } else if (tree_string[index] == 'y') {
+                --parentheses_counter;
+            }
+            ++index;
+        }
+        assert(index == tree_string.size());
+        string right_sub_tree_string = tree_string.substr(right_index,
+                                                          index - right_index - 1);
+        right_child = new MergeTreeNode(right_sub_tree_string);
+    } else {
+        string to_be_index = tree_string.substr(0, tree_string.size() - 2);
+//            cout << "to be index: " << to_be_index << endl;
+        ts_index = stoi(to_be_index);
+    }
+}
+
 MergeTreeNode::~MergeTreeNode() {
     delete left_child;
     delete right_child;
@@ -40,12 +87,13 @@ MergeTreeNode *MergeTreeNode::get_left_most_sibling() {
     if (has_two_leaf_children()) {
         return this;
     }
+    assert(left_child && right_child);
 
-    if (left_child) {
+    if (!left_child->is_leaf()) {
         return left_child->get_left_most_sibling();
     }
 
-    assert(right_child);
+    assert(!right_child->is_leaf());
     return right_child->get_left_most_sibling();
 }
 
@@ -93,17 +141,17 @@ int MergeTreeNode::compute_num_internal_nodes() const {
     }
 }
 
-void MergeTreeNode::postorder(int indentation) const {
+void MergeTreeNode::inorder(int offset, int current_indentation) const {
     if (left_child) {
-        left_child->postorder(indentation + 1);
+        left_child->inorder(offset, current_indentation + offset);
     }
-    if (right_child) {
-        right_child->postorder(indentation + 1);
-    }
-    for (int i = 0; i < indentation; ++i) {
-        cout << "  ";
+    for (int i = 0; i < current_indentation; ++i) {
+        cout << " ";
     }
     cout << ts_index << endl;
+    if (right_child) {
+        right_child->inorder(offset, current_indentation + offset);
+    }
 }
 
 MergeTree::MergeTree(
@@ -183,5 +231,11 @@ void MergeTree::update(pair<int, int> merge, int new_index, UpdateOption option)
         }
         to_be_removed_parent = nullptr;
     }
+}
+
+void MergeTree::inorder_traversal(int indentation_offset) const {
+    cout << "Merge tree, read from left to right (90° rotated tree): "
+         << endl;
+    return root->inorder(indentation_offset, 0);
 }
 }

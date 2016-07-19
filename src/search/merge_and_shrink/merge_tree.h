@@ -20,13 +20,14 @@ struct MergeTreeNode {
     MergeTreeNode() = delete;
     MergeTreeNode(int ts_index);
     MergeTreeNode(MergeTreeNode *left_child, MergeTreeNode*right_child);
+    MergeTreeNode(std::string tree_string);
     ~MergeTreeNode();
 
     MergeTreeNode *get_left_most_sibling();
     std::pair<int, int> erase_children_and_set_index(int new_index);
     MergeTreeNode *get_parent_of_ts_index(int index);
     int compute_num_internal_nodes() const;
-    void postorder(int indentation) const;
+    void inorder(int offset, int current_indentation) const;
 
     bool is_leaf() const {
         return !left_child && !right_child;
@@ -64,9 +65,7 @@ public:
         return root->compute_num_internal_nodes();
     }
 
-    void postorder(int indentation) const {
-        return root->postorder(indentation);
-    }
+    void inorder_traversal(int indentation_offset) const;
 };
 }
 

@@ -1,0 +1,28 @@
+#ifndef MERGE_AND_SHRINK_MERGE_TREE_FACTORY_MANUAL_H
+#define MERGE_AND_SHRINK_MERGE_TREE_FACTORY_MANUAL_H
+
+#include "merge_tree_factory.h"
+
+#include <vector>
+
+namespace options {
+class Options;
+}
+
+namespace merge_and_shrink {
+class BinaryTree;
+
+class MergeTreeFactoryManual : public MergeTreeFactory {
+    std::vector<std::vector<int>> merge_order_list;
+    std::string merge_order_tree_string;
+public:
+    explicit MergeTreeFactoryManual(const options::Options &options);
+    virtual ~MergeTreeFactoryManual() override = default;
+    virtual std::unique_ptr<MergeTree> compute_merge_tree(
+        std::shared_ptr<AbstractTask> task,
+        FactoredTransitionSystem &fts) override;
+    virtual void dump_options() const override;
+};
+}
+
+#endif

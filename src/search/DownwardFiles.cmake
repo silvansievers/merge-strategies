@@ -418,7 +418,6 @@ fast_downward_plugin(
         merge_and_shrink/merge_dfp.cc
         #merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_miasm.cc
-        merge_and_shrink/merge_predefined.cc
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_random_linear.cc
         merge_and_shrink/merge_random_non_linear.cc
@@ -435,7 +434,6 @@ fast_downward_plugin(
         #merge_and_shrink/merge_strategy_factory_dynamic_weighted.cc
         merge_and_shrink/merge_strategy_factory_miasm.cc
         merge_and_shrink/merge_strategy_factory_precomputed.cc
-        merge_and_shrink/merge_strategy_factory_predefined.cc
         merge_and_shrink/merge_strategy_factory_random.cc
         merge_and_shrink/merge_strategy_factory_random_linear.cc
         merge_and_shrink/merge_strategy_factory_random_non_linear.cc
@@ -448,6 +446,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_tree.cc
         merge_and_shrink/merge_tree_factory.cc
         merge_and_shrink/merge_tree_factory_linear.cc
+        merge_and_shrink/merge_tree_factory_manual.cc
         merge_and_shrink/shrink_bisimulation.cc
         merge_and_shrink/shrink_bucket_based.cc
         merge_and_shrink/shrink_fh.cc
