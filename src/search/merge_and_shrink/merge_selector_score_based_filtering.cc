@@ -105,18 +105,22 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
             merge_scoring_functions[i];
         vector<int> scores = scoring_function->compute_scores(fts,
                                                               merge_candidates);
-        cout << "computed scores using " << scoring_function->name() << endl;
         int old_size = merge_candidates.size();
         merge_candidates = get_remaining_candidates(merge_candidates, scores);
         int new_size = merge_candidates.size();
-        cout << old_size << " - " << new_size << endl;
-        if (new_size - old_size == 0 && scoring_function->name() == "goal relevance") {
-            // "skip" computation of dfp if no goal relevance pair has been
-            // found to mimic previous MergeDFP behavior.
+        if (new_size - old_size == 0 &&
+            scoring_function->name() == "goal relevance" &&
+            scores.front() == INF) {
+            /*
+              "skip" computation of dfp if no goal relevance pair has been
+              found (which is the case if no candidates have been filtered,
+              because all scores are identical, and the scores must be
+              infinity) to mimic previous MergeDFP behavior.
+            */
             assert(i < merge_scoring_functions.size() - 1);
             assert(merge_scoring_functions[i + 1]->name() == "dfp");
             ++i;
-            cout << "skipping" << endl;
+//            cout << "skipping computation of dfp scoring function" << endl;
             continue;
         }
 
