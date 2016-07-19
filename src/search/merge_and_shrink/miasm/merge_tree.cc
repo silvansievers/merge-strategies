@@ -62,7 +62,7 @@ bool ComparatorSortPacking::operator()(
     return ComparatorVarSet::operator ()(i, j);
 }
 
-int MergeTree::get_slot(const tree<set<int> >::iterator ti) {
+int MiasmMergeTree::get_slot(const tree<set<int> >::iterator ti) {
     tree<set<int> >::sibling_iterator i = merge_tree.begin(ti);
 
     /* if the node is a leaf node */
@@ -84,7 +84,7 @@ int MergeTree::get_slot(const tree<set<int> >::iterator ti) {
     return slot_count++;
 }
 
-void MergeTree::get_order(vector<pair<int, int> > &merge_next_, int num_vars) {
+void MiasmMergeTree::get_order(vector<pair<int, int> > &merge_next_, int num_vars) {
     // TODO: slot_count? num_vars? what?
     slot_count = num_vars;
     get_slot(merge_tree.begin());
@@ -209,14 +209,14 @@ void MiasmMergeTree::get_internal_tree(const set<int> &varset,
             tree<set<int> > right;
             right.insert(right.begin(), s);
             internal_tree.clear();
-            MergeTree::merge_subs(left, right, internal_tree);
+            merge_subs(left, right, internal_tree);
         }
     }
 }
 
-void MergeTree::merge_subs(const tree<set<int> > &left,
-                           const tree<set<int> > &right,
-                           tree<set<int> > &merged) {
+void merge_subs(const tree<set<int> > &left,
+                const tree<set<int> > &right,
+                tree<set<int> > &merged) {
     set<int> merged_set;
     set<int> left_set = *(left.begin());
     set<int> right_set = *(right.begin());
