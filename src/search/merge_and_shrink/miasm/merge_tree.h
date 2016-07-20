@@ -51,8 +51,8 @@ protected:
 };
 
 void merge_subs(const tree<std::set<int> > &left,
-                           const tree<std::set<int> > &right,
-                           tree<std::set<int> > &merged);
+                const tree<std::set<int> > &right,
+                tree<std::set<int> > &merged);
 
 class MiasmMergeTree {
 public:
@@ -61,16 +61,9 @@ public:
                    const MiasmExternal external_,
                    const VarSetInfoRegistry *p_si,
                    std::shared_ptr<AbstractTask> task);
-    void get_order(std::vector<std::pair<int, int> > &merge_next_, int num_vars);
-    int get_slot(const tree<std::set<int> >::iterator ti);
-    tree<std::set<int>> &get_tree() {
-        return merge_tree;
-    }
-protected:
-    tree<std::set<int> > merge_tree;
-    int slot_count;
-    std::vector<std::pair<int, int> > merge_next;
+    std::pair<int, int> select_next_and_update(int next_ts_index);
 private:
+    tree<std::set<int> > merge_tree;
     std::vector<std::set<int> > packing;
     const MiasmInternal internal;
     const MiasmExternal external;

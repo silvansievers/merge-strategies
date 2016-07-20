@@ -62,35 +62,6 @@ bool ComparatorSortPacking::operator()(
     return ComparatorVarSet::operator ()(i, j);
 }
 
-int MiasmMergeTree::get_slot(const tree<set<int> >::iterator ti) {
-    tree<set<int> >::sibling_iterator i = merge_tree.begin(ti);
-
-    /* if the node is a leaf node */
-    if (i == merge_tree.end(ti)) {
-        const set<int> s = *ti;
-        return *(s.begin());
-    }
-
-    pair<int, int> next;
-    /* the left sub-tree */
-    next.first = get_slot(i);
-    i++;
-    assert(i != merge_tree.end(ti));
-    /* the right sub tree */
-    next.second = get_slot(i);
-
-    merge_next.push_back(next);
-
-    return slot_count++;
-}
-
-void MiasmMergeTree::get_order(vector<pair<int, int> > &merge_next_, int num_vars) {
-    // TODO: slot_count? num_vars? what?
-    slot_count = num_vars;
-    get_slot(merge_tree.begin());
-    merge_next_ = merge_next;
-}
-
 
 MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
                                const MiasmInternal internal_,
@@ -173,6 +144,32 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
     }
 
 //    kptree::print_tree_bracketed(merge_tree, cerr);
+}
+
+pair<int, int> MiasmMergeTree::select_next_and_update(int next_ts_index) {
+    for (tree<set<int>>::leaf_iterator i_node = merge_tree.begin_leaf();
+         i_node != merge_tree.end_leaf(); i_node++) {
+        for (tree<set<int>>::leaf_iterator j_node = i_node;
+            j_node != merge_tree.end_leaf(); j_node++) {
+            if (merge_tree.parent(i_node) == merge_tree.parent(j_node)
+                 && i_node != j_node) {
+                set<int> &var_set1 = *i_node;
+                set<int> &var_set2 = *j_node;
+                assert(var_set1.size() == 1);
+                assert(var_set2.size() == 1);
+                int first_index = *var_set1.begin();
+                int second_index = *var_set2.begin();
+
+                set<int> &parent_var_set = *merge_tree.parent(i_node);
+                parent_var_set.clear();
+                parent_var_set.insert(next_ts_index);
+                merge_tree.erase(i_node);
+                merge_tree.erase(j_node);
+                return make_pair(first_index, second_index);
+            }
+        }
+    }
+    return make_pair(-1, -1);
 }
 
 void MiasmMergeTree::update_pred(const size_t i) {

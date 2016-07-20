@@ -54,22 +54,32 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
     shared_ptr<AbstractTask> task,
     FactoredTransitionSystem &) {
+    TaskProxy task_proxy(*task);
+    int num_ts = task_proxy.get_variables().size();
+
     // compute the merge tree in MiasmMergeTree form
     MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task);
 
     // get the actual merge order
     vector<pair<int, int>> merge_order;
-    miasm_tree->get_order(merge_order, TaskProxy(*task).get_variables().size());
+    int next_ts_index = num_ts;
+    while (true) {
+        pair<int, int> next_merge = miasm_tree->select_next_and_update(next_ts_index);
+        if (next_merge.first == -1) {
+            break;
+        }
+        merge_order.push_back(next_merge);
+        ++next_ts_index;
+    }
+    delete miasm_tree;
 
     // compute the merge tree in MergeTree form from the order
     // TODO: change the miasm computation to use it directly!
-    TaskProxy task_proxy(*task);
-    int num_ts = task_proxy.get_variables().size();
     map<int, MergeTreeNode*> index_to_tree;
     for (int atomic_ts_index = 0; atomic_ts_index < num_ts; ++atomic_ts_index) {
         index_to_tree[atomic_ts_index] = new MergeTreeNode(atomic_ts_index);
     }
-    int next_ts_index = num_ts;
+    next_ts_index = num_ts;
     for (const pair<int, int> &merge : merge_order) {
         int ts_index1 = merge.first;
         int ts_index2 = merge.second;
