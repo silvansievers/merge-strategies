@@ -65,6 +65,9 @@ public:
         return root->compute_num_internal_nodes();
     }
 
+    // NOTE: this performs the "inverted" inorder_traversal, i.e. from right
+    // to left, so that the printed tree matches the correct left-to-right
+    // order.
     void inorder_traversal(int indentation_offset) const;
 };
 }

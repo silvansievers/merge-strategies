@@ -33,7 +33,11 @@ unique_ptr<MergeTree> MergeTreeFactoryLinear::compute_merge_tree(
         root, rng);
 }
 
-void MergeTreeFactoryLinear::dump_options() const {
+string MergeTreeFactoryLinear::name() const {
+    return "linear";
+}
+
+void MergeTreeFactoryLinear::dump_tree_specific_options() const {
     dump_variable_order_type(variable_order_type);
 }
 

@@ -67,7 +67,11 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
     return utils::make_unique_ptr<MergeTree>(root, rng);
 }
 
-void MergeTreeFactoryManual::dump_options() const {
+string MergeTreeFactoryManual::name() const {
+    return "manual";
+}
+
+void MergeTreeFactoryManual::dump_tree_specific_options() const {
     if (!merge_order_list.empty()) {
         cout << "given merge order, as list: " << merge_order_list << endl;
     } else {

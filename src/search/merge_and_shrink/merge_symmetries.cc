@@ -2,9 +2,8 @@
 
 #include "factored_transition_system.h"
 #include "merge_selector_score_based_filtering.h"
+#include "merge_tree.h"
 #include "transition_system.h"
-
-#include "miasm/merge_tree.h"
 
 #include "symmetries/symmetry_group.h"
 
@@ -26,13 +25,13 @@ MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
     int num_merges,
     vector<int> linear_merge_order,
     shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector,
-    MiasmMergeTree *miasm_merge_tree)
+    unique_ptr<MergeTree> miasm_merge_tree)
     : MergeStrategy(fts),
       options(options),
       num_merges(num_merges),
       linear_merge_order(move(linear_merge_order)),
       dfp_selector(dfp_selector),
-      miasm_merge_tree(miasm_merge_tree),
+      miasm_merge_tree(move(miasm_merge_tree)),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
@@ -41,10 +40,6 @@ MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
       pure_fallback_strategy(true) {
-}
-
-MergeSymmetries::~MergeSymmetries() {
-    delete miasm_merge_tree;
 }
 
 void MergeSymmetries::dump_statistics() {
@@ -72,118 +67,6 @@ void MergeSymmetries::dump_statistics() {
         }
         cout << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
-}
-
-pair<int, int> MergeSymmetries::get_next_miasm() {
-    tree<set<int>> &merge_tree = miasm_merge_tree->get_tree();
-    pair<int, int> next_indices;
-
-    // TODO: original miasm uses sibling iterators. is this the same tree
-    // traversal order in as using leaf iterators in our case?
-    for (tree<set<int>>::leaf_iterator i_node = merge_tree.begin_leaf();
-            i_node != merge_tree.end_leaf(); i_node++) {
-        for (tree<set<int>>::leaf_iterator j_node = i_node;
-                j_node != merge_tree.end_leaf(); j_node++) {
-            if (merge_tree.parent(i_node) == merge_tree.parent(j_node)
-                    && i_node != j_node) {
-                set<int> &var_set1 = *i_node;
-                set<int> &var_set2 = *j_node;
-                assert(var_set1.size() == 1);
-                assert(var_set2.size() == 1);
-                int first_index = *var_set1.begin();
-                int second_index = *var_set2.begin();
-                next_indices.first = first_index;
-                next_indices.second = second_index;
-
-                int merged_index = fts.get_size();
-                set<int> &parent_var_set = *merge_tree.parent(i_node);
-                parent_var_set.clear();
-                parent_var_set.insert(merged_index);
-                merge_tree.erase(i_node);
-                merge_tree.erase(j_node);
-                return next_indices;
-            }
-        }
-    }
-    next_indices.first = -1;
-    next_indices.second = -1;
-    ABORT("Did not find MIASM next pair!");
-    return next_indices;
-}
-
-void MergeSymmetries::update_miasm_merge_tree(const pair<int, int> &next_merge) {
-    tree<set<int>> &merge_tree = miasm_merge_tree->get_tree();
-
-    // Find the two indices in the tree
-    int first_index = next_merge.first;
-    int second_index = next_merge.second;
-    tree<set<int>>::pre_order_iterator *first_index_it = 0;
-    tree<set<int>>::pre_order_iterator *second_index_it = 0;
-    for (tree<set<int>>::pre_order_iterator node_it = merge_tree.begin();
-            node_it != merge_tree.end(); node_it++) {
-        const set<int> &node = *node_it;
-        if (node.count(first_index)) {
-            first_index_it = new tree<set<int>>::pre_order_iterator(node_it);
-        }
-        if (node.count(second_index)) {
-            second_index_it = new tree<set<int>>::pre_order_iterator(node_it);
-        }
-    }
-    assert(first_index_it);
-    assert(second_index_it);
-    assert(first_index_it != second_index_it);
-
-    int merged_index = fts.get_size();
-    if (merge_tree.parent(*first_index_it) == merge_tree.parent(*second_index_it)) {
-        // MIASM would merge the two indices anyway
-        set<int> &parent_var_set = *merge_tree.parent(*first_index_it);
-        parent_var_set.clear();
-        parent_var_set.insert(merged_index);
-        merge_tree.erase(*first_index_it);
-        merge_tree.erase(*second_index_it);
-    } else {
-        // Merge the two tree nodes and arbitrarily assign the merged node to
-        // one of the nodes' parent, and remove the other node's parent.
-        tree<set<int>>::pre_order_iterator root = merge_tree.begin();
-        assert(merge_tree.depth(root) == 0);
-        assert(*first_index_it != root);
-        assert(*second_index_it != root);
-
-        tree<set<int>>::pre_order_iterator *chosen_survivor_node;
-        if (*first_index_it == root) {
-            chosen_survivor_node = first_index_it;
-        } else if (*second_index_it == root) {
-            chosen_survivor_node = second_index_it;
-        } else if (merge_tree.depth(*first_index_it) < merge_tree.depth(*second_index_it)){
-            chosen_survivor_node = first_index_it;
-        } else if (merge_tree.depth(*first_index_it) > merge_tree.depth(*second_index_it)) {
-            chosen_survivor_node = second_index_it;
-        } else {
-            int random = (*g_rng())(2); // TODO: use rng_options.h!
-            chosen_survivor_node = (random ? second_index_it : first_index_it);
-        }
-        tree<set<int>>::pre_order_iterator *to_be_erased_node =
-                (chosen_survivor_node == first_index_it ? second_index_it : first_index_it);
-
-        assert(merge_tree.depth(*to_be_erased_node) >= 2);
-
-        // update survivor node
-        (*chosen_survivor_node)->clear();
-        (*chosen_survivor_node)->insert(merged_index);
-
-        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parent
-            = merge_tree.parent(*to_be_erased_node);
-        tree<set<int>>::pre_order_iterator to_be_erased_nodes_parents_parent
-            = merge_tree.parent(to_be_erased_nodes_parent);
-        merge_tree.erase(*to_be_erased_node);
-        // move all children of to_be_erased_nodes_parent to be children of
-        // to_be_erased_nodes_parents_parent
-        merge_tree.reparent(to_be_erased_nodes_parents_parent, to_be_erased_nodes_parent);
-        merge_tree.erase(to_be_erased_nodes_parent);
-    }
-
-    delete first_index_it;
-    delete second_index_it;
 }
 
 pair<int, int> MergeSymmetries::get_next() {
@@ -243,7 +126,8 @@ pair<int, int> MergeSymmetries::get_next() {
         } else if (fallback_strategy == DFP) {
             return dfp_selector->select_merge(fts);
         } else if (fallback_strategy == MIASM) {
-            return get_next_miasm();
+            int next_merge_index = fts.get_size();
+            return miasm_merge_tree->get_next_merge(next_merge_index);
         } else {
             ABORT("unknown fallback merge strategy");
         }
@@ -278,7 +162,10 @@ pair<int, int> MergeSymmetries::get_next() {
         assert(found_entry);
     } else if (fallback_strategy == MIASM) {
         // Update miasm merge order for future fallback cases
-        update_miasm_merge_tree(next_merge);
+        miasm_merge_tree->update(
+            next_merge,
+            fts.get_size(),
+            static_cast<UpdateOption>(options.get_enum("update_option")));
     }
 
     return next_merge;

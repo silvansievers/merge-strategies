@@ -1,9 +1,11 @@
-#include "merge_strategy_factory_miasm.h"
+#include "merge_tree_factory_miasm.h"
 
 #include "factored_transition_system.h"
-#include "merge_miasm.h"
+#include "merge_strategy_factory_precomputed.h"
+#include "merge_tree.h"
 
 #include "miasm/sink_set_search.h"
+#include "miasm/merge_tree.h"
 #include "miasm/miasm_mas.h"
 
 #include "../options/option_parser.h"
@@ -18,8 +20,8 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeStrategyFactoryMiasm::MergeStrategyFactoryMiasm(const options::Options &opts)
-    : MergeStrategyFactory(),
+MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
+    : MergeTreeFactory(opts),
       options(opts),
       miasm_internal(MiasmInternal(opts.get_enum("miasm_internal"))),
       miasm_external(MiasmExternal(opts.get_enum("miasm_external"))) {
@@ -27,7 +29,7 @@ MergeStrategyFactoryMiasm::MergeStrategyFactoryMiasm(const options::Options &opt
     // but it requires a task object.
 }
 
-MiasmMergeTree *MergeStrategyFactoryMiasm::compute_merge_tree(
+MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
     shared_ptr<AbstractTask> task) {
     /* search for sink sets */
     SinkSetSearch sink_set_search(options, task);
@@ -49,27 +51,54 @@ MiasmMergeTree *MergeStrategyFactoryMiasm::compute_merge_tree(
     return miasm_tree;
 }
 
-unique_ptr<MergeStrategy> MergeStrategyFactoryMiasm::compute_merge_strategy(
+unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
     shared_ptr<AbstractTask> task,
-    FactoredTransitionSystem &fts) {
-    MiasmMergeTree *miasm_tree = compute_merge_tree(task);
-    /* convert the merge tree into the merge order
-     * for the convenience of of the generic MergeStrategy::get_next
-     * function */
+    FactoredTransitionSystem &) {
+    // compute the merge tree in MiasmMergeTree form
+    MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task);
+
+    // get the actual merge order
     vector<pair<int, int>> merge_order;
     miasm_tree->get_order(merge_order, TaskProxy(*task).get_variables().size());
-    return utils::make_unique_ptr<MergeMiasm>(fts, move(merge_order));
+
+    // compute the merge tree in MergeTree form from the order
+    // TODO: change the miasm computation to use it directly!
+    TaskProxy task_proxy(*task);
+    int num_ts = task_proxy.get_variables().size();
+    map<int, MergeTreeNode*> index_to_tree;
+    for (int atomic_ts_index = 0; atomic_ts_index < num_ts; ++atomic_ts_index) {
+        index_to_tree[atomic_ts_index] = new MergeTreeNode(atomic_ts_index);
+    }
+    int next_ts_index = num_ts;
+    for (const pair<int, int> &merge : merge_order) {
+        int ts_index1 = merge.first;
+        int ts_index2 = merge.second;
+        index_to_tree[next_ts_index] =
+            new MergeTreeNode(index_to_tree[ts_index1], index_to_tree[ts_index2]);
+        ++next_ts_index;
+    }
+    MergeTreeNode *root = index_to_tree[next_ts_index - 1];
+//    MergeTree merge_tree(root, g_rng());
+//    vector<pair<int, int>> other_merge_order;
+//    next_ts_index = num_ts;
+//    while (!merge_tree.done()) {
+//        other_merge_order.push_back(merge_tree.get_next_merge(next_ts_index));
+//        ++next_ts_index;
+//    }
+//    assert(merge_order == other_merge_order);
+
+    return utils::make_unique_ptr<MergeTree>(root, rng);
 }
 
-string MergeStrategyFactoryMiasm::name() const {
+string MergeTreeFactoryMiasm::name() const {
     return "miasm";
 }
 
-void MergeStrategyFactoryMiasm::dump_strategy_specific_options() const {
+void MergeTreeFactoryMiasm::dump_tree_specific_options() const {
     // TODO
 }
 
-void MergeStrategyFactoryMiasm::greedy_max_set_packing() {
+void MergeTreeFactoryMiasm::greedy_max_set_packing() {
     max_packing.clear();
     /* the variables that have been included in the packing solution */
     set<int> included;
@@ -94,7 +123,9 @@ void MergeStrategyFactoryMiasm::greedy_max_set_packing() {
     }
 }
 
-void MergeStrategyFactoryMiasm::add_options_to_parser(options::OptionParser &parser) {
+void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser) {
+    MergeTreeFactory::add_options_to_parser(parser);
+
     //DEFINE_ENUM_OPT(MiasmInternal, "miasm_internal", LEVEL)
     vector<string> enum_strings;
     enum_strings.push_back("level");
@@ -187,17 +218,38 @@ void MergeStrategyFactoryMiasm::add_options_to_parser(options::OptionParser &par
                            "none");
 }
 
-static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
-    MergeStrategyFactoryMiasm::add_options_to_parser(parser);
+static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
+    MergeTreeFactoryMiasm::add_options_to_parser(parser);
 
     options::Options opts = parser.parse();
 
     if (parser.dry_run())
         return nullptr;
 
-    return make_shared<MergeStrategyFactoryMiasm>(opts);
+    return make_shared<MergeTreeFactoryMiasm>(opts);
 }
 
-static options::PluginShared<MergeStrategyFactory> _plugin("merge_miasm", _parse);
+static options::PluginShared<MergeTreeFactory> _plugin("miasm", _parse);
 
+static shared_ptr<MergeStrategyFactory> _parse_strategy(
+    options::OptionParser &parser) {
+    MergeTreeFactoryMiasm::add_options_to_parser(parser);
+
+    options::Options opts = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+
+    shared_ptr<MergeTreeFactoryMiasm> miasm_tree_factory =
+        make_shared<MergeTreeFactoryMiasm>(opts);
+
+    options::Options strategy_factory_options;
+    strategy_factory_options.set<shared_ptr<MergeTreeFactory>>(
+        "merge_tree", miasm_tree_factory);
+
+    return make_shared<MergeStrategyFactoryPrecomputed>(
+        strategy_factory_options);
+}
+
+static options::PluginShared<MergeStrategyFactory> _plugin_strategy(
+    "merge_miasm", _parse_strategy);
 }

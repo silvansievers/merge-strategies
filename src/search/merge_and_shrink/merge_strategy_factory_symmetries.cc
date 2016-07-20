@@ -2,15 +2,15 @@
 
 #include "factored_transition_system.h"
 #include "merge_dfp.h"
-#include "merge_miasm.h"
 #include "merge_scoring_function_dfp.h"
 #include "merge_scoring_function_goal_relevance.h"
 #include "merge_scoring_function_single_random.h"
 #include "merge_scoring_function_total_order.h"
 #include "merge_selector_score_based_filtering.h"
-#include "merge_strategy_factory_miasm.h"
 #include "merge_symmetries.h"
+#include "merge_tree.h"
 #include "merge_tree_factory_linear.h"
+#include "merge_tree_factory_miasm.h"
 #include "transition_system.h"
 
 #include "miasm/merge_tree.h"
@@ -130,9 +130,9 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
         FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();
-    std::vector<int> linear_merge_order;
+    vector<int> linear_merge_order;
     shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector = nullptr;
-    MiasmMergeTree *miasm_merge_tree = nullptr;
+    unique_ptr<MergeTree> miasm_merge_tree = nullptr;
 
     FallbackStrategy fallback_strategy =
         FallbackStrategy(options.get_enum("fallback_strategy"));
@@ -164,8 +164,8 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
             move(scoring_functions));
         dfp_selector->initialize(task);
     } else if (fallback_strategy == MIASM) {
-        MergeStrategyFactoryMiasm factory(options);
-        miasm_merge_tree = factory.compute_merge_tree(task);
+        MergeTreeFactoryMiasm factory(options);
+        miasm_merge_tree = move(factory.compute_merge_tree(task, fts));
     } else {
         ABORT("unknown fallback merge strategy");
     }
@@ -176,7 +176,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
         num_merges,
         move(linear_merge_order),
         dfp_selector,
-        miasm_merge_tree);
+        move(miasm_merge_tree));
 }
 
 string MergeStrategyFactorySymmetries::name() const {
@@ -273,7 +273,7 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
         "false");
 
     // miasm
-    MergeStrategyFactoryMiasm::add_options_to_parser(parser);
+    MergeTreeFactoryMiasm::add_options_to_parser(parser);
 
     options::Options options = parser.parse();
     if (options.get<int>("bliss_call_time_limit")
