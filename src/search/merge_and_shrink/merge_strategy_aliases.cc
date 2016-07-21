@@ -1,5 +1,6 @@
 #include "merge_scoring_function_dfp.h"
 #include "merge_scoring_function_goal_relevance.h"
+#include "merge_scoring_function_linear.h"
 #include "merge_scoring_function_single_random.h"
 #include "merge_scoring_function_total_order.h"
 #include "merge_selector_score_based_filtering.h"
@@ -13,6 +14,7 @@
 #include "../options/plugin.h"
 
 #include "../utils/markup.h"
+#include "../utils/rng_options.h"
 
 using namespace std;
 
@@ -130,4 +132,68 @@ static shared_ptr<MergeStrategyFactory> _parse_miasm(
 
 static options::PluginShared<MergeStrategyFactory> _plugin_miasm(
     "merge_miasm", _parse_miasm);
+
+static shared_ptr<MergeStrategyFactory>_parse_random_linear(options::OptionParser &parser) {
+    parser.document_synopsis(
+        "Random linear merge strategy.",
+        "This merge strategy only chooses linear merges, and randomly.");
+    utils::add_rng_options(parser);
+
+    options::Options options = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+
+    vector<shared_ptr<MergeScoringFunction>> scoring_functions;
+    scoring_functions.push_back(make_shared<MergeScoringFunctionLinear>());
+    scoring_functions.push_back(make_shared<MergeScoringFunctionSingleRandom>(options));
+
+    // TODO: the option parser does not handle this
+//    options::Options selector_options;
+//    selector_options.set<vector<shared_ptr<MergeScoringFunction>>(
+//        "scoring_functions",
+//        scoring_functions);
+    shared_ptr<MergeSelector> selector =
+        make_shared<MergeSelectorScoreBasedFiltering>(move(scoring_functions));
+
+    options::Options strategy_options;
+    strategy_options.set<shared_ptr<MergeSelector>>(
+        "merge_selector",
+        selector);
+
+    return make_shared<MergeStrategyFactoryStateless>(strategy_options);
+}
+
+static options::PluginShared<MergeStrategyFactory> _plugin_random_linear("merge_random_linear", _parse_random_linear);
+
+static shared_ptr<MergeStrategyFactory>_parse_random(options::OptionParser &parser) {
+    parser.document_synopsis(
+        "Random merge strategy.",
+        "This merge strategy randomly selects the two next transition systems"
+        "to merge.");
+    utils::add_rng_options(parser);
+
+    options::Options options = parser.parse();
+    if (parser.dry_run())
+        return nullptr;
+
+    vector<shared_ptr<MergeScoringFunction>> scoring_functions;
+    scoring_functions.push_back(make_shared<MergeScoringFunctionSingleRandom>(options));
+
+    // TODO: the option parser does not handle this
+//    options::Options selector_options;
+//    selector_options.set<vector<shared_ptr<MergeScoringFunction>>(
+//        "scoring_functions",
+//        scoring_functions);
+    shared_ptr<MergeSelector> selector =
+        make_shared<MergeSelectorScoreBasedFiltering>(move(scoring_functions));
+
+    options::Options strategy_options;
+    strategy_options.set<shared_ptr<MergeSelector>>(
+        "merge_selector",
+        selector);
+
+    return make_shared<MergeStrategyFactoryStateless>(strategy_options);
+}
+
+static options::PluginShared<MergeStrategyFactory> _plugin_random("merge_random", _parse_random);
 }
