@@ -32,6 +32,7 @@ vector<int> MergeScoringFunctionTotalOrder::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     assert(initialized);
     vector<int> scores;
+    scores.reserve(merge_candidates.size());
     for (size_t candidate_index = 0; candidate_index < merge_candidates.size();
          ++candidate_index) {
         pair<int, int> merge_candidate = merge_candidates[candidate_index];
