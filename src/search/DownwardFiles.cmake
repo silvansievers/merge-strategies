@@ -415,7 +415,6 @@ fast_downward_plugin(
         merge_and_shrink/label_reduction.cc
         merge_and_shrink/labels.cc
         merge_and_shrink/merge_and_shrink_heuristic.cc
-        merge_and_shrink/merge_dfp.cc
         #merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_random.cc
         merge_and_shrink/merge_random_linear.cc
@@ -429,6 +428,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_selector.cc
         merge_and_shrink/merge_selector_score_based_filtering.cc
         merge_and_shrink/merge_strategy.cc
+        merge_and_shrink/merge_strategy_aliases.cc
         merge_and_shrink/merge_strategy_factory.cc
         #merge_and_shrink/merge_strategy_factory_dynamic_weighted.cc
         merge_and_shrink/merge_strategy_factory_precomputed.cc

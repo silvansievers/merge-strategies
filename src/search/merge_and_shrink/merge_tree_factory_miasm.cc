@@ -1,7 +1,6 @@
 #include "merge_tree_factory_miasm.h"
 
 #include "factored_transition_system.h"
-#include "merge_strategy_factory_precomputed.h"
 #include "merge_tree.h"
 
 #include "miasm/sink_set_search.h"
@@ -240,26 +239,4 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
 }
 
 static options::PluginShared<MergeTreeFactory> _plugin("miasm", _parse);
-
-static shared_ptr<MergeStrategyFactory> _parse_strategy(
-    options::OptionParser &parser) {
-    MergeTreeFactoryMiasm::add_options_to_parser(parser);
-
-    options::Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-
-    shared_ptr<MergeTreeFactoryMiasm> miasm_tree_factory =
-        make_shared<MergeTreeFactoryMiasm>(opts);
-
-    options::Options strategy_factory_options;
-    strategy_factory_options.set<shared_ptr<MergeTreeFactory>>(
-        "merge_tree", miasm_tree_factory);
-
-    return make_shared<MergeStrategyFactoryPrecomputed>(
-        strategy_factory_options);
-}
-
-static options::PluginShared<MergeStrategyFactory> _plugin_strategy(
-    "merge_miasm", _parse_strategy);
 }

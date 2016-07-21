@@ -1,7 +1,6 @@
 #include "merge_strategy_factory_symmetries.h"
 
 #include "factored_transition_system.h"
-#include "merge_dfp.h"
 #include "merge_scoring_function_dfp.h"
 #include "merge_scoring_function_goal_relevance.h"
 #include "merge_scoring_function_single_random.h"
