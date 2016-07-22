@@ -6,9 +6,7 @@
 namespace merge_and_shrink {
 class MergeScoringFunctionLinear : public MergeScoringFunction {
 public:
-    virtual std::string name() const override {
-        return "linear";
-    }
+    virtual std::string name() const override;
 public:
     MergeScoringFunctionLinear() = default;
     virtual std::vector<int> compute_scores(

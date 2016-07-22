@@ -27,6 +27,10 @@ vector<int> MergeScoringFunctionLinear::compute_scores(
     return scores;
 }
 
+string MergeScoringFunctionLinear::name() const {
+    return "linear";
+}
+
 static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
     parser.document_synopsis(
         "Linear",

@@ -30,6 +30,7 @@ public:
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
         std::shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) = 0;
+    // Inheriting classes must call this method in their parsing methods.
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

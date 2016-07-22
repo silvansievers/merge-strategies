@@ -115,7 +115,11 @@ void MergeScoringFunctionTotalOrder::initialize(
     }
 }
 
-void MergeScoringFunctionTotalOrder::dump_specific_options() const {
+string MergeScoringFunctionTotalOrder::name() const {
+    return "total order";
+}
+
+void MergeScoringFunctionTotalOrder::dump_function_specific_options() const {
     cout << "Atomic transition system order: ";
     switch (atomic_ts_order) {
     case AtomicTSOrder::REGULAR:

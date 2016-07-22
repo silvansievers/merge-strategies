@@ -37,7 +37,11 @@ vector<int> MergeScoringFunctionSingleRandom::compute_scores(
     return scores;
 }
 
-void MergeScoringFunctionSingleRandom::dump_specific_options() const {
+string MergeScoringFunctionSingleRandom::name() const {
+    return "single random";
+}
+
+void MergeScoringFunctionSingleRandom::dump_function_specific_options() const {
     cout << "Random seed: " << random_seed << endl;
 }
 

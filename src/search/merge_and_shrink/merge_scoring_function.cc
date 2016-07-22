@@ -14,7 +14,7 @@ MergeScoringFunction::MergeScoringFunction()
 void MergeScoringFunction::dump_options() const {
     cout << "Merge scoring function:" << endl;
     cout << "Name: " << name() << endl;
-    dump_specific_options();
+    dump_function_specific_options();
 }
 
 static options::PluginTypePlugin<MergeScoringFunction> _type_plugin(

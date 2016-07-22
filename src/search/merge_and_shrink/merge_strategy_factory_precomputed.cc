@@ -28,12 +28,12 @@ unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strateg
     return utils::make_unique_ptr<MergeStrategyPrecomputed>(fts, move(merge_tree));
 }
 
-void MergeStrategyFactoryPrecomputed::dump_strategy_specific_options() const {
-    merge_tree_factory->dump_options();
-}
-
 string MergeStrategyFactoryPrecomputed::name() const {
     return "precomputed";
+}
+
+void MergeStrategyFactoryPrecomputed::dump_strategy_specific_options() const {
+    merge_tree_factory->dump_options();
 }
 
 static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
