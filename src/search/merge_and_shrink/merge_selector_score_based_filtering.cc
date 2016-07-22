@@ -47,7 +47,7 @@ vector<pair<int, int>> MergeSelectorScoreBasedFiltering::get_remaining_candidate
 }
 
 pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
-    FactoredTransitionSystem &fts) {
+    FactoredTransitionSystem &fts) const {
     vector<pair<int, int>> merge_candidates;
     for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
         if (fts.is_active(ts_index1)) {
@@ -60,7 +60,7 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
         }
     }
 
-    for (shared_ptr<MergeScoringFunction> &scoring_function :
+    for (const shared_ptr<MergeScoringFunction> &scoring_function :
          merge_scoring_functions) {
         vector<int> scores = scoring_function->compute_scores(fts,
                                                               merge_candidates);
@@ -149,6 +149,10 @@ void MergeSelectorScoreBasedFiltering::initialize(shared_ptr<AbstractTask> task)
          : merge_scoring_functions) {
         scoring_function->initialize(task);
     }
+}
+
+string MergeSelectorScoreBasedFiltering::name() const {
+    return "score based merge selector";
 }
 
 void MergeSelectorScoreBasedFiltering::dump_specific_options() const {

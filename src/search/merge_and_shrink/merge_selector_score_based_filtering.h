@@ -21,17 +21,16 @@ class MergeSelectorScoreBasedFiltering : public MergeSelector {
         const std::vector<std::pair<int, int>> &merge_candidates,
         const std::vector<int> &scores) const;
 protected:
-    virtual std::string name() const override {
-        return "score based merge selector";
-    }
+    virtual std::string name() const override;
     virtual void dump_specific_options() const override;
 public:
     explicit MergeSelectorScoreBasedFiltering(const options::Options &options);
+    virtual ~MergeSelectorScoreBasedFiltering() override = default;
     // TODO: get rid of this extra constructor
     explicit MergeSelectorScoreBasedFiltering(
         std::vector<std::shared_ptr<MergeScoringFunction>> scoring_functions);
     virtual std::pair<int, int> select_merge(
-        FactoredTransitionSystem &fts) override;
+        FactoredTransitionSystem &fts) const override;
     std::pair<int, int> select_merge_dfp_sccs(
         FactoredTransitionSystem &fts,
         const std::vector<int> &indices_subset);
