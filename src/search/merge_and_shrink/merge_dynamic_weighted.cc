@@ -25,8 +25,8 @@ const int MINUSINF = numeric_limits<int>::min();
 
 // Helper methods to deal with transition systems
 
-// TODO: copied from DFP
-bool is_goal_relevant(const TransitionSystem &ts) {
+// TODO: copied from scoring function goal relevance
+static bool is_goal_relevant(const TransitionSystem &ts) {
     int num_states = ts.get_size();
     for (int state = 0; state < num_states; ++state) {
         if (!ts.is_goal_state(state)) {
@@ -80,50 +80,6 @@ double compute_average_h_value(const Distances &distances) {
         return INF;
     }
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
-}
-
-// TODO: exact copy from MergeDFP
-void compute_label_ranks(const FactoredTransitionSystem &fts,
-                         int index,
-                         vector<int> &label_ranks) {
-    const TransitionSystem &ts = fts.get_ts(index);
-    const Distances &distances = fts.get_dist(index);
-    int num_labels = fts.get_num_labels();
-    // Irrelevant (and inactive, i.e. reduced) labels have a dummy rank of -1
-    label_ranks.resize(num_labels, -1);
-
-    for (const GroupAndTransitions &gat : ts) {
-        const LabelGroup &label_group = gat.label_group;
-        const vector<Transition> &transitions = gat.transitions;
-        // Relevant labels with no transitions have a rank of infinity.
-        int label_rank = INF;
-        bool group_relevant = false;
-        if (static_cast<int>(transitions.size()) == ts.get_size()) {
-            /*
-              A label group is irrelevant in the earlier notion if it has
-              exactly a self loop transition for every state.
-            */
-            for (const Transition &transition : transitions) {
-                if (transition.target != transition.src) {
-                    group_relevant = true;
-                    break;
-                }
-            }
-        } else {
-            group_relevant = true;
-        }
-        if (!group_relevant) {
-            label_rank = -1;
-        } else {
-            for (const Transition &transition : transitions) {
-                label_rank = min(label_rank,
-                                 distances.get_goal_distance(transition.target));
-            }
-        }
-        for (int label_no : label_group) {
-            label_ranks[label_no] = label_rank;
-        }
-    }
 }
 
 void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
@@ -546,59 +502,6 @@ double AvgHSumFeature::compute_value(
     return average_h_sum;
 }
 
-DFPFeature::DFPFeature(int id, int weight)
-    : Feature(id, weight, "dfp", false, true) {
-}
-
-void DFPFeature::initialize(const TaskProxy &task_proxy, bool) {
-    ts_index_to_label_ranks.reserve(task_proxy.get_variables().size() * 2 - 1);
-}
-
-//void DFPFeature::precompute_data(const std::FactoredTransitionSystem &fts) override {
-//}
-
-void DFPFeature::clear() {
-    ts_index_to_label_ranks.clear();
-}
-
-double DFPFeature::compute_value(
-    const FactoredTransitionSystem &fts,
-    int ts_index1,
-    int ts_index2,
-    int) {
-    // return value in [0,infinity)
-    if (ts_index_to_label_ranks.empty()) {
-        ts_index_to_label_ranks.assign(fts.get_size(), vector<int>());
-    }
-    const TransitionSystem &ts1 = fts.get_ts(ts_index1);
-    const TransitionSystem &ts2 = fts.get_ts(ts_index2);
-    int pair_weight = INF;
-    if (is_goal_relevant(ts1) || is_goal_relevant(ts2)) {
-        vector<int> &label_ranks1 = ts_index_to_label_ranks[ts_index1];
-        if (label_ranks1.empty()) {
-            compute_label_ranks(fts, ts_index1, label_ranks1);
-        }
-        vector<int> &label_ranks2 = ts_index_to_label_ranks[ts_index2];
-        if (label_ranks2.empty()) {
-            compute_label_ranks(fts, ts_index2, label_ranks2);
-        }
-        assert(!label_ranks1.empty());
-        assert(!label_ranks2.empty());
-        assert(label_ranks1.size() == label_ranks2.size());
-        for (size_t i = 0; i < label_ranks1.size(); ++i) {
-            if (label_ranks1[i] != -1 && label_ranks2[i] != -1) {
-                // label is relevant in both transition_systems
-                int max_label_rank = max(label_ranks1[i], label_ranks2[i]);
-                pair_weight = min(pair_weight, max_label_rank);
-            }
-        }
-    }
-    // NOTE: if all pairs have infinite weight, the real DFP strategy would
-    // prefer merging the "first" pair with at least one goal relevant
-    // transition system. This feature here cannot do so.
-    return pair_weight;
-}
-
 GoalRelevanceFeature::GoalRelevanceFeature(int id, int weight)
     : Feature(id, weight, "goal relevance", false, false) {
 }
@@ -888,8 +791,6 @@ Features::Features(const options::Options opts)
                            id++, opts.get<int>("w_high_initial_h_value_sum")));
     features.push_back(new AvgHSumFeature(
                            id++, opts.get<int>("w_high_average_h_value_sum")));
-    features.push_back(new DFPFeature(
-                           id++, opts.get<int>("w_dfp")));
     features.push_back(new GoalRelevanceFeature(
                            id++, opts.get<int>("w_goal_relevance")));
     features.push_back(new NumVariablesFeature(
@@ -1057,7 +958,9 @@ MergeDynamicWeighted::MergeDynamicWeighted(
       features(move(features)),
       transition_system_order(move(transition_system_order)),
       max_states(max_states),
-      use_lr(use_lr) {
+      use_lr(use_lr),
+      iterations_with_tiebreaking(0),
+      total_tiebreaking_pair_count(0) {
     if (use_lr) {
         cerr << "Currently not implemented!" << endl;
         utils::exit_with(ExitCode::CRITICAL_ERROR);
@@ -1209,5 +1112,10 @@ pair<int, int> MergeDynamicWeighted::get_next() {
     assert(next_index2 != -1);
 
     return make_pair(next_index1, next_index2);
+}
+
+pair<int, int> MergeDynamicWeighted::get_dfp_tiebreaking_statistics() const {
+    return make_pair(iterations_with_tiebreaking,
+                     total_tiebreaking_pair_count);
 }
 }

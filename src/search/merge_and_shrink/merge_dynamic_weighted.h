@@ -194,20 +194,6 @@ public:
     AvgHSumFeature(int id, int weight);
 };
 
-class DFPFeature : public Feature {
-    std::vector<std::vector<int>> ts_index_to_label_ranks;
-    virtual double compute_value(
-        const FactoredTransitionSystem &fts,
-        int ts_index1,
-        int ts_index2,
-        int merge_index) override;
-public:
-    DFPFeature(int id, int weight);
-    virtual void initialize(const TaskProxy &task_proxy, bool dump) override;
-//    virtual void precompute_data(const FactoredTransitionSystem &fts) override;
-    virtual void clear() override;
-};
-
 class GoalRelevanceFeature : public Feature {
     virtual double compute_value(
         const FactoredTransitionSystem &fts,
@@ -330,6 +316,9 @@ class MergeDynamicWeighted : public MergeStrategy {
     const int max_states; // limit to compute shrink sizes
     const bool use_lr;
 
+    int iterations_with_tiebreaking;
+    int total_tiebreaking_pair_count;
+
     std::pair<int, int> compute_shrink_sizes(int size1, int size2) const;
 public:
     MergeDynamicWeighted(
@@ -340,6 +329,7 @@ public:
         const bool use_lr);
     virtual ~MergeDynamicWeighted() override = default;
     virtual std::pair<int, int> get_next() override;
+    virtual std::pair<int, int> get_dfp_tiebreaking_statistics() const override;
 };
 }
 

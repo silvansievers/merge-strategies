@@ -1,7 +1,7 @@
 #include "merge_strategy_factory_dynamic_weighted.h"
 
 #include "merge_dynamic_weighted.h"
-#include "merge_strategy_factory_dfp.h"
+#include "merge_scoring_function_total_order.h"
 
 #include "../task_proxy.h"
 
@@ -114,7 +114,11 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     parser.add_option<bool>("use_lr", "use label reduction", "false");
 
     // TS order options
-    MergeStrategyFactoryDFP::add_options_to_parser(parser, false);
+    MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
+    parser.add_option<bool>(
+        "randomized_order",
+        "fully randomized transition system order",
+        "false");
 
     // Feature weight options
     parser.add_option<int>(
@@ -183,11 +187,6 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
         "0",
         options::Bounds("0", "100"));
     parser.add_option<int>(
-        "w_dfp",
-        "merge according to DFP merge strategy",
-        "0",
-        options::Bounds("0", "100"));
-    parser.add_option<int>(
         "w_goal_relevance",
         "prefer goal relevant transition systems",
         "0",
@@ -242,7 +241,6 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
         opts.get<int>("w_high_average_h_value_improvement") == 0 &&
         opts.get<int>("w_high_initial_h_value_sum") == 0 &&
         opts.get<int>("w_high_average_h_value_sum") == 0 &&
-        opts.get<int>("w_dfp") == 0 &&
         opts.get<int>("w_goal_relevance") == 0 &&
         opts.get<int>("w_num_variables") == 0 &&
         opts.get<int>("w_shrink_perfectly") == 0 &&
