@@ -7,10 +7,6 @@ namespace options {
 class Options;
 }
 
-namespace options {
-class OptionParser;
-}
-
 namespace merge_and_shrink {
 class MergeTreeFactory;
 class MergeStrategyFactoryPrecomputed : public MergeStrategyFactory {
@@ -24,7 +20,6 @@ public:
         std::shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) override;
     virtual std::string name() const override;
-    static void add_options_to_parser(options::OptionParser &parser);
 };
 }
 
