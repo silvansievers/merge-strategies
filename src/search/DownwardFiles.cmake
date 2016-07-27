@@ -425,6 +425,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_scoring_function_total_order.cc
         merge_and_shrink/merge_selector.cc
         merge_and_shrink/merge_selector_score_based_filtering.cc
+        merge_and_shrink/merge_selector_score_based_weighted_sum.cc
         merge_and_shrink/merge_strategy.cc
         merge_and_shrink/merge_strategy_aliases.cc
         merge_and_shrink/merge_strategy_factory.cc
