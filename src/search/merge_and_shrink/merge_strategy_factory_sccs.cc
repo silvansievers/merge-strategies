@@ -194,9 +194,9 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     order_of_sccs.push_back("increasing");
     parser.add_enum_option("order_of_sccs",
                            order_of_sccs,
-                           "choose an ordering of the sccs: linear (specify "
-                           "variable_order) or dfp (specify dfp order options).",
-                           "topological");
+                           "choose an ordering of the sccs: topological, (cg "
+                           "order) reverse_topological (cg order), decreasing "
+                           "or increasing (in size).");
     vector<string> internal_merge_order;
     internal_merge_order.push_back("linear");
     internal_merge_order.push_back("dfp");
