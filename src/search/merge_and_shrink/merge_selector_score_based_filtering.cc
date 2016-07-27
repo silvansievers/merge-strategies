@@ -16,7 +16,9 @@ MergeSelectorScoreBasedFiltering::MergeSelectorScoreBasedFiltering(
     const options::Options &options)
     : merge_scoring_functions(
         options.get_list<shared_ptr<MergeScoringFunction>>(
-            "scoring_functions")) {
+            "scoring_functions")),
+      iterations_with_tiebreaking(0),
+      total_tiebreaking_pair_count(0) {
 }
 
 MergeSelectorScoreBasedFiltering::MergeSelectorScoreBasedFiltering(
@@ -79,13 +81,14 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
     if (merge_candidates.size() > 1) {
         cerr << "More than one merge candidate remained after computing all "
                 "scores! Did you forget to include a randomizing scoring "
-                "function?" << endl;
+                "function for tie-breaking?" << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
 
     return merge_candidates.front();
 }
 
+// TODO: code duplication!
 pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
     FactoredTransitionSystem &fts,
     const vector<int> &indices_subset) {
@@ -137,7 +140,7 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
     if (merge_candidates.size() > 1) {
         cerr << "More than one merge candidate remained after computing all "
                 "scores! Did you forget to include a randomizing scoring "
-                "function?" << endl;
+                "function for tie-breaking?" << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
 
@@ -152,7 +155,7 @@ void MergeSelectorScoreBasedFiltering::initialize(shared_ptr<AbstractTask> task)
 }
 
 string MergeSelectorScoreBasedFiltering::name() const {
-    return "score based merge selector";
+    return "score based filtering";
 }
 
 void MergeSelectorScoreBasedFiltering::dump_specific_options() const {
