@@ -66,12 +66,12 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
          merge_scoring_functions) {
         vector<int> scores = scoring_function->compute_scores(fts,
                                                               merge_candidates);
-        merge_candidates = get_remaining_candidates(merge_candidates, scores);
-
-        if (scoring_function->name() == "dfp" && merge_candidates.size() != 1) {
+        if (scoring_function->name() == "total order" &&
+            merge_candidates.size() != 1) {
             ++iterations_with_tiebreaking;
             total_tiebreaking_pair_count += merge_candidates.size();
         }
+        merge_candidates = get_remaining_candidates(merge_candidates, scores);
 
         if (merge_candidates.size() == 1) {
             break;
@@ -106,6 +106,11 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
     for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
         shared_ptr<MergeScoringFunction> &scoring_function =
             merge_scoring_functions[i];
+        if (scoring_function->name() == "total order" &&
+            merge_candidates.size() != 1) {
+            ++iterations_with_tiebreaking;
+            total_tiebreaking_pair_count += merge_candidates.size();
+        }
         vector<int> scores = scoring_function->compute_scores(fts,
                                                               merge_candidates);
         int old_size = merge_candidates.size();
@@ -125,11 +130,6 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
             ++i;
 //            cout << "skipping computation of dfp scoring function" << endl;
             continue;
-        }
-
-        if (scoring_function->name() == "dfp" && merge_candidates.size() != 1) {
-            ++iterations_with_tiebreaking;
-            total_tiebreaking_pair_count += merge_candidates.size();
         }
 
         if (merge_candidates.size() == 1) {
