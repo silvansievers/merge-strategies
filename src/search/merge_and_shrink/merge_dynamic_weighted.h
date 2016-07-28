@@ -260,16 +260,6 @@ public:
     void precompute_data(const FactoredTransitionSystem &fts) override;
 };
 
-class MIASMFeature : public Feature {
-    virtual double compute_value(
-        const FactoredTransitionSystem &fts,
-        int ts_index1,
-        int ts_index2,
-        int merge_index) override;
-public:
-    MIASMFeature(int id, int weight);
-};
-
 class MutexFeature : public Feature {
     virtual double compute_value(
         const FactoredTransitionSystem &fts,

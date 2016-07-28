@@ -217,11 +217,6 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
         "0",
         options::Bounds("0", "100"));
     parser.add_option<int>(
-        "w_miasm",
-        "prefer transition systems that allow for most unreachable and irrelevant pruning",
-        "0",
-        options::Bounds("0", "100"));
-    parser.add_option<int>(
         "w_mutex",
         "prefer transition systems that have facts mutex to each other",
         "0",
@@ -247,7 +242,6 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
         opts.get<int>("w_num_trans") == 0 &&
         opts.get<int>("w_lr_opp") == 0 &&
         opts.get<int>("w_more_lr_opp") == 0 &&
-        opts.get<int>("w_miasm") == 0 &&
         opts.get<int>("w_mutex") == 0) {
         cerr << "you must specify at least one non-zero weight!" << endl;
         utils::exit_with(ExitCode::INPUT_ERROR);
