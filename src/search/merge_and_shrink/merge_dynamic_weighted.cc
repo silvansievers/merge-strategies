@@ -1063,15 +1063,15 @@ pair<int, int> MergeDynamicWeighted::get_next() {
     }
 
     // Go through all transition systems again and normalize feature values.
-    int max_weight = -1;
-    unordered_map<int, int> weight_to_count;
+    double max_weight = -1;
+    unordered_map<double, int> weight_to_count;
     for (size_t i = 0; i < sorted_active_ts_indices.size(); ++i) {
         int ts_index1 = sorted_active_ts_indices[i];
         assert(fts.is_active(ts_index1));
         for (size_t j = i + 1; j < sorted_active_ts_indices.size(); ++j) {
             int ts_index2 = sorted_active_ts_indices[j];
             assert(fts.is_active(ts_index2));
-            int pair_weight =
+            double pair_weight =
                 features->compute_weighted_normalized_sum(fts,
                                                           ts_index1,
                                                           ts_index2);
