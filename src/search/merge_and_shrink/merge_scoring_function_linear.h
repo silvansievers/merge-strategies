@@ -9,7 +9,7 @@ public:
     virtual std::string name() const override;
 public:
     MergeScoringFunctionLinear() = default;
-    virtual std::vector<int> compute_scores(
+    virtual std::vector<double> compute_scores(
         FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
 };

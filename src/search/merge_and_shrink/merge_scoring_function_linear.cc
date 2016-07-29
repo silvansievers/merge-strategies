@@ -10,10 +10,10 @@
 using namespace std;
 
 namespace merge_and_shrink {
-vector<int> MergeScoringFunctionLinear::compute_scores(
+vector<double> MergeScoringFunctionLinear::compute_scores(
     FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
-    vector<int> scores;
+    vector<double> scores;
     scores.reserve(merge_candidates.size());
     int composite_ts_index = fts.get_size() - 1;
     for (const pair<int, int> &merge : merge_candidates) {

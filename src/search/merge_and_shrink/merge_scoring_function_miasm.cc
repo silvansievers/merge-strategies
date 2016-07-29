@@ -8,6 +8,7 @@
 #include "../options/options.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/math.h"
 
 #include <math.h>
@@ -56,10 +57,10 @@ pair<int, int> MergeScoringFunctionMIASM::compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
-vector<int> MergeScoringFunctionMIASM::compute_scores(
+vector<double> MergeScoringFunctionMIASM::compute_scores(
     FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
-    vector<int> scores;
+    vector<double> scores;
     scores.reserve(merge_candidates.size());
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
@@ -86,17 +87,15 @@ vector<int> MergeScoringFunctionMIASM::compute_scores(
         int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
 
         // return 0 if the merge is unsolvable (i.e. empty transition system)
-        int score = 0;
+        double score = 0;
         if (fts.get_ts(merge_index).is_solvable()) {
             int expected_size = fts.get_ts(ts_index1).get_size() *
                 fts.get_ts(ts_index2).get_size();
             assert(expected_size);
             int new_size = fts.get_ts(merge_index).get_size();
             assert(new_size <= expected_size);
-            double ratio = static_cast<double>(new_size) /
+            score = static_cast<double>(new_size) /
                 static_cast<double>(expected_size);
-            ratio *= 1000000; // TODO: does this have the desire effect?
-            score = static_cast<int>(round(ratio));
         }
         scores.push_back(score);
 

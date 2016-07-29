@@ -12,19 +12,14 @@ using namespace std;
 namespace merge_and_shrink {
 const int MINUSINF = numeric_limits<int>::min();
 
-double normalize_value(int min_int_score, int max_int_score, int score) {
-    /* Note: we need to convert to double here because INF - MINUSINF does
-       not fit into an int. */
-    double min_score = min_int_score;
-    double max_score = max_int_score;
+double normalize_value(double min_score, double max_score, double score) {
     if (max_score - min_score == 0) {
         // all three scores are the same
         assert(min_score == score);
         assert(max_score == score);
         return 0;
     }
-    double result = (static_cast<double>(score) - min_score) /
-        (max_score - min_score);
+    double result = (score - min_score) / (max_score - min_score);
     assert(result >= 0);
     assert(result <= 1);
     return result;
@@ -69,7 +64,7 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
     int num_merge_candidates = merge_candidates.size();
 
     // Compute all raw score values
-    vector<vector<int>> unnormalized_scores(num_functions);
+    vector<vector<double>> unnormalized_scores(num_functions);
     for (int function_index = 0; function_index < num_functions;
          ++function_index) {
         const shared_ptr<MergeScoringFunction> &scoring_function =
@@ -78,17 +73,17 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
             fts, merge_candidates);
     }
 
-    // If desirge, normalize all scores.
+    // If desired, normalize all scores.
     vector<vector<double>> normalized_scores;
     if (normalize) {
         normalized_scores.resize(num_functions);
         for (int function_index = 0; function_index < (num_functions);
              ++function_index) {
-            const vector<int> &function_unn_scores =
+            const vector<double> &function_unn_scores =
                 unnormalized_scores[function_index];
-            int min_score = INF;
-            int max_score = MINUSINF;
-            for (int score : function_unn_scores) {
+            double min_score = INF;
+            double max_score = MINUSINF;
+            for (double score : function_unn_scores) {
                 if (score < min_score) {
                     min_score = score;
                 }
@@ -100,13 +95,13 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
             vector<double> &function_normalized_scores =
                 normalized_scores[function_index];
             function_normalized_scores.reserve(num_merge_candidates);
-            for (int score: function_unn_scores) {
+            for (double score: function_unn_scores) {
                 double normalized_score = normalize_value(
                     min_score, max_score, score);
                 function_normalized_scores.push_back(normalized_score);
             }
         }
-        vector<vector<int>>().swap(unnormalized_scores);
+        vector<vector<double>>().swap(unnormalized_scores);
     }
 
     // Compute the weighted sum over all (normalized) scores.

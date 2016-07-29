@@ -234,6 +234,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
 
     unique_ptr<MergeStrategy> merge_strategy =
         merge_strategy_factory->compute_merge_strategy(task, *fts);
+    merge_strategy_factory = nullptr;
 
     vector<int> init_hvalue_increase;
     vector<int> remaining_labels;
@@ -406,7 +407,6 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
     cout << "Total tiebreaking merge candidates: "
          << dfp_tiebreaking.second << endl;
 
-    merge_strategy = nullptr;
     shrink_strategy = nullptr;
     label_reduction = nullptr;
 }

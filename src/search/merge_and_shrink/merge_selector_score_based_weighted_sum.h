@@ -13,7 +13,7 @@ class Options;
 
 namespace merge_and_shrink {
 extern const int MINUSINF;
-extern double normalize_value(int min_score, int max_score, int score);
+extern double normalize_value(double min_score, double max_score, double score);
 
 class MergeSelectorScoreBasedWeightedSum : public MergeSelector {
     std::vector<std::shared_ptr<MergeScoringFunction>> merge_scoring_functions;
