@@ -710,30 +710,6 @@ double MoreLROpportunitiesFeatures::compute_value(
     return 0;
 }
 
-MIASMFeature::MIASMFeature(int id, int weight)
-    : Feature(id, weight, "high number of unreachable and irrelevant states", true, true) {
-}
-
-double MIASMFeature::compute_value(
-    const FactoredTransitionSystem &fts,
-    int ts_index1,
-    int ts_index2,
-    int merge_index) {
-    // return value in [0,infinity)
-    assert(merge_index != -1);
-    if (fts.get_ts(merge_index).is_solvable()) {
-        int expected_size = fts.get_ts(ts_index1).get_size() * fts.get_ts(ts_index2).get_size();
-        assert(expected_size);
-        int new_size = fts.get_ts(merge_index).get_size();
-        assert(new_size <= expected_size);
-        return static_cast<double>(new_size) / static_cast<double>(expected_size);
-    } else {
-        // initial state has been pruned
-        // return 0 because this feature is minimized
-        return 0;
-    }
-}
-
 MutexFeature::MutexFeature(int id, int weight)
     : Feature(id, weight, "prefer merging variables that have mutex values ", false, true) {
 }
@@ -803,8 +779,6 @@ Features::Features(const options::Options opts)
                            id++, opts.get<int>("w_lr_opp")));
     features.push_back(new MoreLROpportunitiesFeatures(
                            id++, opts.get<int>("w_more_lr_opp")));
-    features.push_back(new MIASMFeature(
-                           id++, opts.get<int>("w_miasm")));
     features.push_back(new MutexFeature(
                            id++, opts.get<int>("w_mutex")));
     for (Feature *feature : features) {
