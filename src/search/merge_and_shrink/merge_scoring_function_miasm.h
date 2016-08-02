@@ -11,7 +11,6 @@ namespace merge_and_shrink {
 class TransitionSystem;
 class MergeScoringFunctionMIASM : public MergeScoringFunction {
     int max_states; // limit to compute shrink sizes
-    std::pair<int, int> compute_shrink_sizes(int size1, int size2) const;
 protected:
     virtual std::string name() const override;
 public:
