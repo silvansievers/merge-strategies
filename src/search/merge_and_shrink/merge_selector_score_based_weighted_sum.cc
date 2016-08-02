@@ -10,8 +10,6 @@
 using namespace std;
 
 namespace merge_and_shrink {
-const int MINUSINF = numeric_limits<int>::min();
-
 double normalize_value(double min_score, double max_score, double score) {
     if (max_score - min_score == 0) {
         // all three scores are the same

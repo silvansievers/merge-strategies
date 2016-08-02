@@ -21,8 +21,6 @@ using namespace std;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
-const int MINUSINF = numeric_limits<int>::min();
-
 // Helper methods to deal with transition systems
 
 // TODO: copied from scoring function goal relevance
