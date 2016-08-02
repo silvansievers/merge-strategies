@@ -418,6 +418,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_dynamic_weighted.cc
         merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_scoring_function.cc
+        merge_and_shrink/merge_scoring_function_collection.cc
         merge_and_shrink/merge_scoring_function_dfp.cc
         merge_and_shrink/merge_scoring_function_goal_relevance.cc
         merge_and_shrink/merge_scoring_function_linear.cc
@@ -450,6 +451,7 @@ fast_downward_plugin(
         merge_and_shrink/shrink_strategy.cc
         merge_and_shrink/transition_system.cc
         merge_and_shrink/types.cc
+        merge_and_shrink/utils.cc
         merge_and_shrink/miasm/merge_tree.cc
         merge_and_shrink/miasm/miasm_mas.cc
         merge_and_shrink/miasm/sink_set_search.cc

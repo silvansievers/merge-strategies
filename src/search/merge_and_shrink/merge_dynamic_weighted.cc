@@ -36,7 +36,7 @@ static bool is_goal_relevant(const TransitionSystem &ts) {
     return false;
 }
 
-int compute_number_of_product_transitions(
+static int compute_number_of_product_transitions(
     const TransitionSystem &ts1, const TransitionSystem &ts2) {
     // TODO: this is copied from the merge constructor of TransitionSystem
     /*
@@ -69,7 +69,7 @@ int compute_number_of_product_transitions(
     return number_of_transitions;
 }
 
-double compute_average_h_value(const Distances &distances) {
+static double compute_average_h_value(const Distances &distances) {
     int num_states = distances.get_num_states();
     int sum_distances = 0;
     for (int state = 0; state < num_states; ++state) {
@@ -82,7 +82,7 @@ double compute_average_h_value(const Distances &distances) {
     return static_cast<double>(sum_distances) / static_cast<double>(num_states);
 }
 
-void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
+static void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
                                vector<vector<bool>> &ts_index_to_irrelevant_labels) {
     int num_ts = fts.get_size();
     ts_index_to_irrelevant_labels.resize(num_ts, vector<bool>());
