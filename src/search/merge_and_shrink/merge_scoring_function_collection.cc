@@ -288,33 +288,36 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        // return value in [0,infinity)
-        int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
-        int new_init_h;
-        if (fts.get_ts(merge_index).is_solvable()) {
-            new_init_h = fts.get_init_state_goal_distance(merge_index);
-        } else {
-            // initial state has been pruned
-            new_init_h = INF;
-        }
-        fts.release_copies();
         double score = -1;
-        if (inith ==  InitH::ABSOLUTE) {
-            score = new_init_h;
-        } else if (inith ==  InitH::IMPROVEMENT) {
-            int old_init_h = max(fts.get_init_state_goal_distance(ts_index1),
-                                 fts.get_init_state_goal_distance(ts_index2));
-            int difference = new_init_h - old_init_h;
-            if (!difference) {
-                score = 0;
+        if (inith == InitH::SUM) {
+            // return value in [0,infinity)
+            score = fts.get_init_state_goal_distance(ts_index1) +
+                    fts.get_init_state_goal_distance(ts_index2);
+        } else {
+            // return value in [0,infinity)
+            int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
+            int new_init_h;
+            if (fts.get_ts(merge_index).is_solvable()) {
+                new_init_h = fts.get_init_state_goal_distance(merge_index);
+            } else {
+                // initial state has been pruned
+                new_init_h = INF;
             }
-            if (!old_init_h) {
-                score = INF;
+            fts.release_copies();
+            if (inith ==  InitH::ABSOLUTE) {
+                score = new_init_h;
+            } else if (inith ==  InitH::IMPROVEMENT) {
+                int old_init_h = max(fts.get_init_state_goal_distance(ts_index1),
+                                     fts.get_init_state_goal_distance(ts_index2));
+                int difference = new_init_h - old_init_h;
+                if (!difference) {
+                    score = 0;
+                }
+                if (!old_init_h) {
+                    score = INF;
+                }
+                score = static_cast<double>(difference) / static_cast<double>(old_init_h);
             }
-            score = static_cast<double>(difference) / static_cast<double>(old_init_h);
-        } else if (inith ==   InitH::SUM) {
-            // TODO
-            cerr << "Not implemented" << endl;
         }
         assert(score != -1);
         scores.push_back(score);
