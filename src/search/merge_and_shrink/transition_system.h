@@ -226,7 +226,6 @@ public:
         return goal_states[state];
     }
 
-    // Following methods are used by MergeDynamicWeighted
     const std::vector<int> &get_incorporated_variables() const {
         return incorporated_variables;
     }

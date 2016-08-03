@@ -30,7 +30,13 @@ MergeTreeFactoryManual::MergeTreeFactoryManual(
 
 unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
     shared_ptr<AbstractTask>,
-    FactoredTransitionSystem &fts) {
+    FactoredTransitionSystem &fts,
+    const vector<int> &subset) {
+    if (!subset.empty()) {
+        cerr << "MIASM currently does not support to be computed on a subset"
+                "of transition systems!" << endl;
+        exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
     int num_ts = fts.get_size();
     MergeTreeNode *root = nullptr;
     if (!merge_order_list.empty()) {

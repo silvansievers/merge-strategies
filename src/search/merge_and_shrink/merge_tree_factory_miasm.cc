@@ -52,7 +52,13 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 
 unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
     shared_ptr<AbstractTask> task,
-    FactoredTransitionSystem &) {
+    FactoredTransitionSystem &,
+    const vector<int> &subset) {
+    if (!subset.empty()) {
+        cerr << "MIASM currently does not support to be computed on a subset"
+                "of transition systems!" << endl;
+        exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
     TaskProxy task_proxy(*task);
     int num_ts = task_proxy.get_variables().size();
 

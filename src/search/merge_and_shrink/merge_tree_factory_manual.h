@@ -23,7 +23,8 @@ public:
     virtual ~MergeTreeFactoryManual() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
         std::shared_ptr<AbstractTask> task,
-        FactoredTransitionSystem &fts) override;
+        FactoredTransitionSystem &fts,
+        const std::vector<int> &subset = std::vector<int>()) override;
 };
 }
 
