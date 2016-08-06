@@ -1,7 +1,6 @@
 #include "merge_strategy_stateless.h"
 
 #include "merge_selector.h"
-#include "merge_selector_score_based_filtering.h"
 
 using namespace std;
 
