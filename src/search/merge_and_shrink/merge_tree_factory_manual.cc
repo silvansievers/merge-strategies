@@ -1,7 +1,8 @@
 #include "merge_tree_factory_manual.h"
 
-#include "factored_transition_system.h"
 #include "merge_tree.h"
+
+#include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
@@ -29,18 +30,12 @@ MergeTreeFactoryManual::MergeTreeFactoryManual(
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
-    shared_ptr<AbstractTask>,
-    FactoredTransitionSystem &fts,
-    const vector<int> &subset) {
-    if (!subset.empty()) {
-        cerr << "MIASM currently does not support to be computed on a subset"
-                "of transition systems!" << endl;
-        exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-    int num_ts = fts.get_size();
+    shared_ptr<AbstractTask> task) {
+    TaskProxy task_proxy(*task);
+    int num_vars = task_proxy.get_variables().size();
     MergeTreeNode *root = nullptr;
     if (!merge_order_list.empty()) {
-        int num_merges = num_ts - 1;
+        int num_merges = num_vars - 1;
         if (static_cast<int>(merge_order_list.size()) != num_merges) {
             cout << "Number of merges in the given task: "
                  << num_merges << endl;
@@ -50,10 +45,10 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
             utils::exit_with(ExitCode::INPUT_ERROR);
         }
         map<int, MergeTreeNode*> index_to_tree;
-        for (int atomic_ts_index = 0; atomic_ts_index < num_ts; ++atomic_ts_index) {
+        for (int atomic_ts_index = 0; atomic_ts_index < num_vars; ++atomic_ts_index) {
             index_to_tree[atomic_ts_index] = new MergeTreeNode(atomic_ts_index);
         }
-        int next_ts_index = num_ts;
+        int next_ts_index = num_vars;
         for (const vector<int> &merge : merge_order_list) {
             assert(merge.size() == 2);
             int ts_index1 = merge[0];

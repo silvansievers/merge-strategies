@@ -401,7 +401,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
     }
     cout << "Average relative pruning: " << average_pruning << endl;
     pair<int, int> dfp_tiebreaking =
-        merge_strategy->get_dfp_tiebreaking_statistics();
+        merge_strategy->get_tiebreaking_statistics();
     cout << "Iterations with merge tiebreaking: "
          << dfp_tiebreaking.first << endl;
     cout << "Total tiebreaking merge candidates: "

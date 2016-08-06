@@ -17,13 +17,7 @@ pair<int, int> MergeStrategyStateless::get_next() {
     return merge_selector->select_merge(fts);
 }
 
-pair<int, int> MergeStrategyStateless::get_dfp_tiebreaking_statistics() const {
-    shared_ptr<MergeSelectorScoreBasedFiltering> cast =
-        dynamic_pointer_cast<MergeSelectorScoreBasedFiltering>(merge_selector);
-    if (cast) {
-        return cast->get_dfp_tiebreaking_statistics();
-    } else {
-        return make_pair(0, 0);
-    }
+pair<int, int> MergeStrategyStateless::get_tiebreaking_statistics() const {
+    return merge_selector->get_tiebreaking_statistics();
 }
 }

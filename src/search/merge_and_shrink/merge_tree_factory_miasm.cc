@@ -1,6 +1,5 @@
 #include "merge_tree_factory_miasm.h"
 
-#include "factored_transition_system.h"
 #include "merge_tree.h"
 
 #include "miasm/sink_set_search.h"
@@ -51,14 +50,7 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
-    shared_ptr<AbstractTask> task,
-    FactoredTransitionSystem &,
-    const vector<int> &subset) {
-    if (!subset.empty()) {
-        cerr << "MIASM currently does not support to be computed on a subset"
-                "of transition systems!" << endl;
-        exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
+    shared_ptr<AbstractTask> task) {
     TaskProxy task_proxy(*task);
     int num_ts = task_proxy.get_variables().size();
 

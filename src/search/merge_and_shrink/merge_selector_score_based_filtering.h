@@ -30,12 +30,10 @@ public:
     explicit MergeSelectorScoreBasedFiltering(
         std::vector<std::shared_ptr<MergeScoringFunction>> scoring_functions);
     virtual std::pair<int, int> select_merge(
-        FactoredTransitionSystem &fts) const override;
-    std::pair<int, int> select_merge_dfp_sccs(
         FactoredTransitionSystem &fts,
-        const std::vector<int> &indices_subset);
+        const std::vector<int> &indices_subset = std::vector<int>()) const override;
     virtual void initialize(std::shared_ptr<AbstractTask> task) override;
-    std::pair<int, int> get_dfp_tiebreaking_statistics() const {
+    std::pair<int, int> get_tiebreaking_statistics() const {
         return std::make_pair(iterations_with_tiebreaking,
                               total_tiebreaking_pair_count);
     }

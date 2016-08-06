@@ -45,19 +45,10 @@ void MergeSelectorScoreBasedWeightedSum::initialize(
 }
 
 pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
-    FactoredTransitionSystem &fts) const {
-    // Determine the set of potential merges
-    vector<pair<int, int>> merge_candidates;
-    for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
-        if (fts.is_active(ts_index1)) {
-            for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
-                 ++ts_index2) {
-                if (fts.is_active(ts_index2)) {
-                    merge_candidates.emplace_back(ts_index1, ts_index2);
-                }
-            }
-        }
-    }
+    FactoredTransitionSystem &fts,
+    const vector<int> &indices_subset) const {
+    vector<pair<int, int>> merge_candidates =
+        compute_merge_candidates(fts, indices_subset);
     int num_functions = merge_scoring_functions.size();
     int num_merge_candidates = merge_candidates.size();
 

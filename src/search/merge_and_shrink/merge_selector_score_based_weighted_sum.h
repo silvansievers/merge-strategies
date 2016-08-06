@@ -25,7 +25,8 @@ public:
     explicit MergeSelectorScoreBasedWeightedSum(const options::Options &options);
     virtual ~MergeSelectorScoreBasedWeightedSum() override = default;
     virtual std::pair<int, int> select_merge(
-        FactoredTransitionSystem &fts) const override;
+        FactoredTransitionSystem &fts,
+        const std::vector<int> &indices_subset = std::vector<int>()) const override;
     virtual void initialize(std::shared_ptr<AbstractTask> task) override;
 };
 }

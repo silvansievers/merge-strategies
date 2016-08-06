@@ -53,9 +53,7 @@ public:
     explicit MergeTreeFactoryMiasm(const options::Options &opts);
     virtual ~MergeTreeFactoryMiasm() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
-            std::shared_ptr<AbstractTask> task,
-            FactoredTransitionSystem &fts,
-            const std::vector<int> &subset = std::vector<int>()) override;
+            std::shared_ptr<AbstractTask> task) override;
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

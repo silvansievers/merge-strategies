@@ -1,23 +1,21 @@
 #include "merge_strategy_factory_sccs.h"
 
-#include "factored_transition_system.h"
 #include "merge_sccs.h"
-#include "merge_scoring_function_dfp.h"
-#include "merge_scoring_function_goal_relevance.h"
-#include "merge_scoring_function_single_random.h"
-#include "merge_scoring_function_total_order.h"
-#include "merge_selector_score_based_filtering.h"
-#include "merge_tree_factory_linear.h"
+#include "merge_selector.h"
+#include "merge_tree_factory.h"
 #include "transition_system.h"
+
+#include "../task_proxy.h"
 
 #include "../causal_graph.h"
 #include "../scc.h"
-#include "../variable_order_finder.h"
 
 #include "../options/option_parser.h"
+#include "../options/options.h"
 #include "../options/plugin.h"
 
 #include "../utils/logging.h"
+#include "../utils/system.h"
 
 #include <algorithm>
 #include <cassert>
@@ -35,50 +33,24 @@ bool compare_sccs_decreasing(const vector<int> &lhs, const vector<int> &rhs) {
 }
 
 MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &options)
-    : MergeStrategyFactory(), options(options) {
+    : MergeStrategyFactory(),
+      order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs"))),
+      merge_tree_factory(nullptr),
+      merge_selector(nullptr) {
+    if (options.contains("merge_tree")) {
+        merge_tree_factory = options.get<shared_ptr<MergeTreeFactory>>("merge_tree");
+    }
+    if (options.contains("merge_selector")) {
+        merge_selector = options.get<shared_ptr<MergeSelector>>("merge_selector");
+    }
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
-        shared_ptr<AbstractTask> task,
-        FactoredTransitionSystem &fts) {
-    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs")));
-    InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(options.get_enum("internal_merge_order")));
-    vector<int> linear_variable_order;
-    vector<vector<int>> non_singleton_cg_sccs;
-    vector<int> indices_of_merged_sccs;
-
+    shared_ptr<AbstractTask> task,
+    FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
-
-    shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector = nullptr;
-    if (internal_merge_order == InternalMergeOrder::DFP) {
-        vector<shared_ptr<MergeScoringFunction>> scoring_functions;
-        scoring_functions.push_back(make_shared<MergeScoringFunctionGoalRelevance>());
-        scoring_functions.push_back(make_shared<MergeScoringFunctionDFP>());
-
-        bool randomized_order = options.get<bool>("randomized_order");
-        if (randomized_order) {
-            shared_ptr<MergeScoringFunctionSingleRandom> scoring_random =
-                make_shared<MergeScoringFunctionSingleRandom>(options);
-            scoring_functions.push_back(scoring_random);
-        } else {
-            shared_ptr<MergeScoringFunctionTotalOrder> scoring_total_order =
-                make_shared<MergeScoringFunctionTotalOrder>(options);
-            scoring_functions.push_back(scoring_total_order);
-        }
-        dfp_selector = make_shared<MergeSelectorScoreBasedFiltering>(
-            move(scoring_functions));
-        dfp_selector->initialize(task);
-    }
-    if (internal_merge_order == InternalMergeOrder::LINEAR) {
-        VariableOrderFinder vof(task, VariableOrderType(options.get_enum("variable_order")));
-        linear_variable_order.reserve(num_vars);
-        while (!vof.done()) {
-            linear_variable_order.push_back(vof.next());
-        }
-        cout << "linear variable order: " << linear_variable_order << endl;
-    }
 
     // Compute SCCs of the causal graph
     vector<vector<int>> cg;
@@ -118,6 +90,9 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
     */
     int index = num_vars - 1;
     cout << "found cg sccs:" << endl;
+    vector<vector<int>> non_singleton_cg_sccs;
+    vector<int> indices_of_merged_sccs;
+    // TODO: reserve for the other vector as well?
     indices_of_merged_sccs.reserve(sccs.size());
     for (const vector<int> &scc : sccs) {
         cout << scc << endl;
@@ -140,17 +115,20 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
     }
 //    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
 
+    if (merge_selector) {
+        merge_selector->initialize(task);
+    }
+
     return utils::make_unique_ptr<MergeSCCs>(
         fts,
-        internal_merge_order,
-        move(linear_variable_order),
-        dfp_selector,
+        task,
+        merge_tree_factory,
+        merge_selector,
         move(non_singleton_cg_sccs),
         move(indices_of_merged_sccs));
 }
 
 void MergeStrategyFactorySCCs::dump_strategy_specific_options() const {
-    OrderOfSCCs order_of_sccs(static_cast<OrderOfSCCs>(options.get_enum("order_of_sccs")));
     cout << "Merge order of sccs: ";
     switch (order_of_sccs) {
     case OrderOfSCCs::TOPOLOGICAL:
@@ -168,18 +146,13 @@ void MergeStrategyFactorySCCs::dump_strategy_specific_options() const {
     }
     cout << endl;
 
-    InternalMergeOrder internal_merge_order(static_cast<InternalMergeOrder>(
-        options.get_enum("internal_merge_order")));
-    cout << "Internal merge order for sccs: ";
-    switch (internal_merge_order) {
-    case InternalMergeOrder::LINEAR:
-        cout << "linear";
-        break;
-    case InternalMergeOrder::DFP:
-        cout << "dfp";
-        break;
+    cout << "Merge strategy for merging within sccs: ";
+    if (merge_tree_factory) {
+        merge_tree_factory->dump_options();
     }
-    cout << endl;
+    if (merge_selector) {
+        merge_selector->dump_options();
+    }
 }
 
 string MergeStrategyFactorySCCs::name() const {
@@ -197,28 +170,25 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
                            "choose an ordering of the sccs: topological, (cg "
                            "order) reverse_topological (cg order), decreasing "
                            "or increasing (in size).");
-    vector<string> internal_merge_order;
-    internal_merge_order.push_back("linear");
-    internal_merge_order.push_back("dfp");
-    parser.add_enum_option("internal_merge_order",
-                           internal_merge_order,
-                           "choose an internal merge order: linear (specify "
-                           "variable_order) or dfp (specify dfp order options).",
-                           "dfp");
-
-    // linear
-    MergeTreeFactoryLinear::add_options_to_parser(parser);
-
-    // dfp
-    MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
-    parser.add_option<bool>(
-        "randomized_order",
-        "If true, use a 'globally' randomized order, i.e. all transition "
-        "systems are considered in an arbitrary order. This renders all other "
-        "ordering options void.",
-        "false");
+    parser.add_option<shared_ptr<MergeTreeFactory>>(
+        "merge_tree",
+        "the fallback merge 'strategy' to use if a precomputed strategy should"
+        "be used.",
+        options::OptionParser::NONE);
+    parser.add_option<shared_ptr<MergeSelector>>(
+        "merge_selector",
+        "the fallback merge 'strategy' to use if a stateless strategy should"
+        "be used.",
+        options::OptionParser::NONE);
 
     options::Options options = parser.parse();
+    bool merge_tree = options.contains("merge_tree");
+    bool merge_selector = options.contains("merge_selector");
+    if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
+        cerr << "You have to specify exactly one of the options merge_tree "
+                "and merg_selector!" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+    }
     if (parser.dry_run())
         return 0;
     else

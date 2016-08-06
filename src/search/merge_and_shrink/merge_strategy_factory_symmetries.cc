@@ -164,7 +164,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
         dfp_selector->initialize(task);
     } else if (fallback_strategy == MIASM) {
         MergeTreeFactoryMiasm factory(options);
-        miasm_merge_tree = move(factory.compute_merge_tree(task, fts));
+        miasm_merge_tree = move(factory.compute_merge_tree(task));
     } else {
         ABORT("unknown fallback merge strategy");
     }

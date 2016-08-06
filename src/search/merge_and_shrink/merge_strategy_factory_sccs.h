@@ -3,12 +3,25 @@
 
 #include "merge_strategy_factory.h"
 
-#include "../options/options.h"
+namespace options {
+class Options;
+}
 
 namespace merge_and_shrink {
+class MergeTreeFactory;
+class MergeSelector;
 class MergeStrategyFactorySCCs : public MergeStrategyFactory {
-    const options::Options options;
+    enum class OrderOfSCCs {
+        TOPOLOGICAL,
+        REVERSE_TOPOLOGICAL,
+        DECREASING,
+        INCREASING
+    };
+    OrderOfSCCs order_of_sccs;
+    std::shared_ptr<MergeTreeFactory> merge_tree_factory;
+    std::shared_ptr<MergeSelector> merge_selector;
 protected:
+    virtual std::string name() const override;
     virtual void dump_strategy_specific_options() const override;
 public:
     MergeStrategyFactorySCCs(const options::Options &options);
@@ -16,7 +29,6 @@ public:
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
         std::shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) override;
-    virtual std::string name() const override;
 };
 }
 

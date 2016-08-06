@@ -49,74 +49,28 @@ vector<pair<int, int>> MergeSelectorScoreBasedFiltering::get_remaining_candidate
 }
 
 pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
-    FactoredTransitionSystem &fts) const {
-    vector<pair<int, int>> merge_candidates;
-    for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
-        if (fts.is_active(ts_index1)) {
-            for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
-                 ++ts_index2) {
-                if (fts.is_active(ts_index2)) {
-                    merge_candidates.emplace_back(ts_index1, ts_index2);
-                }
-            }
-        }
-    }
-
-    for (const shared_ptr<MergeScoringFunction> &scoring_function :
-         merge_scoring_functions) {
-        vector<double> scores = scoring_function->compute_scores(
-            fts, merge_candidates);
-        if (scoring_function->name() == "total order" &&
-            merge_candidates.size() != 1) {
-            ++iterations_with_tiebreaking;
-            total_tiebreaking_pair_count += merge_candidates.size();
-        }
-        merge_candidates = get_remaining_candidates(merge_candidates, scores);
-        if (merge_candidates.size() == 1) {
-            break;
-        }
-    }
-
-    if (merge_candidates.size() > 1) {
-        cerr << "More than one merge candidate remained after computing all "
-                "scores! Did you forget to include a randomizing scoring "
-                "function for tie-breaking?" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-
-    return merge_candidates.front();
-}
-
-// TODO: code duplication!
-pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
     FactoredTransitionSystem &fts,
-    const vector<int> &indices_subset) {
-    vector<pair<int, int>> merge_candidates;
-    for (size_t i = 0; i < indices_subset.size(); ++i) {
-        int ts_index1 = indices_subset[i];
-        assert(fts.is_active(ts_index1));
-        for (size_t j = i + 1; j < indices_subset.size(); ++j) {
-            int ts_index2 = indices_subset[j];
-            assert(fts.is_active(ts_index2));
-            merge_candidates.emplace_back(ts_index1, ts_index2);
-        }
-    }
+    const std::vector<int> &indices_subset) const {
+    vector<pair<int, int>> merge_candidates =
+        compute_merge_candidates(fts, indices_subset);
 
     for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
-        shared_ptr<MergeScoringFunction> &scoring_function =
+        const shared_ptr<MergeScoringFunction> &scoring_function =
             merge_scoring_functions[i];
-        if (scoring_function->name() == "total order" &&
+        vector<double> scores = scoring_function->compute_scores(
+            fts, merge_candidates);
+        if (scoring_function->get_name() == "total order" &&
             merge_candidates.size() != 1) {
             ++iterations_with_tiebreaking;
             total_tiebreaking_pair_count += merge_candidates.size();
         }
-        vector<double> scores = scoring_function->compute_scores(
-            fts, merge_candidates);
         int old_size = merge_candidates.size();
         merge_candidates = get_remaining_candidates(merge_candidates, scores);
         int new_size = merge_candidates.size();
         if (new_size - old_size == 0 &&
-            scoring_function->name() == "goal relevance" &&
+            i != merge_scoring_functions.size() - 1 &&
+            scoring_function->get_name() == "goal relevance" &&
+            merge_scoring_functions[i + 1]->get_name() == "dfp" &&
             scores.front() == INF) {
             /*
               "skip" computation of dfp if no goal relevance pair has been
@@ -124,13 +78,9 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge_dfp_sccs(
               because all scores are identical, and the scores must be
               infinity) to mimic previous MergeDFP behavior.
             */
-            assert(i < merge_scoring_functions.size() - 1);
-            assert(merge_scoring_functions[i + 1]->name() == "dfp");
             ++i;
-//            cout << "skipping computation of dfp scoring function" << endl;
             continue;
         }
-
         if (merge_candidates.size() == 1) {
             break;
         }
