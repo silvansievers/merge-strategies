@@ -91,7 +91,7 @@ pair<int, int> MergeSCCs::get_tiebreaking_statistics() const {
     if (merge_selector) {
         return merge_selector->get_tiebreaking_statistics();
     } else {
-        return make_pair(-1, -1);
+        return make_pair(0, 0);
     }
 }
 }

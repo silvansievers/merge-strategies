@@ -43,7 +43,7 @@ public:
 
     // tiebreaking statistics
     virtual std::pair<int, int> get_tiebreaking_statistics() const {
-        return std::make_pair(-1, -1);
+        return std::make_pair(0, 0);
     }
 };
 }
