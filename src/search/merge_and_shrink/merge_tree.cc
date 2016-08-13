@@ -166,8 +166,9 @@ void MergeTreeNode::inorder(int offset, int current_indentation) const {
 
 MergeTree::MergeTree(
     MergeTreeNode *root,
-    shared_ptr<utils::RandomNumberGenerator> rng)
-    : root(root), rng(rng) {
+    shared_ptr<utils::RandomNumberGenerator> rng,
+    UpdateOption update_option)
+    : root(root), rng(rng), update_option(update_option) {
 }
 
 MergeTree::~MergeTree() {
@@ -180,12 +181,12 @@ pair<int, int> MergeTree::get_next_merge(int new_index) {
     return next_merge->erase_children_and_set_index(new_index);
 }
 
-void MergeTree::update(pair<int, int> merge, int new_index, UpdateOption option) {
-    int first_index = merge.first;
-    int second_index = merge.second;
-    assert(root->ts_index != first_index && root->ts_index != second_index);
-    MergeTreeNode *first_parent = root->get_parent_of_ts_index(first_index);
-    MergeTreeNode *second_parent = root->get_parent_of_ts_index(second_index);
+void MergeTree::update(pair<int, int> merge, int new_index) {
+    int ts_index1 = merge.first;
+    int ts_index2 = merge.second;
+    assert(root->ts_index != ts_index1 && root->ts_index != ts_index2);
+    MergeTreeNode *first_parent = root->get_parent_of_ts_index(ts_index1);
+    MergeTreeNode *second_parent = root->get_parent_of_ts_index(ts_index2);
 
     if (first_parent == second_parent) { // given merge already in the tree
         first_parent->erase_children_and_set_index(new_index);
@@ -194,22 +195,32 @@ void MergeTree::update(pair<int, int> merge, int new_index, UpdateOption option)
 //        cout << "updating: merge = " << merge << ", new index = " << new_index << endl;
         MergeTreeNode *surviving_node = nullptr;
         MergeTreeNode *to_be_removed_node = nullptr;
-        if (first_parent == root) {
+        if (update_option == UpdateOption::USE_FIRST) {
             surviving_node = first_parent;
             to_be_removed_node = second_parent;
-        } else if (second_parent == root) {
+        } else if (update_option == UpdateOption::USE_SECOND) {
             surviving_node = second_parent;
             to_be_removed_node = first_parent;
-        } else if (option == UpdateOption::USE_FIRST) {
-            surviving_node = first_parent;
-            to_be_removed_node = second_parent;
-        } else if (option == UpdateOption::USE_SECOND) {
-            surviving_node = second_parent;
-            to_be_removed_node = first_parent;
-        } else if (option == UpdateOption::USE_RANDOM) {
+        } else if (update_option == UpdateOption::USE_RANDOM) {
             int random = (*rng)(2);
             surviving_node = (random == 0 ? first_parent : second_parent);
             to_be_removed_node = (random == 0 ? second_parent : first_parent);
+        } else if (update_option == UpdateOption::USE_GREATER_INDEX) {
+            if (ts_index1 > ts_index2) {
+                surviving_node = first_parent;
+                to_be_removed_node = second_parent;
+            } else {
+                surviving_node = second_parent;
+                to_be_removed_node = first_parent;
+            }
+        } else if (update_option == UpdateOption::USE_SMALLER_INDEX) {
+            if (ts_index1 < ts_index2) {
+                surviving_node = first_parent;
+                to_be_removed_node = second_parent;
+            } else {
+                surviving_node = second_parent;
+                to_be_removed_node = first_parent;
+            }
         } else {
             ABORT("Unknown merge tree update option");
         }
@@ -217,12 +228,12 @@ void MergeTree::update(pair<int, int> merge, int new_index, UpdateOption option)
         // Update the leaf node corresponding to one of the indices to
         // correspond to the merged index.
         MergeTreeNode *surviving_leaf = nullptr;
-        if (surviving_node->left_child->ts_index == first_index ||
-            surviving_node->left_child->ts_index == second_index) {
+        if (surviving_node->left_child->ts_index == ts_index1 ||
+            surviving_node->left_child->ts_index == ts_index2) {
             surviving_leaf = surviving_node->left_child;
         } else {
-            assert(surviving_node->right_child->ts_index == first_index ||
-                surviving_node->right_child->ts_index == second_index);
+            assert(surviving_node->right_child->ts_index == ts_index1 ||
+                surviving_node->right_child->ts_index == ts_index2);
             surviving_leaf = surviving_node->right_child;
         }
         surviving_leaf->ts_index = new_index;
@@ -230,40 +241,52 @@ void MergeTree::update(pair<int, int> merge, int new_index, UpdateOption option)
         // Remove all links to to_be_removed_node and store pointers to the
         // relevant children and its parent.
         MergeTreeNode *to_be_removed_nodes_parent = to_be_removed_node->parent;
-        if (to_be_removed_nodes_parent->left_child == to_be_removed_node) {
-            to_be_removed_nodes_parent->left_child = nullptr;
-        } else {
-            assert(to_be_removed_nodes_parent->right_child == to_be_removed_node);
-            to_be_removed_nodes_parent->right_child = nullptr;
+        if (to_be_removed_nodes_parent) {
+            // to_be_removed_nodes_parent can be nullptr if to_be_removed_node
+            // is the root node
+            if (to_be_removed_nodes_parent->left_child == to_be_removed_node) {
+                to_be_removed_nodes_parent->left_child = nullptr;
+            } else {
+                assert(to_be_removed_nodes_parent->right_child == to_be_removed_node);
+                to_be_removed_nodes_parent->right_child = nullptr;
+            }
         }
         MergeTreeNode *to_be_removed_nodes_good_child = nullptr;
-        if (to_be_removed_node->left_child->ts_index == first_index ||
-            to_be_removed_node->left_child->ts_index == second_index) {
+        if (to_be_removed_node->left_child->ts_index == ts_index1 ||
+            to_be_removed_node->left_child->ts_index == ts_index2) {
             to_be_removed_nodes_good_child = to_be_removed_node->right_child;
             // set the "good" child to null so that deleting to_be_removed_node
             // does not delete the good child.
             to_be_removed_node->right_child = nullptr;
         } else {
-            assert(to_be_removed_node->right_child->ts_index == first_index ||
-                   to_be_removed_node->right_child->ts_index == second_index);
+            assert(to_be_removed_node->right_child->ts_index == ts_index1 ||
+                   to_be_removed_node->right_child->ts_index == ts_index2);
             to_be_removed_nodes_good_child = to_be_removed_node->left_child;
             // set the "good" child to null so that deleting to_be_removed_node
             // does not delete the good child.
             to_be_removed_node->left_child = nullptr;
         }
 
-        // delete the node (this also deletes its bad child, but not the good one
+        if (to_be_removed_node == root) {
+            root = to_be_removed_nodes_good_child;
+        }
+
+        // delete the node (this also deletes its bad child, but not the good one)
         delete to_be_removed_node;
         to_be_removed_node = nullptr;
 
         // update pointers of the good child and the removed node's parent to
         // point to each other.
         to_be_removed_nodes_good_child->parent = to_be_removed_nodes_parent;
-        if (!to_be_removed_nodes_parent->left_child) {
-            to_be_removed_nodes_parent->left_child = to_be_removed_nodes_good_child;
-        } else {
-            assert(!to_be_removed_nodes_parent->right_child);
-            to_be_removed_nodes_parent->right_child = to_be_removed_nodes_good_child;
+        if (to_be_removed_nodes_parent) {
+            // to_be_removed_nodes_parent can be nullptr if to_be_removed_node
+            // was the root node
+            if (!to_be_removed_nodes_parent->left_child) {
+                to_be_removed_nodes_parent->left_child = to_be_removed_nodes_good_child;
+            } else {
+                assert(!to_be_removed_nodes_parent->right_child);
+                to_be_removed_nodes_parent->right_child = to_be_removed_nodes_good_child;
+            }
         }
 
 //        cout << "after update" << endl;

@@ -47,7 +47,9 @@ struct MergeTreeNode {
 enum class UpdateOption {
     USE_FIRST,
     USE_SECOND,
-    USE_RANDOM
+    USE_RANDOM,
+    USE_GREATER_INDEX,
+    USE_SMALLER_INDEX
 };
 
 /*
@@ -78,14 +80,16 @@ enum class UpdateOption {
 class MergeTree {
     MergeTreeNode *root;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
+    UpdateOption update_option;
     MergeTree() = delete;
 public:
     MergeTree(
         MergeTreeNode *root,
-        std::shared_ptr<utils::RandomNumberGenerator> rng);
+        std::shared_ptr<utils::RandomNumberGenerator> rng,
+        UpdateOption update_option);
     ~MergeTree();
     std::pair<int, int> get_next_merge(int new_index);
-    void update(std::pair<int, int> merge, int new_index, UpdateOption option);
+    void update(std::pair<int, int> merge, int new_index);
 
     bool done() const {
         return root->is_leaf();

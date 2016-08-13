@@ -94,7 +94,7 @@ unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
 //    }
 //    assert(merge_order == other_merge_order);
 
-    return utils::make_unique_ptr<MergeTree>(root, rng);
+    return utils::make_unique_ptr<MergeTree>(root, rng, update_option);
 }
 
 string MergeTreeFactoryMiasm::name() const {

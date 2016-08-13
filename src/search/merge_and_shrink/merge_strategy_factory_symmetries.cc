@@ -1,29 +1,20 @@
 #include "merge_strategy_factory_symmetries.h"
 
 #include "factored_transition_system.h"
-#include "merge_scoring_function_dfp.h"
-#include "merge_scoring_function_goal_relevance.h"
-#include "merge_scoring_function_single_random.h"
-#include "merge_scoring_function_total_order.h"
-#include "merge_selector_score_based_filtering.h"
 #include "merge_symmetries.h"
+#include "merge_selector.h"
 #include "merge_tree.h"
-#include "merge_tree_factory_linear.h"
-#include "merge_tree_factory_miasm.h"
+#include "merge_tree_factory.h"
 #include "transition_system.h"
-
-#include "miasm/merge_tree.h"
 
 #include "symmetries/symmetry_group.h"
 
-#include "../globals.h"
-#include "../plugin.h"
-#include "../variable_order_finder.h"
+#include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
+#include "../options/plugin.h"
 
-#include "../utils/logging.h"
 #include "../utils/system.h"
 
 #include <algorithm>
@@ -34,7 +25,16 @@ using namespace std;
 namespace merge_and_shrink {
 MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
     const options::Options &options)
-    : MergeStrategyFactory(), options(options) {
+    : MergeStrategyFactory(),
+      options(options),
+      merge_tree_factory(nullptr),
+      merge_selector(nullptr) {
+    if (options.contains("merge_tree")) {
+        merge_tree_factory = options.get<shared_ptr<MergeTreeFactory>>("merge_tree");
+    }
+    if (options.contains("merge_selector")) {
+        merge_selector = options.get<shared_ptr<MergeSelector>>("merge_selector");
+    }
 }
 
 void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
@@ -110,72 +110,35 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     cout << "    stabilize transition systems: "
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
     cout << "    fallback merge strategy: ";
-    switch (FallbackStrategy(options.get_enum("fallback_strategy"))) {
-    case LINEAR:
-        cout << "linear";
-        break;
-    case DFP:
-        cout << "dfp";
-        break;
-    case MIASM:
-        cout << "miasm";
-        break;
+    if (merge_tree_factory) {
+        merge_tree_factory->dump_options();
     }
-    cout << endl;
+    if (merge_selector) {
+        merge_selector->dump_options();
+    }
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy(
         shared_ptr<AbstractTask> task,
         FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
-    int num_vars = task_proxy.get_variables().size();
-    vector<int> linear_merge_order;
-    shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector = nullptr;
-    unique_ptr<MergeTree> miasm_merge_tree = nullptr;
+    int num_merges = task_proxy.get_variables().size() - 1;
 
-    FallbackStrategy fallback_strategy =
-        FallbackStrategy(options.get_enum("fallback_strategy"));
-    if (fallback_strategy == LINEAR) {
-        VariableOrderFinder vof(
-            task,
-            VariableOrderType(options.get_enum("variable_order")));
-        linear_merge_order.reserve(num_vars);
-        while (!vof.done()) {
-            linear_merge_order.push_back(vof.next());
-        }
-//        cout << "linear variable order: " << linear_merge_order << endl;
-    } else if (fallback_strategy == DFP) {
-        vector<shared_ptr<MergeScoringFunction>> scoring_functions;
-        scoring_functions.push_back(make_shared<MergeScoringFunctionGoalRelevance>());
-        scoring_functions.push_back(make_shared<MergeScoringFunctionDFP>());
-
-        bool randomized_order = options.get<bool>("randomized_order");
-        if (randomized_order) {
-            shared_ptr<MergeScoringFunctionSingleRandom> scoring_random =
-                make_shared<MergeScoringFunctionSingleRandom>(options);
-            scoring_functions.push_back(scoring_random);
-        } else {
-            shared_ptr<MergeScoringFunctionTotalOrder> scoring_total_order =
-                make_shared<MergeScoringFunctionTotalOrder>(options);
-            scoring_functions.push_back(scoring_total_order);
-        }
-        dfp_selector = make_shared<MergeSelectorScoreBasedFiltering>(
-            move(scoring_functions));
-        dfp_selector->initialize(task);
-    } else if (fallback_strategy == MIASM) {
-        MergeTreeFactoryMiasm factory(options);
-        miasm_merge_tree = move(factory.compute_merge_tree(task));
-    } else {
-        ABORT("unknown fallback merge strategy");
+    if (merge_selector) {
+        merge_selector->initialize(task);
     }
-    int num_merges = num_vars - 1;
+
+    unique_ptr<MergeTree> merge_tree = nullptr;
+    if (merge_tree_factory) {
+        merge_tree = merge_tree_factory->compute_merge_tree(task);
+    }
+
     return utils::make_unique_ptr<MergeSymmetries>(
         fts,
         options,
         num_merges,
-        move(linear_merge_order),
-        dfp_selector,
-        move(miasm_merge_tree));
+        move(merge_tree),
+        merge_selector);
 }
 
 string MergeStrategyFactorySymmetries::name() const {
@@ -248,31 +211,17 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
                             "from the graph generating methods", "false");
 
-    // Options for fallback merge strategy
-    vector<string> fallback_strategy;
-    fallback_strategy.push_back("linear");
-    fallback_strategy.push_back("dfp");
-    fallback_strategy.push_back("miasm");
-    parser.add_enum_option("fallback_strategy",
-                           fallback_strategy,
-                           "choose a merge strategy: linear (specify "
-                           "variable_order), dfp, or miasm.",
-                           "dfp");
-
-    // linear
-    MergeTreeFactoryLinear::add_options_to_parser(parser);
-
-    // dfp
-    MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
-    parser.add_option<bool>(
-        "randomized_order",
-        "If true, use a 'globally' randomized order, i.e. all transition "
-        "systems are considered in an arbitrary order. This renders all other "
-        "ordering options void.",
-        "false");
-
-    // miasm
-    MergeTreeFactoryMiasm::add_options_to_parser(parser);
+    // Fallback strategy options
+    parser.add_option<shared_ptr<MergeTreeFactory>>(
+        "merge_tree",
+        "the fallback merge 'strategy' to use if a precomputed strategy should"
+        "be used.",
+        options::OptionParser::NONE);
+    parser.add_option<shared_ptr<MergeSelector>>(
+        "merge_selector",
+        "the fallback merge 'strategy' to use if a stateless strategy should"
+        "be used.",
+        options::OptionParser::NONE);
 
     options::Options options = parser.parse();
     if (options.get<int>("bliss_call_time_limit")
@@ -285,6 +234,13 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
             && options.get_enum("symmetries_for_merging") == 0) {
         cerr << "Please use symmetries at least for shrinking or merging." << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
+    bool merge_tree = options.contains("merge_tree");
+    bool merge_selector = options.contains("merge_selector");
+    if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
+        cerr << "You have to specify exactly one of the options merge_tree "
+                "and merg_selector!" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
     if (parser.dry_run())
         return nullptr;

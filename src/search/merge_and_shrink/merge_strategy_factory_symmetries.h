@@ -6,11 +6,12 @@
 #include "../options/options.h"
 
 namespace merge_and_shrink {
-class MergeDFP;
-class MiasmMergeTree;
-
+class MergeTreeFactory;
+class MergeSelector;
 class MergeStrategyFactorySymmetries : public MergeStrategyFactory {
     options::Options options;
+    std::shared_ptr<MergeTreeFactory> merge_tree_factory;
+    std::shared_ptr<MergeSelector> merge_selector;
 protected:
     virtual std::string name() const;
     virtual void dump_strategy_specific_options() const override;

@@ -1,7 +1,7 @@
 #include "merge_symmetries.h"
 
 #include "factored_transition_system.h"
-#include "merge_selector_score_based_filtering.h"
+#include "merge_selector.h"
 #include "merge_tree.h"
 #include "transition_system.h"
 
@@ -9,33 +9,26 @@
 
 #include "../options/options.h"
 
-#include "../globals.h"
-
-#include "../utils/logging.h"
-#include "../utils/rng.h"
-
 #include <algorithm>
 #include <iomanip>
 
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
+MergeSymmetries::MergeSymmetries(
+    FactoredTransitionSystem &fts,
     const options::Options &options,
     int num_merges,
-    vector<int> linear_merge_order,
-    shared_ptr<MergeSelectorScoreBasedFiltering> dfp_selector,
-    unique_ptr<MergeTree> miasm_merge_tree)
+    unique_ptr<MergeTree> merge_tree,
+    shared_ptr<MergeSelector> merge_selector)
     : MergeStrategy(fts),
       options(options),
       num_merges(num_merges),
-      linear_merge_order(move(linear_merge_order)),
-      dfp_selector(dfp_selector),
-      miasm_merge_tree(move(miasm_merge_tree)),
+      merge_tree(move(merge_tree)),
+      merge_selector(merge_selector),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
-      fallback_strategy(FallbackStrategy(options.get_enum("fallback_strategy"))),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
@@ -114,22 +107,15 @@ pair<int, int> MergeSymmetries::get_next() {
         dump_statistics();
     }
 
+    int next_merge_index = fts.get_size();
+
+    // No symmetries merge order -- use fallback strategy.
     if (merge_order.empty()) {
-        if (fallback_strategy == LINEAR) {
-            // Linear Strategy
-            int first = linear_merge_order[0];
-            linear_merge_order.erase(linear_merge_order.begin());
-            int second = linear_merge_order[0];
-            linear_merge_order[0] = fts.get_size();
-            cout << "Next pair (linear strategy): " << first << ", " << second << endl;
-            return make_pair(first, second);
-        } else if (fallback_strategy == DFP) {
-            return dfp_selector->select_merge(fts);
-        } else if (fallback_strategy == MIASM) {
-            int next_merge_index = fts.get_size();
-            return miasm_merge_tree->get_next_merge(next_merge_index);
+        if (merge_selector) {
+            return merge_selector->select_merge(fts);
         } else {
-            ABORT("unknown fallback merge strategy");
+            assert(merge_tree);
+            return merge_tree->get_next_merge(next_merge_index);
         }
     }
 
@@ -140,32 +126,11 @@ pair<int, int> MergeSymmetries::get_next() {
     }
     merge_order.erase(merge_order.begin());
 
-    if (fallback_strategy == LINEAR) {
-        // Update linear merge order in case we need to fallback on it
-        bool found_entry = false;
-        size_t counter = 0;
-        for (vector<int>::iterator it = linear_merge_order.begin();
-             it != linear_merge_order.end(); ++it) {
-            if (!found_entry && (*it == next_merge.first ||
-                                 *it == next_merge.second)) {
-                //cout << "updating entry " << counter << " (" << *it << ")to " << fts.get_size(); << endl;
-                found_entry = true;
-                linear_merge_order[counter] = fts.get_size();
-            } else if (found_entry && (*it == next_merge.first ||
-                                       *it == next_merge.second)) {
-                //cout << "erasing entry " << counter << " (" << *it << ")" << endl;
-                linear_merge_order.erase(it);
-                break;
-            }
-            ++counter;
-        }
-        assert(found_entry);
-    } else if (fallback_strategy == MIASM) {
-        // Update miasm merge order for future fallback cases
-        miasm_merge_tree->update(
+    // Update the merge tree, if present.
+    if (merge_tree) {
+        merge_tree->update(
             next_merge,
-            fts.get_size(),
-            static_cast<UpdateOption>(options.get_enum("update_option")));
+            next_merge_index);
     }
 
     return next_merge;

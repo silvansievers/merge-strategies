@@ -65,7 +65,7 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
                                      1, merge_order_tree_string.size() - 2));
     }
 
-    return utils::make_unique_ptr<MergeTree>(root, rng);
+    return utils::make_unique_ptr<MergeTree>(root, rng, update_option);
 }
 
 string MergeTreeFactoryManual::name() const {
