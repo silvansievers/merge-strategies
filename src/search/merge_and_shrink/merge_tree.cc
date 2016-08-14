@@ -195,7 +195,13 @@ void MergeTree::update(pair<int, int> merge, int new_index) {
 //        cout << "updating: merge = " << merge << ", new index = " << new_index << endl;
         MergeTreeNode *surviving_node = nullptr;
         MergeTreeNode *to_be_removed_node = nullptr;
-        if (update_option == UpdateOption::USE_FIRST) {
+        if (first_parent == root) {
+            surviving_node = first_parent;
+            to_be_removed_node = second_parent;
+        } else if (second_parent == root) {
+            surviving_node = second_parent;
+            to_be_removed_node = first_parent;
+        } else if (update_option == UpdateOption::USE_FIRST) {
             surviving_node = first_parent;
             to_be_removed_node = second_parent;
         } else if (update_option == UpdateOption::USE_SECOND) {
@@ -241,15 +247,11 @@ void MergeTree::update(pair<int, int> merge, int new_index) {
         // Remove all links to to_be_removed_node and store pointers to the
         // relevant children and its parent.
         MergeTreeNode *to_be_removed_nodes_parent = to_be_removed_node->parent;
-        if (to_be_removed_nodes_parent) {
-            // to_be_removed_nodes_parent can be nullptr if to_be_removed_node
-            // is the root node
-            if (to_be_removed_nodes_parent->left_child == to_be_removed_node) {
-                to_be_removed_nodes_parent->left_child = nullptr;
-            } else {
-                assert(to_be_removed_nodes_parent->right_child == to_be_removed_node);
-                to_be_removed_nodes_parent->right_child = nullptr;
-            }
+        if (to_be_removed_nodes_parent->left_child == to_be_removed_node) {
+            to_be_removed_nodes_parent->left_child = nullptr;
+        } else {
+            assert(to_be_removed_nodes_parent->right_child == to_be_removed_node);
+            to_be_removed_nodes_parent->right_child = nullptr;
         }
         MergeTreeNode *to_be_removed_nodes_good_child = nullptr;
         if (to_be_removed_node->left_child->ts_index == ts_index1 ||
@@ -267,10 +269,6 @@ void MergeTree::update(pair<int, int> merge, int new_index) {
             to_be_removed_node->left_child = nullptr;
         }
 
-        if (to_be_removed_node == root) {
-            root = to_be_removed_nodes_good_child;
-        }
-
         // delete the node (this also deletes its bad child, but not the good one)
         delete to_be_removed_node;
         to_be_removed_node = nullptr;
@@ -278,15 +276,11 @@ void MergeTree::update(pair<int, int> merge, int new_index) {
         // update pointers of the good child and the removed node's parent to
         // point to each other.
         to_be_removed_nodes_good_child->parent = to_be_removed_nodes_parent;
-        if (to_be_removed_nodes_parent) {
-            // to_be_removed_nodes_parent can be nullptr if to_be_removed_node
-            // was the root node
-            if (!to_be_removed_nodes_parent->left_child) {
-                to_be_removed_nodes_parent->left_child = to_be_removed_nodes_good_child;
-            } else {
-                assert(!to_be_removed_nodes_parent->right_child);
-                to_be_removed_nodes_parent->right_child = to_be_removed_nodes_good_child;
-            }
+        if (!to_be_removed_nodes_parent->left_child) {
+            to_be_removed_nodes_parent->left_child = to_be_removed_nodes_good_child;
+        } else {
+            assert(!to_be_removed_nodes_parent->right_child);
+            to_be_removed_nodes_parent->right_child = to_be_removed_nodes_good_child;
         }
 
 //        cout << "after update" << endl;
