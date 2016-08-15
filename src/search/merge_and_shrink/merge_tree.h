@@ -30,7 +30,9 @@ struct MergeTreeNode {
 
     MergeTreeNode *get_left_most_sibling();
     std::pair<int, int> erase_children_and_set_index(int new_index);
-    MergeTreeNode *get_parent_of_ts_index(int index);
+    void get_parents_of_ts_indices(
+        const std::pair<int, int> &ts_indices,
+        std::pair<MergeTreeNode *, MergeTreeNode *> &result);
     int compute_num_internal_nodes() const;
     void inorder(int offset, int current_indentation) const;
 
@@ -47,9 +49,7 @@ struct MergeTreeNode {
 enum class UpdateOption {
     USE_FIRST,
     USE_SECOND,
-    USE_RANDOM,
-    USE_GREATER_INDEX,
-    USE_SMALLER_INDEX
+    USE_RANDOM
 };
 
 /*
@@ -73,14 +73,21 @@ enum class UpdateOption {
   has to be kept synchronized with the factored transition system. This
   requires informing the merge tree about all merges that happen and that may
   differ from what the merge tree prescribes. The method update provides this
-  functionality, leaving the user the choice of which of the two existing leaf
-  nodes (if they have different parents) will represent the merged transition
-  system and which one will be removed without replacement.s
+  functionality, using the user specified choice update_option to choose one
+  of two possible leaf nodes representing the indices of the given merge as the
+  future node representing the merge.
 */
 class MergeTree {
     MergeTreeNode *root;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
     UpdateOption update_option;
+    /*
+      Find the two parents (can be the same) of the given indices. The first
+      one will correspond to a merge that would have been merged earlier in
+      the merge tree than the second one.
+    */
+    std::pair<MergeTreeNode *, MergeTreeNode *> get_parents_of_ts_indices(
+        const std::pair<int, int> &ts_indices);
     MergeTree() = delete;
 public:
     MergeTree(
@@ -89,13 +96,17 @@ public:
         UpdateOption update_option);
     ~MergeTree();
     std::pair<int, int> get_next_merge(int new_index);
+    /*
+      Inform the merge tree about a merge that happened independently of
+      using the tree's method get_next_merge.
+    */
     void update(std::pair<int, int> merge, int new_index);
 
     bool done() const {
         return root->is_leaf();
     }
 
-    int compute_num_internale_nodes() const {
+    int compute_num_internal_nodes() const {
         return root->compute_num_internal_nodes();
     }
 

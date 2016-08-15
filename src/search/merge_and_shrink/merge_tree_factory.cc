@@ -57,17 +57,16 @@ void MergeTreeFactory::add_options_to_parser(options::OptionParser &parser) {
     update_option.push_back("use_first");
     update_option.push_back("use_second");
     update_option.push_back("use_random");
-    update_option.push_back("use_greater_index");
-    update_option.push_back("use_smaller_index");
     parser.add_enum_option(
         "update_option",
         update_option,
         "When the merge tree is used within another merge strategy, how"
         "should it be updated when a merge different to a merge from the "
-        "tree is performed: choose among use_first, use_second, "
-        "use_random, use_greater_index, and use_smaller_index to let the left "
-        "(right, random, greater, smaller) leaf node in the tree survive and "
-        "remove the other leaf node without replacement. ",
+        "tree is performed: choose among use_first, use_second, and "
+        "use_random to choose which node of the tree should survive and "
+        "represent the new merged index. Specify use_first (use_second) to "
+        "let the node represententing the index that would have been merged "
+        "earlier (later) survive. use_random chooses a random node.",
         "use_random");
 
 }
