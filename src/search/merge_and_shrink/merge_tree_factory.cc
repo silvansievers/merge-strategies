@@ -32,12 +32,6 @@ void MergeTreeFactory::dump_options() const {
     case UpdateOption::USE_RANDOM:
         cout << "use random";
         break;
-    case UpdateOption::USE_GREATER_INDEX:
-        cout << "use greater index";
-        break;
-    case UpdateOption::USE_SMALLER_INDEX:
-        cout << "use smaller index";
-        break;
     }
     dump_tree_specific_options();
 }
