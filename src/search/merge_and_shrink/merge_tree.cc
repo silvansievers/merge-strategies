@@ -214,7 +214,7 @@ pair<MergeTreeNode *, MergeTreeNode *> MergeTree::get_parents_of_ts_indices(
     return result;
 }
 
-void MergeTree::update(pair<int, int> merge, int new_index) {
+void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
     int ts_index1 = merge.first;
     int ts_index2 = merge.second;
     assert(root->ts_index != ts_index1 && root->ts_index != ts_index2);
@@ -229,10 +229,12 @@ void MergeTree::update(pair<int, int> merge, int new_index) {
 //        cout << "updating: merge = " << merge << ", new index = " << new_index << endl;
         MergeTreeNode *surviving_node = nullptr;
         MergeTreeNode *removed_node = nullptr;
-        if (update_option == UpdateOption::USE_FIRST) {
+        if (update_option == UpdateOption::USE_FIRST ||
+                (miasm_hack && root == first_parent)) {
             surviving_node = first_parent;
             removed_node = second_parent;
-        } else if (update_option == UpdateOption::USE_SECOND) {
+        } else if (update_option == UpdateOption::USE_SECOND ||
+                (miasm_hack && root == second_parent)) {
             surviving_node = second_parent;
             removed_node = first_parent;
         } else if (update_option == UpdateOption::USE_RANDOM) {

@@ -129,8 +129,12 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
     }
 
     unique_ptr<MergeTree> merge_tree = nullptr;
+    bool tree_is_miasm = false;
     if (merge_tree_factory) {
         merge_tree = merge_tree_factory->compute_merge_tree(task);
+        if (merge_tree_factory->get_name() == "miasm") {
+            tree_is_miasm = true;
+        }
     }
 
     return utils::make_unique_ptr<MergeSymmetries>(
@@ -138,7 +142,8 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
         options,
         num_merges,
         move(merge_tree),
-        merge_selector);
+        merge_selector,
+        tree_is_miasm);
 }
 
 string MergeStrategyFactorySymmetries::name() const {

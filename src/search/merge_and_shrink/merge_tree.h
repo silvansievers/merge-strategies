@@ -100,7 +100,7 @@ public:
       Inform the merge tree about a merge that happened independently of
       using the tree's method get_next_merge.
     */
-    void update(std::pair<int, int> merge, int new_index);
+    void update(std::pair<int, int> merge, int new_index, bool miasm_hack = false);
 
     bool done() const {
         return root->is_leaf();

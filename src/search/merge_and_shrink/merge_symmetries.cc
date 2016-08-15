@@ -15,12 +15,12 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSymmetries::MergeSymmetries(
-    FactoredTransitionSystem &fts,
+MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
     const options::Options &options,
     int num_merges,
     unique_ptr<MergeTree> merge_tree,
-    shared_ptr<MergeSelector> merge_selector)
+    shared_ptr<MergeSelector> merge_selector,
+    bool tree_is_miasm)
     : MergeStrategy(fts),
       options(options),
       num_merges(num_merges),
@@ -29,6 +29,7 @@ MergeSymmetries::MergeSymmetries(
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
+      tree_is_miasm(tree_is_miasm),
       iteration_counter(0),
       number_of_applied_symmetries(0),
       bliss_limit_reached(false),
@@ -130,7 +131,8 @@ pair<int, int> MergeSymmetries::get_next() {
     if (merge_tree) {
         merge_tree->update(
             next_merge,
-            next_merge_index);
+            next_merge_index,
+            tree_is_miasm);
     }
 
     return next_merge;

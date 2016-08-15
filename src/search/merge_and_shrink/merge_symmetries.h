@@ -23,6 +23,7 @@ class MergeSymmetries : public MergeStrategy {
     int max_bliss_iterations;
     int bliss_call_time_limit;
     double bliss_remaining_time_budget;
+    bool tree_is_miasm;
 
     // statistics
     int iteration_counter;
@@ -40,7 +41,8 @@ public:
         const options::Options &options,
         int num_merges,
         std::unique_ptr<MergeTree> merge_tree,
-        std::shared_ptr<MergeSelector> merge_selector);
+        std::shared_ptr<MergeSelector> merge_selector,
+        bool tree_is_miasm);
     virtual ~MergeSymmetries() override = default;
     virtual std::pair<int, int> get_next() override;
 };
