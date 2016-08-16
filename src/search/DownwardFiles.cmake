@@ -417,9 +417,11 @@ fast_downward_plugin(
         merge_and_shrink/merge_and_shrink_heuristic.cc
         merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_scoring_function.cc
+        merge_and_shrink/merge_scoring_function_causally_connected_variable.cc
         merge_and_shrink/merge_scoring_function_collection.cc
         merge_and_shrink/merge_scoring_function_dfp.cc
         merge_and_shrink/merge_scoring_function_goal_relevance.cc
+        merge_and_shrink/merge_scoring_function_goal_variable.cc
         merge_and_shrink/merge_scoring_function_linear.cc
         merge_and_shrink/merge_scoring_function_miasm.cc
         merge_and_shrink/merge_scoring_function_single_random.cc

@@ -1,0 +1,106 @@
+#include "merge_scoring_function_causally_connected_variable.h"
+
+#include "factored_transition_system.h"
+#include "transition_system.h"
+
+#include "../causal_graph.h"
+#include "../task_proxy.h"
+
+#include "../options/option_parser.h"
+#include "../options/plugin.h"
+
+using namespace std;
+
+namespace merge_and_shrink {
+vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
+    FactoredTransitionSystem &fts,
+    const vector<pair<int, int>> &merge_candidates) {
+    set<int> composite_indices;
+    for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
+        if (fts.is_active(ts_index)) {
+            int num_vars = fts.get_ts(ts_index).get_incorporated_variables().size();
+            if (num_vars > 1) {
+                composite_indices.insert(ts_index);
+            }
+        }
+    }
+
+    vector<int> composite_vars;
+    for (int ts_index : composite_indices) {
+        const vector<int> &vars = fts.get_ts(ts_index).get_incorporated_variables();
+        composite_vars.insert(composite_vars.end(), vars.begin(), vars.end());
+    }
+
+    TaskProxy task_proxy(*task);
+    int num_vars = task_proxy.get_variables().size();
+    vector<bool> is_causal_predecessor(num_vars, false);
+    const CausalGraph &cg = task_proxy.get_causal_graph();
+    for (int var : composite_vars) {
+        const vector<int> &connected_vars = cg.get_eff_to_pre(var);
+        for (int connected_var : connected_vars)
+            is_causal_predecessor[connected_var] = true;
+    }
+
+    vector<double> scores;
+    scores.reserve(merge_candidates.size());
+    for (pair<int, int> merge_candidate : merge_candidates) {
+        int ts_index1 = merge_candidate.first;
+        int ts_index2 = merge_candidate.second;
+        int score = INF;
+        const vector<int> &variables1 =
+            fts.get_ts(ts_index1).get_incorporated_variables();
+        const vector<int> &variables2 =
+                fts.get_ts(ts_index2).get_incorporated_variables();
+//        if (composite_indices.empty()) {
+//            // TODO: HACK!
+//            // the very first merge: score of 0 iff the two variables are
+//            // causally connected
+//            assert(variables1.size() == 1);
+//            assert(variables2.size() == 1);
+//            int var1 = variables1.front();
+//            int var2 = variables2.front();
+//            const vector<int> &connected_vars1 = cg.get_eff_to_pre(var1);
+//            const vector<int> &connected_vars2 = cg.get_eff_to_pre(var2);
+//            if ((find(connected_vars1.begin(), connected_vars1.end(), var2)
+//                 != connected_vars1.end()) ||
+//                (find(connected_vars2.begin(), connected_vars2.end(), var1))
+//                 != connected_vars2.end()) {
+//                score = 0;
+//            }
+//        } else {
+            if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
+                || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
+                score = 0;
+            }
+//        }
+        scores.push_back(score);
+    }
+    return scores;
+}
+
+void MergeScoringFunctionCausallyConnectedVariable::initialize(
+    shared_ptr<AbstractTask> task) {
+    initialized = true;
+    this->task = task;
+}
+
+string MergeScoringFunctionCausallyConnectedVariable::name() const {
+    return "causally connected variable";
+}
+
+static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
+    parser.document_synopsis(
+        "Causally connected variablescoring",
+        "This scoring function assumes that all non-linear merge candidates "
+        "have been filtered out before. It assigns a merge candidate a value "
+        "of 0 iff at least one of the components is atomic and its variable "
+        "causally connected to (at least one of) the composite transition "
+        "system(s), and otherwise infinity.");
+    if (parser.dry_run())
+        return nullptr;
+    else
+        return make_shared<MergeScoringFunctionCausallyConnectedVariable>();
+}
+
+static options::PluginShared<MergeScoringFunction> _plugin("causally_connected_variable", _parse);
+}
