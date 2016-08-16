@@ -23,6 +23,8 @@ struct MergeTreeNode {
     int ts_index;
 
     MergeTreeNode() = delete;
+    // Copy constructor. Does not set parent pointers.
+    MergeTreeNode(const MergeTreeNode &other);
     MergeTreeNode(int ts_index);
     MergeTreeNode(MergeTreeNode *left_child, MergeTreeNode*right_child);
     MergeTreeNode(std::string tree_string);
@@ -33,6 +35,8 @@ struct MergeTreeNode {
     void get_parents_of_ts_indices(
         const std::pair<int, int> &ts_indices,
         std::pair<MergeTreeNode *, MergeTreeNode *> &result);
+    // Find the parent node for the given index.
+    MergeTreeNode *get_parent_of_ts_index(int index);
     int compute_num_internal_nodes() const;
     void inorder(int offset, int current_indentation) const;
 
@@ -87,7 +91,7 @@ class MergeTree {
       the merge tree than the second one.
     */
     std::pair<MergeTreeNode *, MergeTreeNode *> get_parents_of_ts_indices(
-        const std::pair<int, int> &ts_indices);
+        const std::pair<int, int> &ts_indices, int new_index);
     MergeTree() = delete;
 public:
     MergeTree(
