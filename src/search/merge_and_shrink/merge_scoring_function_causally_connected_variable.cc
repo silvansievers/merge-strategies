@@ -51,28 +51,10 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
             fts.get_ts(ts_index1).get_incorporated_variables();
         const vector<int> &variables2 =
                 fts.get_ts(ts_index2).get_incorporated_variables();
-//        if (composite_indices.empty()) {
-//            // TODO: HACK!
-//            // the very first merge: score of 0 iff the two variables are
-//            // causally connected
-//            assert(variables1.size() == 1);
-//            assert(variables2.size() == 1);
-//            int var1 = variables1.front();
-//            int var2 = variables2.front();
-//            const vector<int> &connected_vars1 = cg.get_eff_to_pre(var1);
-//            const vector<int> &connected_vars2 = cg.get_eff_to_pre(var2);
-//            if ((find(connected_vars1.begin(), connected_vars1.end(), var2)
-//                 != connected_vars1.end()) ||
-//                (find(connected_vars2.begin(), connected_vars2.end(), var1))
-//                 != connected_vars2.end()) {
-//                score = 0;
-//            }
-//        } else {
-            if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
-                || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
-                score = 0;
-            }
-//        }
+        if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
+            || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
+            score = 0;
+        }
         scores.push_back(score);
     }
     return scores;

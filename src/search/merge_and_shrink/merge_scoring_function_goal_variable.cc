@@ -40,7 +40,6 @@ void MergeScoringFunctionGoalVariable::initialize(shared_ptr<AbstractTask> task)
     is_goal_variable.resize(num_vars, false);
     for (FactProxy goal : task_proxy.get_goals()) {
         is_goal_variable[goal.get_variable().get_id()] = true;
-        cout << "goal var: "  << goal.get_variable().get_id() << endl;
     }
 }
 
