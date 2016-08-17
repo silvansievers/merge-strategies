@@ -96,11 +96,17 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
                 if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
                     || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
                     score = 0;
+                } else if ((variables1.size() == 1 && is_goal_variable[variables1.front()])
+                    || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
+                    score = 1;
                 }
             } else {
                 if ((variables1.size() == 1 && is_goal_variable[variables1.front()])
                     || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
                     score = 0;
+                } else if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
+                    || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
+                    score = 1;
                 }
             }
         } // Otherwise, both components are composites and scored infinity.
