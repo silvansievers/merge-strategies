@@ -46,7 +46,7 @@ MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &optio
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
-    shared_ptr<AbstractTask> task,
+    const shared_ptr<AbstractTask> &task,
     FactoredTransitionSystem &fts) {
     TaskProxy task_proxy(*task);
     VariablesProxy vars = task_proxy.get_variables();

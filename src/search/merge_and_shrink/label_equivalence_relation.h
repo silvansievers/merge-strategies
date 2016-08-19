@@ -102,7 +102,6 @@ public:
     */
     explicit LabelEquivalenceRelation(const Labels &labels);
     LabelEquivalenceRelation(const LabelEquivalenceRelation &other);
-    ~LabelEquivalenceRelation() = default;
 
     /*
       The given label mappings (from label reduction) contain the new label

@@ -15,8 +15,8 @@ namespace merge_and_shrink {
 MergeSelectorScoreBasedFiltering::MergeSelectorScoreBasedFiltering(
     const options::Options &options)
     : merge_scoring_functions(
-        options.get_list<shared_ptr<MergeScoringFunction>>(
-            "scoring_functions")),
+          options.get_list<shared_ptr<MergeScoringFunction>>(
+              "scoring_functions")),
       iterations_with_tiebreaking(0),
       total_tiebreaking_pair_count(0) {
 }
@@ -50,7 +50,7 @@ vector<pair<int, int>> MergeSelectorScoreBasedFiltering::get_remaining_candidate
 
 pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
     FactoredTransitionSystem &fts,
-    const std::vector<int> &indices_subset) const {
+    const vector<int> &indices_subset) const {
     vector<pair<int, int>> merge_candidates =
         compute_merge_candidates(fts, indices_subset);
 
@@ -88,15 +88,15 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
 
     if (merge_candidates.size() > 1) {
         cerr << "More than one merge candidate remained after computing all "
-                "scores! Did you forget to include a randomizing scoring "
-                "function for tie-breaking?" << endl;
+            "scores! Did you forget to include a uniquely tie-breaking "
+            "scoring function, e.g. total_order or single_random?" << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
 
     return merge_candidates.front();
 }
 
-void MergeSelectorScoreBasedFiltering::initialize(shared_ptr<AbstractTask> task) {
+void MergeSelectorScoreBasedFiltering::initialize(const shared_ptr<AbstractTask> &task) {
     for (shared_ptr<MergeScoringFunction> &scoring_function
          : merge_scoring_functions) {
         scoring_function->initialize(task);
@@ -119,7 +119,7 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         "Score based filtering merge selector",
         "This merge selector has a list of scoring functions, which are used "
         "iteratively to compute scores for merge candidates, keeping the best "
-        "ones until only one is left.");
+        "ones (with minimal scores) until only one is left.");
     parser.add_list_option<shared_ptr<MergeScoringFunction>>(
         "scoring_functions",
         "The list of scoring functions used to compute scores for candidates.");

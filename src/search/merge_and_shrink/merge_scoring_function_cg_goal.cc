@@ -116,7 +116,7 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
 }
 
 void MergeScoringFunctionCgGoal::initialize(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     initialized = true;
     this->task = task;
     TaskProxy task_proxy(*task);

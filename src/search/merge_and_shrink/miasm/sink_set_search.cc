@@ -25,7 +25,7 @@ using namespace std;
 namespace merge_and_shrink {
 using namespace mst;
 
-SinkSetSearch::SinkSetSearch(const Options &opts, shared_ptr<AbstractTask> task)
+SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> &task)
     : task(task),
       task_proxy(*task),
       causal_graph(task_proxy.get_causal_graph()),
@@ -505,7 +505,7 @@ const VarSetInfoRegistry *SinkSetSearch::get_vsir() {
 }
 
 ComparatorSTLPriorityQueue::ComparatorSTLPriorityQueue(
-    shared_ptr<AbstractTask> task,
+    const shared_ptr<AbstractTask> &task,
     const VarSetInfoRegistry *vsir_, const EnumPriority *priority_)
     : ComparatorVarSet(task, vsir_),
       priority(priority_) {

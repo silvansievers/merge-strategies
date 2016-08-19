@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <iterator>
 #include <set>
 #include <sstream>
 #include <string>
@@ -23,7 +24,7 @@ using namespace std;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
-std::ostream &operator<<(std::ostream &os, const Transition &trans) {
+ostream &operator<<(ostream &os, const Transition &trans) {
     os << trans.src << "->" << trans.target;
     return os;
 }
@@ -77,7 +78,8 @@ GroupAndTransitions TSConstIterator::operator*() const {
   computation is not worth the overhead.
 */
 
-TransitionSystem::TransitionSystem(int num_variables,
+TransitionSystem::TransitionSystem(
+    int num_variables,
     vector<int> &&incorporated_variables,
     unique_ptr<LabelEquivalenceRelation> &&label_equivalence_relation,
     vector<vector<Transition>> &&transitions_by_label,

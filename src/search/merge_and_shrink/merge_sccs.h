@@ -25,9 +25,9 @@ class MergeSCCs : public MergeStrategy {
 public:
     MergeSCCs(
         FactoredTransitionSystem &fts,
-        std::shared_ptr<AbstractTask> task,
-        std::shared_ptr<MergeTreeFactory> merge_tree_factory,
-        std::shared_ptr<MergeSelector> merge_selector,
+        const std::shared_ptr<AbstractTask> &task,
+        const std::shared_ptr<MergeTreeFactory> &merge_tree_factory,
+        const std::shared_ptr<MergeSelector> &merge_selector,
         std::vector<std::vector<int>> non_singleton_cg_sccs,
         std::vector<int> indices_of_merged_sccs);
     virtual ~MergeSCCs() override;

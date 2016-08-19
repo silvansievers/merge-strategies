@@ -22,7 +22,7 @@ public:
     explicit MergeTreeFactoryManual(const options::Options &options);
     virtual ~MergeTreeFactoryManual() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
-        std::shared_ptr<AbstractTask> task) override;
+        const std::shared_ptr<AbstractTask> &task) override;
 };
 }
 

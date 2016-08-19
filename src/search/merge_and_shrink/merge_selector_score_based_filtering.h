@@ -32,7 +32,7 @@ public:
     virtual std::pair<int, int> select_merge(
         FactoredTransitionSystem &fts,
         const std::vector<int> &indices_subset = std::vector<int>()) const override;
-    virtual void initialize(std::shared_ptr<AbstractTask> task) override;
+    virtual void initialize(const std::shared_ptr<AbstractTask> &task) override;
     std::pair<int, int> get_tiebreaking_statistics() const {
         return std::make_pair(iterations_with_tiebreaking,
                               total_tiebreaking_pair_count);

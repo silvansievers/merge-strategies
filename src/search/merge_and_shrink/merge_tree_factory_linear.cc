@@ -22,11 +22,11 @@ namespace merge_and_shrink {
 MergeTreeFactoryLinear::MergeTreeFactoryLinear(const options::Options &options)
     : MergeTreeFactory(options),
       variable_order_type(static_cast<VariableOrderType>(
-        options.get_enum("variable_order"))) {
+                              options.get_enum("variable_order"))) {
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryLinear::compute_merge_tree(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     VariableOrderFinder vof(task, variable_order_type);
     MergeTreeNode *root = new MergeTreeNode(vof.next());
     while (!vof.done()) {
@@ -38,7 +38,7 @@ unique_ptr<MergeTree> MergeTreeFactoryLinear::compute_merge_tree(
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryLinear::compute_merge_tree(
-    shared_ptr<AbstractTask> task,
+    const shared_ptr<AbstractTask> &task,
     FactoredTransitionSystem &fts,
     const vector<int> &indices_subset) {
     /*

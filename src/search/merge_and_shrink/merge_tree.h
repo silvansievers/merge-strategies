@@ -26,15 +26,12 @@ struct MergeTreeNode {
     // Copy constructor. Does not set parent pointers.
     MergeTreeNode(const MergeTreeNode &other);
     MergeTreeNode(int ts_index);
-    MergeTreeNode(MergeTreeNode *left_child, MergeTreeNode*right_child);
+    MergeTreeNode(MergeTreeNode *left_child, MergeTreeNode *right_child);
     MergeTreeNode(std::string tree_string);
     ~MergeTreeNode();
 
     MergeTreeNode *get_left_most_sibling();
     std::pair<int, int> erase_children_and_set_index(int new_index);
-    void get_parents_of_ts_indices(
-        const std::pair<int, int> &ts_indices,
-        std::pair<MergeTreeNode *, MergeTreeNode *> &result);
     // Find the parent node for the given index.
     MergeTreeNode *get_parent_of_ts_index(int index);
     int compute_num_internal_nodes() const;
@@ -46,7 +43,7 @@ struct MergeTreeNode {
 
     bool has_two_leaf_children() const {
         return left_child && right_child &&
-            left_child->is_leaf() && right_child->is_leaf();
+               left_child->is_leaf() && right_child->is_leaf();
     }
 };
 
@@ -96,7 +93,7 @@ class MergeTree {
 public:
     MergeTree(
         MergeTreeNode *root,
-        std::shared_ptr<utils::RandomNumberGenerator> rng,
+        const std::shared_ptr<utils::RandomNumberGenerator> &rng,
         UpdateOption update_option);
     ~MergeTree();
     std::pair<int, int> get_next_merge(int new_index);

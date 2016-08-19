@@ -88,7 +88,7 @@ public:
         return is_index_valid(index);
     }
     // TODO: remove the following method and let DFP use get_labels?
-    int get_num_labels() const; // used by merge_dfp
+    int get_num_labels() const; // used by DFP
     int get_init_state_goal_distance(int index) const;
     const Labels &get_labels() const { // used by label_reduction // for MergeDynamicWeighted
         return *labels;

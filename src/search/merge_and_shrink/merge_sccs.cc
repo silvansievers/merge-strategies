@@ -15,9 +15,9 @@ using namespace std;
 namespace merge_and_shrink {
 MergeSCCs::MergeSCCs(
     FactoredTransitionSystem &fts,
-    shared_ptr<AbstractTask> task,
-    shared_ptr<MergeTreeFactory> merge_tree_factory,
-    shared_ptr<MergeSelector> merge_selector,
+    const shared_ptr<AbstractTask> &task,
+    const shared_ptr<MergeTreeFactory> &merge_tree_factory,
+    const shared_ptr<MergeSelector> &merge_selector,
     vector<vector<int>> non_singleton_cg_sccs,
     vector<int> indices_of_merged_sccs)
     : MergeStrategy(fts),

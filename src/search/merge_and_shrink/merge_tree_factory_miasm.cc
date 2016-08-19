@@ -28,7 +28,7 @@ MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
 }
 
 MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     /* search for sink sets */
     SinkSetSearch sink_set_search(options, task);
     sink_set_search.search();
@@ -50,7 +50,7 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     int num_ts = task_proxy.get_variables().size();
 

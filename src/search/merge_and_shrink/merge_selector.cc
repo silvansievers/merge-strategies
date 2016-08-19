@@ -12,7 +12,7 @@ using namespace std;
 namespace merge_and_shrink {
 vector<pair<int, int>> MergeSelector::compute_merge_candidates(
     FactoredTransitionSystem &fts,
-    const std::vector<int> &indices_subset) const {
+    const vector<int> &indices_subset) const {
     vector<pair<int, int>> merge_candidates;
     if (indices_subset.empty()) {
         for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
@@ -47,7 +47,10 @@ void MergeSelector::dump_options() const {
 }
 
 static options::PluginTypePlugin<MergeSelector> _type_plugin(
-    "Merge Selector",
-    "This page describes merge selectors that can be used in merge strategies "
-    "of type 'stateless'.");
+    "MergeSelector",
+    "This page describes the available merge selectors. They are used to "
+    "compute the next merge purely based on the state of the given factored "
+    "transition system. They are used in the merge strategy of type "
+    "'stateless', but they can also easily be used in different 'combined'"
+    "merged strategies.");
 }

@@ -31,7 +31,6 @@ class Labels {
 public:
     explicit Labels(std::vector<std::unique_ptr<Label>> &&labels);
     explicit Labels(const Labels &other);
-    ~Labels() = default;
     void reduce_labels(const std::vector<int> &old_label_nos);
     int compute_number_active_labels() const;
     bool is_current_label(int label_no) const;

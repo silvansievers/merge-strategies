@@ -107,7 +107,7 @@ VarSetCmpType::operator E() const {
     return e;
 }
 
-ComparatorVarSet::ComparatorVarSet(shared_ptr<AbstractTask> task,
+ComparatorVarSet::ComparatorVarSet(const shared_ptr<AbstractTask> &task,
                                    const VarSetInfoRegistry *vsir_,
                                    const VarSetCmpType cmp_type_)
     : task(task),

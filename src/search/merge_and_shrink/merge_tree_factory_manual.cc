@@ -30,7 +30,7 @@ MergeTreeFactoryManual::MergeTreeFactoryManual(
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();
     MergeTreeNode *root = nullptr;

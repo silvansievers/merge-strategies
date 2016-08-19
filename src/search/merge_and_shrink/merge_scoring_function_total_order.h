@@ -13,27 +13,25 @@ class RandomNumberGenerator;
 }
 
 namespace merge_and_shrink {
-enum class AtomicTSOrder {
-    REGULAR,
-    INVERSE,
-    RANDOM
-};
-
-enum class ProductTSOrder {
-    OLD_TO_NEW,
-    NEW_TO_OLD,
-    RANDOM
-};
-
 class MergeScoringFunctionTotalOrder : public MergeScoringFunction {
+    enum class AtomicTSOrder {
+        REVERSE_LEVEL,
+        LEVEL,
+        RANDOM
+    };
     AtomicTSOrder atomic_ts_order;
+    enum class ProductTSOrder {
+        OLD_TO_NEW,
+        NEW_TO_OLD,
+        RANDOM
+    };
     ProductTSOrder product_ts_order;
     bool atomic_before_product;
     int random_seed; // only for dump options
     std::shared_ptr<utils::RandomNumberGenerator> rng;
     std::vector<std::pair<int, int>> merge_candidate_order;
 protected:
-virtual std::string name() const override;
+    virtual std::string name() const override;
     virtual void dump_function_specific_options() const override;
 public:
     explicit MergeScoringFunctionTotalOrder(const options::Options &options);
@@ -41,7 +39,7 @@ public:
     virtual std::vector<double> compute_scores(
         FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
-    virtual void initialize(std::shared_ptr<AbstractTask> task) override;
+    virtual void initialize(const std::shared_ptr<AbstractTask> &task) override;
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

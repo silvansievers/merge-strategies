@@ -11,7 +11,7 @@ class AbstractTask;
 class Axiom;
 class AxiomEvaluator;
 class CausalGraph;
-struct Fact;
+struct FactPair;
 class GlobalOperator;
 class GlobalState;
 class IntPacker;
@@ -45,7 +45,7 @@ void verify_no_axioms_no_conditional_effects();
 
 void check_magic(std::istream &in, std::string magic);
 
-bool are_mutex(const Fact &a, const Fact &b);
+bool are_mutex(const FactPair &a, const FactPair &b);
 
 extern bool g_use_metric;
 extern int g_min_action_cost;
@@ -75,7 +75,7 @@ extern std::shared_ptr<utils::RandomNumberGenerator> g_rng();
 
 extern const std::shared_ptr<AbstractTask> g_root_task();
 extern std::vector<std::vector<bool>> g_mutex_var_pairs;
-extern std::vector<std::vector<std::set<Fact>>>
+extern std::vector<std::vector<std::set<FactPair>>>
 g_inconsistent_facts;
 
 extern utils::Log g_log;

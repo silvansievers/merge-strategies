@@ -61,7 +61,7 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
 }
 
 void MergeScoringFunctionCausallyConnectedVariable::initialize(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     initialized = true;
     this->task = task;
 }

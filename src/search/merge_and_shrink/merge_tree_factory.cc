@@ -37,11 +37,11 @@ void MergeTreeFactory::dump_options() const {
 }
 
 unique_ptr<MergeTree> MergeTreeFactory::compute_merge_tree(
-    shared_ptr<AbstractTask>,
+    const shared_ptr<AbstractTask> &,
     FactoredTransitionSystem &,
-    const std::vector<int> &) {
+    const vector<int> &) {
     cerr << "This merge tree does not support being computed on a subset "
-            "of indices for a given factored transition system!" << endl;
+        "of indices for a given factored transition system!" << endl;
     utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
 }
 
@@ -62,13 +62,14 @@ void MergeTreeFactory::add_options_to_parser(options::OptionParser &parser) {
         "let the node represententing the index that would have been merged "
         "earlier (later) survive. use_random chooses a random node.",
         "use_random");
-
 }
 
 static options::PluginTypePlugin<MergeTreeFactory> _type_plugin(
-    "Merge Tree",
+    "MergeTree",
     "This page describes the available merge trees that can be used to "
     "precompute a merge strategy, either for the entire task or a given "
     "subset of transition systems of a given factored transition system.\n"
-    "Merge trees are used in the merge strategies of type 'precomputed'.");
+    "Merge trees are typically used in the merge strategy of type "
+    "'precomputed', but they can also be used as fallback merge strategies in "
+    "'combined' merge strategies.");
 }

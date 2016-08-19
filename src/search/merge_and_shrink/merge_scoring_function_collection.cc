@@ -50,7 +50,7 @@ vector<double> MergeScoringFunctionCausalConnection::compute_scores(
 }
 
 void MergeScoringFunctionCausalConnection::initialize(
-    std::shared_ptr<AbstractTask> task) {
+    const std::shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     const CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
@@ -120,7 +120,7 @@ vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
 }
 
 void MergeScoringFunctionBooleanCausalConnection::initialize(
-    std::shared_ptr<AbstractTask> task) {
+    const std::shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     const CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
@@ -196,7 +196,7 @@ vector<double> MergeScoringFunctionNonAdditivity::compute_scores(
 }
 
 void MergeScoringFunctionNonAdditivity::initialize(
-    std::shared_ptr<AbstractTask> task) {
+    const std::shared_ptr<AbstractTask> &task) {
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
     additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));

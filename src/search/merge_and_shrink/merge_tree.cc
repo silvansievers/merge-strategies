@@ -126,54 +126,6 @@ pair<int, int> MergeTreeNode::erase_children_and_set_index(int new_index) {
     return make_pair(left_child_index, right_child_index);
 }
 
-void MergeTreeNode::get_parents_of_ts_indices(
-    const pair<int, int> &ts_indices,
-    pair<MergeTreeNode *, MergeTreeNode *> &result) {
-    if (result.first && result.second) {
-        return;
-    }
-
-    MergeTreeNode *parent1 = nullptr;
-    if (left_child && left_child->is_leaf() &&
-        (left_child->ts_index == ts_indices.first ||
-         left_child->ts_index == ts_indices.second)) {
-        parent1 = this;
-    }
-
-    if (parent1) {
-        if (result.first) {
-            assert(!result.second);
-            result.second = parent1;
-        } else {
-            result.first = parent1;
-        }
-    }
-
-    MergeTreeNode *parent2 = nullptr;
-    if (right_child && right_child->is_leaf() &&
-        (right_child->ts_index == ts_indices.first ||
-         right_child->ts_index == ts_indices.second)) {
-        parent2 = this;
-    }
-
-    if (parent2) {
-        if (result.first) {
-            assert(!result.second);
-            result.second = parent2;
-        } else {
-            result.first = parent2;
-        }
-    }
-
-    if (left_child) {
-        left_child->get_parents_of_ts_indices(ts_indices, result);
-    }
-
-    if (right_child) {
-        right_child->get_parents_of_ts_indices(ts_indices, result);
-    }
-}
-
 MergeTreeNode *MergeTreeNode::get_parent_of_ts_index(int index) {
     if (left_child && left_child->is_leaf() && left_child->ts_index == index) {
         return this;
@@ -227,7 +179,7 @@ void MergeTreeNode::inorder(int offset, int current_indentation) const {
 
 MergeTree::MergeTree(
     MergeTreeNode *root,
-    shared_ptr<utils::RandomNumberGenerator> rng,
+    const shared_ptr<utils::RandomNumberGenerator> &rng,
     UpdateOption update_option)
     : root(root), rng(rng), update_option(update_option) {
 }
@@ -247,34 +199,30 @@ pair<MergeTreeNode *, MergeTreeNode *> MergeTree::get_parents_of_ts_indices(
     int ts_index1 = ts_indices.first;
     int ts_index2 = ts_indices.second;
     bool use_first_index_for_first_parent = true;
-//    if (update_option == UpdateOption::USE_FIRST ||
-//        update_option == UpdateOption::USE_SECOND) {
-        // If we are actually interested in the correct ordering of the two
-        // indices, we need to compute it.
-        MergeTreeNode *copy = new MergeTreeNode(*root);
-        int found_indices = 0;
-        while (!copy->is_leaf()) {
-            MergeTreeNode *next_merge = copy->get_left_most_sibling();
-            pair<int, int> merge = next_merge->erase_children_and_set_index(new_index);
-            if (merge.first == ts_index1 || merge.second == ts_index1) {
-                ++found_indices;
-            }
-            if (merge.first == ts_index2 || merge.second == ts_index2) {
-                if (!found_indices) {
-                    use_first_index_for_first_parent = false;
-                }
-                ++found_indices;
-            }
-            if (found_indices == 2) {
-                break;
-            }
-        }
-        delete copy;
-//    }
 
-    pair<MergeTreeNode *, MergeTreeNode*> result = make_pair(nullptr, nullptr);
+    // Copy the tree and ask it for next merges until found both indices.
+    MergeTreeNode *copy = new MergeTreeNode(*root);
+    int found_indices = 0;
+    while (!copy->is_leaf()) {
+        MergeTreeNode *next_merge = copy->get_left_most_sibling();
+        pair<int, int> merge = next_merge->erase_children_and_set_index(new_index);
+        if (merge.first == ts_index1 || merge.second == ts_index1) {
+            ++found_indices;
+        }
+        if (merge.first == ts_index2 || merge.second == ts_index2) {
+            if (!found_indices) {
+                use_first_index_for_first_parent = false;
+            }
+            ++found_indices;
+        }
+        if (found_indices == 2) {
+            break;
+        }
+    }
+    delete copy;
+
+    pair<MergeTreeNode *, MergeTreeNode *> result = make_pair(nullptr, nullptr);
     if (use_first_index_for_first_parent) {
-        // Either we use "USE_RANDOM" or the first index comes actually first.
         result.first = root->get_parent_of_ts_index(ts_index1);
         result.second = root->get_parent_of_ts_index(ts_index2);
     } else {
@@ -296,8 +244,6 @@ void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
     if (first_parent == second_parent) { // given merge already in the tree
         first_parent->erase_children_and_set_index(new_index);
     } else {
-//        inorder_traversal(4);
-//        cout << "updating: merge = " << merge << ", new index = " << new_index << endl;
         MergeTreeNode *surviving_node = nullptr;
         MergeTreeNode *removed_node = nullptr;
         if (update_option == UpdateOption::USE_FIRST ||
@@ -324,7 +270,7 @@ void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
             surviving_leaf = surviving_node->left_child;
         } else {
             assert(surviving_node->right_child->ts_index == ts_index1 ||
-                surviving_node->right_child->ts_index == ts_index2);
+                   surviving_node->right_child->ts_index == ts_index2);
             surviving_leaf = surviving_node->right_child;
         }
         surviving_leaf->ts_index = new_index;
@@ -383,9 +329,6 @@ void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
                 parent_of_removed_node->right_child = surviving_child_of_removed_node;
             }
         }
-
-//        cout << "after update" << endl;
-//        inorder_traversal(4);
     }
 }
 

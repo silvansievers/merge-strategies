@@ -24,7 +24,7 @@ MergeScoringFunctionTotalOrder::MergeScoringFunctionTotalOrder(
       product_ts_order(ProductTSOrder(options.get_enum("product_ts_order"))),
       atomic_before_product(options.get<bool>("atomic_before_product")),
       random_seed(options.get<int>("random_seed")) {
-      rng = utils::parse_rng_from_options(options);
+    rng = utils::parse_rng_from_options(options);
 }
 
 vector<double> MergeScoringFunctionTotalOrder::compute_scores(
@@ -44,9 +44,9 @@ vector<double> MergeScoringFunctionTotalOrder::compute_scores(
             pair<int, int> other_candidate =
                 merge_candidate_order[merge_candidate_order_index];
             if ((other_candidate.first == ts_index1 &&
-                    other_candidate.second == ts_index2) ||
+                 other_candidate.second == ts_index2) ||
                 (other_candidate.second == ts_index1 &&
-                    other_candidate.first == ts_index2)) {
+                 other_candidate.first == ts_index2)) {
                 // use the index in the merge candidate order as score
                 scores.push_back(merge_candidate_order_index);
             }
@@ -58,7 +58,7 @@ vector<double> MergeScoringFunctionTotalOrder::compute_scores(
 }
 
 void MergeScoringFunctionTotalOrder::initialize(
-    shared_ptr<AbstractTask> task) {
+    const shared_ptr<AbstractTask> &task) {
     initialized = true;
     TaskProxy task_proxy(*task);
     int num_variables = task_proxy.get_variables().size();
@@ -71,7 +71,7 @@ void MergeScoringFunctionTotalOrder::initialize(
     for (int i = 0; i < num_variables; ++i) {
         atomic_tso.push_back(i);
     }
-    if (atomic_ts_order == AtomicTSOrder::INVERSE) {
+    if (atomic_ts_order == AtomicTSOrder::LEVEL) {
         reverse(atomic_tso.begin(), atomic_tso.end());
     } else if (atomic_ts_order == AtomicTSOrder::RANDOM) {
         rng->shuffle(atomic_tso);
@@ -122,11 +122,11 @@ string MergeScoringFunctionTotalOrder::name() const {
 void MergeScoringFunctionTotalOrder::dump_function_specific_options() const {
     cout << "Atomic transition system order: ";
     switch (atomic_ts_order) {
-    case AtomicTSOrder::REGULAR:
-        cout << "regular";
+    case AtomicTSOrder::REVERSE_LEVEL:
+        cout << "reverse level";
         break;
-    case AtomicTSOrder::INVERSE:
-        cout << "inverse";
+    case AtomicTSOrder::LEVEL:
+        cout << "level";
         break;
     case AtomicTSOrder::RANDOM:
         cout << "random";
@@ -158,11 +158,11 @@ void MergeScoringFunctionTotalOrder::add_options_to_parser(
     options::OptionParser &parser) {
     vector<string> atomic_ts_order;
     vector<string> atomic_ts_order_documentation;
-    atomic_ts_order.push_back("regular");
+    atomic_ts_order.push_back("reverse_level");
     atomic_ts_order_documentation.push_back(
         "the variable order of Fast Downward");
-    atomic_ts_order.push_back("inverse");
-    atomic_ts_order_documentation.push_back("opposite of regular");
+    atomic_ts_order.push_back("level");
+    atomic_ts_order_documentation.push_back("opposite of reverse_level");
     atomic_ts_order.push_back("random");
     atomic_ts_order_documentation.push_back("a randomized order");
     parser.add_enum_option(
@@ -170,7 +170,7 @@ void MergeScoringFunctionTotalOrder::add_options_to_parser(
         atomic_ts_order,
         "The order in which atomic transition systems are considered when "
         "considering pairs of potential merges.",
-        "regular",
+        "reverse_level",
         atomic_ts_order_documentation);
 
     vector<string> product_ts_order;
@@ -202,19 +202,23 @@ void MergeScoringFunctionTotalOrder::add_options_to_parser(
 static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
     parser.document_synopsis(
         "Total order",
-        "This scoring function computes an order on merge candidates, based"
-        "on an order of all possible 'indices' of transition systems that may "
-        "occur. The score for each merge candidate correponds to its position "
-        "in the order. This tiebreaking has been introduced in the following "
-        "paper:"
-            + utils::format_paper_reference(
+        "This scoring function computes a total order on the merge candidates, "
+        "based on the specified options. The score for each merge candidate "
+        "correponds to its position in the order. This scoring function is "
+        "mainly intended as tie-breaking, and has been introduced in the "
+        "following paper:"
+        + utils::format_paper_reference(
             {"Silvan Sievers", "Martin Wehrle", "Malte Helmert"},
             "An Analysis of Merge Strategies for Merge-and-Shrink Heuristics",
             "http://ai.cs.unibas.ch/papers/sievers-et-al-icaps2016.pdf",
             "Proceedings of the 26th International Conference on Automated "
             "Planning and Scheduling (ICAPS 2016)",
             "294-298",
-            "AAAI Press 2016"));
+            "AAAI Press 2016") +
+        "Furthermore, using the atomic_ts_order option, this scoring function, "
+        "if used alone in a score based filtering merge selector, can be used "
+        "to emulate the corresponding (precomputed) linear merge strategies "
+        "reverse level/level (independently of the other options).");
     MergeScoringFunctionTotalOrder::add_options_to_parser(parser);
 
     options::Options options = parser.parse();

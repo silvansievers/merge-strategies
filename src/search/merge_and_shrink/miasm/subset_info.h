@@ -112,7 +112,7 @@ public:
      * @param vsir_ - the variable subset registry
      * @param cmp_type_ - the comparison type
      */
-    ComparatorVarSet(std::shared_ptr<AbstractTask> task,
+    ComparatorVarSet(const std::shared_ptr<AbstractTask> &task,
                      const VarSetInfoRegistry *vsir_ = 0,
                      const VarSetCmpType cmp_type_ = VarSetCmpType::E(0));
     virtual ~ComparatorVarSet();

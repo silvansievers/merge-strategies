@@ -14,7 +14,7 @@ public:
     virtual std::vector<double> compute_scores(
         FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
-    virtual void initialize(std::shared_ptr<AbstractTask> task) override;
+    virtual void initialize(const std::shared_ptr<AbstractTask> &task) override;
 };
 }
 
