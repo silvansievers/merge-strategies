@@ -92,7 +92,8 @@ void ShrinkBucketBased::compute_abstraction(
     }
 }
 
-bool ShrinkBucketBased::shrink(FactoredTransitionSystem &fts,
+bool ShrinkBucketBased::shrink(
+    FactoredTransitionSystem &fts,
     int index,
     int target,
     bool silent) const {
