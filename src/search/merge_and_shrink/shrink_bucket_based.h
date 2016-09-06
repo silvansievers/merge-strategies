@@ -58,7 +58,7 @@ public:
         FactoredTransitionSystem &fts,
         int index,
         int target,
-        bool silent = false) const override;
+        Verbosity verbosity) const override;
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

@@ -30,6 +30,7 @@ MiasmAbstraction::MiasmAbstraction(const Options &opts)
       task_proxy(*task),
 //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      verbosity(Verbosity::SILENT),
       built_atomics(false),
       fts(nullptr) {
 //    merge_strategy->initialize(task);
@@ -86,7 +87,7 @@ int MiasmAbstraction::build_transition_system(
         assert(!fts);
         built_atomics = true;
         fts = make_shared<FactoredTransitionSystem>(
-            create_factored_transition_system(task_proxy, false));
+            create_factored_transition_system(task_proxy, verbosity, false));
 
         /* remove the atomic abstraction if its variable is not involved */
         for (var_t i = 0; i < fts->get_size(); ++i) {
@@ -141,7 +142,7 @@ int MiasmAbstraction::build_transition_system(
                                                 newly_built, vsir);
     int right_ts_index = build_transition_system(right_set,
                                                  newly_built, vsir);
-    int new_ts_index = fts->merge(left_ts_index, right_ts_index, false, false);
+    int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity, false, false);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

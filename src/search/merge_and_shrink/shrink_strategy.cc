@@ -14,10 +14,10 @@ bool ShrinkStrategy::shrink_fts(
     FactoredTransitionSystem &fts,
     int index,
     const StateEquivalenceRelation &equivalence_relation,
-    bool silent) const {
+    Verbosity verbosity) const {
     // TODO: We currently violate this; see issue250
     //assert(equivalence_relation.size() <= new_size);
-    return fts.apply_abstraction(index, equivalence_relation, silent);
+    return fts.apply_abstraction(index, equivalence_relation, verbosity);
 }
 
 void ShrinkStrategy::dump_options() const {

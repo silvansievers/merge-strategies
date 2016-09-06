@@ -22,7 +22,7 @@ protected:
         FactoredTransitionSystem &fts,
         int index,
         const StateEquivalenceRelation &equivalence_relation,
-        bool silent) const;
+        Verbosity verbosity) const;
     virtual std::string name() const = 0;
     virtual void dump_strategy_specific_options() const = 0;
 public:
@@ -42,7 +42,7 @@ public:
         FactoredTransitionSystem &fts,
         int index,
         int target,
-        bool silent = false) const = 0;
+        Verbosity verbosity) const = 0;
 
     std::vector<double> &get_miss_qualified_states_ratios() {
         return miss_qualified_states_ratios;

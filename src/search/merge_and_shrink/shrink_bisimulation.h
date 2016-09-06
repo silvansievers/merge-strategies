@@ -46,7 +46,7 @@ public:
         FactoredTransitionSystem &fts,
         int index,
         int target,
-        bool silent = false) const override;
+        Verbosity verbosity) const override;
     int compute_size_after_perfect_shrink(
         const FactoredTransitionSystem &fts, int index);
 

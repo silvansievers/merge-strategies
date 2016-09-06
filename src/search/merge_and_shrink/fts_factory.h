@@ -15,9 +15,11 @@ class TaskProxy;
 
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
+enum class Verbosity;
 
 extern FactoredTransitionSystem create_factored_transition_system(
     const TaskProxy &task_proxy,
+    Verbosity verbosity,
     bool finalize_if_unsolvable = true,
     bool debug_transition_system = false);
 }

@@ -5,6 +5,7 @@
 
 #include "../factored_transition_system.h"
 #include "../transition_system.h"
+#include "../types.h"
 
 #include "../../option_parser.h"
 #include "../../scc.h"
@@ -372,6 +373,8 @@ void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
     }
 
     cout << "Abstracting affected transition systems by the equivalence relations. " << endl;
+    // TODO: pass verbosity to merge strategies?
+    Verbosity verbosity = Verbosity::VERBOSE;
     for (int i = 0; i < fts.get_size(); ++i) {
         if (!fts.is_active(i))
             continue;
@@ -383,7 +386,7 @@ void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         if (equivalence_relation_size != ts.get_size()) {
-            fts.apply_abstraction(i, equivalence_relations[i]);
+            fts.apply_abstraction(i, equivalence_relations[i], verbosity);
 //            cout << transition_systems[i]->tag() << "applying abstraction. " << endl;
         } else {
 //            cout << transition_systems[i]->tag() << "not abstracted due to symmetries." << endl;

@@ -96,11 +96,11 @@ bool ShrinkBucketBased::shrink(
     FactoredTransitionSystem &fts,
     int index,
     int target,
-    bool silent) const {
+    Verbosity verbosity) const {
     vector<Bucket> buckets;
     partition_into_buckets(fts, index, buckets);
     StateEquivalenceRelation equivalence_relation;
     compute_abstraction(buckets, target, equivalence_relation);
-    return shrink_fts(fts, index, equivalence_relation, silent);
+    return shrink_fts(fts, index, equivalence_relation, verbosity);
 }
 }

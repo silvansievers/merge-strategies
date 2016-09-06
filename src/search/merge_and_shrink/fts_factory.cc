@@ -6,6 +6,7 @@
 #include "label_equivalence_relation.h"
 #include "labels.h"
 #include "transition_system.h"
+#include "types.h"
 
 #include "../task_proxy.h"
 
@@ -85,7 +86,7 @@ public:
       Note: create() may only be called once. We don't worry about
       misuse because the class is only used internally in this file.
     */
-    FactoredTransitionSystem create(bool finalize_if_unsolvable);
+    FactoredTransitionSystem create(Verbosity verbosity, bool finalize_if_unsolvable);
 };
 
 
@@ -420,8 +421,11 @@ vector<unique_ptr<Distances>> FTSFactory::create_distances(
     return result;
 }
 
-FactoredTransitionSystem FTSFactory::create(bool finalize_if_unsolvable) {
-    cout << "Building atomic transition systems... " << endl;
+FactoredTransitionSystem FTSFactory::create(
+    Verbosity verbosity, bool finalize_if_unsolvable) {
+    if (verbosity >= Verbosity::NORMAL) {
+        cout << "Building atomic transition systems... " << endl;
+    }
 
     unique_ptr<Labels> labels = utils::make_unique_ptr<Labels>(create_labels());
 
@@ -439,11 +443,14 @@ FactoredTransitionSystem FTSFactory::create(bool finalize_if_unsolvable) {
         move(transition_systems),
         move(heuristic_representations),
         move(distances),
+        verbosity,
         finalize_if_unsolvable);
 }
 
 FactoredTransitionSystem create_factored_transition_system(
-    const TaskProxy &task_proxy, bool finalize_if_unsolvable, bool debug_transition_system) {
-    return FTSFactory(task_proxy, debug_transition_system).create(finalize_if_unsolvable);
+    const TaskProxy &task_proxy, 
+    Verbosity verbosity,
+    bool finalize_if_unsolvable, bool debug_transition_system) {
+    return FTSFactory(task_proxy, debug_transition_system).create(verbosity, finalize_if_unsolvable);
 }
 }

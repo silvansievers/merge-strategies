@@ -236,7 +236,8 @@ StateEquivalenceRelation ShrinkBisimulation::compute_equivalence_relation(
     int num_groups = initialize_groups(fts, index, state_to_group);
     // cout << "number of initial groups: " << num_groups << endl;
 
-    // assert(num_groups <= target_size); // TODO: We currently violate this; see issue250
+    // TODO: We currently violate this; see issue250
+    // assert(num_groups <= target_size);
 
     int max_h = distances.get_max_h();
     assert(max_h >= 0 && max_h != INF);
@@ -361,13 +362,14 @@ StateEquivalenceRelation ShrinkBisimulation::compute_equivalence_relation(
     return equivalence_relation;
 }
 
-bool ShrinkBisimulation::shrink(FactoredTransitionSystem &fts,
+bool ShrinkBisimulation::shrink(
+    FactoredTransitionSystem &fts,
     int index,
-    int target_size,
-    bool silent) const {
+    int target,
+    Verbosity verbosity) const {
     StateEquivalenceRelation equivalence_relation =
-        compute_equivalence_relation(fts, index, target_size);
-    return shrink_fts(fts, index, equivalence_relation, silent);
+        compute_equivalence_relation(fts, index, target);
+    return shrink_fts(fts, index, equivalence_relation, verbosity);
 }
 
 int ShrinkBisimulation::compute_size_after_perfect_shrink(

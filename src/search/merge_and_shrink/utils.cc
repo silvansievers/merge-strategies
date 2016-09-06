@@ -81,13 +81,13 @@ int shrink_and_merge_temporarily(
     options::Options options;
     options.set<bool>("greedy", false);
     options.set<int>("at_limit", 0);
-    bool silent = true;
+    Verbosity verbosity = Verbosity::SILENT;
     ShrinkBisimulation shrink_bisim(options);
-    shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, silent);
-    shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, silent);
+    shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, verbosity);
+    shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, verbosity);
 
     // perform the merge
-    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, true, false);
+    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, verbosity, true, false);
     return merge_index;
 }
 

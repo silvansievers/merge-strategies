@@ -70,7 +70,7 @@ public:
     ~Distances();
 
     bool are_distances_computed() const;
-    std::vector<bool> compute_distances(bool silent);
+    std::vector<bool> compute_distances(Verbosity verbosity);
 
     /*
       Update distances according to the given abstraction.
@@ -83,7 +83,7 @@ public:
     */
     bool apply_abstraction(
         const StateEquivalenceRelation &state_equivalence_relation,
-        bool silent);
+        Verbosity verbosity);
 
     int get_max_f() const { // used by shrink_fh
         return max_f;

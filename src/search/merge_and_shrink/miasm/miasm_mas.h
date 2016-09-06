@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#include "../types.h"
+
 #include "../../task_proxy.h"
 
 #include <memory>
@@ -27,6 +29,7 @@ class MiasmAbstraction {
 //    std::shared_ptr<MergeStrategy> merge_strategy;
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
 //    std::shared_ptr<LabelReduction> label_reduction;
+    Verbosity verbosity;
     bool built_atomics;
 public:
     MiasmAbstraction(const options::Options &opts);

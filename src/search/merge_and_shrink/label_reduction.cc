@@ -4,6 +4,7 @@
 #include "label_equivalence_relation.h"
 #include "labels.h"
 #include "transition_system.h"
+#include "types.h"
 
 #include "../equivalence_relation.h"
 #include "../option_parser.h"
@@ -61,7 +62,7 @@ void LabelReduction::compute_label_mapping(
     const EquivalenceRelation *relation,
     const FactoredTransitionSystem &fts,
     vector<pair<int, vector<int>>> &label_mapping,
-    bool silent) {
+    Verbosity verbosity) {
     const Labels &labels = fts.get_labels();
     int next_new_label_no = labels.get_size();
     int num_labels = 0;
@@ -94,7 +95,7 @@ void LabelReduction::compute_label_mapping(
         }
     }
     int number_reduced_labels = num_labels - num_labels_after_reduction;
-    if (number_reduced_labels > 0 && !silent) {
+    if (verbosity >= Verbosity::VERBOSE && number_reduced_labels > 0) {
         cout << "Label reduction: "
              << num_labels << " labels, "
              << num_labels_after_reduction << " after reduction"
@@ -137,15 +138,15 @@ EquivalenceRelation *LabelReduction::compute_combinable_equivalence_relation(
     return relation;
 }
 
-bool LabelReduction::reduce(pair<int, int> next_merge,
-                            FactoredTransitionSystem &fts,
-                            bool partial) {
+bool LabelReduction::reduce(
+    pair<int, int> next_merge,
+    FactoredTransitionSystem &fts,
+    Verbosity verbosity) {
     assert(initialized());
     assert(reduce_before_shrinking() || reduce_before_merging());
     int num_transition_systems = fts.get_size();
 
     if (lr_method == TWO_TRANSITION_SYSTEMS) {
-        assert(!partial);
         /* Note:
            We compute the combinable relation for labels for the two transition systems
            in the order given by the merge strategy. We conducted experiments
@@ -161,7 +162,7 @@ bool LabelReduction::reduce(pair<int, int> next_merge,
             next_merge.first,
             fts);
         vector<pair<int, vector<int>>> label_mapping;
-        compute_label_mapping(relation, fts, label_mapping, partial);
+        compute_label_mapping(relation, fts, label_mapping, verbosity);
         if (!label_mapping.empty()) {
             fts.apply_label_reduction(label_mapping,
                                       next_merge.first);
@@ -174,7 +175,7 @@ bool LabelReduction::reduce(pair<int, int> next_merge,
         relation = compute_combinable_equivalence_relation(
             next_merge.second,
             fts);
-        compute_label_mapping(relation, fts, label_mapping, partial);
+        compute_label_mapping(relation, fts, label_mapping, verbosity);
         if (!label_mapping.empty()) {
             fts.apply_label_reduction(label_mapping,
                                       next_merge.second);
@@ -213,7 +214,7 @@ bool LabelReduction::reduce(pair<int, int> next_merge,
             EquivalenceRelation *relation =
                 compute_combinable_equivalence_relation(ts_index,
                                                         fts);
-            compute_label_mapping(relation, fts, label_mapping, partial);
+            compute_label_mapping(relation, fts, label_mapping, verbosity);
             delete relation;
         }
 
@@ -225,17 +226,6 @@ bool LabelReduction::reduce(pair<int, int> next_merge,
             reduced = true;
             num_unsuccessful_iterations = 0;
             fts.apply_label_reduction(label_mapping, ts_index);
-            // TODO: fix
-//            if (partial) {
-//                all_transition_systems[next_merge.first]->
-//                    apply_label_reduction(label_mapping, next_merge.first != ts_index);
-//                all_transition_systems[next_merge.second]->
-//                    apply_label_reduction(label_mapping, next_merge.second != ts_index);
-//            } else {
-//                notify_transition_systems(ts_index,
-//                                          all_transition_systems,
-//                                          label_mapping);
-//            }
         }
         if (num_unsuccessful_iterations == num_transition_systems - 1)
             break;
