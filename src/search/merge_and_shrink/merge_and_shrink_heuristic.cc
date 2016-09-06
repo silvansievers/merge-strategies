@@ -284,7 +284,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
             if (label_reduction && label_reduction->reduce_before_shrinking()) {
                 bool reduced =
                     label_reduction->reduce(merge_indices, *fts, verbosity);
-                if (reduced && verbosity >= Verbosity::NORMAL) {
+                if (verbosity >= Verbosity::NORMAL && reduced) {
                     print_time(timer, "after label reduction");
                 }
                 remaining_labels.push_back(fts->get_labels().compute_number_active_labels());
@@ -293,8 +293,8 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
             // Shrinking
             pair<bool, bool> shrunk = shrink_before_merge(
                 merge_index1, merge_index2);
-            if ((shrunk.first || shrunk.second) &&
-                verbosity >= Verbosity::NORMAL) {
+            if (verbosity >= Verbosity::NORMAL &&
+                (shrunk.first || shrunk.second)) {
                 if (verbosity >= Verbosity::VERBOSE) {
                     if (shrunk.first) {
                         fts->statistics(merge_index1);
@@ -323,7 +323,7 @@ void MergeAndShrinkHeuristic::build_transition_system(const utils::Timer &timer)
             if (label_reduction && label_reduction->reduce_before_merging()) {
                 bool reduced =
                     label_reduction->reduce(merge_indices, *fts, verbosity);
-                if (reduced && verbosity >= Verbosity::NORMAL) {
+                if (verbosity >= Verbosity::NORMAL && reduced) {
                     print_time(timer, "after label reduction");
                 }
                 remaining_labels.push_back(fts->get_labels().compute_number_active_labels());
