@@ -21,13 +21,6 @@ public:
     LabelGroup() : cost(INF) {
     }
 
-    explicit LabelGroup(const LabelGroup &other)
-        : cost(other.cost) {
-        for (int label : other.labels) {
-            insert(label);
-        }
-    }
-
     void set_cost(int cost_) {
         cost = cost_;
     }
@@ -49,15 +42,6 @@ public:
     }
 
     LabelConstIter end() const {
-        return labels.end();
-    }
-
-    // TODO: get rid of
-    LabelIter begin() {
-        return labels.begin();
-    }
-
-    LabelIter end() {
         return labels.end();
     }
 
@@ -135,7 +119,7 @@ public:
     const LabelGroup &get_group(int group_id) const {
         return grouped_labels.at(group_id);
     }
-    bool consistent();
+//    bool consistent();
     bool operator==(const LabelEquivalenceRelation &other) const;
     void dump() const;
 };

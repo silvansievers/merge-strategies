@@ -2,8 +2,6 @@
 
 #include "labels.h"
 
-//#include "../utilities.h"
-
 #include <cassert>
 #include <iostream>
 
@@ -16,24 +14,44 @@ LabelEquivalenceRelation::LabelEquivalenceRelation(const Labels &labels)
     label_to_positions.resize(labels.get_max_size());
 }
 
-LabelEquivalenceRelation::LabelEquivalenceRelation(const LabelEquivalenceRelation &other)
+LabelEquivalenceRelation::LabelEquivalenceRelation(
+    const LabelEquivalenceRelation &other)
     : labels(other.labels),
+      /* We copy label_to_positions to actually have identical vectors even
+      on "unused" positions (for label numbers that do not exist any more). */
       label_to_positions(other.label_to_positions) {
-    // we need to reserve max size to ensure that no move occurs in grouped_labels
-    // otherwise, iterators to elements of list<int> of LabelGroup could become
-    // invalid!
+    /*
+      We need to reserve space for the potential maximum number of labels to
+      ensure that no move occurs in grouped_labels. Otherwise, iterators to
+      elements of list<int> of LabelGroup could become invalid!
+    */
     grouped_labels.reserve(labels.get_max_size());
-    for (size_t group_id = 0; group_id < other.grouped_labels.size(); ++group_id) {
-        const LabelGroup &label_group = other.grouped_labels[group_id];
-        grouped_labels.push_back(LabelGroup(label_group));
-        // TODO: change so that we do not first create the group and then update
-        // the iterators.
-        LabelGroup &new_group = grouped_labels.back();
-        // we also need to update label_to_positions with correct iterators
-        for (LabelIter label_it = new_group.begin();
-             label_it != new_group.end(); ++label_it) {
-            label_to_positions[*label_it] = make_pair(group_id, label_it);
+    for (size_t other_group_id = 0;
+         other_group_id < other.grouped_labels.size();
+         ++other_group_id) {
+
+        // Add a new empty label group.
+        int group_id = grouped_labels.size();
+        assert(group_id == static_cast<int>(other_group_id));
+        grouped_labels.push_back(LabelGroup());
+        LabelGroup &label_group = grouped_labels.back();
+
+        /*
+          Go over the other label group, add all labels to this group.
+
+          To obtain exact copies of the label groups with the same cost, we do
+          not use add_label_to_group, which would recompute costs based on
+          given labels and leave cost=infinity for empty groups, but we
+          manually set the group's cost to match the other group's cost.
+        */
+        const LabelGroup &other_label_group =
+            other.grouped_labels[other_group_id];
+        for (int other_label_no : other_label_group) {
+            LabelIter label_it = label_group.insert(other_label_no);
+            assert(*label_it == other_label_no);
+            label_to_positions[other_label_no] = make_pair(group_id, label_it);
         }
+        label_group.set_cost(other_label_group.get_cost());
     }
     assert(grouped_labels == other.grouped_labels);
     assert(*this == other);
@@ -112,27 +130,27 @@ int LabelEquivalenceRelation::add_label_group(const vector<int> &new_labels) {
     return new_group_id;
 }
 
-bool LabelEquivalenceRelation::consistent() {
-    bool consistent = true;
-    for (size_t group_id = 0; group_id < grouped_labels.size(); ++group_id) {
-        LabelGroup &label_group = grouped_labels[group_id];
-        for (LabelIter label_it = label_group.begin();
-             label_it != label_group.end(); ++label_it) {
-            int label_no = *label_it;
-            if (label_to_positions[label_no].first != static_cast<int>(group_id) ||
-                *label_to_positions[label_no].second != *label_it) {
-                cout << label_no << " has inconsistent entries" << endl;
-                cout << label_to_positions[label_no].first << " "
-                     << group_id << endl;
-                cout << *label_to_positions[label_no].second << " "
-                     << *label_it << endl;
-                consistent = false;
-                break;
-            }
-        }
-    }
-    return consistent;
-}
+//bool LabelEquivalenceRelation::consistent() {
+//    bool consistent = true;
+//    for (size_t group_id = 0; group_id < grouped_labels.size(); ++group_id) {
+//        LabelGroup &label_group = grouped_labels[group_id];
+//        for (LabelIter label_it = label_group.begin();
+//             label_it != label_group.end(); ++label_it) {
+//            int label_no = *label_it;
+//            if (label_to_positions[label_no].first != static_cast<int>(group_id) ||
+//                *label_to_positions[label_no].second != *label_it) {
+//                cout << label_no << " has inconsistent entries" << endl;
+//                cout << label_to_positions[label_no].first << " "
+//                     << group_id << endl;
+//                cout << *label_to_positions[label_no].second << " "
+//                     << *label_it << endl;
+//                consistent = false;
+//                break;
+//            }
+//        }
+//    }
+//    return consistent;
+//}
 
 bool LabelEquivalenceRelation::operator==(const LabelEquivalenceRelation &other) const {
     assert(grouped_labels == other.grouped_labels);
