@@ -4,10 +4,8 @@
 #include "factored_transition_system.h"
 #include "label_equivalence_relation.h"
 #include "labels.h"
-#include "shrink_bisimulation.h"
+#include "shrink_strategy.h"
 #include "transition_system.h"
-
-#include "../options/options.h"
 
 #include "../utils/math.h"
 
@@ -28,11 +26,11 @@ bool is_goal_relevant(const TransitionSystem &ts) {
     return false;
 }
 
-// TODO: copied from MergeAndShrinkHeuristic
-pair<int, int> compute_shrink_sizes(int size1, int size2, int max_states) {
+pair<int, int> compute_shrink_sizes(
+    int size1, int size2, int max_states, int max_states_before_merge) {
     // Bound both sizes by max allowed size before merge.
-    int new_size1 = min(size1, max_states);
-    int new_size2 = min(size2, max_states);
+    int new_size1 = min(size1, max_states_before_merge);
+    int new_size2 = min(size2, max_states_before_merge);
 
     if (!utils::is_product_within_limit(new_size1, new_size2, max_states)) {
         int balanced_size = int(sqrt(max_states));
@@ -57,37 +55,72 @@ pair<int, int> compute_shrink_sizes(int size1, int size2, int max_states) {
         }
     }
     assert(new_size1 <= size1 && new_size2 <= size2);
-    assert(new_size1 <= max_states);
-    assert(new_size2 <= max_states);
+    assert(new_size1 <= max_states_before_merge);
+    assert(new_size2 <= max_states_before_merge);
     assert(new_size1 * new_size2 <= max_states);
     return make_pair(new_size1, new_size2);
+}
+
+bool shrink_transition_system(
+    FactoredTransitionSystem &fts,
+    int index,
+    int new_size,
+    int shrink_threshold_before_merge,
+    const shared_ptr<ShrinkStrategy> &shrink_strategy,
+    Verbosity verbosity) {
+    const TransitionSystem &ts = fts.get_ts(index);
+    assert(ts.is_solvable());
+    int num_states = ts.get_size();
+    if (num_states > min(new_size, shrink_threshold_before_merge)) {
+        if (verbosity >= Verbosity::VERBOSE) {
+            cout << ts.tag() << "current size: " << num_states;
+            if (new_size < num_states)
+                cout << " (new size limit: " << new_size;
+            else
+                cout << " (shrink threshold: " << shrink_threshold_before_merge;
+            cout << ")" << endl;
+        }
+        return shrink_strategy->shrink(fts, index, new_size, verbosity);
+    }
+    return false;
 }
 
 int shrink_and_merge_temporarily(
     FactoredTransitionSystem &fts,
     int ts_index1,
     int ts_index2,
-    int max_states) {
+    const shared_ptr<ShrinkStrategy> &shrink_strategy,
+    int max_states,
+    int max_states_before_merge,
+    int shrink_threshold_before_merge) {
     // Copy the transition systems (distances etc)
     int copy_ts_index1 = fts.copy(ts_index1);
     int copy_ts_index2 = fts.copy(ts_index2);
     pair<int, int> shrink_sizes =
         compute_shrink_sizes(fts.get_ts(copy_ts_index1).get_size(),
                              fts.get_ts(copy_ts_index2).get_size(),
-                             max_states);
+                             max_states,
+                             max_states_before_merge);
 
-    // shrink before merge (with implicit threshold = 1,
-    // i.e. always try to shrink)
-    options::Options options;
-    options.set<bool>("greedy", false);
-    options.set<int>("at_limit", 0);
+    // Shrink before merge
     Verbosity verbosity = Verbosity::SILENT;
-    ShrinkBisimulation shrink_bisim(options);
-    shrink_bisim.shrink(fts, copy_ts_index1, shrink_sizes.first, verbosity);
-    shrink_bisim.shrink(fts, copy_ts_index2, shrink_sizes.second, verbosity);
+    shrink_transition_system(
+        fts,
+        copy_ts_index1,
+        shrink_sizes.first,
+        shrink_threshold_before_merge,
+        shrink_strategy,
+        verbosity);
+    shrink_transition_system(
+        fts,
+        copy_ts_index2,
+        shrink_sizes.second,
+        shrink_threshold_before_merge,
+        shrink_strategy,
+        verbosity);
 
-    // perform the merge
-    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, verbosity, true, false);
+    // Perform the merge and temporarily add it to FTS
+    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, verbosity);
     return merge_index;
 }
 

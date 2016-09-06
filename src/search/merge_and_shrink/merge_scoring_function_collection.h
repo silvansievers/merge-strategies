@@ -12,6 +12,7 @@ class Options;
 }
 
 namespace merge_and_shrink {
+class ShrinkStrategy;
 class MergeScoringFunctionCausalConnection : public MergeScoringFunction {
     std::vector<std::vector<int>> var_pair_causal_links;
 protected:
@@ -79,7 +80,10 @@ class MergeScoringFunctionInitH : public MergeScoringFunction {
         SUM
     };
     InitH inith;
-    int max_states;
+    std::shared_ptr<ShrinkStrategy> shrink_stratey;
+    const int max_states;
+    const int max_states_before_merge;
+    const int shrink_threshold_before_merge;
 protected:
     virtual std::string name() const override;
 public:
@@ -99,7 +103,10 @@ class MergeScoringFunctionMaxFGH : public MergeScoringFunction {
         H
     };
     FGH fgh;
-    int max_states;
+    std::shared_ptr<ShrinkStrategy> shrink_stratey;
+    const int max_states;
+    const int max_states_before_merge;
+    const int shrink_threshold_before_merge;
 protected:
     virtual std::string name() const override;
 public:
@@ -119,7 +126,10 @@ class MergeScoringFunctionAvgH : public MergeScoringFunction {
         SUM
     };
     AvgH avgh;
-    int max_states;
+    std::shared_ptr<ShrinkStrategy> shrink_stratey;
+    const int max_states;
+    const int max_states_before_merge;
+    const int shrink_threshold_before_merge;
 protected:
     virtual std::string name() const override;
 public:
@@ -159,7 +169,10 @@ public:
 
 
 class MergeScoringFunctionShrinkPerfectly : public MergeScoringFunction {
-    int max_states;
+    std::shared_ptr<ShrinkStrategy> shrink_stratey;
+    const int max_states;
+    const int max_states_before_merge;
+    const int shrink_threshold_before_merge;
 protected:
     virtual std::string name() const override;
 public:

@@ -3,6 +3,7 @@
 #include "distances.h"
 #include "factored_transition_system.h"
 #include "labels.h"
+#include "merge_and_shrink_heuristic.h"
 #include "shrink_bisimulation.h"
 #include "transition_system.h"
 #include "utils.h"
@@ -303,7 +304,10 @@ static options::PluginShared<MergeScoringFunction> _plugin_tsq("transitions_stat
 MergeScoringFunctionInitH::MergeScoringFunctionInitH(
     const options::Options &options)
     : inith(static_cast<InitH>(options.get_enum("choice"))),
-      max_states(options.get<int>("max_states")) {
+      shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      max_states(options.get<int>("max_states")),
+      max_states_before_merge(options.get<int>("max_states_before_merge")),
+      shrink_threshold_before_merge(options.get<int>("threshold_before_merge")) {
 }
 
 vector<double> MergeScoringFunctionInitH::compute_scores(
@@ -320,7 +324,9 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
             score = - (fts.get_init_state_goal_distance(ts_index1) +
                     fts.get_init_state_goal_distance(ts_index2));
         } else {
-            int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
+            int merge_index = shrink_and_merge_temporarily(
+            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            max_states_before_merge, shrink_threshold_before_merge);
             int new_init_h;
             if (fts.get_ts(merge_index).is_solvable()) {
                 new_init_h = fts.get_init_state_goal_distance(merge_index);
@@ -375,9 +381,18 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
         "absolute: init h value of th merge. "
         "sum: sum of the init h values of the components.",
         "improvement");
-    parser.add_option<int>("max_states", "shrink strategy option", "50000");
+
+    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+    // instead of having the identical options here again.
+    parser.add_option<shared_ptr<ShrinkStrategy>>(
+        "shrink_strategy",
+        "The given shrink stratgy configuration should match the one "
+        "given to merge_and_shrink.");
+    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+
     if (parser.dry_run())
         return nullptr;
     else
@@ -391,7 +406,10 @@ static options::PluginShared<MergeScoringFunction> _plugin_ih("init_h", _parse_i
 MergeScoringFunctionMaxFGH::MergeScoringFunctionMaxFGH(
     const options::Options &options)
     : fgh(static_cast<FGH>(options.get_enum("fgh"))),
-      max_states(options.get<int>("max_states")) {
+      shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      max_states(options.get<int>("max_states")),
+      max_states_before_merge(options.get<int>("max_states_before_merge")),
+      shrink_threshold_before_merge(options.get<int>("threshold_before_merge")) {
 }
 
 vector<double> MergeScoringFunctionMaxFGH::compute_scores(
@@ -402,7 +420,9 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
+        int merge_index = shrink_and_merge_temporarily(
+            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            max_states_before_merge, shrink_threshold_before_merge);
 
         // score value in [-infinity,0]
         double score = 1;
@@ -439,9 +459,18 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
     fgh_values.push_back("g");
     fgh_values.push_back("h");
     parser.add_enum_option("fgh", fgh_values, "f, g, or h", "f");
-    parser.add_option<int>("max_states", "shrink strategy option", "50000");
+
+    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+    // instead of having the identical options here again.
+    parser.add_option<shared_ptr<ShrinkStrategy>>(
+        "shrink_strategy",
+        "The given shrink stratgy configuration should match the one "
+        "given to merge_and_shrink.");
+    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+
     if (parser.dry_run())
         return nullptr;
     else
@@ -455,7 +484,10 @@ static options::PluginShared<MergeScoringFunction> _plugin_fgh("max_fgh", _parse
 MergeScoringFunctionAvgH::MergeScoringFunctionAvgH(
     const options::Options &options)
     : avgh(static_cast<AvgH>(options.get_enum("choice"))),
-      max_states(options.get<int>("max_states")) {
+      shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      max_states(options.get<int>("max_states")),
+      max_states_before_merge(options.get<int>("max_states_before_merge")),
+      shrink_threshold_before_merge(options.get<int>("threshold_before_merge")) {
 }
 
 vector<double> MergeScoringFunctionAvgH::compute_scores(
@@ -469,7 +501,9 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         // score value in [-infinity,infinity]
         double score = 1;
         if (avgh == AvgH::IMPROVEMENT) {
-            int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
+            int merge_index = shrink_and_merge_temporarily(
+            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            max_states_before_merge, shrink_threshold_before_merge);
             double new_average_h = compute_average_h_value(fts.get_dist(merge_index));
             fts.release_copies();
             double old_average_h = max(compute_average_h_value(fts.get_dist(ts_index1)),
@@ -518,9 +552,18 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
         avgh_value,
         "improvement, sum, or absolute h value",
         "improvement");
-    parser.add_option<int>("max_states", "shrink strategy option", "50000");
+
+    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+    // instead of having the identical options here again.
+    parser.add_option<shared_ptr<ShrinkStrategy>>(
+        "shrink_strategy",
+        "The given shrink stratgy configuration should match the one "
+        "given to merge_and_shrink.");
+    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+
     if (parser.dry_run())
         return nullptr;
     else
@@ -609,7 +652,10 @@ static options::PluginShared<MergeScoringFunction> _plugin_nv("num_variables", _
 
 MergeScoringFunctionShrinkPerfectly::MergeScoringFunctionShrinkPerfectly(
     const options::Options &options)
-    : max_states(options.get<int>("max_states")) {
+    : shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
+      max_states(options.get<int>("max_states")),
+      max_states_before_merge(options.get<int>("max_states_before_merge")),
+      shrink_threshold_before_merge(options.get<int>("threshold_before_merge")) {
 }
 
 vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
@@ -620,7 +666,9 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        int merge_index = shrink_and_merge_temporarily(fts, ts_index1, ts_index2, max_states);
+        int merge_index = shrink_and_merge_temporarily(
+            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            max_states_before_merge, shrink_threshold_before_merge);
 
         // score value in [-infinity,0]
         double score = 1;
@@ -654,9 +702,18 @@ static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) 
         "perfect shrinking",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    parser.add_option<int>("max_states", "shrink strategy option", "50000");
+
+    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+    // instead of having the identical options here again.
+    parser.add_option<shared_ptr<ShrinkStrategy>>(
+        "shrink_strategy",
+        "The given shrink stratgy configuration should match the one "
+        "given to merge_and_shrink.");
+    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+
     if (parser.dry_run())
         return nullptr;
     else

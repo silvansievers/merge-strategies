@@ -8,9 +8,13 @@ class Options;
 }
 
 namespace merge_and_shrink {
+class ShrinkStrategy;
 class TransitionSystem;
 class MergeScoringFunctionMIASM : public MergeScoringFunction {
-    int max_states; // limit to compute shrink sizes
+    std::shared_ptr<ShrinkStrategy> shrink_stratey;
+    const int max_states;
+    const int max_states_before_merge;
+    const int shrink_threshold_before_merge;
 protected:
     virtual std::string name() const override;
 public:
