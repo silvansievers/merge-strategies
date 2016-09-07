@@ -120,7 +120,7 @@ int shrink_and_merge_temporarily(
         verbosity);
 
     // Perform the merge and temporarily add it to FTS
-    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, verbosity);
+    int merge_index = fts.merge(copy_ts_index1, copy_ts_index2, verbosity, true, false);
     return merge_index;
 }
 
