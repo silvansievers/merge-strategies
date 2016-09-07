@@ -140,7 +140,14 @@ public:
     }
 
     int get_init_state_goal_distance(int index) const;
+    // Copy the entry at index and appends it, increasing the size by one.
     int copy(int index);
+    /*
+      Delete the last three indices. This assumes and requires that the
+      entry at the last index represents a merge of the entries of the
+      second and third to last indices, which in turn have been copied
+      before.
+     */
     void release_copies();
     void remove(int index);
 
