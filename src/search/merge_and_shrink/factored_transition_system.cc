@@ -302,6 +302,7 @@ int FactoredTransitionSystem::copy(int index) {
     distances.push_back(utils::make_unique_ptr<Distances>(*transition_systems.back(),
                                                           *distances[index]));
 
+    ++num_active_entries;
     return new_index;
 }
 
@@ -323,6 +324,7 @@ void FactoredTransitionSystem::release_copies() {
     distances.pop_back();
     assert(!distances.back());
     distances.pop_back();
+    --num_active_entries;
 }
 
 void FactoredTransitionSystem::remove(int index) {
