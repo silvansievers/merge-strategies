@@ -6,13 +6,10 @@
 #include <memory>
 #include <vector>
 
-class State;
-class TaskProxy;
-
 namespace merge_and_shrink {
 class Distances;
 class FactoredTransitionSystem;
-class HeuristicRepresentation;
+class MergeAndShrinkRepresentation;
 class Labels;
 class TransitionSystem;
 
@@ -47,11 +44,10 @@ class FactoredTransitionSystem {
     std::unique_ptr<Labels> labels;
     // Entries with nullptr have been merged.
     std::vector<std::unique_ptr<TransitionSystem>> transition_systems;
-    std::vector<std::unique_ptr<HeuristicRepresentation>> heuristic_representations;
+    std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> mas_representations;
     std::vector<std::unique_ptr<Distances>> distances;
-    int final_index;
-    bool solvable;
-    // TODO: add something like "current_index"? for shrink classes e.g.
+    int unsolvable_index; // -1 if solvable, index of an unsolvable entry otw.
+    int num_active_entries; // number of (active) entries
 
     // Statistics
     std::vector<double> relative_pruning_per_iteration;
@@ -66,14 +62,11 @@ class FactoredTransitionSystem {
 
     bool is_index_valid(int index) const;
     bool is_component_valid(int index) const;
-    bool is_finalized() const {
-        return final_index != -1;
-    }
 public:
     FactoredTransitionSystem(
         std::unique_ptr<Labels> labels,
         std::vector<std::unique_ptr<TransitionSystem>> &&transition_systems,
-        std::vector<std::unique_ptr<HeuristicRepresentation>> &&heuristic_representations,
+        std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> &&mas_representations,
         std::vector<std::unique_ptr<Distances>> &&distances,
         Verbosity verbosity,
         bool finalize_if_unsolvable);
@@ -84,14 +77,6 @@ public:
     FactoredTransitionSystem(const FactoredTransitionSystem &) = delete;
     FactoredTransitionSystem &operator=(
         const FactoredTransitionSystem &) = delete;
-
-    const TransitionSystem &get_ts(int index) const {
-        return *transition_systems[index];
-    }
-
-    const Distances &get_dist(int index) const {
-        return *distances[index];
-    }
 
     // Methods for MergeAndShrinkHeuristic
     void apply_label_reduction(
@@ -107,15 +92,33 @@ public:
         Verbosity verbosity, 
         bool invalidating_merge = true, 
         bool finalize_if_unsolvable = true);
-    void finalize(int index = -1);
+    /*
+      This method may only be called either when there is only one entry left
+      in the FTS or when the FTS is unsolvable.
 
-    bool is_solvable() const {
-        return solvable;
-    }
+      Note that the FTS becomes invalid after calling this method.
+    */
+    std::pair<std::unique_ptr<MergeAndShrinkRepresentation>,
+              std::unique_ptr<Distances>> get_final_entry();
 
-    int get_cost(const State &state) const;
     void statistics(int index) const;
     void dump(int index) const;
+
+    const TransitionSystem &get_ts(int index) const {
+        return *transition_systems[index];
+    }
+
+    const Distances &get_dist(int index) const {
+        return *distances[index];
+    }
+
+    bool is_solvable() const {
+        return unsolvable_index == -1;
+    }
+
+    int get_num_active_entries() const {
+        return num_active_entries;
+    }
 
     // Used by LabelReduction and MergeScoringFunctionDFP
     const Labels &get_labels() const {

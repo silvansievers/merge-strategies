@@ -12,6 +12,7 @@ class Timer;
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
 class LabelReduction;
+class MergeAndShrinkRepresentation;
 class MergeStrategyFactory;
 class ShrinkStrategy;
 class TransitionSystem;
@@ -40,7 +41,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     bool debug_transition_systems;
 
     long starting_peak_memory;
-    std::unique_ptr<FactoredTransitionSystem> fts;
+    std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
 
     void build_transition_system(const utils::Timer &timer);
 
@@ -57,8 +58,10 @@ class MergeAndShrinkHeuristic : public Heuristic {
       (shrink_threshold_before_merge) and uses the shrink strategy to reduce
       the size of the transition system if necessary.
     */
-    bool shrink_transition_system(int index, int new_size);
-    std::pair<bool, bool> shrink_before_merge(int index1, int index2);
+    bool shrink_transition_system(
+        FactoredTransitionSystem &fts, int index, int new_size);
+    std::pair<bool, bool> shrink_before_merge(
+        FactoredTransitionSystem &fts, int index1, int index2);
 
 
     void report_peak_memory_delta(bool final = false) const;
