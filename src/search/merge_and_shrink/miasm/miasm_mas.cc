@@ -25,13 +25,10 @@ using namespace std;
 namespace merge_and_shrink {
 using namespace mst;
 
-MiasmAbstraction::MiasmAbstraction(const Options &opts)
-    : task(get_task_from_options(opts)),
-      task_proxy(*task),
-//      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
+MiasmAbstraction::MiasmAbstraction(const Options &)
+    : //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       verbosity(Verbosity::SILENT),
-      built_atomics(false),
       fts(nullptr) {
 //    merge_strategy->initialize(task);
 //    if (opts.contains("label_reduction")) {
@@ -50,6 +47,7 @@ string MiasmAbstraction::plugin_key() {
 
 void MiasmAbstraction::release_cache(const var_set_t &var_set) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
+    assert(var_set.size() != 1); // do not delete atomic entries
     assert(cache.count(var_set));
     int ts_index = cache[var_set];
     // TODO: erase vector position and shift all others?
@@ -69,36 +67,29 @@ void MiasmAbstraction::release_cache() {
     map<var_set_t, int>().swap(cache);
 }
 
+void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
+    assert(!fts);
+    const bool finalize_if_unsolvable = false;
+    fts = make_shared<FactoredTransitionSystem>(
+        create_factored_transition_system(task_proxy, verbosity, finalize_if_unsolvable));
+
+    assert(static_cast<int>(task_proxy.get_variables().size()) == fts->get_size());
+    for (var_t i = 0; i < fts->get_size(); ++i) {
+        var_set_t s = mst::singleton(i);
+        assert(!cache.count(s));
+//            cerr << "new: " << s << endl;
+        cache.insert(pair<var_set_t, int>(s, i));
+    }
+}
+
 int MiasmAbstraction::build_transition_system(
     const var_set_t &G, vector<var_set_t> &newly_built,
     const VarSetInfoRegistry &vsir) {
+    assert(fts);
     assert(!G.empty());
     if (cache.count(G)) {
 //        cerr << "old: " << G << endl;
         assert(fts);
-        return cache[G];
-    }
-
-    /* will do once only */
-    if (G.size() == 1) {
-        if (built_atomics) {
-            ABORT("Cannot recompute atomic abstractions");
-        }
-        assert(!fts);
-        built_atomics = true;
-        fts = make_shared<FactoredTransitionSystem>(
-            create_factored_transition_system(task_proxy, verbosity, false));
-
-        /* remove the atomic abstraction if its variable is not involved */
-        for (var_t i = 0; i < fts->get_size(); ++i) {
-            var_set_t s = mst::singleton(i);
-            assert(!cache.count(s));
-            newly_built.push_back(s);
-//            cerr << "new: " << s << endl;
-            cache.insert(pair<var_set_t, int>(s, i));
-        }
-
-        assert(cache.count(G));
         return cache[G];
     }
 
@@ -142,7 +133,10 @@ int MiasmAbstraction::build_transition_system(
                                                 newly_built, vsir);
     int right_ts_index = build_transition_system(right_set,
                                                  newly_built, vsir);
-    int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity, false, false);
+    const bool invalidating_merge = false;
+    const bool finalize_if_unsolvable = false;
+    int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
+                                  invalidating_merge, finalize_if_unsolvable);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));
@@ -172,8 +166,6 @@ static MiasmAbstraction *_parse(OptionParser &parser) {
 //        "with shrink strategies.",
 //        OptionParser::NONE);
 
-    // For AbstractTask
-    Heuristic::add_options_to_parser(parser);
     Options opts = parser.parse();
 
     if (parser.dry_run()) {

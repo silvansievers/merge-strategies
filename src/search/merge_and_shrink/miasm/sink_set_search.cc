@@ -43,9 +43,9 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
     if (!opts.contains(MiasmAbstraction::option_key())) {
         cerr << "Must specify 'miasm_merge_and_shrink' option for merge_miasm" << endl;
         utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    } else {
-        miasm_abstraction = opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key());
     }
+    miasm_abstraction = opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key());
+    miasm_abstraction->initialize(task_proxy);
 }
 
 bool SinkSetSearch::time_limit_exceeded() {
@@ -435,11 +435,9 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
      * real current usage of memory */
     if (memory_limit_exceeded()) {
         for (size_t i = 0; i < newly_built.size(); ++i) {
-            if (newly_built[i].size() == 1) {
-                // Do not delete cached atomic abstractions, as we cannot
-                // recompute single atomic abstractions.
-                continue;
-            }
+            // We never remove atomic entries, and hence never may have
+            // "newly built" them.
+            assert(newly_built[i].size() > 1);
             miasm_abstraction->release_cache(newly_built[i]);
         }
     }

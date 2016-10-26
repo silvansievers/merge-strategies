@@ -24,15 +24,12 @@ class FactoredTransitionSystem;
 class VarSetInfoRegistry;
 
 class MiasmAbstraction {
-    std::shared_ptr<AbstractTask> task;
-    TaskProxy task_proxy;
 //    std::shared_ptr<MergeStrategy> merge_strategy;
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
 //    std::shared_ptr<LabelReduction> label_reduction;
     Verbosity verbosity;
-    bool built_atomics;
 public:
-    MiasmAbstraction(const options::Options &opts);
+    explicit MiasmAbstraction(const options::Options &opts);
     static std::string option_key();
     static std::string plugin_key();
 
@@ -42,6 +39,7 @@ public:
     void release_cache();
     void release_cache(const mst::var_set_t &var_set);
 
+    void initialize(const TaskProxy &task_proxy);
     int build_transition_system(
         const mst::var_set_t &G,
         std::vector<mst::var_set_t> &newly_built,
