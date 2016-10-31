@@ -426,7 +426,6 @@ fast_downward_plugin(
         merge_and_shrink/labels.cc
         merge_and_shrink/merge_and_shrink_heuristic.cc
         merge_and_shrink/merge_and_shrink_representation.cc
-        merge_and_shrink/merge_sccs.cc
         merge_and_shrink/merge_scoring_function.cc
         merge_and_shrink/merge_scoring_function_causally_connected_variable.cc
         merge_and_shrink/merge_scoring_function_cg_goal.cc
@@ -449,6 +448,7 @@ fast_downward_plugin(
         merge_and_shrink/merge_strategy_factory_stateless.cc
         merge_and_shrink/merge_strategy_factory_symmetries.cc
         merge_and_shrink/merge_strategy_precomputed.cc
+        merge_and_shrink/merge_strategy_sccs.cc
         merge_and_shrink/merge_strategy_stateless.cc
         merge_and_shrink/merge_symmetries.cc
         merge_and_shrink/merge_tree.cc

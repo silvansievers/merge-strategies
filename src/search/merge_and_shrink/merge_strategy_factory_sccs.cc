@@ -1,13 +1,13 @@
 #include "merge_strategy_factory_sccs.h"
 
-#include "merge_sccs.h"
+#include "merge_strategy_sccs.h"
 #include "merge_selector.h"
 #include "merge_tree_factory.h"
 #include "transition_system.h"
 
+#include "../causal_graph.h"
 #include "../task_proxy.h"
 
-#include "../causal_graph.h"
 #include "../scc.h"
 
 #include "../options/option_parser.h"
@@ -59,10 +59,6 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
             task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
     }
-//    cout << "CG:" << endl;
-//    for (size_t var = 0; var < cg.size(); ++var) {
-//        cout << var << ": " << cg[var] << endl;
-//    }
     SCC scc(cg);
     vector<vector<int>> sccs(scc.get_result());
 
@@ -88,10 +84,9 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
       SCCs have been merged.
     */
     int index = num_vars - 1;
-    cout << "found cg sccs:" << endl;
+    cout << "SCCs of the causal graph:" << endl;
     vector<vector<int>> non_singleton_cg_sccs;
     vector<int> indices_of_merged_sccs;
-    // TODO: reserve for the other vector as well?
     indices_of_merged_sccs.reserve(sccs.size());
     for (const vector<int> &scc : sccs) {
         cout << scc << endl;
@@ -101,7 +96,6 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
         } else {
             index += scc_size - 1;
             indices_of_merged_sccs.push_back(index);
-            // only store non-singleton sccs for internal merging
             non_singleton_cg_sccs.push_back(vector<int>(scc.begin(), scc.end()));
         }
     }
@@ -112,13 +106,12 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
         cout << "Only singleton SCCs" << endl;
         assert(non_singleton_cg_sccs.empty());
     }
-//    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
 
     if (merge_selector) {
         merge_selector->initialize(task_proxy);
     }
 
-    return utils::make_unique_ptr<MergeSCCs>(
+    return utils::make_unique_ptr<MergeStrategySCCs>(
         fts,
         task_proxy,
         merge_tree_factory,
@@ -164,19 +157,19 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     order_of_sccs.push_back("reverse_topological");
     order_of_sccs.push_back("decreasing");
     order_of_sccs.push_back("increasing");
-    parser.add_enum_option("order_of_sccs",
-                           order_of_sccs,
-                           "choose an ordering of the sccs: topological, (cg "
-                           "order) reverse_topological (cg order), decreasing "
-                           "or increasing (in size).");
+    parser.add_enum_option(
+        "order_of_sccs",
+        order_of_sccs,
+        "choose an ordering of the sccs: topological/reverse_topological or "
+        "decreasing/increasing in the size of the SCCs.");
     parser.add_option<shared_ptr<MergeTreeFactory>>(
         "merge_tree",
-        "the fallback merge 'strategy' to use if a precomputed strategy should"
+        "the fallback merge strategy to use if a precomputed strategy should"
         "be used.",
         options::OptionParser::NONE);
     parser.add_option<shared_ptr<MergeSelector>>(
         "merge_selector",
-        "the fallback merge 'strategy' to use if a stateless strategy should"
+        "the fallback merge strategy to use if a stateless strategy should"
         "be used.",
         options::OptionParser::NONE);
 

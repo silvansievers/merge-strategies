@@ -1,4 +1,4 @@
-#include "merge_sccs.h"
+#include "merge_strategy_sccs.h"
 
 #include "factored_transition_system.h"
 #include "merge_selector.h"
@@ -13,7 +13,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSCCs::MergeSCCs(
+MergeStrategySCCs::MergeStrategySCCs(
     FactoredTransitionSystem &fts,
     const TaskProxy &task_proxy,
     const shared_ptr<MergeTreeFactory> &merge_tree_factory,
@@ -29,13 +29,11 @@ MergeSCCs::MergeSCCs(
       current_merge_tree(nullptr) {
 }
 
-MergeSCCs::~MergeSCCs() {
-    current_merge_tree = nullptr;
+MergeStrategySCCs::~MergeStrategySCCs() {
 }
 
-pair<int, int> MergeSCCs::get_next() {
-
-    // We did not already start merging an SCC/all finished SCCs, so we have
+pair<int, int> MergeStrategySCCs::get_next() {
+    // We did not already start merging an SCC/all finished SCCs, so we
     // do not have a current set of indices we want to finish merging.
     if (current_ts_indices.empty()) {
         // Get the next indices we need to merge
@@ -78,7 +76,6 @@ pair<int, int> MergeSCCs::get_next() {
     for (vector<int>::iterator it = current_ts_indices.begin();
          it != current_ts_indices.end();) {
         if (*it == next_pair.first || *it == next_pair.second) {
-            // TODO: does this work on Windows?
             it = current_ts_indices.erase(it);
         } else {
             ++it;
@@ -87,7 +84,7 @@ pair<int, int> MergeSCCs::get_next() {
     return next_pair;
 }
 
-pair<int, int> MergeSCCs::get_tiebreaking_statistics() const {
+pair<int, int> MergeStrategySCCs::get_tiebreaking_statistics() const {
     if (merge_selector) {
         return merge_selector->get_tiebreaking_statistics();
     } else {
