@@ -408,13 +408,6 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
-    NAME SCC
-    HELP "Tarjan's algorithm for finding maximal SCCs"
-    SOURCES
-        scc.cc
-)
-
-fast_downward_plugin(
     NAME MAS_HEURISTIC
     HELP "The Merge-and-Shrink heuristic"
     SOURCES
@@ -469,7 +462,7 @@ fast_downward_plugin(
         merge_and_shrink/miasm/sink_set_search.cc
         merge_and_shrink/miasm/subset_info.cc
         merge_and_shrink/miasm/types.cc
-    DEPENDS SCC
+    DEPENDS SCCS
 )
 
 fast_downward_plugin(
@@ -545,6 +538,14 @@ fast_downward_plugin(
         potentials/single_potential_heuristics.cc
         potentials/util.cc
     DEPENDS LP_SOLVER
+)
+
+fast_downward_plugin(
+    NAME SCCS
+    HELP "Utility to compute the maximal SCCs of a graph"
+    SOURCES
+        algorithms/sccs.cc
+    DEPENDENCY_ONLY
 )
 
 fast_downward_plugin(

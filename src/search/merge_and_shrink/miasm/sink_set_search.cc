@@ -7,7 +7,8 @@
 
 #include "../../causal_graph.h"
 #include "../../option_parser.h"
-#include "../../scc.h"
+
+#include "../../algorithms/sccs.h"
 
 #include "get_rss.h"
 
@@ -149,7 +150,7 @@ void SinkSetSearch::kickstart() {
     for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
         cg_succ.push_back(causal_graph.get_successors(i));
     }
-    vector<vector<int> > sccs = SCC(cg_succ).get_result();
+    vector<vector<int> > sccs = sccs::SCCs(cg_succ).get_result();
 
     for (size_t i = 0; i < sccs.size(); ++i) {
         var_set_t scc(sccs[i].begin(), sccs[i].end());

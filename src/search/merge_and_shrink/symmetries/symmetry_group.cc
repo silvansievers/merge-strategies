@@ -8,7 +8,8 @@
 #include "../types.h"
 
 #include "../../option_parser.h"
-#include "../../scc.h"
+
+#include "../../algorithms/sccs.h"
 
 #include "../../utils/system.h"
 #include "../../utils/timer.h"
@@ -319,7 +320,7 @@ void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
       corresponds to a set of abstract states of one transition system that
       are symmetric to each other and that hence can be combined into one.
     */
-    SCC scc(graph);
+    sccs::SCCs scc(graph);
     const vector<vector<int> > &sccs = scc.get_result();
 
     /*
