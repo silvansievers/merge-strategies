@@ -196,8 +196,13 @@ pair<bool, bool> MergeAndShrinkHeuristic::shrink_before_merge(
 }
 
 void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
+    const bool finalize_if_unsolvable = true;
     FactoredTransitionSystem fts =
-        create_factored_transition_system(task_proxy, verbosity, true, debug_transition_systems);
+        create_factored_transition_system(
+            task_proxy,
+            verbosity,
+            finalize_if_unsolvable,
+            debug_transition_systems);
     print_time(timer, "after computation of atomic transition systems");
     cout << endl;
     int maximum_intermediate_size = 0;
