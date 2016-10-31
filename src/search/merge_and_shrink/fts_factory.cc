@@ -22,7 +22,6 @@ using namespace std;
 namespace merge_and_shrink {
 class FTSFactory {
     const TaskProxy &task_proxy;
-    const bool debug_transition_system;
 
     struct TransitionSystemData {
         // The following two attributes are only used for statistics
@@ -35,7 +34,6 @@ class FTSFactory {
         int num_states;
         vector<bool> goal_states;
         int init_state;
-        vector<vector<set<int>>> abs_state_to_var_multi_vals;
         TransitionSystemData(TransitionSystemData &&other)
             : num_variables(other.num_variables),
               incorporated_variables(move(other.incorporated_variables)),
@@ -44,8 +42,7 @@ class FTSFactory {
               relevant_labels(move(other.relevant_labels)),
               num_states(other.num_states),
               goal_states(move(other.goal_states)),
-              init_state(other.init_state),
-              abs_state_to_var_multi_vals(move(other.abs_state_to_var_multi_vals)) {
+              init_state(other.init_state) {
         }
         TransitionSystemData() = default;
         TransitionSystemData(TransitionSystemData &other) = delete;
@@ -79,7 +76,7 @@ class FTSFactory {
     vector<unique_ptr<Distances>> create_distances(
         const vector<unique_ptr<TransitionSystem>> &transition_systems);
 public:
-    FTSFactory(const TaskProxy &task_proxy, bool debug_transition_system);
+    explicit FTSFactory(const TaskProxy &task_proxy);
     ~FTSFactory();
 
     /*
@@ -90,10 +87,8 @@ public:
 };
 
 
-FTSFactory::FTSFactory(const TaskProxy &task_proxy, bool debug_transition_system)
-    : task_proxy(task_proxy),
-      debug_transition_system(debug_transition_system),
-      task_has_conditional_effects(false) {
+FTSFactory::FTSFactory(const TaskProxy &task_proxy)
+    : task_proxy(task_proxy), task_has_conditional_effects(false) {
 }
 
 FTSFactory::~FTSFactory() {
@@ -125,8 +120,7 @@ void FTSFactory::build_state_data(VariableProxy var) {
     TransitionSystemData &ts_data = transition_system_data_by_var[var_id];
     ts_data.init_state = task_proxy.get_initial_state()[var_id].get_value();
 
-    VariablesProxy variables = task_proxy.get_variables();
-    int range = variables[var_id].get_domain_size();
+    int range = task_proxy.get_variables()[var_id].get_domain_size();
     ts_data.num_states = range;
 
     int goal_value = -1;
@@ -143,30 +137,6 @@ void FTSFactory::build_state_data(VariableProxy var) {
     for (int value = 0; value < range; ++value) {
         if (value == goal_value || goal_value == -1) {
             ts_data.goal_states[value] = true;
-        }
-    }
-
-    if (debug_transition_system) {
-        int num_variables = variables.size();
-        ts_data.abs_state_to_var_multi_vals.reserve(range);
-        for (int abs_state = 0; abs_state < range; ++abs_state) {
-            vector<set<int>> var_multi_vals;
-            var_multi_vals.reserve(num_variables);
-            for (int var = 0; var < num_variables; ++var) {
-                set<int> multi_vals;
-                if (var == var_id) {
-                    // if var is the variable of the transition system, its value can only be the
-                    // value of the abstract state
-                    multi_vals.insert(abs_state);
-                } else {
-                    // all values of var are allowed (i.e. value = -1)
-                    for (int val = 0; val < variables[var].get_domain_size(); ++val) {
-                        multi_vals.insert(val);
-                    }
-                }
-                var_multi_vals.push_back(multi_vals);
-            }
-            ts_data.abs_state_to_var_multi_vals.push_back(var_multi_vals);
         }
     }
 }
@@ -381,8 +351,7 @@ vector<unique_ptr<TransitionSystem>> FTSFactory::create_transition_systems() {
                              ts_data.num_states,
                              move(ts_data.goal_states),
                              ts_data.init_state,
-                             compute_label_equivalence_relation,
-                             move(ts_data.abs_state_to_var_multi_vals)
+                             compute_label_equivalence_relation
                              ));
     }
     return result;
@@ -449,9 +418,9 @@ FactoredTransitionSystem FTSFactory::create(
 }
 
 FactoredTransitionSystem create_factored_transition_system(
-    const TaskProxy &task_proxy, 
+    const TaskProxy &task_proxy,
     Verbosity verbosity,
-    bool finalize_if_unsolvable, bool debug_transition_system) {
-    return FTSFactory(task_proxy, debug_transition_system).create(verbosity, finalize_if_unsolvable);
+    bool finalize_if_unsolvable) {
+    return FTSFactory(task_proxy).create(verbosity, finalize_if_unsolvable);
 }
 }

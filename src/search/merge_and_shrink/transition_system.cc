@@ -4,8 +4,6 @@
 #include "label_equivalence_relation.h"
 #include "labels.h"
 
-#include "../globals.h"
-
 #include "../utils/collections.h"
 #include "../utils/memory.h"
 #include "../utils/system.h"
@@ -87,16 +85,14 @@ TransitionSystem::TransitionSystem(
     int num_states,
     vector<bool> &&goal_states,
     int init_state,
-    bool compute_label_equivalence_relation,
-    vector<vector<set<int>>> &&abs_state_to_var_multi_vals)
+    bool compute_label_equivalence_relation)
     : num_variables(num_variables),
       incorporated_variables(move(incorporated_variables)),
       label_equivalence_relation(move(label_equivalence_relation)),
       transitions_by_group_id(move(transitions_by_label)),
       num_states(num_states),
       goal_states(move(goal_states)),
-      init_state(init_state),
-      abs_state_to_var_multi_vals(move(abs_state_to_var_multi_vals)) {
+      init_state(init_state) {
     if (compute_label_equivalence_relation) {
         compute_locally_equivalent_labels();
     }
@@ -111,8 +107,7 @@ TransitionSystem::TransitionSystem(const TransitionSystem &other)
       transitions_by_group_id(other.transitions_by_group_id),
       num_states(other.num_states),
       goal_states(other.goal_states),
-      init_state(other.init_state),
-      abs_state_to_var_multi_vals(other.abs_state_to_var_multi_vals) {
+      init_state(other.init_state) {
     assert(*this == other);
 }
 
@@ -147,7 +142,6 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
     int num_states = ts1_size * ts2_size;
     vector<bool> goal_states(num_states, false);
     int init_state = -1;
-    vector<vector<set<int>>> abs_state_to_var_multi_vals;
 
     for (int s1 = 0; s1 < ts1_size; ++s1) {
         for (int s2 = 0; s2 < ts2_size; ++s2) {
@@ -156,27 +150,6 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
                 goal_states[state] = true;
             if (s1 == ts1.init_state && s2 == ts2.init_state)
                 init_state = state;
-
-            if (!ts1.abs_state_to_var_multi_vals.empty() &&
-                    ts2.abs_state_to_var_multi_vals.empty()) {
-                const vector<set<int> > &abs1_var_multi_vals = ts1.abs_state_to_var_multi_vals[s1];
-                const vector<set<int> > &abs2_var_multi_vals = ts2.abs_state_to_var_multi_vals[s2];
-                assert(abs1_var_multi_vals.size() == abs2_var_multi_vals.size());
-                assert(static_cast<int>(abs1_var_multi_vals.size()) == num_variables);
-                vector<set<int> > new_var_multi_vals;
-                // this assumes that the two transition system do no share any variables. otherwise,
-                // a more complex double-union should be computed, as in apply_abstraction()
-                for (size_t i = 0; i < abs1_var_multi_vals.size(); ++i) {
-                    const set<int> &abs1_multi_vals = abs1_var_multi_vals[i];
-                    const set<int> &abs2_multi_vals = abs2_var_multi_vals[i];
-                    set<int> new_multi_vals;
-                    set_intersection(abs1_multi_vals.begin(), abs1_multi_vals.end(),
-                                     abs2_multi_vals.begin(), abs2_multi_vals.end(),
-                                     inserter(new_multi_vals, new_multi_vals.begin()));
-                    new_var_multi_vals.push_back(new_multi_vals);
-                }
-                abs_state_to_var_multi_vals.push_back(new_var_multi_vals);
-            }
         }
     }
     assert(init_state != -1);
@@ -261,8 +234,7 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
         num_states,
         move(goal_states),
         init_state,
-        false,
-        move(abs_state_to_var_multi_vals)
+        false
         );
 }
 
@@ -309,31 +281,6 @@ bool TransitionSystem::apply_abstraction(
     if (verbosity >= Verbosity::VERBOSE) {
         cout << tag() << "applying abstraction (" << get_size()
              << " to " << new_num_states << " states)" << endl;
-    }
-
-    if (!abs_state_to_var_multi_vals.empty()) {
-//        for (size_t i = 0; i < abstraction_mapping.size(); ++i) {
-//            cout << "State " << i << " mapped to state " << abstraction_mapping[i] << endl;
-//        }
-        vector<vector<set<int>>> new_abs_state_to_var_multi_vals(
-            new_num_states, vector<set<int> >(num_variables));
-        for (int i = 0; i < num_states; ++i) {
-            if (abstraction_mapping[i] == PRUNED_STATE)
-                continue;
-            const vector<set<int> > &var_multi_vals = abs_state_to_var_multi_vals[i];
-            assert(static_cast<int>(var_multi_vals.size()) == num_variables);
-            vector<set<int> > &new_var_multi_vals = new_abs_state_to_var_multi_vals[abstraction_mapping[i]];
-            for (int var = 0; var < num_variables; ++var) {
-                const set<int> &multi_vals = var_multi_vals[var];
-                // when mapping several states to one, we need to take the union of the possibly non-empty set of values from a
-                // previous state mapping and the current set of values.
-                set<int> &new_multi_vals = new_var_multi_vals[var];
-                set_union(multi_vals.begin(), multi_vals.end(),
-                          new_multi_vals.begin(), new_multi_vals.end(),
-                          inserter(new_multi_vals, new_multi_vals.end()));
-            }
-        }
-        abs_state_to_var_multi_vals.swap(new_abs_state_to_var_multi_vals);
     }
 
     vector<bool> new_goal_states(new_num_states, false);
@@ -603,31 +550,5 @@ bool TransitionSystem::operator==(const TransitionSystem &other) const {
            num_states == other.num_states &&
            goal_states == other.goal_states &&
            init_state == other.init_state;
-}
-
-// TODO: HACK! using g_variable_*
-void TransitionSystem::dump_state() const {
-    if (abs_state_to_var_multi_vals.empty())
-        return;
-    cout << "State dump for " << tag() << endl;
-    for (int i = 0; i < num_states; ++i) {
-        const vector<set<int> > &var_multi_vals = abs_state_to_var_multi_vals[i];
-        assert(static_cast<int>(var_multi_vals.size()) == num_variables);
-        for (size_t var = 0; var < var_multi_vals.size(); ++var) {
-            const set<int> &multi_vals = var_multi_vals[var];
-            if (static_cast<int>(multi_vals.size()) == g_variable_domain[var]) {
-                for (int values = 0; values < g_variable_domain[var]; ++values) {
-                    assert(multi_vals.count(values) > 0);
-                }
-                cout << g_variable_name[var] << " has value -1 (can take all values): ";
-            } else {
-                cout << g_variable_name[var] << " can take the following value(s): ";
-            }
-            for (set<int>::const_iterator it = multi_vals.begin(); it != multi_vals.end(); ++it) {
-                cout << *it << " (" << g_fact_names[var][*it] << ") ";
-            }
-            cout << endl;
-        }
-    }
 }
 }

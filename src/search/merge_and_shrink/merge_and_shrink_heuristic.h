@@ -35,7 +35,6 @@ class MergeAndShrinkHeuristic : public Heuristic {
     const int shrink_threshold_before_merge;
 
     const Verbosity verbosity;
-    const bool debug_transition_systems;
     long starting_peak_memory;
     // The final merge-and-shrink representation, storing goal distances.
     std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;

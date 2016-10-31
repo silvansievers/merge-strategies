@@ -47,7 +47,6 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       max_states_before_merge(opts.get<int>("max_states_before_merge")),
       shrink_threshold_before_merge(opts.get<int>("threshold_before_merge")),
       verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
-      debug_transition_systems(opts.get<bool>("debug_transition_systems")),
       starting_peak_memory(-1),
       mas_representation(nullptr) {
     assert(max_states_before_merge > 0);
@@ -201,8 +200,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         create_factored_transition_system(
             task_proxy,
             verbosity,
-            finalize_if_unsolvable,
-            debug_transition_systems);
+            finalize_if_unsolvable);
     print_time(timer, "after computation of atomic transition systems");
     cout << endl;
     int maximum_intermediate_size = 0;
@@ -596,9 +594,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "Option to specify the level of verbosity.",
         "verbose",
         verbosity_level_docs);
-
-    parser.add_option<bool>("debug_transition_systems", "store additional information "
-                            "in transition systems for debug output.", "false");
 
     Options opts = parser.parse();
     if (parser.help_mode()) {
