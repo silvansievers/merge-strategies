@@ -1,7 +1,6 @@
 #ifndef MERGE_AND_SHRINK_UTILS_H
 #define MERGE_AND_SHRINK_UTILS_H
 
-#include <memory>
 #include <vector>
 
 namespace merge_and_shrink {
