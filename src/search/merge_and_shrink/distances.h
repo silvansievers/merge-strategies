@@ -52,7 +52,7 @@ class Distances {
     int max_h;
 
     void clear_distances();
-public: // for MergeDynamicWeighted
+public: // For computing average heuristic values.
     int get_num_states() const;
 private:
     bool is_unit_cost() const;

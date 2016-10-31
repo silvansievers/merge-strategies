@@ -121,7 +121,7 @@ private:
     */
     void compute_locally_equivalent_labels();
 
-public: // TODO: temporary access
+public: // For copying transition systems within FTS
     const std::vector<Transition> &get_transitions_for_group_id(int group_id) const {
         return transitions_by_group_id[group_id];
     }

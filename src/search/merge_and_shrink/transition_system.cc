@@ -226,6 +226,7 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
         label_equivalence_relation->add_label_group(dead_labels);
     }
 
+    const bool compute_label_equivalence_relation = false;
     return utils::make_unique_ptr<TransitionSystem>(
         num_variables,
         move(incorporated_variables),
@@ -234,7 +235,7 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
         num_states,
         move(goal_states),
         init_state,
-        false
+        compute_label_equivalence_relation
         );
 }
 
