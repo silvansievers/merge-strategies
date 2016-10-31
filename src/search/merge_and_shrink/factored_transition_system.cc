@@ -175,8 +175,11 @@ bool FactoredTransitionSystem::apply_abstraction(
 }
 
 int FactoredTransitionSystem::merge(
-    int index1, int index2, Verbosity verbosity, 
-    bool invalidating_merge, bool finalize_if_unsolvable) {
+    int index1,
+    int index2,
+    Verbosity verbosity,
+    bool finalize_if_unsolvable,
+    bool invalidating_merge) {
     assert(is_index_valid(index1));
     assert(is_index_valid(index2));
     transition_systems.push_back(
@@ -227,10 +230,8 @@ int FactoredTransitionSystem::merge(
     int new_index = transition_systems.size() - 1;
     compute_distances_and_prune(new_index, verbosity);
     assert(is_component_valid(new_index));
-    if (finalize_if_unsolvable) {
-        if (!new_ts.is_solvable()) {
-            unsolvable_index = new_index;
-        }
+    if (finalize_if_unsolvable && !new_ts.is_solvable()) {
+        unsolvable_index = new_index;
     }
     --num_active_entries;
     return new_index;

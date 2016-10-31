@@ -133,10 +133,10 @@ int MiasmAbstraction::build_transition_system(
                                                 newly_built, vsir);
     int right_ts_index = build_transition_system(right_set,
                                                  newly_built, vsir);
-    const bool invalidating_merge = false;
     const bool finalize_if_unsolvable = false;
+    const bool invalidating_merge = false;
     int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
-                                  invalidating_merge, finalize_if_unsolvable);
+                                  finalize_if_unsolvable, invalidating_merge);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

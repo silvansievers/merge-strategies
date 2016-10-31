@@ -124,15 +124,16 @@ int shrink_and_merge_temporarily(
         shrink_strategy,
         verbosity);
 
-    // Perform the merge and temporarily add it to FTS
-    const bool invalidating_merge = true;
+    // Perform the merge and temporarily add it to fts
     const bool finalize_if_unsolvable = false;
+    const bool invalidating_merge = true;
     int merge_index = fts.merge(
         copy_ts_index1,
         copy_ts_index2,
         verbosity,
-        invalidating_merge,
-        finalize_if_unsolvable);
+        finalize_if_unsolvable,
+        invalidating_merge
+        );
     return merge_index;
 }
 

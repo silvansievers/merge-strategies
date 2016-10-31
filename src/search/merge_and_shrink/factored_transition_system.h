@@ -87,11 +87,11 @@ public:
         const StateEquivalenceRelation &state_equivalence_relation,
         Verbosity verbosity);
     int merge(
-        int index1, 
-        int index2, 
-        Verbosity verbosity, 
-        bool invalidating_merge = true, 
-        bool finalize_if_unsolvable = true);
+        int index1,
+        int index2,
+        Verbosity verbosity,
+        bool finalize_if_unsolvable,
+        bool invalidating_merge = true);
     /*
       This method may only be called either when there is only one entry left
       in the FTS or when the FTS is unsolvable.
