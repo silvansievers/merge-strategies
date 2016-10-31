@@ -146,8 +146,7 @@ public:
         int init_state,
         bool compute_label_equivalence_relation,
         std::vector<std::vector<std::set<int>>> &&abs_state_to_var_multi_vals);
-    // Copy constructor
-    TransitionSystem(const TransitionSystem &other);
+    explicit TransitionSystem(const TransitionSystem &other);
     ~TransitionSystem();
     /*
       Factory method to construct the merge of two transition systems.

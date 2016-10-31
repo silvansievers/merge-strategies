@@ -17,16 +17,6 @@
 using namespace std;
 
 namespace merge_and_shrink {
-bool is_goal_relevant(const TransitionSystem &ts) {
-    int num_states = ts.get_size();
-    for (int state = 0; state < num_states; ++state) {
-        if (!ts.is_goal_state(state)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 pair<int, int> compute_shrink_sizes(
     int size1,
     int size2,
@@ -86,6 +76,16 @@ bool shrink_transition_system(
             cout << ")" << endl;
         }
         return shrink_strategy.shrink(fts, index, new_size, verbosity);
+    }
+    return false;
+}
+
+bool is_goal_relevant(const TransitionSystem &ts) {
+    int num_states = ts.get_size();
+    for (int state = 0; state < num_states; ++state) {
+        if (!ts.is_goal_state(state)) {
+            return true;
+        }
     }
     return false;
 }

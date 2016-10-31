@@ -10,7 +10,6 @@ class FactoredTransitionSystem;
 class ShrinkStrategy;
 class TransitionSystem;
 enum class Verbosity;
-extern bool is_goal_relevant(const TransitionSystem &ts);
 
 /*
   Compute target sizes for shrinking two transition systems with sizes size1
@@ -45,6 +44,8 @@ extern bool shrink_transition_system(
     int shrink_threshold_before_merge,
     const ShrinkStrategy &shrink_strategy,
     Verbosity verbosity);
+
+extern bool is_goal_relevant(const TransitionSystem &ts);
 
 extern int shrink_and_merge_temporarily(
     FactoredTransitionSystem &fts,
