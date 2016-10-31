@@ -33,9 +33,8 @@ vector<double> MergeScoringFunctionGoalVariable::compute_scores(
     return scores;
 }
 
-void MergeScoringFunctionGoalVariable::initialize(const shared_ptr<AbstractTask> &task) {
+void MergeScoringFunctionGoalVariable::initialize(const TaskProxy &task_proxy) {
     initialized = true;
-    TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();
     is_goal_variable.resize(num_vars, false);
     for (FactProxy goal : task_proxy.get_goals()) {

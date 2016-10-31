@@ -28,9 +28,9 @@ MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
 }
 
 MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
-    const shared_ptr<AbstractTask> &task) {
+    const TaskProxy &task_proxy) {
     /* search for sink sets */
-    SinkSetSearch sink_set_search(options, task);
+    SinkSetSearch sink_set_search(options, task_proxy);
     sink_set_search.search();
     sink_set_search.get_sink_set(sink_sets);
 
@@ -45,17 +45,16 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
     MiasmMergeTree *miasm_tree = new MiasmMergeTree(
         max_packing, miasm_internal, miasm_external,
         sink_set_search.get_vsir(),
-        task);
+        task_proxy);
     return miasm_tree;
 }
 
 unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
-    const shared_ptr<AbstractTask> &task) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy) {
     int num_ts = task_proxy.get_variables().size();
 
     // compute the merge tree in MiasmMergeTree form
-    MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task);
+    MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task_proxy);
 
     // get the actual merge order
     vector<pair<int, int>> merge_order;

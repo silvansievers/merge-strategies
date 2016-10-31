@@ -100,7 +100,7 @@ struct VarSetCmpType {
 class ComparatorVarSet {
 protected:
     /** @brief the subset information */
-    std::shared_ptr<AbstractTask> task;
+    const TaskProxy &task_proxy;
     const VarSetInfoRegistry *vsir;
 public:
     /** @brief the comparison type */
@@ -112,7 +112,7 @@ public:
      * @param vsir_ - the variable subset registry
      * @param cmp_type_ - the comparison type
      */
-    ComparatorVarSet(const std::shared_ptr<AbstractTask> &task,
+    ComparatorVarSet(const TaskProxy &task_proxy,
                      const VarSetInfoRegistry *vsir_ = 0,
                      const VarSetCmpType cmp_type_ = VarSetCmpType::E(0));
     virtual ~ComparatorVarSet();

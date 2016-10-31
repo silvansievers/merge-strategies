@@ -4,6 +4,7 @@
 #include "transition_system.h"
 
 #include "../causal_graph.h"
+#include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
@@ -12,6 +13,12 @@
 using namespace std;
 
 namespace merge_and_shrink {
+MergeScoringFunctionCausallyConnectedVariable::
+MergeScoringFunctionCausallyConnectedVariable()
+    : // HACK!
+      task_proxy(*g_root_task()) {
+}
+
 vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
     FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
@@ -31,7 +38,6 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
         composite_vars.insert(composite_vars.end(), vars.begin(), vars.end());
     }
 
-    TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();
     vector<bool> is_causal_predecessor(num_vars, false);
     const CausalGraph &cg = task_proxy.get_causal_graph();
@@ -61,9 +67,9 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
 }
 
 void MergeScoringFunctionCausallyConnectedVariable::initialize(
-    const shared_ptr<AbstractTask> &task) {
+    const TaskProxy &task) {
     initialized = true;
-    this->task = task;
+    this->task_proxy = task;
 }
 
 string MergeScoringFunctionCausallyConnectedVariable::name() const {

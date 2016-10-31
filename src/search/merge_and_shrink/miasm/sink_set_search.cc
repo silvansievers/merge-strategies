@@ -25,9 +25,8 @@ using namespace std;
 namespace merge_and_shrink {
 using namespace mst;
 
-SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask> &task)
-    : task(task),
-      task_proxy(*task),
+SinkSetSearch::SinkSetSearch(const Options &opts, const TaskProxy &task_proxy)
+    : task_proxy(task_proxy),
       causal_graph(task_proxy.get_causal_graph()),
       time_limit(opts.get<double>("time_limit")),
       memory_limit(opts.get<int>("memory_limit")),
@@ -37,7 +36,7 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const shared_ptr<AbstractTask>
       opt_expa(EnumExpand(opts.get_enum("expand"))),
       opt_gain(EnumGain(opts.get_enum("gain"))),
       opt_prune(EnumPrune(opts.get_enum("prune"))),
-      pq(ComparatorSTLPriorityQueue(task, &vsir, &opt_prior)) {
+      pq(ComparatorSTLPriorityQueue(task_proxy, &vsir, &opt_prior)) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
 //    dump_options(cerr, "\n    ");
     if (!opts.contains(MiasmAbstraction::option_key())) {
@@ -74,7 +73,7 @@ void SinkSetSearch::dump_options(ostream &os, const string sep) const {
 
 void SinkSetSearch::get_sink_set(vector<var_set_t> &sink_set) {
     std::sort(sink_set_idx.begin(), sink_set_idx.end(),
-              ComparatorVarSet(task, &vsir, VarSetCmpType::BY_RATIO));
+              ComparatorVarSet(task_proxy, &vsir, VarSetCmpType::BY_RATIO));
 
 //    for (size_t i = 0; i < sink_set_idx.size(); i++) {
 //        cerr << vsir[sink_set_idx[i]].variables << ": "
@@ -503,9 +502,10 @@ const VarSetInfoRegistry *SinkSetSearch::get_vsir() {
 }
 
 ComparatorSTLPriorityQueue::ComparatorSTLPriorityQueue(
-    const shared_ptr<AbstractTask> &task,
-    const VarSetInfoRegistry *vsir_, const EnumPriority *priority_)
-    : ComparatorVarSet(task, vsir_),
+    const TaskProxy &task_proxy,
+    const VarSetInfoRegistry *vsir_,
+    const EnumPriority *priority_)
+    : ComparatorVarSet(task_proxy, vsir_),
       priority(priority_) {
     /* TODO: can we specify cmp_type.e in the initilization list
      * after knowing p_order? */

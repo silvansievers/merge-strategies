@@ -37,10 +37,10 @@ MergeSelectorScoreBasedWeightedSum::MergeSelectorScoreBasedWeightedSum(
 }
 
 void MergeSelectorScoreBasedWeightedSum::initialize(
-    const shared_ptr<AbstractTask> &task) {
+    const TaskProxy &task_proxy) {
     for (shared_ptr<MergeScoringFunction> &scoring_function
          : merge_scoring_functions) {
-        scoring_function->initialize(task);
+        scoring_function->initialize(task_proxy);
     }
 }
 

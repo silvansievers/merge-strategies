@@ -3,6 +3,8 @@
 
 #include "merge_scoring_function.h"
 
+#include "../task_proxy.h"
+
 namespace options {
 class Options;
 }
@@ -10,7 +12,7 @@ class Options;
 namespace merge_and_shrink {
 class MergeScoringFunctionCgGoal : public MergeScoringFunction {
     bool cg_before_goal;
-    std::shared_ptr<AbstractTask> task;
+    TaskProxy task_proxy;
     std::vector<bool> is_goal_variable;
 protected:
     virtual std::string name() const override;
@@ -20,7 +22,7 @@ public:
     virtual std::vector<double> compute_scores(
         FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
-    virtual void initialize(const std::shared_ptr<AbstractTask> &task) override;
+    virtual void initialize(const TaskProxy &task_proxy) override;
 };
 }
 

@@ -119,19 +119,18 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy(
-        const shared_ptr<AbstractTask> &task,
-        FactoredTransitionSystem &fts) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy,
+    FactoredTransitionSystem &fts) {
     int num_merges = task_proxy.get_variables().size() - 1;
 
     if (merge_selector) {
-        merge_selector->initialize(task);
+        merge_selector->initialize(task_proxy);
     }
 
     unique_ptr<MergeTree> merge_tree = nullptr;
     bool tree_is_miasm = false;
     if (merge_tree_factory) {
-        merge_tree = merge_tree_factory->compute_merge_tree(task);
+        merge_tree = merge_tree_factory->compute_merge_tree(task_proxy);
         if (merge_tree_factory->get_name() == "miasm") {
             tree_is_miasm = true;
         }

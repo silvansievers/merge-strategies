@@ -43,8 +43,7 @@ private:
     std::vector<std::set<int> > max_packing;
     //@}
 
-    MiasmMergeTree *compute_miasm_merge_tree(
-        const std::shared_ptr<AbstractTask> &task);
+    MiasmMergeTree *compute_miasm_merge_tree(const TaskProxy &task_proxy);
 protected:
     virtual std::string name() const override;
     virtual void dump_tree_specific_options() const override;
@@ -53,7 +52,7 @@ public:
     explicit MergeTreeFactoryMiasm(const options::Options &opts);
     virtual ~MergeTreeFactoryMiasm() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
-            const std::shared_ptr<AbstractTask> &task) override;
+        const TaskProxy &task_proxy) override;
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

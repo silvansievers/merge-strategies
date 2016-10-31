@@ -3,18 +3,20 @@
 
 #include "merge_scoring_function.h"
 
+#include "../task_proxy.h"
+
 namespace merge_and_shrink {
 class MergeScoringFunctionCausallyConnectedVariable : public MergeScoringFunction {
-    std::shared_ptr<AbstractTask> task;
+    TaskProxy task_proxy;
 protected:
     virtual std::string name() const override;
 public:
-    MergeScoringFunctionCausallyConnectedVariable() = default;
+    MergeScoringFunctionCausallyConnectedVariable();
     virtual ~MergeScoringFunctionCausallyConnectedVariable() override = default;
     virtual std::vector<double> compute_scores(
         FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
-    virtual void initialize(const std::shared_ptr<AbstractTask> &task) override;
+    virtual void initialize(const TaskProxy &task_proxy) override;
 };
 }
 

@@ -107,10 +107,10 @@ VarSetCmpType::operator E() const {
     return e;
 }
 
-ComparatorVarSet::ComparatorVarSet(const shared_ptr<AbstractTask> &task,
+ComparatorVarSet::ComparatorVarSet(const TaskProxy &task_proxy,
                                    const VarSetInfoRegistry *vsir_,
                                    const VarSetCmpType cmp_type_)
-    : task(task),
+    : task_proxy(task_proxy),
       vsir(vsir_),
       cmp_type(cmp_type_) {
 }
@@ -149,7 +149,6 @@ bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
     if (cmp_type_temp == VarSetCmpType::BY_COMB_SIZE) {
         /* TODO seems expensive to compute */
         /* TransitionSystem::combinatorial_size */
-        TaskProxy task_proxy(*task);
         size_t size_i = combinatorial_size(SIi.variables, task_proxy);
         size_t size_j = combinatorial_size(SIj.variables, task_proxy);
         if (size_i != size_j) {

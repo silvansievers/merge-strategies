@@ -4,6 +4,7 @@
 #include "transition_system.h"
 
 #include "../causal_graph.h"
+#include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
@@ -15,7 +16,9 @@ using namespace std;
 namespace merge_and_shrink {
 MergeScoringFunctionCgGoal::MergeScoringFunctionCgGoal(
     const options::Options &options)
-    : cg_before_goal(options.get<bool>("cg_before_goal")) {
+    : cg_before_goal(options.get<bool>("cg_before_goal")),
+      // HACK!
+      task_proxy(*g_root_task()) {
 }
 
 vector<double> MergeScoringFunctionCgGoal::compute_scores(
@@ -37,7 +40,6 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
         composite_vars.insert(composite_vars.end(), vars.begin(), vars.end());
     }
 
-    TaskProxy task_proxy(*task);
     int num_vars = task_proxy.get_variables().size();
     vector<bool> is_causal_predecessor(num_vars, false);
     const CausalGraph &cg = task_proxy.get_causal_graph();
@@ -116,10 +118,9 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
 }
 
 void MergeScoringFunctionCgGoal::initialize(
-    const shared_ptr<AbstractTask> &task) {
+    const TaskProxy &task_proxy) {
     initialized = true;
-    this->task = task;
-    TaskProxy task_proxy(*task);
+    this->task_proxy = task_proxy;
     int num_vars = task_proxy.get_variables().size();
     is_goal_variable.resize(num_vars, false);
     for (FactProxy goal : task_proxy.get_goals()) {

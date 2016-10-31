@@ -46,9 +46,8 @@ MergeStrategyFactorySCCs::MergeStrategyFactorySCCs(const options::Options &optio
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
-    const shared_ptr<AbstractTask> &task,
+    const TaskProxy &task_proxy,
     FactoredTransitionSystem &fts) {
-    TaskProxy task_proxy(*task);
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
 
@@ -116,12 +115,12 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
 //    cout << "indices of merged sccs: " << indices_of_merged_sccs << endl;
 
     if (merge_selector) {
-        merge_selector->initialize(task);
+        merge_selector->initialize(task_proxy);
     }
 
     return utils::make_unique_ptr<MergeSCCs>(
         fts,
-        task,
+        task_proxy,
         merge_tree_factory,
         merge_selector,
         move(non_singleton_cg_sccs),

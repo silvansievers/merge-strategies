@@ -51,8 +51,7 @@ vector<double> MergeScoringFunctionCausalConnection::compute_scores(
 }
 
 void MergeScoringFunctionCausalConnection::initialize(
-    const std::shared_ptr<AbstractTask> &task) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy) {
     const CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
     var_pair_causal_links.resize(num_variables, vector<int>(num_variables, 0));
@@ -121,8 +120,7 @@ vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
 }
 
 void MergeScoringFunctionBooleanCausalConnection::initialize(
-    const std::shared_ptr<AbstractTask> &task) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy) {
     const CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
     causally_connected_var_pairs.resize(num_variables, vector<bool>(num_variables, false));
@@ -197,8 +195,7 @@ vector<double> MergeScoringFunctionNonAdditivity::compute_scores(
 }
 
 void MergeScoringFunctionNonAdditivity::initialize(
-    const std::shared_ptr<AbstractTask> &task) {
-    TaskProxy task_proxy(*task);
+    const TaskProxy &task_proxy) {
     int num_variables = task_proxy.get_variables().size();
     additive_var_pairs.resize(num_variables, vector<bool>(num_variables, true));
     for (OperatorProxy op : task_proxy.get_operators()) {
@@ -325,7 +322,7 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
                     fts.get_init_state_goal_distance(ts_index2));
         } else {
             int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
             max_states_before_merge, shrink_threshold_before_merge);
             int new_init_h;
             if (fts.get_ts(merge_index).is_solvable()) {
@@ -421,7 +418,7 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
             max_states_before_merge, shrink_threshold_before_merge);
 
         // score value in [-infinity,0]
@@ -502,7 +499,7 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         double score = 1;
         if (avgh == AvgH::IMPROVEMENT) {
             int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
             max_states_before_merge, shrink_threshold_before_merge);
             double new_average_h = compute_average_h_value(fts.get_dist(merge_index));
             fts.release_copies();
@@ -667,7 +664,7 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, shrink_stratey, max_states,
+            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
             max_states_before_merge, shrink_threshold_before_merge);
 
         // score value in [-infinity,0]

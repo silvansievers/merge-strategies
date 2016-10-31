@@ -14,10 +14,10 @@
 using namespace std;
 
 namespace merge_and_shrink {
-ComparatorSortPacking::ComparatorSortPacking(const shared_ptr<AbstractTask> &task,
+ComparatorSortPacking::ComparatorSortPacking(const TaskProxy &task_proxy,
                                              const MiasmExternal &ext_,
                                              const VarSetInfoRegistry *p_si_)
-    : ComparatorVarSet(task, p_si_),
+    : ComparatorVarSet(task_proxy, p_si_),
       ext(ext_) {
     if (ext == MiasmExternal::NUM_VAR_CGL) {
         cmp_type.e = VarSetCmpType::BY_NUM_VAR;
@@ -67,23 +67,21 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
                                const MiasmInternal internal_,
                                const MiasmExternal external_,
                                const VarSetInfoRegistry *p_si,
-                               const shared_ptr<AbstractTask> &task)
+                               const TaskProxy &task_proxy)
     : packing(packing_),
       internal(internal_),
       external(external_),
-      task(task),
-      causal_graph(TaskProxy(*task).get_causal_graph()) {
+      causal_graph(task_proxy.get_causal_graph()) {
     if (p_si) {
         assert(p_si);
     }
 
 //    cerr << "\n\n" << packing << "\n\n";
 
-    sort(packing.begin(), packing.end(), ComparatorSortPacking(task, external, p_si));
+    sort(packing.begin(), packing.end(), ComparatorSortPacking(task_proxy, external, p_si));
 
 //    cerr << "\n\n" << packing << "\n\n";
 
-    TaskProxy task_proxy(*task);
     GoalsProxy goals_proxy = task_proxy.get_goals();
     for (size_t i = 0; i < goals_proxy.size(); ++i) {
         goal.insert(goals_proxy[i].get_variable().get_id());
