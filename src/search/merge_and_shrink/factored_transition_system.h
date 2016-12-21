@@ -48,6 +48,7 @@ class FactoredTransitionSystem {
     std::vector<std::unique_ptr<Distances>> distances;
     int unsolvable_index; // -1 if solvable, index of an unsolvable entry otw.
     int num_active_entries;
+    bool ignore_representation;
 
     // Statistics
     std::vector<double> relative_pruning_per_iteration;
@@ -143,15 +144,15 @@ public:
     }
 
     int get_init_state_goal_distance(int index) const;
-    // Copy the entry at index and appends it, increasing the size by one.
-    int copy(int index);
+    // Copy TS and Distances at index and append it, increasing the size by one.
+    int copy_without_representation(int index);
     /*
       Delete the last three indices. This assumes and requires that the
       entry at the last index represents a merge of the entries of the
       second and third to last indices, which in turn have been copied
-      before.
+      before, using copy_without_representation.
      */
-    void release_copies();
+    void delete_last_three_entries();
     void remove(int index);
 
     const std::vector<double> &get_pruning_statistics() const {

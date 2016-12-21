@@ -331,7 +331,7 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
                 // initial state has been pruned
                 new_init_h = INF;
             }
-            fts.release_copies();
+            fts.delete_last_three_entries();
             if (inith ==  InitH::ABSOLUTE) {
                 if (new_init_h == INF) {
                     score = MINUSINF;
@@ -435,7 +435,7 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
             // initial state has been pruned
             score = MINUSINF;
         }
-        fts.release_copies();
+        fts.delete_last_three_entries();
         assert(score <= 0);
         scores.push_back(score);
     }
@@ -502,7 +502,7 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
             fts, ts_index1, ts_index2, *shrink_stratey, max_states,
             max_states_before_merge, shrink_threshold_before_merge);
             double new_average_h = compute_average_h_value(fts.get_dist(merge_index));
-            fts.release_copies();
+            fts.delete_last_three_entries();
             double old_average_h = max(compute_average_h_value(fts.get_dist(ts_index1)),
                                        compute_average_h_value(fts.get_dist(ts_index2)));
             double difference = new_average_h - old_average_h;
@@ -683,7 +683,7 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         } else {
             score = MINUSINF;
         }
-        fts.release_copies();
+        fts.delete_last_three_entries();
         assert(score <= 0);
         scores.push_back(score);
     }

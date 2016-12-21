@@ -44,7 +44,8 @@ FactoredTransitionSystem::FactoredTransitionSystem(
       mas_representations(move(mas_representations)),
       distances(move(distances)),
       unsolvable_index(-1),
-      num_active_entries(this->transition_systems.size()) {
+      num_active_entries(this->transition_systems.size()),
+      ignore_representation(false) {
     for (size_t i = 0; i < this->transition_systems.size(); ++i) {
         compute_distances_and_prune(i, verbosity);
         if (finalize_if_unsolvable && !this->transition_systems[i]->is_solvable()) {
@@ -60,7 +61,8 @@ FactoredTransitionSystem::FactoredTransitionSystem(FactoredTransitionSystem &&ot
       mas_representations(move(other.mas_representations)),
       distances(move(other.distances)),
       unsolvable_index(move(other.unsolvable_index)),
-      num_active_entries(move(other.num_active_entries)) {
+      num_active_entries(move(other.num_active_entries)),
+      ignore_representation(move(other.ignore_representation)) {
     /*
       This is just a default move constructor. Unfortunately Visual
       Studio does not support "= default" for move construction or
@@ -99,12 +101,14 @@ void FactoredTransitionSystem::discard_states(
 
 bool FactoredTransitionSystem::is_index_valid(int index) const {
     if (index >= static_cast<int>(transition_systems.size())) {
-        assert(index >= static_cast<int>(mas_representations.size()));
+        assert(ignore_representation||
+               index >= static_cast<int>(mas_representations.size()));
         assert(index >= static_cast<int>(distances.size()));
         return false;
     }
-    return transition_systems[index] && mas_representations[index]
-           && distances[index];
+    return transition_systems[index] &&
+           (ignore_representation || mas_representations[index]) &&
+           distances[index];
 }
 
 bool FactoredTransitionSystem::is_component_valid(int index) const {
@@ -167,8 +171,10 @@ bool FactoredTransitionSystem::apply_abstraction(
     if (shrunk) {
         distances[index]->apply_abstraction(
             state_equivalence_relation, verbosity);
-        mas_representations[index]->apply_abstraction_to_lookup_table(
-            abstraction_mapping);
+        if (!ignore_representation) {
+            mas_representations[index]->apply_abstraction_to_lookup_table(
+                abstraction_mapping);
+        }
     }
     assert(is_component_valid(index));
     return shrunk;
@@ -193,12 +199,14 @@ int FactoredTransitionSystem::merge(
         distances[index2] = nullptr;
         transition_systems[index1] = nullptr;
         transition_systems[index2] = nullptr;
-        mas_representations.push_back(
-            utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(
-                move(mas_representations[index1]),
-                move(mas_representations[index2])));
-        mas_representations[index1] = nullptr;
-        mas_representations[index2] = nullptr;
+        if (!ignore_representation) {
+            mas_representations.push_back(
+                utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(
+                    move(mas_representations[index1]),
+                    move(mas_representations[index2])));
+            mas_representations[index1] = nullptr;
+            mas_representations[index2] = nullptr;
+        }
     } else {
         unique_ptr<MergeAndShrinkRepresentation> hr1 = nullptr;
         if (dynamic_cast<MergeAndShrinkRepresentationLeaf *>(mas_representations[index1].get())) {
@@ -274,7 +282,7 @@ void FactoredTransitionSystem::statistics(int index) const {
 }
 
 void FactoredTransitionSystem::dump(int index) const {
-    assert(transition_systems[index]);
+    assert(is_index_valid(index));
     transition_systems[index]->dump_labels_and_transitions();
     mas_representations[index]->dump();
 }
@@ -283,32 +291,19 @@ int FactoredTransitionSystem::get_init_state_goal_distance(int index) const {
     return distances[index]->get_goal_distance(transition_systems[index]->get_init_state());
 }
 
-int FactoredTransitionSystem::copy(int index) {
-    assert(is_active(index));
+int FactoredTransitionSystem::copy_without_representation(int index) {
+    assert(is_index_valid(index));
     int new_index = transition_systems.size();
     transition_systems.push_back(
         utils::make_unique_ptr<TransitionSystem>(*transition_systems[index]));
-
-    unique_ptr<MergeAndShrinkRepresentation> hr = nullptr;
-    if (dynamic_cast<MergeAndShrinkRepresentationLeaf *>(mas_representations[index].get())) {
-        hr = utils::make_unique_ptr<MergeAndShrinkRepresentationLeaf>(
-            dynamic_cast<MergeAndShrinkRepresentationLeaf *>
-                (mas_representations[index].get()));
-    } else {
-        hr = utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(
-            dynamic_cast<MergeAndShrinkRepresentationMerge *>(
-                mas_representations[index].get()));
-    }
-    mas_representations.push_back(move(hr));
-
     distances.push_back(utils::make_unique_ptr<Distances>(*transition_systems.back(),
                                                           *distances[index]));
-
     ++num_active_entries;
+    ignore_representation = true;
     return new_index;
 }
 
-void FactoredTransitionSystem::release_copies() {
+void FactoredTransitionSystem::delete_last_three_entries() {
     int last_index = transition_systems.size() - 1;
     transition_systems[last_index] = nullptr;
     transition_systems.pop_back();
@@ -316,10 +311,6 @@ void FactoredTransitionSystem::release_copies() {
     transition_systems.pop_back();
     assert(!transition_systems.back());
     transition_systems.pop_back();
-    mas_representations[last_index] = nullptr;
-    mas_representations.pop_back();
-    mas_representations.pop_back();
-    mas_representations.pop_back();
     distances[last_index] = nullptr;
     distances.pop_back();
     assert(!distances.back());
@@ -327,6 +318,7 @@ void FactoredTransitionSystem::release_copies() {
     assert(!distances.back());
     distances.pop_back();
     --num_active_entries;
+    ignore_representation = false;
 }
 
 void FactoredTransitionSystem::remove(int index) {
