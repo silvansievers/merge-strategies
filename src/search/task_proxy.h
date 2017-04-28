@@ -2,12 +2,15 @@
 #define TASK_PROXY_H
 
 #include "abstract_task.h"
+#include "operator_id.h"
 
+#include "utils/collections.h"
 #include "utils/hash.h"
 #include "utils/system.h"
 
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -94,17 +97,31 @@ class VariablesProxy;
 /*
   Basic iterator support for proxy collections.
 */
-template<class ProxyCollection>
+template<typename ProxyCollection>
 class ProxyIterator {
-    const ProxyCollection &collection;
+    /* We store a pointer to collection instead of a reference
+       because iterators have to be copy assignable. */
+    const ProxyCollection *collection;
     std::size_t pos;
 public:
-    ProxyIterator(const ProxyCollection &collection, std::size_t pos)
-        : collection(collection), pos(pos) {}
-    ~ProxyIterator() = default;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = typename ProxyCollection::ItemType;
+    using difference_type = int;
+    using pointer = const value_type *;
+    using reference = value_type;
 
-    typename ProxyCollection::ItemType operator*() const {
-        return collection[pos];
+    ProxyIterator(const ProxyCollection &collection, std::size_t pos)
+        : collection(&collection), pos(pos) {
+    }
+
+    reference operator*() const {
+        return (*collection)[pos];
+    }
+
+    value_type operator++(int) {
+        value_type value(**this);
+        ++(*this);
+        return value;
     }
 
     ProxyIterator &operator++() {
@@ -113,7 +130,7 @@ public:
     }
 
     bool operator==(const ProxyIterator &other) const {
-        assert(&collection == &other.collection);
+        assert(collection == other.collection);
         return pos == other.pos;
     }
 
@@ -212,7 +229,7 @@ public:
   We don't implement size() because it would not be constant-time.
 
   FactsProxy supports iteration, e.g. for range-based for loops. This
-  iterates over all facts in order of increasing variable id, and in
+  iterates over all facts in order of increasing variable ID, and in
   order of increasing value for each variable.
 */
 class FactsProxy {
@@ -456,8 +473,9 @@ public:
         return index;
     }
 
-    const GlobalOperator *get_global_operator() const {
-        return task->get_global_operator(index, is_an_axiom);
+    OperatorID get_global_operator_id() const {
+        assert(!is_an_axiom);
+        return task->get_global_operator_id(OperatorID(index));
     }
 };
 
@@ -481,6 +499,10 @@ public:
     OperatorProxy operator[](std::size_t index) const {
         assert(index < size());
         return OperatorProxy(*task, index, false);
+    }
+
+    OperatorProxy operator[](OperatorID id) const {
+        return (*this)[id.get_index()];
     }
 };
 

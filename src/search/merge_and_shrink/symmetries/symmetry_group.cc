@@ -320,8 +320,7 @@ void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
       corresponds to a set of abstract states of one transition system that
       are symmetric to each other and that hence can be combined into one.
     */
-    sccs::SCCs scc(graph);
-    const vector<vector<int> > &sccs = scc.get_result();
+    vector<vector<int> > sccs(sccs::compute_maximal_sccs(graph));
 
     /*
       Go over the sccs and create the equivalence relation for all transition

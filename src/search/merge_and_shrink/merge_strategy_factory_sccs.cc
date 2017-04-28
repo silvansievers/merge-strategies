@@ -52,7 +52,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
     VariablesProxy vars = task_proxy.get_variables();
     int num_vars = vars.size();
 
-    // Compute SCCs of the causal graph
+    // Compute SCCs of the causal graph.
     vector<vector<int>> cg;
     cg.reserve(num_vars);
     for (VariableProxy var : vars) {
@@ -60,16 +60,15 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
             task_proxy.get_causal_graph().get_successors(var.get_id());
         cg.push_back(successors);
     }
-    sccs::SCCs sccs_algorithm(cg);
-    vector<vector<int>> sccs(sccs_algorithm.get_result());
+    vector<vector<int>> sccs(sccs::compute_maximal_sccs(cg));
 
-    // Put the SCCs in the desired order
+    // Put the SCCs in the desired order.
     switch (order_of_sccs) {
     case OrderOfSCCs::TOPOLOGICAL:
-        // SCCs are computed in topological order
+        // SCCs are computed in topological order.
         break;
     case OrderOfSCCs::REVERSE_TOPOLOGICAL:
-        // SCCs are computed in topological order
+        // SCCs are computed in topological order.
         reverse(sccs.begin(), sccs.end());
         break;
     case OrderOfSCCs::DECREASING:
@@ -97,7 +96,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySCCs::compute_merge_strategy(
         } else {
             index += scc_size - 1;
             indices_of_merged_sccs.push_back(index);
-            non_singleton_cg_sccs.push_back(vector<int>(scc.begin(), scc.end()));
+            non_singleton_cg_sccs.push_back(scc);
         }
     }
     if (sccs.size() == 1) {
@@ -164,12 +163,12 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
             "Scheduling (ICAPS 2016)",
             "2358-2366",
             "AAAI Press 2016") +
-        "In a nutshel, it computes the maximal SCCs of the causal graph, "
+        "In a nutshell, it computes the maximal SCCs of the causal graph, "
         "obtaining a partitioning of the task's variables. Every such "
-        "partition is then merged individually, using the specified fallback"
+        "partition is then merged individually, using the specified fallback "
         "merge strategy, considering the SCCs in a configurable order. "
-        "Afterwards, all resulting composite abstractions are merged to form"
-        "the final abstraction, again using the specified fallback merge"
+        "Afterwards, all resulting composite abstractions are merged to form "
+        "the final abstraction, again using the specified fallback merge "
         "strategy and the configurable order of the SCCs.");
     vector<string> order_of_sccs;
     order_of_sccs.push_back("topological");
@@ -179,31 +178,39 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     parser.add_enum_option(
         "order_of_sccs",
         order_of_sccs,
-        "choose an ordering of the sccs: topological/reverse_topological or "
-        "decreasing/increasing in the size of the SCCs.");
+        "choose an ordering of the SCCs: topological/reverse_topological or "
+        "decreasing/increasing in the size of the SCCs. The former two options "
+        "refer to the directed graph where each obtained SCC is a "
+        "'supervertex'. For the latter two options, the tie-breaking is to "
+        "use the topological order according to that same graph of SCC "
+        "supervertices.",
+        "topological");
     parser.add_option<shared_ptr<MergeTreeFactory>>(
         "merge_tree",
-        "the fallback merge strategy to use if a precomputed strategy should"
+        "the fallback merge strategy to use if a precomputed strategy should "
         "be used.",
         options::OptionParser::NONE);
     parser.add_option<shared_ptr<MergeSelector>>(
         "merge_selector",
-        "the fallback merge strategy to use if a stateless strategy should"
+        "the fallback merge strategy to use if a stateless strategy should "
         "be used.",
         options::OptionParser::NONE);
 
     options::Options options = parser.parse();
-    bool merge_tree = options.contains("merge_tree");
-    bool merge_selector = options.contains("merge_selector");
-    if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
-        cerr << "You have to specify exactly one of the options merge_tree "
-                "and merg_selector!" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-    }
-    if (parser.dry_run())
-        return 0;
-    else
+    if (parser.help_mode()) {
+        return nullptr;
+    } else if (parser.dry_run()) {
+        bool merge_tree = options.contains("merge_tree");
+        bool merge_selector = options.contains("merge_selector");
+        if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
+            cerr << "You have to specify exactly one of the options merge_tree "
+                "and merge_selector!" << endl;
+            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        }
+        return nullptr;
+    } else {
         return make_shared<MergeStrategyFactorySCCs>(options);
+    }
 }
 
 static options::PluginShared<MergeStrategyFactory> _plugin("merge_sccs", _parse);

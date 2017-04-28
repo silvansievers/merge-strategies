@@ -150,7 +150,7 @@ void SinkSetSearch::kickstart() {
     for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
         cg_succ.push_back(causal_graph.get_successors(i));
     }
-    vector<vector<int> > sccs = sccs::SCCs(cg_succ).get_result();
+    vector<vector<int> > sccs(sccs::compute_maximal_sccs(cg_succ));
 
     for (size_t i = 0; i < sccs.size(); ++i) {
         var_set_t scc(sccs[i].begin(), sccs[i].end());
