@@ -257,6 +257,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     int iteration_counter = 0;
     bool still_perfect = true;
     vector<pair<int, int>> merge_order;
+    vector<double> relative_pruning_per_iteration;
 
     if (unsolvable_index == -1) { // All atomic transition systems are solvable.
         unique_ptr<MergeStrategy> merge_strategy =
@@ -345,12 +346,16 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
 
             // Pruning
             if (prune_unreachable_states || prune_irrelevant_states) {
+                int old_size = fts.get_ts(merged_index).get_size();
                 bool pruned = prune_factor(
                     fts,
                     merged_index,
                     prune_unreachable_states,
                     prune_irrelevant_states,
                     verbosity);
+                double new_size = fts.get_ts(merged_index).get_size();
+                assert(new_size <= old_size);
+                relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(old_size));
                 if (verbosity >= Verbosity::NORMAL && pruned) {
                     if (verbosity >= Verbosity::VERBOSE) {
                         fts.statistics(merged_index);
@@ -453,17 +458,16 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     } else {
          cout << "Non-linear merge order" << endl;
     }
-    const vector<double> &pruning_statistics = fts.get_pruning_statistics();
-    cout << "Relative pruning per iteration: " << pruning_statistics << endl;
+    cout << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
     double summed_pruning = 0;
-    for (double pruning : pruning_statistics) {
+    for (double pruning : relative_pruning_per_iteration) {
         summed_pruning += pruning;
     }
-    // If pruning statistics are empty, then because the instance is unsolvable.
+    // If relative_pruning_per_iteration are empty, then because the instance is unsolvable.
     // In this case, we return 0, which is the worst value possible for pruning.
     double average_pruning = 0;
-    if (!pruning_statistics.empty()) {
-        average_pruning =  summed_pruning / static_cast<double>(pruning_statistics.size());
+    if (!relative_pruning_per_iteration.empty()) {
+        average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
     }
     cout << "Average relative pruning: " << average_pruning << endl;
 

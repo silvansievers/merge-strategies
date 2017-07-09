@@ -50,9 +50,6 @@ class FactoredTransitionSystem {
     const bool compute_goal_distances;
     int num_active_entries;
 
-    // Statistics
-    std::vector<double> relative_pruning_per_iteration;
-
     /*
       Assert that the factor at the given index is in a consistent state, i.e.
       that there is a transition system, a distances object, and an MSR.
@@ -169,10 +166,6 @@ public:
     bool is_active(int index) const;
     int get_init_state_goal_distance(int index) const;
     void remove(int index);
-
-    const std::vector<double> &get_pruning_statistics() const {
-        return relative_pruning_per_iteration;
-    }
 };
 }
 
