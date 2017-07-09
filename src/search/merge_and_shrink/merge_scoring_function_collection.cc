@@ -8,7 +8,6 @@
 #include "transition_system.h"
 #include "utils.h"
 
-#include "../causal_graph.h"
 #include "../globals.h"
 #include "../task_proxy.h"
 
@@ -16,11 +15,13 @@
 #include "../options/options.h"
 #include "../options/plugin.h"
 
+#include "../task_utils/causal_graph.h"
+
 using namespace std;
 
 namespace merge_and_shrink {
 vector<double> MergeScoringFunctionCausalConnection::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -52,7 +53,7 @@ vector<double> MergeScoringFunctionCausalConnection::compute_scores(
 
 void MergeScoringFunctionCausalConnection::initialize(
     const TaskProxy &task_proxy) {
-    const CausalGraph &cg = task_proxy.get_causal_graph();
+    const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
     var_pair_causal_links.resize(num_variables, vector<int>(num_variables, 0));
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -90,7 +91,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_cg("causal_connection
 
 
 vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -121,7 +122,7 @@ vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
 
 void MergeScoringFunctionBooleanCausalConnection::initialize(
     const TaskProxy &task_proxy) {
-    const CausalGraph &cg = task_proxy.get_causal_graph();
+    const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
     int num_variables = task_proxy.get_variables().size();
     causally_connected_var_pairs.resize(num_variables, vector<bool>(num_variables, false));
     for (VariableProxy var : task_proxy.get_variables()) {
@@ -159,7 +160,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_bcg("boolean_causal_c
 
 
 vector<double> MergeScoringFunctionNonAdditivity::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -236,7 +237,7 @@ MergeScoringFunctionTransitionsStatesQuotient::
 }
 
 vector<double> MergeScoringFunctionTransitionsStatesQuotient::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -308,7 +309,7 @@ MergeScoringFunctionInitH::MergeScoringFunctionInitH(
 }
 
 vector<double> MergeScoringFunctionInitH::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -321,17 +322,20 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
             score = - (fts.get_init_state_goal_distance(ts_index1) +
                     fts.get_init_state_goal_distance(ts_index2));
         } else {
-            int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-            max_states_before_merge, shrink_threshold_before_merge);
+            pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
+                shrink_and_merge_temporarily(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge);
+            const TransitionSystem &ts = *merge.first;
+            const Distances &distances = *merge.second;
+
             int new_init_h;
-            if (fts.get_ts(merge_index).is_solvable()) {
-                new_init_h = fts.get_init_state_goal_distance(merge_index);
+            if (ts.is_solvable(distances)) {
+                new_init_h = distances.get_goal_distance(ts.get_init_state());
             } else {
                 // initial state has been pruned
                 new_init_h = INF;
             }
-            fts.delete_last_three_entries();
             if (inith ==  InitH::ABSOLUTE) {
                 if (new_init_h == INF) {
                     score = MINUSINF;
@@ -410,32 +414,60 @@ MergeScoringFunctionMaxFGH::MergeScoringFunctionMaxFGH(
 }
 
 vector<double> MergeScoringFunctionMaxFGH::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-            max_states_before_merge, shrink_threshold_before_merge);
+        pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
+            shrink_and_merge_temporarily(
+                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                max_states_before_merge, shrink_threshold_before_merge);
+        const TransitionSystem &ts = *merge.first;
+        const Distances &distances = *merge.second;
 
         // score value in [-infinity,0]
         double score = 1;
-        if (fts.get_ts(merge_index).is_solvable()) {
+        if (ts.is_solvable(distances)) {
+            int max_g = 0;
+            int max_h = 0;
+            int max_f = 0;
+            for (int state = 0; state < ts.get_size(); ++state) {
+                int g = distances.get_init_distance(state);
+                int h = distances.get_goal_distance(state);
+                int f;
+                if (g == INF || h == INF) {
+                    /*
+                      If not pruning unreachable or irrelevant states, we may have
+                      states with g- or h-values of infinity, which we need to treat
+                      manually here to avoid overflow.
+
+                      Also note that not using full pruning means that if there is at
+                      least one dead state, this strategy will always use the
+                      map-based approach for partitioning. This is important because
+                      the vector-based approach requires that there are no dead states.
+                    */
+                    f = INF;
+                } else {
+                    f = g + h;
+                }
+                max_g = max(max_g, g);
+                max_h = max(max_h, h);
+                max_f = max(max_f, f);
+            }
             if (fgh == FGH::F) {
-                score = - fts.get_dist(merge_index).get_max_f();
+                score = - max_f;
             } else if (fgh == FGH::G) {
-                score = - fts.get_dist(merge_index).get_max_g();
+                score = - max_g;
             } else if (fgh == FGH::H) {
-                score = - fts.get_dist(merge_index).get_max_h();
+                score = - max_h;
             }
         } else {
             // initial state has been pruned
             score = MINUSINF;
         }
-        fts.delete_last_three_entries();
         assert(score <= 0);
         scores.push_back(score);
     }
@@ -488,7 +520,7 @@ MergeScoringFunctionAvgH::MergeScoringFunctionAvgH(
 }
 
 vector<double> MergeScoringFunctionAvgH::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -498,13 +530,14 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         // score value in [-infinity,infinity]
         double score = 1;
         if (avgh == AvgH::IMPROVEMENT) {
-            int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-            max_states_before_merge, shrink_threshold_before_merge);
-            double new_average_h = compute_average_h_value(fts.get_dist(merge_index));
-            fts.delete_last_three_entries();
-            double old_average_h = max(compute_average_h_value(fts.get_dist(ts_index1)),
-                                       compute_average_h_value(fts.get_dist(ts_index2)));
+            pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
+                shrink_and_merge_temporarily(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge);
+            const Distances &distances = *merge.second;
+            double new_average_h = compute_average_h_value(distances);
+            double old_average_h = max(compute_average_h_value(fts.get_distances(ts_index1)),
+                                       compute_average_h_value(fts.get_distances(ts_index2)));
             double difference = new_average_h - old_average_h;
             // NOTE: this difference may actually be negative!
             if (!difference) {
@@ -519,8 +552,8 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
                 score = - static_cast<double>(difference) / static_cast<double>(old_average_h);
             }
         } else if (avgh == AvgH::SUM) {
-            double average_h_sum = compute_average_h_value(fts.get_dist(ts_index1)) +
-                                   compute_average_h_value(fts.get_dist(ts_index2));
+            double average_h_sum = compute_average_h_value(fts.get_distances(ts_index1)) +
+                                   compute_average_h_value(fts.get_distances(ts_index2));
             score = - average_h_sum;
         } else if (avgh == AvgH::ABSOLUTE) {
             // TODO
@@ -572,7 +605,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_ah("avg_h", _parse_ah
 
 
 vector<double> MergeScoringFunctionGoalRelevanceFine::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -612,7 +645,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_grf("goal_relevance_f
 
 
 vector<double> MergeScoringFunctionNumVariables::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -656,26 +689,31 @@ MergeScoringFunctionShrinkPerfectly::MergeScoringFunctionShrinkPerfectly(
 }
 
 vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        int merge_index = shrink_and_merge_temporarily(
-            fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-            max_states_before_merge, shrink_threshold_before_merge);
+        pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
+            shrink_and_merge_temporarily(
+                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                max_states_before_merge, shrink_threshold_before_merge);
+        const TransitionSystem &ts = *merge.first;
+        const Distances &distances = *merge.second;
 
         // score value in [-infinity,0]
         double score = 1;
-        if (fts.get_ts(merge_index).is_solvable()) {
+        if (ts.is_solvable(distances)) {
             options::Options options;
             options.set<bool>("greedy", false);
             options.set<int>("at_limit", 0);
             ShrinkBisimulation shrink_bisim(options);
-            int size_before = fts.get_ts(merge_index).get_size();
-            int size_after = shrink_bisim.compute_size_after_perfect_shrink(fts, merge_index);
+            int size_before = ts.get_size();
+            int size_after =
+                shrink_bisim.compute_equivalence_relation(
+                    ts, distances, size_before).size();
             assert(size_after <= size_before);
             int difference = size_before - size_after;
             score = - static_cast<double>(difference) /
@@ -683,7 +721,6 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         } else {
             score = MINUSINF;
         }
-        fts.delete_last_three_entries();
         assert(score <= 0);
         scores.push_back(score);
     }
@@ -722,7 +759,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_sp("perfect_shrinking
 
 
 vector<double> MergeScoringFunctionNumTransitions::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
@@ -755,7 +792,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_nt("num_transitions",
 
 
 vector<double> MergeScoringFunctionLROpportunities::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     // Precompute the set of irrelevant labels for every transition system
     vector<vector<bool>> ts_index_to_irrelevant_labels;
@@ -835,7 +872,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_lro("lr_opportunities
 
 
 vector<double> MergeScoringFunctionMoreLROpportunities::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     // Precompute the set of irrelevant labels for every transition system
     vector<vector<bool>> ts_index_to_irrelevant_labels;
@@ -923,7 +960,7 @@ static options::PluginShared<MergeScoringFunction> _plugin_mlro("more_lr_opportu
 
 
 vector<double> MergeScoringFunctionMutexes::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());

@@ -1,7 +1,7 @@
 #include "merge_tree.h"
 
 //#include "../../utilities.h"
-#include "../../causal_graph.h"
+#include "../task_utils/causal_graph.h"
 #include "../../task_proxy.h"
 
 #include "../../ext/tree_util.hh"

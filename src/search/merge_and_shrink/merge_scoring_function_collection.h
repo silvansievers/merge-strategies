@@ -22,9 +22,17 @@ public:
     MergeScoringFunctionCausalConnection() = default;
     virtual ~MergeScoringFunctionCausalConnection() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
     virtual void initialize(const TaskProxy &task_proxy) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -37,9 +45,17 @@ public:
     MergeScoringFunctionBooleanCausalConnection() = default;
     virtual ~MergeScoringFunctionBooleanCausalConnection() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
     virtual void initialize(const TaskProxy &task_proxy) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -52,9 +68,17 @@ public:
     MergeScoringFunctionNonAdditivity() = default;
     virtual ~MergeScoringFunctionNonAdditivity() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
     virtual void initialize(const TaskProxy &task_proxy) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -68,8 +92,16 @@ public:
         const options::Options &options);
     virtual ~MergeScoringFunctionTransitionsStatesQuotient() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -91,8 +123,16 @@ public:
     explicit MergeScoringFunctionInitH(const options::Options &options);
     virtual ~MergeScoringFunctionInitH() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return true;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -114,8 +154,16 @@ public:
     explicit MergeScoringFunctionMaxFGH(const options::Options &options);
     virtual ~MergeScoringFunctionMaxFGH() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return true;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return true;
+    }
 };
 
 
@@ -137,8 +185,16 @@ public:
     explicit MergeScoringFunctionAvgH(const options::Options &options);
     virtual ~MergeScoringFunctionAvgH() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -150,8 +206,16 @@ public:
     MergeScoringFunctionGoalRelevanceFine() = default;
     virtual ~MergeScoringFunctionGoalRelevanceFine() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -163,8 +227,16 @@ public:
     MergeScoringFunctionNumVariables() = default;
     virtual ~MergeScoringFunctionNumVariables() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -181,8 +253,16 @@ public:
         const options::Options &options);
     virtual ~MergeScoringFunctionShrinkPerfectly() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return true;
+    }
 };
 
 
@@ -194,8 +274,16 @@ public:
     MergeScoringFunctionNumTransitions() = default;
     virtual ~MergeScoringFunctionNumTransitions() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -208,8 +296,16 @@ public:
     MergeScoringFunctionLROpportunities() = default;
     virtual ~MergeScoringFunctionLROpportunities() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -222,8 +318,16 @@ public:
     MergeScoringFunctionMoreLROpportunities() = default;
     virtual ~MergeScoringFunctionMoreLROpportunities() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 
 
@@ -235,8 +339,16 @@ public:
     MergeScoringFunctionMutexes() = default;
     virtual ~MergeScoringFunctionMutexes() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 }
 

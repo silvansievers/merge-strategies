@@ -12,7 +12,7 @@ using namespace std;
 
 namespace merge_and_shrink {
 vector<double> MergeScoringFunctionGoalVariable::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());

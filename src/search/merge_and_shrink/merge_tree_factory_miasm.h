@@ -53,6 +53,15 @@ public:
     virtual ~MergeTreeFactoryMiasm() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
         const TaskProxy &task_proxy) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
+
     static void add_options_to_parser(options::OptionParser &parser);
 };
 }

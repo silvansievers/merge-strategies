@@ -5,7 +5,7 @@
 #include "../factored_transition_system.h"
 #include "../transition_system.h"
 
-#include "../../causal_graph.h"
+#include "../task_utils/causal_graph.h"
 #include "../../option_parser.h"
 
 #include "../../algorithms/sccs.h"

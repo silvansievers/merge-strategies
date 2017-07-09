@@ -3,13 +3,14 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
-#include "../causal_graph.h"
 #include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
 #include "../options/plugin.h"
+
+#include "../task_utils/causal_graph.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ MergeScoringFunctionCgGoal::MergeScoringFunctionCgGoal(
 }
 
 vector<double> MergeScoringFunctionCgGoal::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     set<int> composite_indices;
     for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
@@ -42,7 +43,7 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
 
     int num_vars = task_proxy.get_variables().size();
     vector<bool> is_causal_predecessor(num_vars, false);
-    const CausalGraph &cg = task_proxy.get_causal_graph();
+    const causal_graph::CausalGraph &cg = task_proxy.get_causal_graph();
     for (int var : composite_vars) {
         const vector<int> &connected_vars = cg.get_eff_to_pre(var);
         for (int connected_var : connected_vars)

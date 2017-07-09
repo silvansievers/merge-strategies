@@ -20,9 +20,17 @@ public:
     explicit MergeScoringFunctionCgGoal(const options::Options &options);
     virtual ~MergeScoringFunctionCgGoal() override = default;
     virtual std::vector<double> compute_scores(
-        FactoredTransitionSystem &fts,
+        const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
     virtual void initialize(const TaskProxy &task_proxy) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 }
 

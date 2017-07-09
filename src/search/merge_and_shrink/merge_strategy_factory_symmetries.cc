@@ -120,7 +120,7 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
 
 unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy(
     const TaskProxy &task_proxy,
-    FactoredTransitionSystem &fts) {
+    const FactoredTransitionSystem &fts) {
     int num_merges = task_proxy.get_variables().size() - 1;
 
     if (merge_selector) {

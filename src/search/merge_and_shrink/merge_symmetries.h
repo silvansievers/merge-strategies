@@ -37,7 +37,8 @@ class MergeSymmetries : public MergeStrategy {
 
     void dump_statistics();
 public:
-    MergeSymmetries(FactoredTransitionSystem &fts,
+    MergeSymmetries(
+        const FactoredTransitionSystem &fts,
         const options::Options &options,
         int num_merges,
         std::unique_ptr<MergeTree> merge_tree,

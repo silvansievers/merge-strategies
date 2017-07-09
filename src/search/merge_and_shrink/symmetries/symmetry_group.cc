@@ -50,7 +50,7 @@ void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) 
     }
 }
 
-bool SymmetryGroup::find_and_apply_symmetries(FactoredTransitionSystem &fts,
+bool SymmetryGroup::find_and_apply_symmetries(const FactoredTransitionSystem &fts,
                                               vector<pair<int, int> > &merge_order) {
     bliss_time = gc->compute_symmetries(fts, this, symmetry_generator_info);
     delete gc;
@@ -276,7 +276,7 @@ bool SymmetryGroup::find_and_apply_symmetries(FactoredTransitionSystem &fts,
     return applied_symmetries;
 }
 
-void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
+void SymmetryGroup::apply_symmetries(const FactoredTransitionSystem &fts,
                                      const vector<int> &generator_indices) const {
     cout << "Creating equivalence relations from symmetries." << endl;
 
@@ -386,7 +386,8 @@ void SymmetryGroup::apply_symmetries(FactoredTransitionSystem &fts,
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         if (equivalence_relation_size != ts.get_size()) {
-            fts.apply_abstraction(i, equivalence_relations[i], verbosity);
+            FactoredTransitionSystem &non_const_fts = const_cast<FactoredTransitionSystem &>(fts);
+            non_const_fts.apply_abstraction(i, equivalence_relations[i], verbosity);
 //            cout << transition_systems[i]->tag() << "applying abstraction. " << endl;
         } else {
 //            cout << transition_systems[i]->tag() << "not abstracted due to symmetries." << endl;

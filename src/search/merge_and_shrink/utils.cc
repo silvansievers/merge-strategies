@@ -8,6 +8,7 @@
 #include "transition_system.h"
 
 #include "../utils/math.h"
+#include "../utils/memory.h"
 
 #include <algorithm>
 #include <cassert>
@@ -56,7 +57,7 @@ pair<int, int> compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
-bool shrink_transition_system(
+bool shrink_factor(
     FactoredTransitionSystem &fts,
     int index,
     int new_size,
@@ -64,7 +65,6 @@ bool shrink_transition_system(
     const ShrinkStrategy &shrink_strategy,
     Verbosity verbosity) {
     const TransitionSystem &ts = fts.get_ts(index);
-    assert(ts.is_solvable());
     int num_states = ts.get_size();
     if (num_states > min(new_size, shrink_threshold_before_merge)) {
         if (verbosity >= Verbosity::VERBOSE) {
@@ -75,9 +75,91 @@ bool shrink_transition_system(
                 cout << " (shrink threshold: " << shrink_threshold_before_merge;
             cout << ")" << endl;
         }
-        return shrink_strategy.shrink(fts, index, new_size, verbosity);
+
+        const Distances &distances = fts.get_distances(index);
+        StateEquivalenceRelation equivalence_relation =
+            shrink_strategy.compute_equivalence_relation(ts, distances, new_size);
+        // TODO: We currently violate this; see issue250
+        //assert(equivalence_relation.size() <= target_size);
+        return fts.apply_abstraction(index, equivalence_relation, verbosity);
     }
     return false;
+}
+
+StateEquivalenceRelation compute_pruning_equivalence_relation(
+    const TransitionSystem &ts,
+    const Distances &distances,
+    bool prune_unreachable_states,
+    bool prune_irrelevant_states,
+    Verbosity verbosity) {
+    int num_states = ts.get_size();
+    StateEquivalenceRelation state_equivalence_relation;
+    state_equivalence_relation.reserve(num_states);
+    int unreachable_count = 0;
+    int irrelevant_count = 0;
+    int dead_count = 0;
+    for (int state = 0; state < num_states; ++state) {
+        /* If pruning both unreachable and irrelevant states, a state which is
+           dead is counted for both statistics! */
+        bool prune_state = false;
+        if (prune_unreachable_states && distances.get_init_distance(state) == INF) {
+            ++unreachable_count;
+            prune_state = true;
+        }
+        if (prune_irrelevant_states && distances.get_goal_distance(state) == INF) {
+            ++irrelevant_count;
+            prune_state = true;
+        }
+        if (prune_state) {
+            ++dead_count;
+        } else {
+            StateEquivalenceClass state_equivalence_class;
+            state_equivalence_class.push_front(state);
+            state_equivalence_relation.push_back(state_equivalence_class);
+        }
+    }
+    if (verbosity >= Verbosity::VERBOSE &&
+        (unreachable_count || irrelevant_count)) {
+        cout << ts.tag()
+             << "unreachable: " << unreachable_count << " states, "
+             << "irrelevant: " << irrelevant_count << " states ("
+             << "total dead: " << dead_count << " states)" << endl;
+    }
+    return state_equivalence_relation;
+}
+
+bool prune_factor(
+    FactoredTransitionSystem &fts,
+    int index,
+    bool prune_unreachable_states,
+    bool prune_irrelevant_states,
+    Verbosity verbosity) {
+    assert(prune_unreachable_states || prune_irrelevant_states);
+    const TransitionSystem &ts = fts.get_ts(index);
+    const Distances &distances = fts.get_distances(index);
+    StateEquivalenceRelation state_equivalence_relation =
+        compute_pruning_equivalence_relation(
+            ts,
+            distances,
+            prune_unreachable_states,
+            prune_irrelevant_states,
+            verbosity);
+    return fts.apply_abstraction(index, state_equivalence_relation, verbosity);
+}
+
+vector<int> compute_abstraction_mapping(
+    int num_states,
+    const StateEquivalenceRelation &equivalence_relation) {
+    vector<int> abstraction_mapping(num_states, PRUNED_STATE);
+    for (size_t class_no = 0; class_no < equivalence_relation.size(); ++class_no) {
+        const StateEquivalenceClass &state_equivalence_class =
+            equivalence_relation[class_no];
+        for (int state : state_equivalence_class) {
+            assert(abstraction_mapping[state] == PRUNED_STATE);
+            abstraction_mapping[state] = class_no;
+        }
+    }
+    return abstraction_mapping;
 }
 
 bool is_goal_relevant(const TransitionSystem &ts) {
@@ -90,51 +172,83 @@ bool is_goal_relevant(const TransitionSystem &ts) {
     return false;
 }
 
-int shrink_and_merge_temporarily(
-    FactoredTransitionSystem &fts,
-    int ts_index1,
-    int ts_index2,
+void shrink_factor(
+    const ShrinkStrategy &shrink_strategy,
+    TransitionSystem &ts,
+    const Distances &dist,
+    int new_size,
+    Verbosity verbosity) {
+    StateEquivalenceRelation equivalence_relation =
+        shrink_strategy.compute_equivalence_relation(ts, dist, new_size);
+    // TODO: We currently violate this; see issue250
+    //assert(equivalence_relation.size() <= target_size);
+    int new_num_states = equivalence_relation.size();
+    if (new_num_states < ts.get_size()) {
+        /* Compute the abstraction mapping based on the given state equivalence
+           relation. */
+        vector<int> abstraction_mapping = compute_abstraction_mapping(
+            ts.get_size(), equivalence_relation);
+        ts.apply_abstraction(
+            equivalence_relation, abstraction_mapping, verbosity);
+        // Not applying abstraction to distances because we don't need to.
+    }
+}
+
+pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_and_merge_temporarily(
+    const FactoredTransitionSystem &fts,
+    int index1,
+    int index2,
     const ShrinkStrategy &shrink_strategy,
     int max_states,
     int max_states_before_merge,
     int shrink_threshold_before_merge) {
-    // Copy the transition systems (distances etc)
-    int copy_ts_index1 = fts.copy_without_representation(ts_index1);
-    int copy_ts_index2 = fts.copy_without_representation(ts_index2);
-    pair<int, int> shrink_sizes =
-        compute_shrink_sizes(fts.get_ts(copy_ts_index1).get_size(),
-                             fts.get_ts(copy_ts_index2).get_size(),
-                             max_states,
-                             max_states_before_merge);
+    // Copy the transition systems for further processing.
+    TransitionSystem ts1(fts.get_ts(index1));
+    TransitionSystem ts2(fts.get_ts(index2));
 
-    // Shrink before merge
+    // Imitate shrinking and merging as done in the merge-and-shrink loop.
+    pair<int, int> new_sizes = compute_shrink_sizes(
+        ts1.get_size(),
+        ts2.get_size(),
+        max_states_before_merge,
+        max_states);
     Verbosity verbosity = Verbosity::SILENT;
-    shrink_transition_system(
-        fts,
-        copy_ts_index1,
-        shrink_sizes.first,
-        shrink_threshold_before_merge,
-        shrink_strategy,
-        verbosity);
-    shrink_transition_system(
-        fts,
-        copy_ts_index2,
-        shrink_sizes.second,
-        shrink_threshold_before_merge,
-        shrink_strategy,
-        verbosity);
+    if (ts1.get_size() > min(new_sizes.first, shrink_threshold_before_merge)) {
+        Distances dist1(ts1, fts.get_distances(index1));
+        shrink_factor(shrink_strategy, ts1, dist1, new_sizes.first, verbosity);
+    }
+    if (ts2.get_size() > min(new_sizes.second, shrink_threshold_before_merge)) {
+        Distances dist2(ts2, fts.get_distances(index2));
+        shrink_factor(shrink_strategy, ts2, dist2, new_sizes.second, verbosity);
+    }
 
-    // Perform the merge and temporarily add it to fts
-    const bool finalize_if_unsolvable = false;
-    const bool invalidating_merge = true;
-    int merge_index = fts.merge(
-        copy_ts_index1,
-        copy_ts_index2,
-        verbosity,
-        finalize_if_unsolvable,
-        invalidating_merge
-        );
-    return merge_index;
+    /*
+      Compute the product of the two copied transition systems and distance
+      information.
+    */
+    unique_ptr<TransitionSystem> product = TransitionSystem::merge(
+        fts.get_labels(), ts1, ts2, verbosity);
+    unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
+    const bool compute_init_distances = true;
+    const bool compute_goal_distances = true;
+    distances->compute_distances(compute_init_distances, compute_goal_distances, verbosity);
+
+    // Prune the result.
+    const bool prune_unreachable_states = true;
+    const bool prune_irrelevant_states = true;
+    StateEquivalenceRelation equiv_rel =
+        compute_pruning_equivalence_relation(
+            *product,
+            *distances,
+            prune_unreachable_states,
+            prune_irrelevant_states,
+            verbosity);
+    if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
+        product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);
+        distances->apply_abstraction(equiv_rel, compute_init_distances, compute_goal_distances, verbosity);
+    }
+
+    return make_pair(move(product), move(distances));
 }
 
 int compute_number_of_product_transitions(
@@ -174,7 +288,12 @@ double compute_average_h_value(const Distances &distances) {
     int num_states = distances.get_num_states();
     int sum_distances = 0;
     for (int state = 0; state < num_states; ++state) {
-        sum_distances += distances.get_goal_distance(state);
+        int distance = distances.get_goal_distance(state);
+        if (distance == INF) {
+            sum_distances = INF;
+            break;
+        }
+        sum_distances += distance;
     }
     if (num_states == 0) {
         // For unsolvable transition systems

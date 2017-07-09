@@ -17,7 +17,10 @@
 #include <limits>
 #include <string>
 
+namespace causal_graph {
 class CausalGraph;
+}
+
 namespace options {
 class Options;
 }
@@ -120,7 +123,7 @@ public:
     //@{
 protected:
     const TaskProxy &task_proxy;
-    const CausalGraph &causal_graph;
+    const causal_graph::CausalGraph &causal_graph;
     /** @brief the time limit for sink-set search */
     const double time_limit;
     /** @brief the memory limit for the process,

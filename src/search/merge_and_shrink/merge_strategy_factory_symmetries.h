@@ -20,7 +20,15 @@ public:
     virtual ~MergeStrategyFactorySymmetries() override = default;
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
         const TaskProxy &task_proxy,
-        FactoredTransitionSystem &fts) override;
+        const FactoredTransitionSystem &fts) override;
+
+    virtual bool requires_init_distances() const override {
+        return false;
+    }
+
+    virtual bool requires_goal_distances() const override {
+        return false;
+    }
 };
 }
 

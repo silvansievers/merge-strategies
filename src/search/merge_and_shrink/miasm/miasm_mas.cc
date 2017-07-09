@@ -8,6 +8,7 @@
 #include "../merge_strategy.h"
 #include "../shrink_strategy.h"
 #include "../transition_system.h"
+#include "../utils.h"
 
 #include "../../heuristic.h"
 #include "../../option_parser.h"
@@ -69,9 +70,11 @@ void MiasmAbstraction::release_cache() {
 
 void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
     assert(!fts);
-    const bool finalize_if_unsolvable = false;
+    const bool compute_init_distances = true;
+    const bool compute_goal_distances = true;
     fts = make_shared<FactoredTransitionSystem>(
-        create_factored_transition_system(task_proxy, verbosity, finalize_if_unsolvable));
+        create_factored_transition_system(
+            task_proxy, compute_init_distances, compute_goal_distances, verbosity));
 
     assert(static_cast<int>(task_proxy.get_variables().size()) == fts->get_size());
     for (var_t i = 0; i < fts->get_size(); ++i) {
@@ -133,10 +136,12 @@ int MiasmAbstraction::build_transition_system(
                                                 newly_built, vsir);
     int right_ts_index = build_transition_system(right_set,
                                                  newly_built, vsir);
-    const bool finalize_if_unsolvable = false;
     const bool invalidating_merge = false;
     int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
-                                  finalize_if_unsolvable, invalidating_merge);
+                                  invalidating_merge);
+    const bool prune_unreachable_states = true;
+    const bool prune_irrelevant_states = true;
+    prune_factor(*fts, new_ts_index, prune_unreachable_states, prune_irrelevant_states, verbosity);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

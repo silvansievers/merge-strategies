@@ -15,7 +15,8 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeSymmetries::MergeSymmetries(FactoredTransitionSystem &fts,
+MergeSymmetries::MergeSymmetries(
+    const FactoredTransitionSystem &fts,
     const options::Options &options,
     int num_merges,
     unique_ptr<MergeTree> merge_tree,

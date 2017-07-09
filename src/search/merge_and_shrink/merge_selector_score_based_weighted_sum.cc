@@ -45,7 +45,7 @@ void MergeSelectorScoreBasedWeightedSum::initialize(
 }
 
 pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<int> &indices_subset) const {
     vector<pair<int, int>> merge_candidates =
         compute_merge_candidates(fts, indices_subset);
@@ -146,6 +146,26 @@ void MergeSelectorScoreBasedWeightedSum::dump_specific_options() const {
         scoring_function->dump_options();
         cout << "associated weight: " << weights[i] << endl;
     }
+}
+
+bool MergeSelectorScoreBasedWeightedSum::requires_init_distances() const {
+    for (const shared_ptr<MergeScoringFunction> &scoring_function
+         : merge_scoring_functions) {
+        if (scoring_function->requires_init_distances()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool MergeSelectorScoreBasedWeightedSum::requires_goal_distances() const {
+    for (const shared_ptr<MergeScoringFunction> &scoring_function
+         : merge_scoring_functions) {
+        if (scoring_function->requires_goal_distances()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {

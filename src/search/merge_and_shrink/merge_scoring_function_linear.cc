@@ -13,7 +13,7 @@ using namespace std;
 
 namespace merge_and_shrink {
 vector<double> MergeScoringFunctionLinear::compute_scores(
-    FactoredTransitionSystem &fts,
+    const FactoredTransitionSystem &fts,
     const vector<pair<int, int>> &merge_candidates) {
     set<int> composite_indices;
     for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
@@ -60,5 +60,5 @@ static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
         return make_shared<MergeScoringFunctionLinear>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin("linear", _parse);
+static options::PluginShared<MergeScoringFunction> _plugin("sf_linear", _parse);
 }

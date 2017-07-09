@@ -50,7 +50,7 @@ class SymmetryGroup {
 
     double bliss_time; // elapsed bliss time
 
-    void apply_symmetries(FactoredTransitionSystem &fts,
+    void apply_symmetries(const FactoredTransitionSystem &fts,
                           const std::vector<int> &generator_indices) const;
 public:
     explicit SymmetryGroup(const options::Options &options);
@@ -58,7 +58,7 @@ public:
 
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
-    bool find_and_apply_symmetries(FactoredTransitionSystem &fts,
+    bool find_and_apply_symmetries(const FactoredTransitionSystem &fts,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {
         return bliss_limit_reached;
