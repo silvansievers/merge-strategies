@@ -162,7 +162,7 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
                            "0");
     parser.add_option<bool>("stop_after_no_symmetries", "stop calling bliss "
                             "after unsuccesfull previous bliss call.",
-                           "False");
+                           "false");
     vector<string> symmetries_for_shrinking;
     symmetries_for_shrinking.push_back("NO_SHRINKING");
     symmetries_for_shrinking.push_back("ATOMIC");
