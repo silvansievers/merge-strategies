@@ -28,6 +28,8 @@ class MiasmAbstraction {
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
 //    std::shared_ptr<LabelReduction> label_reduction;
     Verbosity verbosity;
+    const bool prune_unreachable_states;
+    const bool prune_irrelevant_states;
 public:
     explicit MiasmAbstraction(const options::Options &opts);
     static std::string option_key();

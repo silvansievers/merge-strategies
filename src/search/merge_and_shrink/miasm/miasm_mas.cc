@@ -30,6 +30,8 @@ MiasmAbstraction::MiasmAbstraction(const Options &)
     : //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       verbosity(Verbosity::SILENT),
+      prune_unreachable_states(true),
+      prune_irrelevant_states(true),
       fts(nullptr) {
 //    merge_strategy->initialize(task);
 //    if (opts.contains("label_reduction")) {
@@ -75,6 +77,14 @@ void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
     fts = make_shared<FactoredTransitionSystem>(
         create_factored_transition_system(
             task_proxy, compute_init_distances, compute_goal_distances, verbosity));
+    for (int index = 0; index < fts->get_size(); ++index) {
+        prune_step(
+            *fts,
+            index,
+            prune_unreachable_states,
+            prune_irrelevant_states,
+            verbosity);
+    }
 
     assert(static_cast<int>(task_proxy.get_variables().size()) == fts->get_size());
     for (var_t i = 0; i < fts->get_size(); ++i) {
@@ -139,8 +149,6 @@ int MiasmAbstraction::build_transition_system(
     const bool invalidating_merge = false;
     int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
                                   invalidating_merge);
-    const bool prune_unreachable_states = true;
-    const bool prune_irrelevant_states = true;
     prune_step(*fts, new_ts_index, prune_unreachable_states, prune_irrelevant_states, verbosity);
 
     newly_built.push_back(G);
