@@ -55,6 +55,11 @@ extern std::vector<int> compute_abstraction_mapping(
 
 extern bool is_goal_relevant(const TransitionSystem &ts);
 
+/*
+  Copy the two transition systems at the given indices, possibly shrink them
+  according to the same rules as merge-and-shrink does, and return their
+  product.
+*/
 extern std::unique_ptr<TransitionSystem> shrink_before_merge_externally(
     const FactoredTransitionSystem &fts,
     int index1,
@@ -67,7 +72,8 @@ extern std::unique_ptr<TransitionSystem> shrink_before_merge_externally(
 /*
   Copy the two transition systems at the given indices, possibly shrink them
   according to the same rules as merge-and-shrink does, compute their product,
-  and finally prune the product according to given flags.
+  and finally prune the product according to given flags. Return both the
+  product and the distance information.
 */
 extern std::pair<std::unique_ptr<TransitionSystem>, std::unique_ptr<Distances>> shrink_merge_prune_externally(
     const FactoredTransitionSystem &fts,

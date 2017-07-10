@@ -21,7 +21,8 @@ Distances::Distances(const TransitionSystem &transition_system)
 Distances::Distances(const TransitionSystem &transition_system, const Distances &other)
     : transition_system(transition_system),
       init_distances(other.init_distances),
-      goal_distances(other.goal_distances) {
+      goal_distances(other.goal_distances),
+      distances_computed(other.distances_computed) {
 }
 
 Distances::~Distances() {
