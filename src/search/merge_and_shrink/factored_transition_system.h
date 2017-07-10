@@ -116,6 +116,7 @@ public:
         int index2,
         Verbosity verbosity,
         bool invalidating_merge = true);
+
     /*
       Extract the factor at the given index, rendering the FTS invalid.
     */

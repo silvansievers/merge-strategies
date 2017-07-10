@@ -18,6 +18,18 @@
 using namespace std;
 
 namespace merge_and_shrink {
+/*
+  Compute target sizes for shrinking two transition systems with sizes size1
+  and size2 before they are merged. Use the following rules:
+  1) Right before merging, the transition systems may have at most
+     max_states_before_merge states.
+  2) Right after merging, the product has at most max_states_after_merge states.
+  3) Transition systems are shrunk as little as necessary to satisfy the above
+     constraints. (If possible, neither is shrunk at all.)
+  There is often a Pareto frontier of solutions following these rules. In this
+  case, balanced solutions (where the target sizes are close to each other)
+  are preferred over less balanced ones.
+*/
 pair<int, int> compute_shrink_sizes(
     int size1,
     int size2,
@@ -57,6 +69,13 @@ pair<int, int> compute_shrink_sizes(
     return make_pair(new_size1, new_size2);
 }
 
+/*
+  This method checks if the transition system of the factor at index violates
+  the size limit given via new_size (e.g. as computed by compute_shrink_sizes)
+  or the threshold shrink_threshold_before_merge that triggers shrinking even
+  if the size limit is not violated. If so, trigger the shrinking process.
+  Return true iff the factor was actually shrunk.
+*/
 bool shrink_factor(
     FactoredTransitionSystem &fts,
     int index,
@@ -84,6 +103,55 @@ bool shrink_factor(
         return fts.apply_abstraction(index, equivalence_relation, verbosity);
     }
     return false;
+}
+
+bool shrink_before_merge_step(
+    FactoredTransitionSystem &fts,
+    int index1,
+    int index2,
+    int max_states,
+    int max_states_before_merge,
+    int shrink_threshold_before_merge,
+    const ShrinkStrategy &shrink_strategy,
+    Verbosity verbosity) {
+    /*
+      Compute the size limit for both transition systems as imposed by
+      max_states and max_states_before_merge.
+    */
+    pair<int, int> new_sizes = compute_shrink_sizes(
+        fts.get_ts(index1).get_size(),
+        fts.get_ts(index2).get_size(),
+        max_states_before_merge,
+        max_states);
+
+    /*
+      For both transition systems, possibly compute and apply an
+      abstraction.
+      TODO: we could better use the given limit by increasing the size limit
+      for the second shrinking if the first shrinking was larger than
+      required.
+    */
+    bool shrunk1 = shrink_factor(
+        fts,
+        index1,
+        new_sizes.first,
+        shrink_threshold_before_merge,
+        shrink_strategy,
+        verbosity);
+    if (verbosity >= Verbosity::VERBOSE && shrunk1) {
+        fts.statistics(index1);
+    }
+    bool shrunk2 = shrink_factor(
+        fts,
+        index2,
+        new_sizes.second,
+        shrink_threshold_before_merge,
+        shrink_strategy,
+        verbosity);
+    if (verbosity >= Verbosity::VERBOSE && shrunk2) {
+        fts.statistics(index2);
+    }
+    return shrunk1 || shrunk2;
 }
 
 StateEquivalenceRelation compute_pruning_equivalence_relation(
@@ -128,7 +196,7 @@ StateEquivalenceRelation compute_pruning_equivalence_relation(
     return state_equivalence_relation;
 }
 
-bool prune_factor(
+bool prune_step(
     FactoredTransitionSystem &fts,
     int index,
     bool prune_unreachable_states,
@@ -172,7 +240,7 @@ bool is_goal_relevant(const TransitionSystem &ts) {
     return false;
 }
 
-void shrink_factor(
+void shrink_ts(
     const ShrinkStrategy &shrink_strategy,
     TransitionSystem &ts,
     const Distances &dist,
@@ -194,7 +262,7 @@ void shrink_factor(
     }
 }
 
-pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_and_merge_temporarily(
+unique_ptr<TransitionSystem> shrink_before_merge_externally(
     const FactoredTransitionSystem &fts,
     int index1,
     int index2,
@@ -202,11 +270,11 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_and_merge_tempo
     int max_states,
     int max_states_before_merge,
     int shrink_threshold_before_merge) {
-    // Copy the transition systems for further processing.
+    // Copy the transition systems.
     TransitionSystem ts1(fts.get_ts(index1));
     TransitionSystem ts2(fts.get_ts(index2));
 
-    // Imitate shrinking and merging as done in the merge-and-shrink loop.
+    // Imitate shrinking before merging as done in the merge-and-shrink loop.
     pair<int, int> new_sizes = compute_shrink_sizes(
         ts1.get_size(),
         ts2.get_size(),
@@ -215,37 +283,56 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_and_merge_tempo
     Verbosity verbosity = Verbosity::SILENT;
     if (ts1.get_size() > min(new_sizes.first, shrink_threshold_before_merge)) {
         Distances dist1(ts1, fts.get_distances(index1));
-        shrink_factor(shrink_strategy, ts1, dist1, new_sizes.first, verbosity);
+        shrink_ts(shrink_strategy, ts1, dist1, new_sizes.first, verbosity);
     }
     if (ts2.get_size() > min(new_sizes.second, shrink_threshold_before_merge)) {
         Distances dist2(ts2, fts.get_distances(index2));
-        shrink_factor(shrink_strategy, ts2, dist2, new_sizes.second, verbosity);
+        shrink_ts(shrink_strategy, ts2, dist2, new_sizes.second, verbosity);
     }
 
-    /*
-      Compute the product of the two copied transition systems and distance
-      information.
-    */
-    unique_ptr<TransitionSystem> product = TransitionSystem::merge(
-        fts.get_labels(), ts1, ts2, verbosity);
-    unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
-    const bool compute_init_distances = true;
-    const bool compute_goal_distances = true;
-    distances->compute_distances(compute_init_distances, compute_goal_distances, verbosity);
+    // Return the product.
+    return TransitionSystem::merge(fts.get_labels(), ts1, ts2, verbosity);
+}
 
-    // Prune the result.
-    const bool prune_unreachable_states = true;
-    const bool prune_irrelevant_states = true;
-    StateEquivalenceRelation equiv_rel =
-        compute_pruning_equivalence_relation(
-            *product,
-            *distances,
-            prune_unreachable_states,
-            prune_irrelevant_states,
-            verbosity);
-    if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
-        product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);
-        distances->apply_abstraction(equiv_rel, compute_init_distances, compute_goal_distances, verbosity);
+pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_externally(
+    const FactoredTransitionSystem &fts,
+    int index1,
+    int index2,
+    const ShrinkStrategy &shrink_strategy,
+    int max_states,
+    int max_states_before_merge,
+    int shrink_threshold_before_merge,
+    const bool prune_unreachable_states,
+    const bool prune_irrelevant_states) {
+    unique_ptr<TransitionSystem> product =
+        shrink_before_merge_externally(
+            fts,
+            index1,
+            index2,
+            shrink_strategy,
+            max_states,
+            max_states_before_merge,
+            shrink_threshold_before_merge);
+
+    unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
+    Verbosity verbosity = Verbosity::SILENT;
+    // Pruning unreachable states requires init distance information, pruning
+    // irrelevant states requires goal distance information. Also below.
+    distances->compute_distances(prune_unreachable_states, prune_irrelevant_states, verbosity);
+
+    if (prune_unreachable_states || prune_irrelevant_states) {
+        // Prune the result.
+        StateEquivalenceRelation equiv_rel =
+            compute_pruning_equivalence_relation(
+                *product,
+                *distances,
+                prune_unreachable_states,
+                prune_irrelevant_states,
+                verbosity);
+        if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
+            product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);
+            distances->apply_abstraction(equiv_rel, prune_unreachable_states, prune_irrelevant_states, verbosity);
+        }
     }
 
     return make_pair(move(product), move(distances));

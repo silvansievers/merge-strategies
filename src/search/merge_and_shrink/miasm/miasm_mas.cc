@@ -141,7 +141,7 @@ int MiasmAbstraction::build_transition_system(
                                   invalidating_merge);
     const bool prune_unreachable_states = true;
     const bool prune_irrelevant_states = true;
-    prune_factor(*fts, new_ts_index, prune_unreachable_states, prune_irrelevant_states, verbosity);
+    prune_step(*fts, new_ts_index, prune_unreachable_states, prune_irrelevant_states, verbosity);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

@@ -322,10 +322,13 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
             score = - (fts.get_init_state_goal_distance(ts_index1) +
                     fts.get_init_state_goal_distance(ts_index2));
         } else {
+            const bool prune_unreachable_states = true;
+            const bool prune_irrelevant_states = true;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                shrink_and_merge_temporarily(
-                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                    max_states_before_merge, shrink_threshold_before_merge);
+                    shrink_merge_prune_externally(
+                        fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                        max_states_before_merge, shrink_threshold_before_merge,
+                        prune_unreachable_states, prune_irrelevant_states);
             const TransitionSystem &ts = *merge.first;
             const Distances &distances = *merge.second;
 
@@ -421,10 +424,13 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
+        const bool prune_unreachable_states = true;
+        const bool prune_irrelevant_states = true;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-            shrink_and_merge_temporarily(
-                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                max_states_before_merge, shrink_threshold_before_merge);
+                shrink_merge_prune_externally(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge,
+                    prune_unreachable_states, prune_irrelevant_states);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 
@@ -530,10 +536,13 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         // score value in [-infinity,infinity]
         double score = 1;
         if (avgh == AvgH::IMPROVEMENT) {
+            const bool prune_unreachable_states = true;
+            const bool prune_irrelevant_states = true;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                shrink_and_merge_temporarily(
-                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                    max_states_before_merge, shrink_threshold_before_merge);
+                    shrink_merge_prune_externally(
+                        fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                        max_states_before_merge, shrink_threshold_before_merge,
+                        prune_unreachable_states, prune_irrelevant_states);
             const Distances &distances = *merge.second;
             double new_average_h = compute_average_h_value(distances);
             double old_average_h = max(compute_average_h_value(fts.get_distances(ts_index1)),
@@ -696,10 +705,13 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
+        const bool prune_unreachable_states = true;
+        const bool prune_irrelevant_states = true;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-            shrink_and_merge_temporarily(
-                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                max_states_before_merge, shrink_threshold_before_merge);
+                shrink_merge_prune_externally(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge,
+                    prune_unreachable_states, prune_irrelevant_states);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 
