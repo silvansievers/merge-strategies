@@ -1,5 +1,6 @@
 #include "merge_strategy_factory_precomputed.h"
 
+#include "merge_strategy_factory_stateless.h"
 #include "merge_strategy_precomputed.h"
 #include "merge_tree_factory.h"
 #include "merge_tree.h"
@@ -17,6 +18,10 @@ MergeStrategyFactoryPrecomputed::MergeStrategyFactoryPrecomputed(
     options::Options &options)
     : MergeStrategyFactory(),
       merge_tree_factory(options.get<shared_ptr<MergeTreeFactory>>("merge_tree")) {
+    if (options.contains("fallback_merge_strategy_stateless")) {
+        fallback_merge_strategy_factory_stateless =
+          options.get<shared_ptr<MergeStrategyFactoryStateless>>("fallback_merge_strategy_stateless");
+    }
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strategy(
@@ -24,7 +29,11 @@ unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strateg
     const FactoredTransitionSystem &fts) {
     unique_ptr<MergeTree> merge_tree =
         merge_tree_factory->compute_merge_tree(task_proxy);
-    return utils::make_unique_ptr<MergeStrategyPrecomputed>(fts, move(merge_tree));
+    if (merge_tree) {
+        return utils::make_unique_ptr<MergeStrategyPrecomputed>(fts, move(merge_tree));
+    } else {
+        return fallback_merge_strategy_factory_stateless->compute_merge_strategy(task_proxy, fts);
+    }
 }
 
 bool MergeStrategyFactoryPrecomputed::requires_init_distances() const {
@@ -55,6 +64,10 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     parser.add_option<shared_ptr<MergeTreeFactory>>(
         "merge_tree",
         "The precomputed merge tree");
+    parser.add_option<shared_ptr<MergeStrategyFactoryStateless>>(
+        "fallback_merge_strategy_stateless",
+        "Any stateless merge strategy serving as fallback.",
+        options::OptionParser::NONE);
 
     options::Options opts = parser.parse();
     if (parser.dry_run())

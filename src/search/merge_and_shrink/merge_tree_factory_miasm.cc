@@ -39,6 +39,12 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
     /* find the maximal weighted set packing of the priority sets */
     greedy_max_set_packing();
 //    cerr << "max packing" << max_packing << endl;
+    if (max_packing.size() == task_proxy.get_variables().size()) {
+        cout << "Found a trivial variable partitioning, using fallback merge "
+                "strategy" << endl;
+        return nullptr;
+    }
+
     /* construct the merge tree based on the max packing
      * using the internal and external merging strategy
      * specified in the options for the current MIASM */
@@ -55,6 +61,9 @@ unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
 
     // compute the merge tree in MiasmMergeTree form
     MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task_proxy);
+    if (!miasm_tree) {
+        return nullptr;
+    }
 
     // get the actual merge order
     vector<pair<int, int>> merge_order;
