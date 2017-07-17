@@ -32,6 +32,7 @@ MiasmAbstraction::MiasmAbstraction(const Options &)
       verbosity(Verbosity::SILENT),
       prune_unreachable_states(true),
       prune_irrelevant_states(true),
+      pruning_as_abstraction(false),
       fts(nullptr) {
 //    merge_strategy->initialize(task);
 //    if (opts.contains("label_reduction")) {
@@ -83,6 +84,7 @@ void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
             index,
             prune_unreachable_states,
             prune_irrelevant_states,
+            pruning_as_abstraction,
             verbosity);
     }
 
@@ -149,7 +151,13 @@ int MiasmAbstraction::build_transition_system(
     const bool invalidating_merge = false;
     int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
                                   invalidating_merge);
-    prune_step(*fts, new_ts_index, prune_unreachable_states, prune_irrelevant_states, verbosity);
+    prune_step(
+        *fts,
+        new_ts_index,
+        prune_unreachable_states,
+        prune_irrelevant_states,
+        pruning_as_abstraction,
+        verbosity);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

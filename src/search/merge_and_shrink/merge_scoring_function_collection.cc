@@ -324,11 +324,13 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
         } else {
             const bool prune_unreachable_states = true;
             const bool prune_irrelevant_states = true;
+            const bool pruning_as_abstraction = false;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
                     shrink_merge_prune_externally(
                         fts, ts_index1, ts_index2, *shrink_stratey, max_states,
                         max_states_before_merge, shrink_threshold_before_merge,
-                        prune_unreachable_states, prune_irrelevant_states);
+                        prune_unreachable_states, prune_irrelevant_states,
+                        pruning_as_abstraction);
             const TransitionSystem &ts = *merge.first;
             const Distances &distances = *merge.second;
 
@@ -426,11 +428,13 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
         int ts_index2 = merge_candidate.second;
         const bool prune_unreachable_states = true;
         const bool prune_irrelevant_states = true;
+        const bool pruning_as_abstraction = false;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
                 shrink_merge_prune_externally(
                     fts, ts_index1, ts_index2, *shrink_stratey, max_states,
                     max_states_before_merge, shrink_threshold_before_merge,
-                    prune_unreachable_states, prune_irrelevant_states);
+                    prune_unreachable_states, prune_irrelevant_states,
+                    pruning_as_abstraction);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 
@@ -538,11 +542,13 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         if (avgh == AvgH::IMPROVEMENT) {
             const bool prune_unreachable_states = true;
             const bool prune_irrelevant_states = true;
+            const bool pruning_as_abstraction = false;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
                     shrink_merge_prune_externally(
                         fts, ts_index1, ts_index2, *shrink_stratey, max_states,
                         max_states_before_merge, shrink_threshold_before_merge,
-                        prune_unreachable_states, prune_irrelevant_states);
+                        prune_unreachable_states, prune_irrelevant_states,
+                        pruning_as_abstraction);
             const Distances &distances = *merge.second;
             double new_average_h = compute_average_h_value(distances);
             double old_average_h = max(compute_average_h_value(fts.get_distances(ts_index1)),
@@ -707,11 +713,13 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         int ts_index2 = merge_candidate.second;
         const bool prune_unreachable_states = true;
         const bool prune_irrelevant_states = true;
+        const bool pruning_as_abstraction = false;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
                 shrink_merge_prune_externally(
                     fts, ts_index1, ts_index2, *shrink_stratey, max_states,
                     max_states_before_merge, shrink_threshold_before_merge,
-                    prune_unreachable_states, prune_irrelevant_states);
+                    prune_unreachable_states, prune_irrelevant_states,
+                    pruning_as_abstraction);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 

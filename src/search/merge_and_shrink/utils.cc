@@ -159,39 +159,72 @@ StateEquivalenceRelation compute_pruning_equivalence_relation(
     const Distances &distances,
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
+    bool pruning_as_abstraction,
     Verbosity verbosity) {
     int num_states = ts.get_size();
     StateEquivalenceRelation state_equivalence_relation;
     state_equivalence_relation.reserve(num_states);
     int unreachable_count = 0;
     int irrelevant_count = 0;
-    int dead_count = 0;
-    for (int state = 0; state < num_states; ++state) {
-        /* If pruning both unreachable and irrelevant states, a state which is
-           dead is counted for both statistics! */
-        bool prune_state = false;
-        if (prune_unreachable_states && distances.get_init_distance(state) == INF) {
-            ++unreachable_count;
-            prune_state = true;
+    if (pruning_as_abstraction) {
+        StateEquivalenceClass unreachable_states;
+        StateEquivalenceClass irrelevant_states;
+        for (int state = 0; state < num_states; ++state) {
+            /* If pruning both unreachable and irrelevant states, it is mapped
+             * to the "irrelevant state". */
+            if (prune_irrelevant_states && distances.get_goal_distance(state) == INF) {
+                ++irrelevant_count;
+                irrelevant_states.push_front(state);
+            } else if (prune_unreachable_states && distances.get_init_distance(state) == INF) {
+                ++unreachable_count;
+                unreachable_states.push_front(state);
+            } else {
+                StateEquivalenceClass state_equivalence_class;
+                state_equivalence_class.push_front(state);
+                state_equivalence_relation.push_back(state_equivalence_class);
+            }
         }
-        if (prune_irrelevant_states && distances.get_goal_distance(state) == INF) {
-            ++irrelevant_count;
-            prune_state = true;
+        if (verbosity >= Verbosity::VERBOSE &&
+            (unreachable_count || irrelevant_count)) {
+            cout << ts.tag()
+                 << "unreachable: " << unreachable_count << " states, "
+                 << "irrelevant: " << irrelevant_count << " states " << endl;
         }
-        if (prune_state) {
-            ++dead_count;
-        } else {
-            StateEquivalenceClass state_equivalence_class;
-            state_equivalence_class.push_front(state);
-            state_equivalence_relation.push_back(state_equivalence_class);
+        if (unreachable_count) {
+            state_equivalence_relation.push_back(unreachable_states);
         }
-    }
-    if (verbosity >= Verbosity::VERBOSE &&
-        (unreachable_count || irrelevant_count)) {
-        cout << ts.tag()
-             << "unreachable: " << unreachable_count << " states, "
-             << "irrelevant: " << irrelevant_count << " states ("
-             << "total dead: " << dead_count << " states)" << endl;
+        if (irrelevant_count) {
+            state_equivalence_relation.push_back(irrelevant_states);
+        }
+    } else {
+        int dead_count = 0;
+        for (int state = 0; state < num_states; ++state) {
+            /* If pruning both unreachable and irrelevant states, a state which is
+               dead is counted for both statistics! */
+            bool prune_state = false;
+            if (prune_unreachable_states && distances.get_init_distance(state) == INF) {
+                ++unreachable_count;
+                prune_state = true;
+            }
+            if (prune_irrelevant_states && distances.get_goal_distance(state) == INF) {
+                ++irrelevant_count;
+                prune_state = true;
+            }
+            if (prune_state) {
+                ++dead_count;
+            } else {
+                StateEquivalenceClass state_equivalence_class;
+                state_equivalence_class.push_front(state);
+                state_equivalence_relation.push_back(state_equivalence_class);
+            }
+        }
+        if (verbosity >= Verbosity::VERBOSE &&
+            (unreachable_count || irrelevant_count)) {
+            cout << ts.tag()
+                 << "unreachable: " << unreachable_count << " states, "
+                 << "irrelevant: " << irrelevant_count << " states ("
+                 << "total dead: " << dead_count << " states)" << endl;
+        }
     }
     return state_equivalence_relation;
 }
@@ -201,6 +234,7 @@ bool prune_step(
     int index,
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
+    bool pruning_as_abstraction,
     Verbosity verbosity) {
     assert(prune_unreachable_states || prune_irrelevant_states);
     const TransitionSystem &ts = fts.get_ts(index);
@@ -211,6 +245,7 @@ bool prune_step(
             distances,
             prune_unreachable_states,
             prune_irrelevant_states,
+            pruning_as_abstraction,
             verbosity);
     return fts.apply_abstraction(index, state_equivalence_relation, verbosity);
 }
@@ -345,7 +380,8 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
     int max_states_before_merge,
     int shrink_threshold_before_merge,
     const bool prune_unreachable_states,
-    const bool prune_irrelevant_states) {
+    const bool prune_irrelevant_states,
+    const bool pruning_as_abstraction) {
     unique_ptr<TransitionSystem> product =
         shrink_before_merge_externally(
             fts,
@@ -370,6 +406,7 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
                 *distances,
                 prune_unreachable_states,
                 prune_irrelevant_states,
+                pruning_as_abstraction,
                 verbosity);
         if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
             product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);

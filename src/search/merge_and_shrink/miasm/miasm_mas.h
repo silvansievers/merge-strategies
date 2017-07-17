@@ -30,6 +30,7 @@ class MiasmAbstraction {
     Verbosity verbosity;
     const bool prune_unreachable_states;
     const bool prune_irrelevant_states;
+    const bool pruning_as_abstraction;
 public:
     explicit MiasmAbstraction(const options::Options &opts);
     static std::string option_key();

@@ -37,6 +37,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     // Options for pruning
     const bool prune_unreachable_states;
     const bool prune_irrelevant_states;
+    const bool pruning_as_abstraction;
 
     const Verbosity verbosity;
     long starting_peak_memory;

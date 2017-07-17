@@ -48,6 +48,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       shrink_threshold_before_merge(opts.get<int>("threshold_before_merge")),
       prune_unreachable_states(opts.get<bool>("prune_unreachable_states")),
       prune_irrelevant_states(opts.get<bool>("prune_irrelevant_states")),
+      pruning_as_abstraction(opts.get<bool>("pruning_as_abstraction")),
       verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
       starting_peak_memory(-1),
       mas_representation(nullptr) {
@@ -192,6 +193,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 index,
                 prune_unreachable_states,
                 prune_irrelevant_states,
+                pruning_as_abstraction,
                 verbosity);
         }
         if (!fts.is_factor_solvable(index)) {
@@ -313,6 +315,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                     merged_index,
                     prune_unreachable_states,
                     prune_irrelevant_states,
+                    pruning_as_abstraction,
                     verbosity);
                 double new_size = fts.get_ts(merged_index).get_size();
                 assert(new_size <= old_size);
@@ -628,6 +631,12 @@ static Heuristic *_parse(OptionParser &parser) {
         "If true, prune abstract states from which no goal state can be "
         "reached.",
         "true");
+    parser.add_option<bool>(
+        "pruning_as_abstraction",
+        "If true, perform pruning by not removing pruned states, but mapping "
+        "them to two single states representing unreachable and irrelevant "
+        "states respectively.",
+        "false");
 
     MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
     Heuristic::add_options_to_parser(parser);

@@ -43,6 +43,7 @@ extern bool prune_step(
     int index,
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
+    bool pruning_as_abstraction,
     Verbosity verbosity);
 
 /*
@@ -84,7 +85,8 @@ extern std::pair<std::unique_ptr<TransitionSystem>, std::unique_ptr<Distances>> 
     int max_states_before_merge,
     int shrink_threshold_before_merge,
     const bool prune_unreachable_states,
-    const bool prune_irrelevant_states);
+    const bool prune_irrelevant_states,
+    const bool pruning_as_abstraction);
 
 extern int compute_number_of_product_transitions(
     const TransitionSystem &ts1, const TransitionSystem &ts2);
