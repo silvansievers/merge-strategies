@@ -123,10 +123,7 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
     const FactoredTransitionSystem &fts) {
     int num_merges = task_proxy.get_variables().size() - 1;
 
-    if (merge_selector) {
-        merge_selector->initialize(task_proxy);
-    }
-
+    // We first check if we can compute a merge tree, if given a factory.
     unique_ptr<MergeTree> merge_tree = nullptr;
     bool tree_is_miasm = false;
     if (merge_tree_factory) {
@@ -134,6 +131,16 @@ unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy
         if (merge_tree_factory->get_name() == "miasm") {
             tree_is_miasm = true;
         }
+    }
+
+    if (!merge_tree) {
+        // If there is no tree (either because there is no factory, or because
+        // the computation failed (e.g. MIASM), prepare the selector.
+        assert(merge_selector);
+        merge_selector->initialize(task_proxy);
+    } else {
+        // Make sure to not have an active merge selector if having a tree.
+        merge_selector = nullptr;
     }
 
     return utils::make_unique_ptr<MergeSymmetries>(
@@ -242,9 +249,13 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     bool merge_tree = options.contains("merge_tree");
     bool merge_selector = options.contains("merge_selector");
     if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
-        cerr << "You have to specify exactly one of the options merge_tree "
-                "and merg_selector!" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+//        cerr << "You have to specify exactly one of the options merge_tree "
+//                "and merge_selector!" << endl;
+//        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        cerr << "WARNING! You have specified both merge_tree and "
+                "merge_selector. Is that on purpose? (It usually only makes "
+                "sense if using miasm as a tree, which might not compute a "
+                "tree at all.)" << endl;
     }
     if (parser.dry_run())
         return nullptr;
