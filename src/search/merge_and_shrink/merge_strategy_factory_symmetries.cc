@@ -109,7 +109,7 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
          << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
     cout << "    stabilize transition systems: "
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
-    cout << "    fallback merge strategy: ";
+    cout << "    fallback merge strategy: " << endl;
     if (merge_tree_factory) {
         merge_tree_factory->dump_options();
     }
