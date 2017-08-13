@@ -145,11 +145,9 @@ void MergeSymmetries::determine_merge_order() {
 //        }
     }
 
-    assert(chosen_generator_for_merging != 1);
-    const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
-
-    if (internal_merging == SECONDARY) {
+    if (internal_merging == SECONDARY && chosen_generator_for_merging != -1) {
         assert(current_ts_indices.empty());
+        const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
         current_ts_indices = generator->get_overall_affected_transition_systems();
         return;
     }
@@ -166,9 +164,10 @@ void MergeSymmetries::determine_merge_order() {
       and the remaining other (internally) affected transition systems, again
       as given by fast downward.
     */
-    if (symmetries_for_merging != NO_MERGING) {
+    if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
         vector<vector<int> > cycles;
         vector<int> merge_linear_transition_systems;
+        const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
 
         // Always include all mapped transition systems
         if (internal_merging == NON_LINEAR) {
@@ -279,7 +278,7 @@ pair<int, int> MergeSymmetries::get_next() {
         } else {
             if (symmetry_group->get_num_generators()) {
                 determine_merge_order();
-                if (pure_fallback_strategy) {
+                if (pure_fallback_strategy && (!merge_order.empty() || !current_ts_indices.empty())) {
                     pure_fallback_strategy = false;
                     cout << "not pure fallback strategy anymore" << endl;
                 }
