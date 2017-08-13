@@ -90,35 +90,16 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
 unique_ptr<MergeStrategy> MergeStrategyFactorySymmetries::compute_merge_strategy(
     const TaskProxy &task_proxy,
     const FactoredTransitionSystem &fts) {
-    int num_merges = task_proxy.get_variables().size() - 1;
-
-    // We first check if we can compute a merge tree, if given a factory.
-    unique_ptr<MergeTree> merge_tree = nullptr;
-    bool tree_is_miasm = false;
-    if (merge_tree_factory) {
-        merge_tree = merge_tree_factory->compute_merge_tree(task_proxy);
-        if (merge_tree_factory->get_name() == "miasm") {
-            tree_is_miasm = true;
-        }
-    }
-
-    if (!merge_tree) {
-        // If there is no tree (either because there is no factory, or because
-        // the computation failed (e.g. MIASM), prepare the selector.
-        assert(merge_selector);
+    if (merge_selector) {
         merge_selector->initialize(task_proxy);
-    } else {
-        // Make sure to not have an active merge selector if having a tree.
-        merge_selector = nullptr;
     }
 
     return utils::make_unique_ptr<MergeSymmetries>(
         fts,
         options,
-        num_merges,
-        move(merge_tree),
-        merge_selector,
-        tree_is_miasm);
+        task_proxy,
+        merge_tree_factory,
+        merge_selector);
 }
 
 string MergeStrategyFactorySymmetries::name() const {
@@ -149,14 +130,16 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
+    internal_merging.push_back("SECONDARY");
     parser.add_enum_option("internal_merging",
                            internal_merging,
                            "choose the order in which to merge the set of "
-                           "transition systems to be merged (only useful with "
-                           "MERGE_FOR_ATOMIC): "
+                           "transition systems to be merged: "
                            "linear (obvious), "
                            "non linear, which means to first merge every cycle, "
-                           "and then the resulting intermediate transition systems.",
+                           "and then the resulting intermediate transition systems, "
+                           "secondary: use secondary merge strategy, i.e. either "
+                           "a merge tree factory or a merge selector.",
                            "LINEAR");
 
     // Options for GraphCreator
