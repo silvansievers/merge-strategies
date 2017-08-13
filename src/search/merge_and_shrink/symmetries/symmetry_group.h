@@ -29,12 +29,6 @@ class SymmetryGroup {
     };
     SymmetriesForMerging symmetries_for_merging;
 
-    enum ExternalMerging {
-        MERGE_FOR_ATOMIC,
-        MERGE_FOR_LOCAL
-    };
-    ExternalMerging external_merging;
-
     enum InternalMerging {
         LINEAR,
         NON_LINEAR

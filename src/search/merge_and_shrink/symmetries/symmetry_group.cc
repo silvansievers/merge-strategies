@@ -25,7 +25,6 @@ SymmetryGroup::SymmetryGroup(const Options &options)
     : bliss_limit_reached(false),
       stop_after_no_symmetries(options.get<bool>("stop_after_no_symmetries")),
       symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
-      external_merging(ExternalMerging(options.get_enum("external_merging"))),
       internal_merging(InternalMerging(options.get_enum("internal_merging"))),
       bliss_time(0) {
     gc = new MSGraphCreator(options);
@@ -64,9 +63,7 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
 
     int chosen_generator_for_merging = -1;
     int smallest_generator_affected_transition_systems_size = numeric_limits<int>::max();
-    int smallest_generator_mapped_transition_systems_size = numeric_limits<int>::max();
     int largest_generator_affected_transition_systems_size = 0;
-    int largest_generator_mapped_transition_systems_size = 0;
 
     /*
       Go over the generators and classify them into atomic, local or general
@@ -75,8 +72,6 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
     */
     for (int generator_index = 0; generator_index < get_num_generators(); ++generator_index) {
         const SymmetryGenerator *generator = symmetry_generators[generator_index];
-        const vector<int> &mapped_transition_systems =
-            generator->get_mapped_transition_systems();
         const vector<int> &overall_affected_transition_systems =
             generator->get_overall_affected_transition_systems();
 
@@ -86,40 +81,18 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         if (number_overall_affected_transition_systems > 1) {
-            if (external_merging == MERGE_FOR_ATOMIC) {
-                if (symmetries_for_merging == SMALLEST
-                        && number_overall_affected_transition_systems
-                        < smallest_generator_affected_transition_systems_size) {
-                    smallest_generator_affected_transition_systems_size
-                            = number_overall_affected_transition_systems;
-                    chosen_generator_for_merging = generator_index;
-                } else if (symmetries_for_merging == LARGEST
-                              && number_overall_affected_transition_systems
-                              > largest_generator_affected_transition_systems_size) {
-                    largest_generator_affected_transition_systems_size
-                            = number_overall_affected_transition_systems;
-                    chosen_generator_for_merging = generator_index;
-                }
-            }
-        }
-
-        int number_mapped_transition_systems = mapped_transition_systems.size();
-        if (number_mapped_transition_systems > 0) {
-            if (external_merging == MERGE_FOR_LOCAL) {
-                if (symmetries_for_merging == SMALLEST
-                        && number_mapped_transition_systems
-                        < smallest_generator_mapped_transition_systems_size) {
-                    smallest_generator_mapped_transition_systems_size
-                            = number_mapped_transition_systems;
-                    chosen_generator_for_merging = generator_index;
-                }
-                if (symmetries_for_merging == LARGEST
-                        && number_mapped_transition_systems
-                        > largest_generator_mapped_transition_systems_size) {
-                    largest_generator_mapped_transition_systems_size
-                            = number_mapped_transition_systems;
-                    chosen_generator_for_merging = generator_index;
-                }
+            if (symmetries_for_merging == SMALLEST
+                    && number_overall_affected_transition_systems
+                    < smallest_generator_affected_transition_systems_size) {
+                smallest_generator_affected_transition_systems_size
+                        = number_overall_affected_transition_systems;
+                chosen_generator_for_merging = generator_index;
+            } else if (symmetries_for_merging == LARGEST
+                          && number_overall_affected_transition_systems
+                          > largest_generator_affected_transition_systems_size) {
+                largest_generator_affected_transition_systems_size
+                        = number_overall_affected_transition_systems;
+                chosen_generator_for_merging = generator_index;
             }
         }
 
@@ -161,8 +134,7 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
         const SymmetryGenerator *generator = symmetry_generators[chosen_generator_for_merging];
 
         // Always include all mapped transition systems
-        if (internal_merging == NON_LINEAR
-                || external_merging == MERGE_FOR_LOCAL) {
+        if (internal_merging == NON_LINEAR) {
             /*
               If the internal merge strategy is non linear or we only want
               to merge every cycle (non linearly), we need to
@@ -183,17 +155,14 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
         }
 
         /*
-          If merging for atomic symmetries, we need to include the internally
-          affected transition systems (to be merge linearly after the mapped
-          ones).
+          We need to include the internally affected transition systems (to be
+          merged linearly after the mapped ones).
         */
-        if (external_merging == MERGE_FOR_ATOMIC) {
-            const vector<int> &internally_affected_transition_systems =
-                 generator->get_internally_affected_transition_systems();
-            merge_linear_transition_systems.insert(merge_linear_transition_systems.end(),
-                                                   internally_affected_transition_systems.begin(),
-                                                   internally_affected_transition_systems.end());
-        }
+        const vector<int> &internally_affected_transition_systems =
+             generator->get_internally_affected_transition_systems();
+        merge_linear_transition_systems.insert(merge_linear_transition_systems.end(),
+                                               internally_affected_transition_systems.begin(),
+                                               internally_affected_transition_systems.end());
 
         /*
           Here we compute the actual merge tree: if cycles is non-empty, we
@@ -215,35 +184,31 @@ void SymmetryGroup::find_symmetries(const FactoredTransitionSystem &fts,
                 abs_index_1 = number_of_transition_systems + number_of_merges;
                 ++number_of_merges;
             }
-            if (external_merging == MERGE_FOR_ATOMIC) {
-                /*
-                  number_of_transition_systems + number_of_merges always is the *next*
-                  position where a new merged transition system will be stored at.
-                  here, we need the *last* position where the transition system
-                  resulting from merging the cycle was stored, hence the -1.
-                */
-                merge_linear_indices.push_back(number_of_transition_systems + number_of_merges - 1);
-            }
+            /*
+              number_of_transition_systems + number_of_merges always is the *next*
+              position where a new merged transition system will be stored at.
+              here, we need the *last* position where the transition system
+              resulting from merging the cycle was stored, hence the -1.
+            */
+            merge_linear_indices.push_back(number_of_transition_systems + number_of_merges - 1);
         }
 
         /*
           Here we include the transition systems that need to be merged linearly
-          in the merge tree. Those are the internally affected ones if they
-          need to be merged, and the products of the merged cycles if
-          applicable (merge_linear_transition_systems).
+          in the merge tree. Those are the internally affected ones and the
+          products of the merged cycles if applicable
+          (merge_linear_transition_systems).
         */
-        if (external_merging == MERGE_FOR_ATOMIC) {
-            merge_linear_indices.insert(merge_linear_indices.end(),
-                                        merge_linear_transition_systems.begin(),
-                                        merge_linear_transition_systems.end());
+        merge_linear_indices.insert(merge_linear_indices.end(),
+                                    merge_linear_transition_systems.begin(),
+                                    merge_linear_transition_systems.end());
 
-            size_t abs_index_1 = merge_linear_indices[0];
-            for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
-                size_t abs_index_2 = merge_linear_indices[i];
-                merge_order.push_back(make_pair(abs_index_1, abs_index_2));
-                abs_index_1 = number_of_transition_systems + number_of_merges;
-                ++number_of_merges;
-            }
+        size_t abs_index_1 = merge_linear_indices[0];
+        for (size_t i = 1; i < merge_linear_indices.size(); ++i) {
+            size_t abs_index_2 = merge_linear_indices[i];
+            merge_order.push_back(make_pair(abs_index_1, abs_index_2));
+            abs_index_1 = number_of_transition_systems + number_of_merges;
+            ++number_of_merges;
         }
 
         cout << "Chosen internal merge order: " << endl;

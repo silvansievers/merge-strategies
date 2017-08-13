@@ -57,18 +57,6 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     }
     cout << endl;
     if (symmetries_for_merging) {
-        cout << "    external merging: ";
-        switch (options.get_enum("external_merging")) {
-            case 0: {
-                cout << "merge for atomic symmetry";
-                break;
-            }
-            case 1: {
-                cout << "merge for local symmetry";
-                break;
-            }
-        }
-        cout << endl;
         cout << "    internal merging: ";
         switch (options.get_enum("internal_merging")) {
             case 0: {
@@ -163,18 +151,6 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
                            "the set of transition systems to be merged: "
                            "the smallest or the largest",
                            "SMALLEST");
-    vector<string> external_merging;
-    external_merging.push_back("MERGE_FOR_ATOMIC");
-    external_merging.push_back("MERGE_FOR_LOCAL");
-    parser.add_enum_option("external_merging",
-                           external_merging,
-                           "choose the set of transition systems to be merged: "
-                           "merge for atomic: merge all transition systems affected "
-                           "by the chosen symmetry, or "
-                           "merge for local: merge only the transition systems "
-                           "mapped (in cycles) to others. only merge every "
-                           "cycle separately.",
-                           "MERGE_FOR_ATOMIC");
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
