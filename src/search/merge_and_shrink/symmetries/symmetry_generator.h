@@ -67,13 +67,13 @@ class SymmetryGenerator {
     //std::vector<std::vector<int> > cycles;
 
     //void compute_cycles();
+    int get_value(int ind) const;
 public:
     SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info,
                       const unsigned int* automorphism);
     ~SymmetryGenerator();
 
     bool identity() const;
-    int get_value(int ind) const;
 
     const std::vector<int> &get_internally_affected_transition_systems() const {
         return internally_affected_transition_systems;
@@ -89,12 +89,6 @@ public:
     //}
     void compute_cycles(std::vector<std::vector<int> > &cycles) const;
     //void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
-    bool internally_affects(int transition_system_index) const {
-        return internally_affected[transition_system_index];
-    }
-    bool maps(int transition_system_index) const {
-        return mapped[transition_system_index];
-    }
     void dump() const;
     void dump_value() const;
     void dump_all() const;
