@@ -6,9 +6,6 @@
 namespace bliss {
     class Digraph;
 }
-namespace options {
-class Options;
-}
 
 /**
  * This class is using bliss for finding symmetries of the given set of transition systems.
@@ -16,7 +13,6 @@ class Options;
 
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
-class SymmetryGenerator;
 class SymmetryGeneratorInfo;
 class SymmetryGroup;
 class MSGraphCreator {
@@ -31,20 +27,18 @@ class MSGraphCreator {
     };
 
     // Options
-    bool debug; //generate dot-readable output
-    bool stabilize_transition_systems;
-    double bliss_time_limit;
+    const bool debug; //generate dot-readable output
+    const bool stabilize_transition_systems;
 
     void create_bliss_directed_graph(const FactoredTransitionSystem &fts,
                                      bliss::Digraph &bliss_graph,
-                                     SymmetryGeneratorInfo *symmetry_generator_info);
+                                     SymmetryGeneratorInfo *symmetry_generator_info) const ;
 public:
-    explicit MSGraphCreator(const options::Options &options);
-    ~MSGraphCreator();
-
+    MSGraphCreator(const bool debug, const bool stabilize_transition_systems);
     double compute_symmetries(const FactoredTransitionSystem &fts,
                               SymmetryGroup *symmetry_group,
-                              SymmetryGeneratorInfo *symmetry_generator_info);
+                              SymmetryGeneratorInfo *symmetry_generator_info,
+                              double bliss_time_limit) const;
 };
 }
 

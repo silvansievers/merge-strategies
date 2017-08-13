@@ -3,8 +3,6 @@
 
 #include "merge_strategy.h"
 
-#include "../options/options.h"
-
 #include <memory>
 #include <vector>
 
@@ -15,15 +13,31 @@ class Options;
 namespace merge_and_shrink {
 class MergeSelector;
 class MergeTree;
+class SymmetryGroup;
 class MergeSymmetries : public MergeStrategy {
-    options::Options options;
-    int num_merges;
+    const int num_merges;
+
+    enum SymmetriesForMerging {
+        NO_MERGING,
+        SMALLEST,
+        LARGEST
+    };
+    const SymmetriesForMerging symmetries_for_merging;
+
+    enum InternalMerging {
+        LINEAR,
+        NON_LINEAR
+    };
+    const InternalMerging internal_merging;
+
+    const int max_bliss_iterations;
+    const int bliss_call_time_limit;
+    const bool tree_is_miasm;
+
+    std::unique_ptr<SymmetryGroup> symmetry_group;
+    double bliss_remaining_time_budget;
     std::shared_ptr<MergeTree> merge_tree;
     std::shared_ptr<MergeSelector> merge_selector;
-    int max_bliss_iterations;
-    int bliss_call_time_limit;
-    double bliss_remaining_time_budget;
-    bool tree_is_miasm;
 
     // statistics
     int iteration_counter;
@@ -34,6 +48,7 @@ class MergeSymmetries : public MergeStrategy {
     // current merge_order
     std::vector<std::pair<int, int>> merge_order;
 
+    void determine_merge_order();
     void dump_statistics();
 public:
     MergeSymmetries(

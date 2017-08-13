@@ -19,40 +19,30 @@ class SymmetryGroup {
     SymmetryGeneratorInfo *symmetry_generator_info;
     std::vector<const SymmetryGenerator*> symmetry_generators;
 
-    bool bliss_limit_reached;
-    bool stop_after_no_symmetries;
-
-    enum SymmetriesForMerging {
-        NO_MERGING,
-        SMALLEST,
-        LARGEST
-    };
-    SymmetriesForMerging symmetries_for_merging;
-
-    enum InternalMerging {
-        LINEAR,
-        NON_LINEAR
-    };
-    InternalMerging internal_merging;
-
-    double bliss_time; // elapsed bliss time
+    bool bliss_limit_reached; // computation of bliss threw bliss or memory exception
 public:
-    explicit SymmetryGroup(const options::Options &options);
+    SymmetryGroup(const bool debug, const bool stabilize_transition_systems);
     ~SymmetryGroup();
 
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
-    void find_symmetries(const FactoredTransitionSystem &fts,
-                                   std::vector<std::pair<int, int> > &merge_order);
+    double find_symmetries(
+        const FactoredTransitionSystem &fts,
+        double bliss_time_limit);
+    void reset();
+
+    const SymmetryGenerator *get_generator(int generator_index) const {
+        return symmetry_generators[generator_index];
+    }
+
     bool is_bliss_limit_reached() const {
         return bliss_limit_reached;
     }
+
     int get_num_generators() const {
         return symmetry_generators.size();
     }
-    double get_bliss_time() const {
-        return bliss_time;
-    }
+
     void set_bliss_limit_reached() {
         bliss_limit_reached = true;
     }

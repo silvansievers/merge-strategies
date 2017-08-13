@@ -76,8 +76,6 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
          << options.get<int>("bliss_call_time_limit") << endl;
     cout << "    total time budget for bliss (0 means unlimited): "
          << options.get<int>("bliss_total_time_budget") << endl;
-    cout << "    stop searching for symmetries once no symmetry was found: "
-         << (options.get<bool>("stop_after_no_symmetries") ? "yes" : "no") << endl;
     cout << "    stabilize transition systems: "
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
     cout << "    fallback merge strategy: " << endl;
@@ -138,9 +136,6 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     parser.add_option<int>("bliss_total_time_budget", "time in seconds bliss is "
                            "allowed to run overall (0 means no limit)",
                            "0");
-    parser.add_option<bool>("stop_after_no_symmetries", "stop calling bliss "
-                            "after unsuccesfull previous bliss call.",
-                           "false");
     vector<string> symmetries_for_merging;
     symmetries_for_merging.push_back("NO_MERGING");
     symmetries_for_merging.push_back("SMALLEST");

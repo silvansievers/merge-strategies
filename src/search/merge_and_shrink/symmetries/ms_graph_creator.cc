@@ -12,7 +12,6 @@
 #include "../../bliss/defs.h"
 
 #include "../../globals.h"
-#include "../../option_parser.h"
 
 #include "../../utils/timer.h"
 
@@ -31,18 +30,16 @@ void add_automorphism(void* param, unsigned int, const unsigned int *automorphis
     symmetry_group->create_symmetry_generator(automorphism);
 }
 
-MSGraphCreator::MSGraphCreator(const Options &options)
-    : debug(options.get<bool>("debug_graph_creator")),
-      stabilize_transition_systems(options.get<bool>("stabilize_transition_systems")),
-      bliss_time_limit(options.get<double>("bliss_time_limit")) {
-}
-
-MSGraphCreator::~MSGraphCreator() {
+MSGraphCreator::MSGraphCreator(
+    const bool debug, const bool stabilize_transition_systems)
+    : debug(debug),
+      stabilize_transition_systems(stabilize_transition_systems) {
 }
 
 double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
                                           SymmetryGroup *symmetry_group,
-                                          SymmetryGeneratorInfo *symmetry_generator_info) {
+                                          SymmetryGeneratorInfo *symmetry_generator_info,
+                                          double bliss_time_limit) const {
     utils::Timer timer;
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
@@ -68,7 +65,7 @@ double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
 
 void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem &fts,
                                                  bliss::Digraph &bliss_graph,
-                                                 SymmetryGeneratorInfo *symmetry_generator_info) {
+                                                 SymmetryGeneratorInfo *symmetry_generator_info) const {
     if (debug) {
         cout << "digraph pdg";
         cout << " {" << endl;
