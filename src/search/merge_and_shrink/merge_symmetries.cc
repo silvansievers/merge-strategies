@@ -32,7 +32,6 @@ MergeSymmetries::MergeSymmetries(
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
       tree_is_miasm(tree_is_miasm),
       iteration_counter(0),
-      number_of_applied_symmetries(0),
       bliss_limit_reached(false),
       pure_fallback_strategy(true) {
 }
@@ -78,11 +77,7 @@ pair<int, int> MergeSymmetries::get_next() {
         cout << "Setting bliss time limit to " << time_limit << endl;
         options.set<double>("bliss_time_limit", time_limit);
         SymmetryGroup symmetry_group(options);
-        bool applied_symmetries =
-            symmetry_group.find_and_apply_symmetries(fts, merge_order);
-        if (applied_symmetries) {
-            ++number_of_applied_symmetries;
-        }
+        symmetry_group.find_symmetries(fts, merge_order);
         if (symmetry_group.is_bliss_limit_reached()) {
             bliss_limit_reached = true;
         }
@@ -102,7 +97,6 @@ pair<int, int> MergeSymmetries::get_next() {
             }
             cout << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
         }
-        cout << "Number of applied symmetries: " << number_of_applied_symmetries << endl;
     }
 
     if (iteration_counter == num_merges) { // TODO: check correctness

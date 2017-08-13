@@ -39,23 +39,6 @@ MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
 
 void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     cout << "Options for merge symmetries:" << endl;
-    cout << "    symmetries for shrinking: ";
-    int symmetries_for_shrinking = options.get_enum("symmetries_for_shrinking");
-    switch (symmetries_for_shrinking) {
-        case 0: {
-            cout << "none";
-            break;
-        }
-        case 1: {
-            cout << "atomic";
-            break;
-        }
-        case 2: {
-            cout << "local";
-            break;
-        }
-    }
-    cout << endl;
     cout << "    symmetries for merging: ";
     int symmetries_for_merging = options.get_enum("symmetries_for_merging");
     switch (symmetries_for_merging) {
@@ -170,17 +153,6 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     parser.add_option<bool>("stop_after_no_symmetries", "stop calling bliss "
                             "after unsuccesfull previous bliss call.",
                            "false");
-    vector<string> symmetries_for_shrinking;
-    symmetries_for_shrinking.push_back("NO_SHRINKING");
-    symmetries_for_shrinking.push_back("ATOMIC");
-    symmetries_for_shrinking.push_back("LOCAL");
-    parser.add_enum_option("symmetries_for_shrinking",
-                           symmetries_for_shrinking,
-                           "choose the type of symmetries used for shrinking: "
-                           "no shrinking, "
-                           "only atomic symmetries, "
-                           "local symmetries.",
-                           "NO_SHRINKING");
     vector<string> symmetries_for_merging;
     symmetries_for_merging.push_back("NO_MERGING");
     symmetries_for_merging.push_back("SMALLEST");
@@ -239,11 +211,6 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
             && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limit or "
                 "bliss_total_time_budget but not both" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-    if (options.get_enum("symmetries_for_shrinking") == 0
-            && options.get_enum("symmetries_for_merging") == 0) {
-        cerr << "Please use symmetries at least for shrinking or merging." << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
     bool merge_tree = options.contains("merge_tree");

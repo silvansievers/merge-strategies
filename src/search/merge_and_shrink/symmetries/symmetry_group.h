@@ -22,13 +22,6 @@ class SymmetryGroup {
     bool bliss_limit_reached;
     bool stop_after_no_symmetries;
 
-    enum SymmetriesForShrinking {
-        NO_SHRINKING,
-        ATOMIC,
-        LOCAL
-    };
-    SymmetriesForShrinking symmetries_for_shrinking;
-
     enum SymmetriesForMerging {
         NO_MERGING,
         SMALLEST,
@@ -49,16 +42,13 @@ class SymmetryGroup {
     InternalMerging internal_merging;
 
     double bliss_time; // elapsed bliss time
-
-    void apply_symmetries(const FactoredTransitionSystem &fts,
-                          const std::vector<int> &generator_indices) const;
 public:
     explicit SymmetryGroup(const options::Options &options);
     ~SymmetryGroup();
 
     // method used by add_automorphism
     void create_symmetry_generator(const unsigned int *automorphism);
-    bool find_and_apply_symmetries(const FactoredTransitionSystem &fts,
+    void find_symmetries(const FactoredTransitionSystem &fts,
                                    std::vector<std::pair<int, int> > &merge_order);
     bool is_bliss_limit_reached() const {
         return bliss_limit_reached;

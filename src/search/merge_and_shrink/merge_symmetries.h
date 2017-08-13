@@ -27,7 +27,6 @@ class MergeSymmetries : public MergeStrategy {
 
     // statistics
     int iteration_counter;
-    int number_of_applied_symmetries;
     bool bliss_limit_reached;
     std::vector<double> bliss_times;
     bool pure_fallback_strategy;
