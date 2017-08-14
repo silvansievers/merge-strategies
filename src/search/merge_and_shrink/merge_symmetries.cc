@@ -4,6 +4,7 @@
 #include "merge_selector.h"
 #include "merge_tree.h"
 #include "merge_tree_factory.h"
+#include "merge_tree_factory_miasm.h"
 #include "transition_system.h"
 
 #include "symmetries/symmetry_generator.h"
@@ -48,22 +49,22 @@ MergeSymmetries::MergeSymmetries(
         options.get<bool>("debug_graph_creator"),
         options.get<bool>("stabilize_transition_systems"));
     if (fallback_merge_tree_factory) {
-        fallback_merge_tree = fallback_merge_tree_factory->compute_merge_tree(task_proxy);
-        if (fallback_merge_tree_factory->get_name() == "miasm") {
-            tree_is_miasm = true;
-        }
-        if (fallback_merge_tree) {
-            // Since the tree computation can fail (MIASM, if it detects only
-            // a trivial partitioning), we check if we actually computed a
-            // tree. If so, we delete the merge_selector (if given).
-            fallback_merge_selector = nullptr;
-        }
-    }
-    if (fallback_merge_tree) {
         assert(!fallback_merge_selector);
-    }
-    if (fallback_merge_selector) {
-        assert(!fallback_merge_tree);
+        fallback_merge_tree = fallback_merge_tree_factory->compute_merge_tree(task_proxy);
+        assert(fallback_merge_tree);
+        if (fallback_merge_tree_factory->get_name() == "miasm") {
+            MergeTreeFactoryMiasm *miasm_factory = dynamic_cast<MergeTreeFactoryMiasm *>(fallback_merge_tree_factory.get());
+            assert(miasm_factory);
+            if (miasm_factory->is_trivial_partitioning() && miasm_factory->has_fallback_merge_selector()) {
+                fallback_merge_selector = miasm_factory->get_fallback_merge_selector();
+                fallback_merge_tree = nullptr;
+                fallback_merge_tree_factory = nullptr;
+            } else {
+                tree_is_miasm = true;
+            }
+        }
+    } else {
+        assert(fallback_merge_selector);
     }
 }
 

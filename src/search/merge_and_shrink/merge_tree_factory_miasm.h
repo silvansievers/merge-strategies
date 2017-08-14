@@ -12,6 +12,7 @@
 
 namespace merge_and_shrink {
 class MiasmMergeTree;
+class MergeSelector;
 
 /**
  * @brief The MIASM merging strategy
@@ -42,6 +43,10 @@ private:
      * ratio of R&R states */
     std::vector<std::set<int> > max_packing;
     //@}
+    // HACK! For MIASM to have a fallback strategy.
+    std::shared_ptr<MergeSelector> fallback_merge_selector;
+    // True iff the variable partitioning found is trivial.
+    bool trivial_partitioning;
 
     MiasmMergeTree *compute_miasm_merge_tree(const TaskProxy &task_proxy);
 protected:
@@ -60,6 +65,18 @@ public:
 
     virtual bool requires_goal_distances() const override {
         return false;
+    }
+
+    bool is_trivial_partitioning() const {
+        return trivial_partitioning;
+    }
+
+    bool has_fallback_merge_selector() const {
+        return fallback_merge_selector != nullptr;
+    }
+
+    std::shared_ptr<MergeSelector> get_fallback_merge_selector() const {
+        return fallback_merge_selector;
     }
 
     static void add_options_to_parser(options::OptionParser &parser);

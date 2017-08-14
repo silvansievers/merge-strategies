@@ -1,9 +1,13 @@
 #include "merge_strategy_factory_precomputed.h"
 
-#include "merge_strategy_factory_stateless.h"
 #include "merge_strategy_precomputed.h"
 #include "merge_tree_factory.h"
 #include "merge_tree.h"
+
+// HACK! For MIASM to have a fallback merge strategy.
+#include "merge_selector.h"
+#include "merge_strategy_stateless.h"
+#include "merge_tree_factory_miasm.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
@@ -18,10 +22,6 @@ MergeStrategyFactoryPrecomputed::MergeStrategyFactoryPrecomputed(
     options::Options &options)
     : MergeStrategyFactory(),
       merge_tree_factory(options.get<shared_ptr<MergeTreeFactory>>("merge_tree")) {
-    if (options.contains("fallback_merge_strategy_stateless")) {
-        fallback_merge_strategy_factory_stateless =
-          options.get<shared_ptr<MergeStrategyFactoryStateless>>("fallback_merge_strategy_stateless");
-    }
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strategy(
@@ -29,11 +29,17 @@ unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strateg
     const FactoredTransitionSystem &fts) {
     unique_ptr<MergeTree> merge_tree =
         merge_tree_factory->compute_merge_tree(task_proxy);
-    if (merge_tree) {
-        return utils::make_unique_ptr<MergeStrategyPrecomputed>(fts, move(merge_tree));
-    } else {
-        return fallback_merge_strategy_factory_stateless->compute_merge_strategy(task_proxy, fts);
+    if (merge_tree_factory->get_name() == "miasm") {
+        // HACK! For MIASM to have a fallback merge strategy.
+        MergeTreeFactoryMiasm *miasm_factory = dynamic_cast<MergeTreeFactoryMiasm *>(merge_tree_factory.get());
+        assert(miasm_factory);
+        if (miasm_factory->is_trivial_partitioning() && miasm_factory->has_fallback_merge_selector()) {
+            shared_ptr<MergeSelector> fallback_merge_selector = miasm_factory->get_fallback_merge_selector();
+            fallback_merge_selector->initialize(task_proxy);
+            return utils::make_unique_ptr<MergeStrategyStateless>(fts, fallback_merge_selector);
+        }
     }
+    return utils::make_unique_ptr<MergeStrategyPrecomputed>(fts, move(merge_tree));
 }
 
 bool MergeStrategyFactoryPrecomputed::requires_init_distances() const {
@@ -64,10 +70,6 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     parser.add_option<shared_ptr<MergeTreeFactory>>(
         "merge_tree",
         "The precomputed merge tree");
-    parser.add_option<shared_ptr<MergeStrategyFactoryStateless>>(
-        "fallback_merge_strategy_stateless",
-        "Any stateless merge strategy serving as fallback.",
-        options::OptionParser::NONE);
 
     options::Options opts = parser.parse();
     if (parser.dry_run())

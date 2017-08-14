@@ -170,13 +170,9 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     bool merge_tree = options.contains("merge_tree");
     bool merge_selector = options.contains("merge_selector");
     if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
-//        cerr << "You have to specify exactly one of the options merge_tree "
-//                "and merge_selector!" << endl;
-//        utils::exit_with(utils::ExitCode::INPUT_ERROR);
-        cerr << "WARNING! You have specified both merge_tree and "
-                "merge_selector. Is that on purpose? (It usually only makes "
-                "sense if using miasm as a tree, which might not compute a "
-                "tree at all.)" << endl;
+        cerr << "You have to specify exactly one of the options merge_tree "
+                "and merge_selector!" << endl;
+        utils::exit_with(utils::ExitCode::INPUT_ERROR);
     }
     if (parser.dry_run())
         return nullptr;

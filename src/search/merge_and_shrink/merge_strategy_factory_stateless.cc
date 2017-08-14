@@ -59,34 +59,4 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
 }
 
 static options::PluginShared<MergeStrategyFactory> _plugin("merge_stateless", _parse);
-
-/*
-  This part is a HACK intended to allow directly parsing merge strategy
-  fatcories of type MergeStrategyFactoryStateless. This allows having such
-  an option in MergeStrategyFactoryPrecomputed. (Otherwise, it would need
-  to have a general MergeStrategyFactory, being itself a derived class of
-  that class.)
-*/
-static options::PluginTypePlugin<MergeStrategyFactoryStateless> _type_plugin(
-    "MergeStrategyStateless",
-    "HACK");
-
-static shared_ptr<MergeStrategyFactoryStateless>_parse_stateless(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "Stateless merge strategy",
-        "This merge strategy has a merge selector, which computes the next "
-        "merge only depending on the current state of the factored transition "
-        "system, not requiring any additional information.");
-    parser.add_option<shared_ptr<MergeSelector>>(
-        "merge_selector",
-        "The merge selector to be used.");
-
-    options::Options opts = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeStrategyFactoryStateless>(opts);
-}
-
-static options::PluginShared<MergeStrategyFactoryStateless> _plugin_stateless("merge_stateless_plugin", _parse_stateless);
 }

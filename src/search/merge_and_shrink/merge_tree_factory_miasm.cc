@@ -1,5 +1,6 @@
 #include "merge_tree_factory_miasm.h"
 
+#include "merge_selector.h"
 #include "merge_tree.h"
 
 #include "miasm/sink_set_search.h"
@@ -22,9 +23,14 @@ MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
     : MergeTreeFactory(opts),
       options(opts),
       miasm_internal(MiasmInternal(opts.get_enum("miasm_internal"))),
-      miasm_external(MiasmExternal(opts.get_enum("miasm_external"))) {
+      miasm_external(MiasmExternal(opts.get_enum("miasm_external"))),
+      fallback_merge_selector(nullptr),
+      trivial_partitioning(false) {
     // TODO: We would like to store sink_set_search instead of options here,
     // but it requires a task object.
+    if (options.contains("fallback_merge_selector")) {
+        fallback_merge_selector = options.get<shared_ptr<MergeSelector>>("fallback_merge_selector");
+    }
 }
 
 MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
@@ -40,9 +46,13 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
     greedy_max_set_packing();
 //    cerr << "max packing" << max_packing << endl;
     if (max_packing.size() == task_proxy.get_variables().size()) {
-        cout << "Found a trivial variable partitioning, using fallback merge "
-                "strategy" << endl;
-        return nullptr;
+        trivial_partitioning = true;
+        cout << "Found a trivial variable partitioning, ";
+        if (fallback_merge_selector) {
+            cout << "using fallback merge strategy" << endl;
+        } else {
+            cout << "but no fallback merge strategy specified." << endl;
+        }
     }
 
     /* construct the merge tree based on the max packing
@@ -61,9 +71,6 @@ unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
 
     // compute the merge tree in MiasmMergeTree form
     MiasmMergeTree *miasm_tree = compute_miasm_merge_tree(task_proxy);
-    if (!miasm_tree) {
-        return nullptr;
-    }
 
     // get the actual merge order
     vector<pair<int, int>> merge_order;
@@ -231,6 +238,12 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     parser.add_enum_option("prune", enum_strings,
                            "",
                            "none");
+
+    parser.add_option<shared_ptr<MergeSelector>>(
+        "fallback_merge_selector",
+        "the fallback merge 'strategy' to use if a stateless strategy should"
+        "be used.",
+        options::OptionParser::NONE);
 }
 
 static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {

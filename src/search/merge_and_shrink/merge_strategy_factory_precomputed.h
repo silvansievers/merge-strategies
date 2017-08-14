@@ -8,12 +8,9 @@ class Options;
 }
 
 namespace merge_and_shrink {
-class MergeStrategyFactoryStateless;
 class MergeTreeFactory;
 class MergeStrategyFactoryPrecomputed : public MergeStrategyFactory {
     std::shared_ptr<MergeTreeFactory> merge_tree_factory;
-    // HACK! For MIASM to have a fallback strategy.
-    std::shared_ptr<MergeStrategyFactoryStateless> fallback_merge_strategy_factory_stateless;
 protected:
     virtual std::string name() const override;
     virtual void dump_strategy_specific_options() const override;
