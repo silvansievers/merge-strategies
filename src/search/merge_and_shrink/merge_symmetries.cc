@@ -145,9 +145,15 @@ void MergeSymmetries::determine_merge_order() {
 //        }
     }
 
-    if (internal_merging == SECONDARY && chosen_generator_for_merging != -1) {
+    if (chosen_generator_for_merging == -1) {
+        // There are only atomic generators, nothing to merge for.
+        return;
+    }
+
+    const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
+
+    if (internal_merging == SECONDARY) {
         assert(current_ts_indices.empty());
-        const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
         current_ts_indices = generator->get_overall_affected_transition_systems();
         return;
     }
@@ -164,10 +170,9 @@ void MergeSymmetries::determine_merge_order() {
       and the remaining other (internally) affected transition systems, again
       as given by fast downward.
     */
-    if (symmetries_for_merging != NO_MERGING && chosen_generator_for_merging != -1) {
+    if (symmetries_for_merging != NO_MERGING) {
         vector<vector<int> > cycles;
         vector<int> merge_linear_transition_systems;
-        const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
 
         // Always include all mapped transition systems
         if (internal_merging == NON_LINEAR) {
