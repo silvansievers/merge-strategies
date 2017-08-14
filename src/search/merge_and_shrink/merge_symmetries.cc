@@ -13,6 +13,8 @@
 
 #include "../task_proxy.h"
 
+#include "../utils/logging.h"
+
 #include <algorithm>
 #include <iomanip>
 
@@ -38,7 +40,10 @@ MergeSymmetries::MergeSymmetries(
       tree_is_miasm(false),
       iteration_counter(0),
       bliss_limit_reached(false),
-      pure_fallback_strategy(true) {
+      pure_fallback_strategy(true),
+      merging_for_symmetries(false),
+      start_merging_for_symmetries(false),
+      done_merging_for_symmetries(false) {
     symmetry_group = utils::make_unique_ptr<SymmetryGroup>(
         options.get<bool>("debug_graph_creator"),
         options.get<bool>("stabilize_transition_systems"));
@@ -147,10 +152,14 @@ void MergeSymmetries::determine_merge_order() {
 
     if (chosen_generator_for_merging == -1) {
         // There are only atomic generators, nothing to merge for.
+        cout << "Found only atomic generators, not merging for symmetries."
+             << endl;
         return;
     }
 
     const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
+    cout << "Affected transition system indices of chosen generator: "
+         << generator->get_overall_affected_transition_systems() << endl;
 
     if (internal_merging == SECONDARY) {
         assert(current_ts_indices.empty());
@@ -261,55 +270,71 @@ void MergeSymmetries::determine_merge_order() {
 
 pair<int, int> MergeSymmetries::get_next() {
     ++iteration_counter;
-
-    if (merge_order.empty() && current_ts_indices.empty() &&
-        !bliss_limit_reached && iteration_counter <= max_bliss_iterations) {
-        // We do not have any current transitions to merge according a previously
-        // found ssymmetry and we are still allowed to search for new symmetries.
-        double time_limit = 0.0;
-        if (bliss_remaining_time_budget) {
-            // we round everything down to the full second
-            time_limit = bliss_remaining_time_budget;
-        } else if (bliss_call_time_limit) {
-            time_limit = bliss_call_time_limit;
+    start_merging_for_symmetries = false;
+    done_merging_for_symmetries = false;
+    if (merge_order.empty() && current_ts_indices.empty()) {
+        // We do not have any current transitions to merge according a
+        // previously found symmetry.
+        if (merging_for_symmetries) {
+            merging_for_symmetries = false;
+            done_merging_for_symmetries = true;
         }
-        cout << "Setting bliss time limit to " << time_limit << endl;
-        double bliss_time = symmetry_group->find_symmetries(fts, time_limit);
-        if (symmetry_group->is_bliss_limit_reached()) {
-            bliss_limit_reached = true;
-            // We do not use the possibly incomplete generators (TODO: this
-            // probably does not make sense, but we didn't use them before
-            // so we stick to this policy).
-        } else {
-            if (symmetry_group->get_num_generators()) {
-                determine_merge_order();
-                if (pure_fallback_strategy && (!merge_order.empty() || !current_ts_indices.empty())) {
-                    pure_fallback_strategy = false;
-                    cout << "not pure fallback strategy anymore" << endl;
+
+        if (!bliss_limit_reached && iteration_counter <= max_bliss_iterations) {
+            // We are allowed to search for new symmetries.
+            double time_limit = 0.0;
+            if (bliss_remaining_time_budget) {
+                // we round everything down to the full second
+                time_limit = bliss_remaining_time_budget;
+            } else if (bliss_call_time_limit) {
+                time_limit = bliss_call_time_limit;
+            }
+            cout << "Setting bliss time limit to " << time_limit << endl;
+            double bliss_time = symmetry_group->find_symmetries(fts, time_limit);
+            if (symmetry_group->is_bliss_limit_reached()) {
+                bliss_limit_reached = true;
+                // We do not use the possibly incomplete generators (TODO: this
+                // probably does not make sense, but we didn't use them before
+                // so we stick to this policy).
+            } else {
+                if (symmetry_group->get_num_generators()) {
+                    determine_merge_order();
+                    if (!merge_order.empty() || !current_ts_indices.empty()) {
+                        // Found a non-atomic generator that we use to merge
+                        // for turning it into an atomic one.
+                        merging_for_symmetries = true;
+                        start_merging_for_symmetries = true;
+                        if (pure_fallback_strategy) {
+                            pure_fallback_strategy = false;
+                            cout << "not pure fallback strategy anymore" << endl;
+                        }
+                    }
                 }
             }
-        }
-        symmetry_group->reset();
-        bliss_times.push_back(bliss_time);
-        if (bliss_remaining_time_budget) {
-            bliss_remaining_time_budget -= bliss_time;
-            if (bliss_remaining_time_budget <= 0) {
-                assert(bliss_limit_reached);
-                // in case of measurement inaccuracies, set bliss limit
-                // reached to true in any case.
-                bliss_limit_reached = true;
+            symmetry_group->reset();
+            bliss_times.push_back(bliss_time);
+            if (bliss_remaining_time_budget) {
+                bliss_remaining_time_budget -= bliss_time;
+                if (bliss_remaining_time_budget <= 0) {
+                    assert(bliss_limit_reached);
+                    // in case of measurement inaccuracies, set bliss limit
+                    // reached to true in any case.
+                    bliss_limit_reached = true;
+                }
+                cout << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
             }
-            cout << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
-        }
 
-        // If using a merge tree factory, compute a merge tree for this set
-        if (!current_ts_indices.empty() && fallback_merge_tree_factory) {
-            current_merge_tree = fallback_merge_tree_factory->compute_merge_tree(
-                task_proxy, fts, current_ts_indices);
+            // If using a merge tree factory, compute a merge tree for this set
+            if (!current_ts_indices.empty() && fallback_merge_tree_factory) {
+                current_merge_tree = fallback_merge_tree_factory->compute_merge_tree(
+                    task_proxy, fts, current_ts_indices);
+            }
         }
     } else {
+        // We are merging for symmetries.
+        assert(merging_for_symmetries);
         if (internal_merging == SECONDARY) {
-            // Add the most recent merge to the current indices set
+            // Add the most recent merge to the current indices set.
             current_ts_indices.push_back(fts.get_size() - 1);
         }
     }
@@ -320,13 +345,14 @@ pair<int, int> MergeSymmetries::get_next() {
 
     int next_merge_index = fts.get_size();
     if (!merge_order.empty() || !current_ts_indices.empty()) {
-        // We are merging according to symmetries.
+        // We are merging for symmetries.
+        assert(merging_for_symmetries);
         pair<int, int> next_merge;
 
         if (!merge_order.empty()) {
             next_merge = merge_order.front();
             if (!fts.is_active(next_merge.first) || !fts.is_active(next_merge.second)) {
-                cerr << "Problem with the merge strategy: invalid indices" << endl;
+                cerr << "Problem with the merge order: invalid indices!" << endl;
                 utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
             }
             merge_order.erase(merge_order.begin());
@@ -370,6 +396,7 @@ pair<int, int> MergeSymmetries::get_next() {
 
     // No symmetries whatsoever -- use fallback strategy.
     assert(merge_order.empty() && current_ts_indices.empty());
+    assert(!merging_for_symmetries);
     if (fallback_merge_selector) {
         return fallback_merge_selector->select_merge(fts);
     } else {

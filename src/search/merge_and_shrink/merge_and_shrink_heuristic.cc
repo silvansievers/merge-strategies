@@ -218,6 +218,10 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     bool still_perfect = true;
     vector<pair<int, int>> merge_order;
     vector<double> relative_pruning_per_iteration;
+    int num_attempts_merging_for_symmetries = 0;
+    int num_failed_perfect_merging_for_symmetries = 0;
+    bool merging_for_symmetries = true;
+    bool currently_perfect_for_symmetries = true;
 
     if (unsolvable_index == -1) { // All atomic transition systems are solvable.
         unique_ptr<MergeStrategy> merge_strategy =
@@ -227,6 +231,17 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         while (fts.get_num_active_entries() > 1) {
             // Choose next transition systems to merge
             pair<int, int> merge_indices = merge_strategy->get_next();
+            if (merge_strategy->ended_merging_for_symmetries()) {
+                merging_for_symmetries = false;
+                if (!currently_perfect_for_symmetries) {
+                    ++num_failed_perfect_merging_for_symmetries;
+                }
+            }
+            if (merge_strategy->started_merging_for_symmetries()) {
+                ++num_attempts_merging_for_symmetries;
+                merging_for_symmetries = true;
+                currently_perfect_for_symmetries = true;
+            }
             int merge_index1 = merge_indices.first;
             int merge_index2 = merge_indices.second;
             assert(merge_index1 != merge_index2);
@@ -275,6 +290,9 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 // shrinking.
                 cout << "not perfect anymore in iteration " << iteration_counter << endl;
                 still_perfect = false;
+                if (merging_for_symmetries && currently_perfect_for_symmetries) {
+                    currently_perfect_for_symmetries = false;
+                }
             }
 
             // Label reduction (before merging)
@@ -437,6 +455,15 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
     }
     cout << "Average relative pruning: " << average_pruning << endl;
+
+    cout << "Number of attempts to merge for symmetries: "
+         << num_attempts_merging_for_symmetries << endl;
+    cout << "Number of times non-perfect shrinking interfered merging for symmetries: "
+         << num_failed_perfect_merging_for_symmetries << endl;
+    cout << "Ratio of successful attempts to merge for symmetries: "
+         << 1 - (static_cast<double>(num_failed_perfect_merging_for_symmetries)
+                 / static_cast<double>(num_attempts_merging_for_symmetries))
+         << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;

@@ -50,6 +50,9 @@ class MergeSymmetries : public MergeStrategy {
     bool bliss_limit_reached;
     std::vector<double> bliss_times;
     bool pure_fallback_strategy;
+    bool merging_for_symmetries;
+    bool start_merging_for_symmetries;
+    bool done_merging_for_symmetries;
 
     // current merge_order
     std::vector<std::pair<int, int>> merge_order;
@@ -67,6 +70,12 @@ public:
         std::shared_ptr<MergeSelector> merge_selector);
     virtual ~MergeSymmetries() override = default;
     virtual std::pair<int, int> get_next() override;
+    virtual bool started_merging_for_symmetries() const override {
+        return start_merging_for_symmetries;
+    }
+    virtual bool ended_merging_for_symmetries() const override {
+        return done_merging_for_symmetries;
+    }
 };
 }
 
