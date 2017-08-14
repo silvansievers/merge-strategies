@@ -219,9 +219,12 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     vector<pair<int, int>> merge_order;
     vector<double> relative_pruning_per_iteration;
     int num_attempts_merging_for_symmetries = 0;
-    int num_failed_perfect_merging_for_symmetries = 0;
+    int num_imperfect_shrinking_merging_for_symmetries = 0;
+    int num_pruning_merging_for_symmetries = 0;
+    int num_failed_merging_for_symmetries = 0;
     bool merging_for_symmetries = true;
-    bool currently_perfect_for_symmetries = true;
+    bool currently_shrink_perfect_for_symmetries = true;
+    bool currently_prune_perfect_for_symmetries = true;
 
     if (unsolvable_index == -1) { // All atomic transition systems are solvable.
         unique_ptr<MergeStrategy> merge_strategy =
@@ -233,14 +236,22 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
             pair<int, int> merge_indices = merge_strategy->get_next();
             if (merge_strategy->ended_merging_for_symmetries()) {
                 merging_for_symmetries = false;
-                if (!currently_perfect_for_symmetries) {
-                    ++num_failed_perfect_merging_for_symmetries;
+                if (!currently_shrink_perfect_for_symmetries) {
+                    ++num_imperfect_shrinking_merging_for_symmetries;
+                }
+                if (!currently_prune_perfect_for_symmetries) {
+                    ++num_pruning_merging_for_symmetries;
+                }
+                if (!currently_shrink_perfect_for_symmetries ||
+                    !currently_prune_perfect_for_symmetries) {
+                    ++num_failed_merging_for_symmetries;
                 }
             }
             if (merge_strategy->started_merging_for_symmetries()) {
                 ++num_attempts_merging_for_symmetries;
                 merging_for_symmetries = true;
-                currently_perfect_for_symmetries = true;
+                currently_shrink_perfect_for_symmetries = true;
+                currently_prune_perfect_for_symmetries = true;
             }
             int merge_index1 = merge_indices.first;
             int merge_index2 = merge_indices.second;
@@ -290,8 +301,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 // shrinking.
                 cout << "not perfect anymore in iteration " << iteration_counter << endl;
                 still_perfect = false;
-                if (merging_for_symmetries && currently_perfect_for_symmetries) {
-                    currently_perfect_for_symmetries = false;
+                if (merging_for_symmetries && currently_shrink_perfect_for_symmetries) {
+                    currently_shrink_perfect_for_symmetries = false;
                 }
             }
 
@@ -328,7 +339,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
             // Pruning
             if (prune_unreachable_states || prune_irrelevant_states) {
                 int old_size = fts.get_ts(merged_index).get_size();
-                bool pruned = prune_step(
+                pair<bool, bool> pruned_and_pruned_unreachable = prune_step(
                     fts,
                     merged_index,
                     prune_unreachable_states,
@@ -338,11 +349,17 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 double new_size = fts.get_ts(merged_index).get_size();
                 assert(new_size <= old_size);
                 relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(old_size));
-                if (verbosity >= Verbosity::NORMAL && pruned) {
+                if (verbosity >= Verbosity::NORMAL && pruned_and_pruned_unreachable.first) {
                     if (verbosity >= Verbosity::VERBOSE) {
                         fts.statistics(merged_index);
                     }
                     print_time(timer, "after pruning");
+                }
+                if (pruned_and_pruned_unreachable.first &&
+                    pruned_and_pruned_unreachable.second &&
+                    merging_for_symmetries &&
+                    currently_prune_perfect_for_symmetries) {
+                    currently_prune_perfect_for_symmetries = false;
                 }
             }
 
@@ -459,11 +476,11 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     cout << "Number of attempts to merge for symmetries: "
          << num_attempts_merging_for_symmetries << endl;
     cout << "Number of times non-perfect shrinking interfered merging for symmetries: "
-         << num_failed_perfect_merging_for_symmetries << endl;
-    cout << "Ratio of successful attempts to merge for symmetries: "
-         << 1 - (static_cast<double>(num_failed_perfect_merging_for_symmetries)
-                 / static_cast<double>(num_attempts_merging_for_symmetries))
-         << endl;
+         << num_imperfect_shrinking_merging_for_symmetries << endl;
+    cout << "Number of times pruning interfered merging for symmetries: "
+         << num_pruning_merging_for_symmetries << endl;
+    cout << "Number of times merging for symmetries failed for any reason: "
+         << num_failed_merging_for_symmetries << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;

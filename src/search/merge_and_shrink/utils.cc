@@ -154,7 +154,7 @@ bool shrink_before_merge_step(
     return shrunk1 || shrunk2;
 }
 
-StateEquivalenceRelation compute_pruning_equivalence_relation(
+pair<StateEquivalenceRelation, bool> compute_pruning_equivalence_relation(
     const TransitionSystem &ts,
     const Distances &distances,
     bool prune_unreachable_states,
@@ -166,6 +166,7 @@ StateEquivalenceRelation compute_pruning_equivalence_relation(
     state_equivalence_relation.reserve(num_states);
     int unreachable_count = 0;
     int irrelevant_count = 0;
+    bool pruned_unreachable_states = false;
     if (pruning_as_abstraction) {
         StateEquivalenceClass unreachable_states;
         StateEquivalenceClass irrelevant_states;
@@ -192,6 +193,7 @@ StateEquivalenceRelation compute_pruning_equivalence_relation(
         }
         if (unreachable_count) {
             state_equivalence_relation.push_back(unreachable_states);
+            pruned_unreachable_states = true;
         }
         if (irrelevant_count) {
             state_equivalence_relation.push_back(irrelevant_states);
@@ -225,11 +227,14 @@ StateEquivalenceRelation compute_pruning_equivalence_relation(
                  << "irrelevant: " << irrelevant_count << " states ("
                  << "total dead: " << dead_count << " states)" << endl;
         }
+        if (unreachable_count) {
+            pruned_unreachable_states = true;
+        }
     }
-    return state_equivalence_relation;
+    return make_pair(state_equivalence_relation, pruned_unreachable_states);
 }
 
-bool prune_step(
+pair<bool, bool> prune_step(
     FactoredTransitionSystem &fts,
     int index,
     bool prune_unreachable_states,
@@ -239,7 +244,7 @@ bool prune_step(
     assert(prune_unreachable_states || prune_irrelevant_states);
     const TransitionSystem &ts = fts.get_ts(index);
     const Distances &distances = fts.get_distances(index);
-    StateEquivalenceRelation state_equivalence_relation =
+    pair<StateEquivalenceRelation, bool> state_equivalence_relation_and_pruned_unreachable =
         compute_pruning_equivalence_relation(
             ts,
             distances,
@@ -247,7 +252,10 @@ bool prune_step(
             prune_irrelevant_states,
             pruning_as_abstraction,
             verbosity);
-    return fts.apply_abstraction(index, state_equivalence_relation, verbosity);
+    bool pruned = fts.apply_abstraction(
+        index, state_equivalence_relation_and_pruned_unreachable.first, verbosity);
+    return make_pair(
+        pruned, state_equivalence_relation_and_pruned_unreachable.second);
 }
 
 vector<int> compute_abstraction_mapping(
@@ -400,7 +408,7 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
 
     if (prune_unreachable_states || prune_irrelevant_states) {
         // Prune the result.
-        StateEquivalenceRelation equiv_rel =
+        pair<StateEquivalenceRelation, bool> equiv_rel_and_pruned_unreachable =
             compute_pruning_equivalence_relation(
                 *product,
                 *distances,
@@ -408,6 +416,7 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
                 prune_irrelevant_states,
                 pruning_as_abstraction,
                 verbosity);
+        const StateEquivalenceRelation &equiv_rel = equiv_rel_and_pruned_unreachable.first;
         if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
             product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);
             distances->apply_abstraction(equiv_rel, prune_unreachable_states, prune_irrelevant_states, verbosity);

@@ -34,11 +34,12 @@ extern bool shrink_before_merge_step(
 /*
   Prune unreachable and/or irrelevant states of the factor at index. This
   requires that init and/or goal distances have been computed accordingly.
-  Return true iff any states have been pruned.
+  Return true in the first component iff any states have been pruned. Return
+  true in the second component iff unreachable states have been pruned.
 
   TODO: maybe this functionality belongs to a new class PruningStrategy.
 */
-extern bool prune_step(
+extern std::pair<bool, bool> prune_step(
     FactoredTransitionSystem &fts,
     int index,
     bool prune_unreachable_states,
