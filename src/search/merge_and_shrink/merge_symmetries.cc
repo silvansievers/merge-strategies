@@ -57,6 +57,7 @@ MergeSymmetries::MergeSymmetries(
             assert(miasm_factory);
             if (miasm_factory->is_trivial_partitioning() && miasm_factory->has_fallback_merge_selector()) {
                 fallback_merge_selector = miasm_factory->get_fallback_merge_selector();
+                fallback_merge_selector->initialize(task_proxy);
                 fallback_merge_tree = nullptr;
                 fallback_merge_tree_factory = nullptr;
             } else {
