@@ -734,6 +734,7 @@ fast_downward_plugin(
         bliss/timer.cc
         bliss/uintseqhash.cc
         bliss/utils.cc
+    DEPENDENCY_ONLY
 )
 
 fast_downward_plugin(
