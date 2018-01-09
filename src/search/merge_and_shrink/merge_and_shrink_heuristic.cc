@@ -20,7 +20,6 @@
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/math.h"
-#include "../utils/memory.h"
 #include "../utils/system.h"
 #include "../utils/timer.h"
 
@@ -565,7 +564,7 @@ void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts
         utils::exit_with(ExitCode::INPUT_ERROR);
     }
     if (threshold > max_states) {
-        cerr << "warning: threshold exceeds max_states, correcting" << endl;
+        cout << "warning: threshold exceeds max_states, correcting" << endl;
         threshold = max_states;
     }
 
