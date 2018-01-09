@@ -59,7 +59,8 @@ pair<int, int> MergeSelectorScoreBasedFiltering::select_merge(
             merge_scoring_functions[i];
         vector<double> scores = scoring_function->compute_scores(
             fts, merge_candidates);
-        if (scoring_function->get_name() == "total order" &&
+        if ((scoring_function->get_name() == "total order" ||
+             scoring_function->get_name() == "single random") &&
             merge_candidates.size() != 1) {
             ++iterations_with_tiebreaking;
             total_tiebreaking_pair_count += merge_candidates.size();
