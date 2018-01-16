@@ -418,6 +418,14 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     pair<unique_ptr<MergeAndShrinkRepresentation>, unique_ptr<Distances>>
     final_entry = fts.extract_factor(final_index);
     mas_representation = move(final_entry.first);
+    if (!final_entry.second->are_goal_distances_computed()) {
+        // Be careful: the following two variables shadow above ones.
+        const bool compute_init_distances = false;
+        const bool compute_goal_distances = true;
+        final_entry.second->compute_distances(
+            compute_init_distances, compute_goal_distances, verbosity);
+    }
+    assert(final_entry.second->are_goal_distances_computed());
     mas_representation->set_distances(*final_entry.second);
 
     cout << "Maximum intermediate abstraction size: "
@@ -547,12 +555,12 @@ void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts
     }
 
     if (max_states < 1) {
-        cerr << "error: transition system size must be at least 1" << endl;
+        cout << "error: transition system size must be at least 1" << endl;
         utils::exit_with(ExitCode::INPUT_ERROR);
     }
 
     if (max_states_before_merge < 1) {
-        cerr << "error: transition system size before merge must be at least 1"
+        cout << "error: transition system size before merge must be at least 1"
              << endl;
         utils::exit_with(ExitCode::INPUT_ERROR);
     }
@@ -561,7 +569,7 @@ void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts
         threshold = max_states;
     }
     if (threshold < 1) {
-        cerr << "error: threshold must be at least 1" << endl;
+        cout << "error: threshold must be at least 1" << endl;
         utils::exit_with(ExitCode::INPUT_ERROR);
     }
     if (threshold > max_states) {
@@ -607,9 +615,7 @@ static Heuristic *_parse(OptionParser &parser) {
             "Proceedings of the 26th International Conference on Automated "
             "Planning and Scheduling (ICAPS 2016)",
             "294-298",
-            "AAAI Press 2016") + "\n" +
-        "Note that dyn-MIASM has not been integrated into the official code "
-        "base of Fast Downward and is available on request.");
+            "AAAI Press 2016"));
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "supported (but see note)");
     parser.document_language_support("axioms", "not supported");
@@ -634,8 +640,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "{{{\nmerge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),"
         "merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector="
         "score_based_filtering(scoring_functions=[goal_relevance,dfp,"
-        "total_order])),"
-        "label_reduction=exact(before_shrinking=true,"
+        "total_order])),label_reduction=exact(before_shrinking=true,"
         "before_merging=false),max_states=50000,threshold_before_merge=1)\n}}}\n"
         "Note that for versions of Fast Downward prior to 2016-08-19, the "
         "syntax differs. See the recommendation in the file "

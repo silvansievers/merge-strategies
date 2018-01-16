@@ -17,8 +17,8 @@ LabelEquivalenceRelation::LabelEquivalenceRelation(const Labels &labels)
 LabelEquivalenceRelation::LabelEquivalenceRelation(
     const LabelEquivalenceRelation &other)
     : labels(other.labels),
-      /* We copy label_to_positions to actually have identical vectors even
-      on "unused" positions (for label numbers that do not exist any more). */
+      /* We copy label_to_positions to have identical vectors even on
+      "unused" positions (for label numbers that do not exist any more). */
       label_to_positions(other.label_to_positions) {
     /*
       We need to reserve space for the potential maximum number of labels to
@@ -29,7 +29,6 @@ LabelEquivalenceRelation::LabelEquivalenceRelation(
     for (size_t other_group_id = 0;
          other_group_id < other.grouped_labels.size();
          ++other_group_id) {
-
         // Add a new empty label group.
         int group_id = grouped_labels.size();
         assert(group_id == static_cast<int>(other_group_id));

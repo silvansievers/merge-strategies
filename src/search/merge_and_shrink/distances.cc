@@ -22,14 +22,13 @@ Distances::Distances(const TransitionSystem &transition_system, const Distances 
     : transition_system(transition_system),
       init_distances(other.init_distances),
       goal_distances(other.goal_distances),
-      distances_computed(other.distances_computed) {
-}
-
-Distances::~Distances() {
+      init_distances_computed(other.init_distances_computed), 
+      goal_distances_computed(other.goal_distances_computed) {
 }
 
 void Distances::clear_distances() {
-    distances_computed = false;
+    init_distances_computed = false;
+    goal_distances_computed = false;
     init_distances.clear();
     goal_distances.clear();
 }
@@ -196,19 +195,36 @@ void Distances::compute_distances(
         ("abstract h"), depending on the given flags.
     */
 
+    if (are_init_distances_computed()) {
+        /*
+          The only scenario where distance information is allowed to be
+          present when computing distances is when computing goal distances
+          for the final transition system in a setting where only init
+          distances have been computed during the merge-and-shrink computation.
+        */
+        assert(!are_goal_distances_computed());
+        assert(goal_distances.empty());
+        assert(!compute_init_distances);
+        assert(compute_goal_distances);
+    } else {
+        /*
+          Otherwise, when computing distances, the previous (invalid)
+          distance information must have been cleared before.
+        */
+        assert(!are_init_distances_computed() && !are_goal_distances_computed());
+        assert(init_distances.empty() && goal_distances.empty());
+    }
+
     if (verbosity >= Verbosity::VERBOSE) {
         cout << transition_system.tag();
     }
-    assert(!are_distances_computed());
-    assert(init_distances.empty() && goal_distances.empty());
 
     int num_states = get_num_states();
-
     if (num_states == 0) {
         if (verbosity >= Verbosity::VERBOSE) {
             cout << "empty transition system, no distances to compute" << endl;
         }
-        distances_computed = true;
+        init_distances_computed = true;
         return;
     }
 
@@ -218,9 +234,20 @@ void Distances::compute_distances(
     if (compute_goal_distances) {
         goal_distances.resize(num_states, INF);
     }
+    if (verbosity >= Verbosity::VERBOSE) {
+        cout << "computing ";
+        if (compute_init_distances && compute_goal_distances) {
+            cout << "init and goal";
+        } else if (compute_init_distances) {
+            cout << "init";
+        } else if (compute_goal_distances) {
+            cout << "goal";
+        }
+        cout << " distances using ";
+    }
     if (is_unit_cost()) {
         if (verbosity >= Verbosity::VERBOSE) {
-            cout << "computing distances using unit-cost algorithm" << endl;
+            cout << "unit-cost";
         }
         if (compute_init_distances) {
             compute_init_distances_unit_cost();
@@ -230,7 +257,7 @@ void Distances::compute_distances(
         }
     } else {
         if (verbosity >= Verbosity::VERBOSE) {
-            cout << "computing distances using general-cost algorithm" << endl;
+            cout << "general-cost";
         }
         if (compute_init_distances) {
             compute_init_distances_general_cost();
@@ -239,9 +266,17 @@ void Distances::compute_distances(
             compute_goal_distances_general_cost();
         }
     }
+    if (verbosity >= Verbosity::VERBOSE) {
+        cout << " algorithm" << endl;
+    }
 
-    distances_computed = true;
-    assert(are_distances_computed());
+    if (compute_init_distances) {
+        init_distances_computed = true;
+    }
+    if (compute_goal_distances) {
+        goal_distances_computed = true;
+    }
+    assert(are_init_distances_computed() || are_goal_distances_computed());
 }
 
 void Distances::apply_abstraction(
@@ -249,11 +284,12 @@ void Distances::apply_abstraction(
     bool compute_init_distances,
     bool compute_goal_distances,
     Verbosity verbosity) {
-    assert(are_distances_computed());
     if (compute_init_distances) {
+        assert(are_init_distances_computed());
         assert(state_equivalence_relation.size() < init_distances.size());
     }
     if (compute_goal_distances) {
+        assert(are_goal_distances_computed());
         assert(state_equivalence_relation.size() < goal_distances.size());
     }
 
@@ -318,8 +354,6 @@ void Distances::apply_abstraction(
         init_distances = move(new_init_distances);
         goal_distances = move(new_goal_distances);
     }
-
-    assert(are_distances_computed());
 }
 
 void Distances::dump() const {
@@ -332,8 +366,8 @@ void Distances::dump() const {
 
 void Distances::statistics() const {
     cout << transition_system.tag();
-    if (!are_distances_computed()) {
-        cout << "distances not computed";
+    if (!are_goal_distances_computed()) {
+        cout << "goal distances not computed";
     } else if (transition_system.is_solvable(*this)) {
         cout << "init h=" << get_goal_distance(transition_system.get_init_state());
     } else {
