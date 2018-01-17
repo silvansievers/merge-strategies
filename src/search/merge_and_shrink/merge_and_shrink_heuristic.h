@@ -18,6 +18,41 @@ class ShrinkStrategy;
 class TransitionSystem;
 enum class Verbosity;
 
+class FactorScoringFunction {
+public:
+    virtual ~FactorScoringFunction() = default;
+    virtual std::vector<int> compute_scores(
+        const FactoredTransitionSystem &fts,
+        const std::vector<int> &indices) const = 0;
+};
+
+class FactorScoringFunctionInitH : public FactorScoringFunction {
+public:
+    FactorScoringFunctionInitH() = default;
+    virtual ~FactorScoringFunctionInitH() override = default;
+    virtual std::vector<int> compute_scores(
+        const FactoredTransitionSystem &fts,
+        const std::vector<int> &indices) const override;
+};
+
+class FactorScoringFunctionSize : public FactorScoringFunction {
+public:
+    FactorScoringFunctionSize() = default;
+    virtual ~FactorScoringFunctionSize() override = default;
+    virtual std::vector<int> compute_scores(
+        const FactoredTransitionSystem &fts,
+        const std::vector<int> &indices) const override;
+};
+
+class FactorScoringFunctionRandom : public FactorScoringFunction {
+public:
+    FactorScoringFunctionRandom() = default;
+    virtual ~FactorScoringFunctionRandom() override = default;
+    virtual std::vector<int> compute_scores(
+        const FactoredTransitionSystem &fts,
+        const std::vector<int> &indices) const override;
+};
+
 class MergeAndShrinkHeuristic : public Heuristic {
     // TODO: when the option parser supports it, the following should become
     // unique pointers.
@@ -40,10 +75,13 @@ class MergeAndShrinkHeuristic : public Heuristic {
     const bool pruning_as_abstraction;
 
     const Verbosity verbosity;
+    const double max_time;
     long starting_peak_memory;
     // The final merge-and-shrink representation, storing goal distances.
     std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
 
+    int check_time_and_set_final_factor(
+        const utils::Timer &timer, const FactoredTransitionSystem &fts) const;
     void build(const utils::Timer &timer);
 
     void report_peak_memory_delta(bool final = false) const;
