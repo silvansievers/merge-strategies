@@ -266,7 +266,9 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
             task_proxy,
             compute_init_distances,
             compute_goal_distances,
-            verbosity);
+            verbosity,
+            max_time,
+            timer);
     int unsolvable_index = -1;
     /*
       Go over all atomic factors and check if any is unsolvable. If so,
