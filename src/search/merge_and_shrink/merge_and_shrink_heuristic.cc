@@ -296,10 +296,15 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     unsolvable_index = check_time_and_set_final_factor(timer, fts);
 
     int maximum_intermediate_size = 0;
+    int maximum_transitions_size = 0;
     for (int i = 0; i < fts.get_size(); ++i) {
         int size = fts.get_ts(i).get_size();
         if (size > maximum_intermediate_size) {
             maximum_intermediate_size = size;
+        }
+        int num_trans = fts.get_ts(i).compute_total_transitions();
+        if (num_trans > maximum_transitions_size) {
+            maximum_transitions_size = num_trans;
         }
     }
 
@@ -439,6 +444,10 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
             if (abs_size > maximum_intermediate_size) {
                 maximum_intermediate_size = abs_size;
             }
+            int num_trans = fts.get_ts(merged_index).compute_total_transitions();
+            if (num_trans > maximum_transitions_size) {
+                maximum_transitions_size = num_trans;
+            }
             int new_init_dist = fts.get_init_state_goal_distance(merged_index);
             int difference = new_init_dist - max(init_dist1, init_dist2);
             init_hvalue_increase.push_back(difference);
@@ -562,6 +571,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
 
     cout << "Maximum intermediate abstraction size: "
          << maximum_intermediate_size << endl;
+    cout << "Maximum intermediate number of transitions: "
+         << maximum_transitions_size << endl;
     cout << "Init h value improvements: " << init_hvalue_increase << endl;
     cout << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
