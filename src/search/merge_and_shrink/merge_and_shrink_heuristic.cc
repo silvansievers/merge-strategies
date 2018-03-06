@@ -221,6 +221,7 @@ vector<int> get_remaining_candidates(
 int MergeAndShrinkHeuristic::check_time_and_set_final_factor(
     const utils::Timer &timer, const FactoredTransitionSystem &fts) const {
     if (timer() > max_time) {
+        cout << endl;
         cout << "Ran out of time, stopping computation." << endl;
         vector<int> current_indices;
         for (int index : fts) {
@@ -293,7 +294,9 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     print_time(timer, "after computation of atomic transition systems");
     cout << endl;
 
-    unsolvable_index = check_time_and_set_final_factor(timer, fts);
+    if (unsolvable_index == -1) {
+        unsolvable_index = check_time_and_set_final_factor(timer, fts);
+    }
 
     int maximum_intermediate_size = 0;
     int maximum_transitions_size = 0;

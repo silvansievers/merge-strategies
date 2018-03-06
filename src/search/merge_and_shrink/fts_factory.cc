@@ -55,10 +55,8 @@ class FTSFactory {
     // see TODO in build_transitions()
     int task_has_conditional_effects;
     int max_valid_factor_index;
-    int max_valid_op_index;
 
     bool check_time_and_set_valid_factors(int var_index, string identifier);
-    bool check_time_and_set_valid_operators(int op_index, string identifier);
 
     vector<unique_ptr<Label>> create_labels();
     void build_label_equivalence_relation(LabelEquivalenceRelation &label_equivalence_relation);
@@ -109,8 +107,7 @@ FTSFactory::FTSFactory(
       max_time(max_time),
       timer(timer),
       task_has_conditional_effects(false),
-      max_valid_factor_index(INF),
-      max_valid_op_index(INF) {
+      max_valid_factor_index(INF) {
 }
 
 FTSFactory::~FTSFactory() {
@@ -118,21 +115,11 @@ FTSFactory::~FTSFactory() {
 
 bool FTSFactory::check_time_and_set_valid_factors(int var_index, string identifier) {
     if (timer() > max_time) {
+        cout << endl;
         cout << "Ran out of time during computation of " << identifier
              << ", stopping computation of atomic FTS at variable index "
              << var_index << endl;
         max_valid_factor_index = var_index;
-        return true;
-    }
-    return false;
-}
-
-bool FTSFactory::check_time_and_set_valid_operators(int op_index, string identifier) {
-    if (timer() > max_time) {
-        cout << "Ran out of time during computation of " << identifier
-             << ", stopping computation of atomic FTS at operator index "
-             << op_index << endl;
-        max_valid_op_index = op_index;
         return true;
     }
     return false;
@@ -347,9 +334,6 @@ void FTSFactory::build_transitions_for_irrelevant_ops(VariableProxy variable) {
 
     // Make all irrelevant labels explicit.
     for (int label_no = 0; label_no < num_labels; ++label_no) {
-        if (label_no > max_valid_op_index) {
-            break;
-        }
         if (!is_relevant(var_no, label_no)) {
             for (int state = 0; state < num_states; ++state)
                 add_transition(var_no, label_no, state, state);
@@ -361,13 +345,13 @@ void FTSFactory::build_transitions() {
     /*
       - Add all transitions.
       - Computes relevant operator information as a side effect.
+      NOTE: we cannot interrupt the computation of transitions even this can
+      take up very much time, because if ignoring some of the operators may
+      cause non-admissible heuristic values.
     */
     for (size_t op_index = 0; op_index < task_proxy.get_operators().size(); ++op_index) {
         OperatorProxy op = task_proxy.get_operators()[op_index];
         build_transitions_for_operator(op);
-        if (check_time_and_set_valid_operators(op_index, "operator transitions")) {
-            break;
-        }
     }
 
     for (size_t var_index = 0; var_index < task_proxy.get_variables().size(); ++var_index) {
