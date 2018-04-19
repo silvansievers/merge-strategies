@@ -371,7 +371,7 @@ static shared_ptr<LabelReduction>_parse(OptionParser &parser) {
                            "label_reduction_method.",
                            "RANDOM",
                            label_reduction_system_order_doc);
-    parser.add_option<bool>("ignore_costs", "ignore label costs");
+    parser.add_option<bool>("ignore_costs", "ignore label costs", "false");
     // Add random_seed option.
     utils::add_rng_options(parser);
 
