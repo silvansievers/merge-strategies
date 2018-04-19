@@ -3,12 +3,13 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
-#include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
 #include "../options/plugin.h"
+
+#include "../tasks/root_task.h"
 
 #include "../task_utils/causal_graph.h"
 
@@ -19,7 +20,7 @@ MergeScoringFunctionCgGoal::MergeScoringFunctionCgGoal(
     const options::Options &options)
     : cg_before_goal(options.get<bool>("cg_before_goal")),
       // HACK!
-      task_proxy(*g_root_task()) {
+      task_proxy(*tasks::g_root_task) {
 }
 
 vector<double> MergeScoringFunctionCgGoal::compute_scores(

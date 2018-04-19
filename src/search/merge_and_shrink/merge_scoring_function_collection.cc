@@ -8,12 +8,13 @@
 #include "transition_system.h"
 #include "utils.h"
 
-#include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/options.h"
 #include "../options/plugin.h"
+
+#include "../tasks/root_task.h"
 
 #include "../task_utils/causal_graph.h"
 
@@ -994,7 +995,7 @@ vector<double> MergeScoringFunctionMutexes::compute_scores(
         int mutex_pair_count = 0;
         for (int ts1_var_no : ts1_var_nos) {
             for (int ts2_var_no : ts2_var_nos) {
-                if (g_mutex_var_pairs[ts1_var_no][ts2_var_no]) {
+                if (tasks::g_mutex_var_pairs[ts1_var_no][ts2_var_no]) {
                     ++mutex_pair_count;
                 }
             }

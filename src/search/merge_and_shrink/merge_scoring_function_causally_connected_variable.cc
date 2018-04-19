@@ -3,11 +3,12 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
-#include "../globals.h"
 #include "../task_proxy.h"
 
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
+
+#include "../tasks/root_task.h"
 
 #include "../task_utils/causal_graph.h"
 
@@ -17,7 +18,7 @@ namespace merge_and_shrink {
 MergeScoringFunctionCausallyConnectedVariable::
 MergeScoringFunctionCausallyConnectedVariable()
     : // HACK!
-      task_proxy(*g_root_task()) {
+      task_proxy(*tasks::g_root_task) {
 }
 
 vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
