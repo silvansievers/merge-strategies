@@ -59,6 +59,7 @@ class LabelReduction {
     };
     LabelReductionMethod lr_method;
     LabelReductionSystemOrder lr_system_order;
+    bool ignore_costs;
     std::shared_ptr<utils::RandomNumberGenerator> rng;
 
     bool initialized() const;

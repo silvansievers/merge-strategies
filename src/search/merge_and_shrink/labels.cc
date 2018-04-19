@@ -1,5 +1,7 @@
 #include "labels.h"
 
+#include "types.h"
+
 #include "../utils/collections.h"
 #include "../utils/memory.h"
 
@@ -31,9 +33,13 @@ Labels::Labels(const Labels &other)
 }
 
 void Labels::reduce_labels(const vector<int> &old_label_nos) {
-    int new_label_cost = labels[old_label_nos[0]]->get_cost();
+    int new_label_cost = INF;
     for (size_t i = 0; i < old_label_nos.size(); ++i) {
         int old_label_no = old_label_nos[i];
+        int cost = get_label_cost(old_label_no);
+        if (cost < new_label_cost) {
+            new_label_cost = cost;
+        }
         labels[old_label_no] = nullptr;
     }
     labels.push_back(utils::make_unique_ptr<Label>(new_label_cost));

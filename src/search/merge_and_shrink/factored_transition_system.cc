@@ -267,4 +267,12 @@ void FactoredTransitionSystem::remove(int index) {
     mas_representations[index] = nullptr;
     distances[index] = nullptr;
 }
+
+void FactoredTransitionSystem::dump() const {
+    for (size_t i = 0; i < transition_systems.size(); ++i) {
+        if (transition_systems[i]) {
+            transition_systems[i]->dump_labels_and_transitions();
+        }
+    }
+}
 }
