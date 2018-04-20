@@ -76,12 +76,14 @@ class MergeAndShrinkHeuristic : public Heuristic {
 
     const Verbosity verbosity;
     const double max_time;
+    const int num_transitions_to_abort;
     long starting_peak_memory;
     // The final merge-and-shrink representation, storing goal distances.
     std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
 
-    int check_time_and_set_final_factor(
-        const utils::Timer &timer, const FactoredTransitionSystem &fts) const;
+    bool ran_out_of_time(const utils::Timer &timer) const;
+    bool too_many_transitions(int num_transitions) const;
+    int find_best_factor(const FactoredTransitionSystem &fts) const;
     void build(const utils::Timer &timer);
 
     void report_peak_memory_delta(bool final = false) const;

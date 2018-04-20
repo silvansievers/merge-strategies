@@ -52,6 +52,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       pruning_as_abstraction(opts.get<bool>("pruning_as_abstraction")),
       verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
       max_time(opts.get<double>("max_time")),
+      num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
       starting_peak_memory(-1),
       mas_representation(nullptr) {
     assert(max_states_before_merge > 0);
@@ -218,39 +219,55 @@ vector<int> get_remaining_candidates(
     return result;
 }
 
-int MergeAndShrinkHeuristic::check_time_and_set_final_factor(
-    const utils::Timer &timer, const FactoredTransitionSystem &fts) const {
+bool MergeAndShrinkHeuristic::ran_out_of_time(
+    const utils::Timer &timer) const {
     if (timer() > max_time) {
         cout << endl;
         cout << "Ran out of time, stopping computation." << endl;
-        vector<int> current_indices;
-        for (int index : fts) {
-            current_indices.push_back(index);
-        }
-
-        vector<FactorScoringFunction *> factor_scoring_functions;
-        factor_scoring_functions.push_back(new FactorScoringFunctionInitH());
-        factor_scoring_functions.push_back(new FactorScoringFunctionSize());
-        factor_scoring_functions.push_back(new FactorScoringFunctionRandom());
-        for (size_t i = 0; i < factor_scoring_functions.size(); ++i) {
-            const FactorScoringFunction *fsf = factor_scoring_functions[i];
-            vector<int> scores = fsf->compute_scores(fts, current_indices);
-            current_indices = get_remaining_candidates(current_indices, scores);
-            if (current_indices.size() == 1) {
-                cout << "Finding best factor in iteration: " << i << endl;
-                break;
-            }
-        }
-
-        for (FactorScoringFunction *fsf : factor_scoring_functions) {
-            delete fsf;
-            fsf = nullptr;
-        }
-
-        assert(current_indices.size() == 1);
-        return current_indices.front();
+        cout << endl;
+        return true;
     }
-    return -1;
+    return false;
+}
+
+bool MergeAndShrinkHeuristic::too_many_transitions(int num_transitions) const {
+    if (num_transitions > num_transitions_to_abort) {
+        cout << "Factor has too many transitions, stopping computation."
+             << endl;
+        cout << endl;
+        return true;
+    }
+    return false;
+}
+
+int MergeAndShrinkHeuristic::find_best_factor(
+    const FactoredTransitionSystem &fts) const {
+    vector<int> current_indices;
+    for (int index : fts) {
+        current_indices.push_back(index);
+    }
+
+    vector<FactorScoringFunction *> factor_scoring_functions;
+    factor_scoring_functions.push_back(new FactorScoringFunctionInitH());
+    factor_scoring_functions.push_back(new FactorScoringFunctionSize());
+    factor_scoring_functions.push_back(new FactorScoringFunctionRandom());
+    for (size_t i = 0; i < factor_scoring_functions.size(); ++i) {
+        const FactorScoringFunction *fsf = factor_scoring_functions[i];
+        vector<int> scores = fsf->compute_scores(fts, current_indices);
+        current_indices = get_remaining_candidates(current_indices, scores);
+        if (current_indices.size() == 1) {
+            cout << "Finding best factor in iteration: " << i << endl;
+            break;
+        }
+    }
+
+    for (FactorScoringFunction *fsf : factor_scoring_functions) {
+        delete fsf;
+        fsf = nullptr;
+    }
+
+    assert(current_indices.size() == 1);
+    return current_indices.front();
 }
 
 void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
@@ -270,7 +287,7 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
             verbosity,
             max_time,
             timer);
-    int unsolvable_index = -1;
+    int final_index = -1;
     /*
       Go over all atomic factors and check if any is unsolvable. If so,
       we can skip the main loop and immediately terminate the heuristic
@@ -287,17 +304,27 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 verbosity);
         }
         if (!fts.is_factor_solvable(index)) {
-            unsolvable_index = index;
+            final_index = index;
             break;
         }
     }
     print_time(timer, "after computation of atomic transition systems");
     cout << endl;
 
-    if (unsolvable_index == -1) {
-        unsolvable_index = check_time_and_set_final_factor(timer, fts);
+    if (final_index == -1) {
+        if (ran_out_of_time(timer)) {
+            final_index = find_best_factor(fts);
+        } else {
+            for (int index = 0; index < fts.get_size(); ++index) {
+                if (too_many_transitions(fts.get_ts(index).compute_total_transitions())) {
+                    final_index = find_best_factor(fts);
+                    break;
+                }
+            }
+        }
     }
 
+    pair<int, int> score_based_merging_tiebreaking;
     int maximum_intermediate_size = 0;
     int maximum_transitions_size = 0;
     for (int i = 0; i < fts.get_size(); ++i) {
@@ -326,7 +353,9 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     bool currently_shrink_perfect_for_symmetries = true;
     bool currently_prune_perfect_for_symmetries = true;
 
-    if (unsolvable_index == -1) { // All atomic transition systems are solvable.
+    if (final_index == -1) {
+        // All atomic transition systems are solvable and no limit has been
+        // reached.
         unique_ptr<MergeStrategy> merge_strategy =
             merge_strategy_factory->compute_merge_strategy(task_proxy, fts);
         merge_strategy_factory = nullptr;
@@ -334,9 +363,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         while (fts.get_num_active_entries() > 1) {
             // Choose next transition systems to merge
             pair<int, int> merge_indices = merge_strategy->get_next();
-            int final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer)) {
+                final_index = find_best_factor(fts);
                 break;
             }
             if (merge_strategy->ended_merging_for_symmetries()) {
@@ -381,9 +409,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
             }
 
-            final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer)) {
+                final_index = find_best_factor(fts);
                 break;
             }
 
@@ -417,9 +444,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 still_perfect = false;
             }
 
-            final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer)) {
+                final_index = find_best_factor(fts);
                 break;
             }
 
@@ -432,9 +458,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
             }
 
-            final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer)) {
+                final_index = find_best_factor(fts);
                 break;
             }
 
@@ -463,9 +488,8 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
                 print_time(timer, "after merging");
             }
 
-            final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer) || too_many_transitions(num_trans)) {
+                final_index = find_best_factor(fts);
                 break;
             }
 
@@ -509,31 +533,25 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
               not to be pruned/not to be evaluated as infinity.
             */
             if (!fts.is_factor_solvable(merged_index)) {
-                unsolvable_index = merged_index;
+                final_index = merged_index;
                 break;
             }
 
-            final_factor = check_time_and_set_final_factor(timer, fts);
-            if (final_factor != -1) {
-                unsolvable_index = final_factor;
+            if (ran_out_of_time(timer)) {
+                final_index = find_best_factor(fts);
                 break;
             }
 
             ++iteration_counter;
         }
 
-        pair<int, int> dfp_tiebreaking =
+        score_based_merging_tiebreaking =
             merge_strategy->get_tiebreaking_statistics();
-        cout << "Iterations with merge tiebreaking: "
-             << dfp_tiebreaking.first << endl;
-        cout << "Total tiebreaking merge candidates: "
-             << dfp_tiebreaking.second << endl;
     }
 
-    int final_index;
-    if (unsolvable_index == -1) {
+    if (final_index == -1) {
         /*
-          If unsolvable_index == -1, we "regularly" finished the merge-and-
+          If final_index == -1, we "regularly" finished the merge-and-
           shrink construction, i.e. we merged all transition systems and are
           left with one solvable transition system. This assumes that merges
           are always appended at the end.
@@ -543,21 +561,27 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         }
         final_index = fts.get_size() - 1;
         assert(fts.is_factor_solvable(final_index));
-        cout << "Final transition system size: "
-             << fts.get_ts(final_index).get_size() << endl;
+        cout << "Main loop terminated regularly." << endl;
     } else {
         /*
-          unsolvable_index points to an unsolvable transition system (this
+          final_index points to an unsolvable transition system (this
           happens if we exited the main loop prior to its regular termination)
-          or to the "best" factor if the time limit was reached.
+          or to the "best" factor if the time limit or transition limit was
+          reached.
         */
-        final_index = unsolvable_index;
-        cout << "Abstract problem is unsolvable or time limit reached!" << endl;
-        if (fts.is_factor_solvable(final_index)) {
-            cout << "Final transition system size: "
-                 << fts.get_ts(final_index).get_size() << endl;
-        }
+        cout << "Abstract problem is unsolvable or the time or transition "
+                "limit was reached!" << endl;
     }
+
+    if (fts.is_factor_solvable(final_index)) {
+        cout << "Final transition system size: "
+             << fts.get_ts(final_index).get_size() << endl;
+    }
+
+    cout << "Iterations with merge tiebreaking: "
+         << score_based_merging_tiebreaking.first << endl;
+    cout << "Total tiebreaking merge candidates: "
+         << score_based_merging_tiebreaking.second << endl;
 
     pair<unique_ptr<MergeAndShrinkRepresentation>, unique_ptr<Distances>>
     final_entry = fts.extract_factor(final_index);
@@ -861,9 +885,17 @@ static Heuristic *_parse(OptionParser &parser) {
         "A limit in seconds on the computation time of the heuristic. "
         "If the limit is surpassed, the algorithm uses the factor with "
         "the largest initial h value, breaking ties by preferring larger "
-        "factors.",
+        "factors, to compute the heuristic.",
         "infinity",
         Bounds("0.0", "infinity"));
+    parser.add_option<int>(
+        "num_transitions_to_abort",
+        "A limit on the number of transitions of any factor during the "
+        "computation. Once this limit is reached, stop the computation and "
+        "the algorithm uses the factor with the largest initial h value, "
+        "breaking ties by preferring larger factors, to compute the heuristic.",
+        "infinity",
+        Bounds("0", "infinity"));
 
     Options opts = parser.parse();
     if (parser.help_mode()) {
