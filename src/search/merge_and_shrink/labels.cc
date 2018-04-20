@@ -33,6 +33,12 @@ Labels::Labels(const Labels &other)
 }
 
 void Labels::reduce_labels(const vector<int> &old_label_nos) {
+    /*
+      Even though we currently only support exact label reductions where
+      reduced labels are of equal cost, to support non-exact label reductions,
+      we compute the cost of the new label as the minimum cost of all old
+      labels reduced to it to satisfy admissibility.
+    */
     int new_label_cost = INF;
     for (size_t i = 0; i < old_label_nos.size(); ++i) {
         int old_label_no = old_label_nos[i];

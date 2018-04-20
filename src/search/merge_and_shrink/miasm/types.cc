@@ -1,7 +1,7 @@
 #include "types.h"
 
 #include "../../abstract_task.h"
-#include "../../globals.h"
+#include "../../tasks/root_task.h"
 
 #include <limits>
 #include <utility>
@@ -20,12 +20,12 @@ var_set_t mst::singleton(const var_t &var) {
 set<var_set_t> mst::get_mutex_pairs_var() {
     set<var_set_t> mutex_var_set;
     /* get mutex pairs, keep the variables but not the values */
-    for (size_t u = 0; u < g_inconsistent_facts.size(); ++u) {
-        for (size_t value_u = 0; value_u < g_inconsistent_facts[u].size();
+    for (size_t u = 0; u < tasks::g_mutexes.size(); ++u) {
+        for (size_t value_u = 0; value_u < tasks::g_mutexes[u].size();
              ++value_u) {
             for (set<FactPair>::iterator
-                 i = g_inconsistent_facts[u][value_u].begin();
-                 i != g_inconsistent_facts[u][value_u].end(); ++i) {
+                 i = tasks::g_mutexes[u][value_u].begin();
+                 i != tasks::g_mutexes[u][value_u].end(); ++i) {
                 size_t v = i->var;
                 if (u == v)
                     continue;
@@ -42,16 +42,16 @@ set<var_set_t> mst::get_mutex_pairs_var() {
 }
 
 var_relation_t mst::get_mutex_pairs_relation() {
-    const size_t n = g_variable_domain.size();
+    const size_t n = tasks::g_root_task->get_num_variables();
     vector<var_t> row(n, 0);
     var_relation_t mutex_pair_relation(n, row);
 
-    for (size_t u = 0; u < g_inconsistent_facts.size(); ++u) {
-        for (size_t val_u = 0; val_u < g_inconsistent_facts[u].size();
+    for (size_t u = 0; u < tasks::g_mutexes.size(); ++u) {
+        for (size_t val_u = 0; val_u < tasks::g_mutexes[u].size();
              ++val_u) {
             for (set<FactPair>::iterator
-                 v_pair = g_inconsistent_facts[u][val_u].begin();
-                 v_pair != g_inconsistent_facts[u][val_u].end();
+                 v_pair = tasks::g_mutexes[u][val_u].begin();
+                 v_pair != tasks::g_mutexes[u][val_u].end();
                  ++v_pair) {
                 var_set_t p;
                 p.insert(u);
