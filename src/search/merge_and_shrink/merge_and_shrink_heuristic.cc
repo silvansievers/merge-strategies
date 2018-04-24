@@ -333,7 +333,6 @@ int MergeAndShrinkHeuristic::main_loop(
     vector<int> init_hvalue_increase;
     vector<int> remaining_labels;
     remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
-    int iteration_counter = 0;
     bool still_perfect = true;
     vector<pair<int, int>> merge_order;
     vector<double> relative_pruning_per_iteration;
@@ -349,12 +348,13 @@ int MergeAndShrinkHeuristic::main_loop(
         merge_strategy_factory->compute_merge_strategy(task_proxy, fts);
     merge_strategy_factory = nullptr;
 
-    int final_index = -2;
+    int iteration_counter = 0;
+    int final_index = -1;
     while (fts.get_num_active_entries() > 1) {
         // Choose next transition systems to merge
         pair<int, int> merge_indices = merge_strategy->get_next();
         if (ran_out_of_time(timer)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
         if (merge_strategy->ended_merging_for_symmetries()) {
@@ -400,7 +400,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
 
         if (ran_out_of_time(timer)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
 
@@ -435,7 +435,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
 
         if (ran_out_of_time(timer)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
 
@@ -449,7 +449,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
 
         if (ran_out_of_time(timer)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
 
@@ -479,7 +479,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
 
         if (ran_out_of_time(timer) || too_many_transitions(num_trans)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
 
@@ -524,7 +524,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
 
         if (ran_out_of_time(timer)) {
-            final_index = -1;
+            final_index = -2;
             break;
         }
 
@@ -540,7 +540,7 @@ int MergeAndShrinkHeuristic::main_loop(
     score_based_merging_tiebreaking =
         merge_strategy->get_tiebreaking_statistics();
 
-    if (final_index == -2) {
+    if (final_index == -1) {
         /*
           We regularly finished the merge-and-shrink construction, i.e., we
           merged all transition systems and are left with one solvable
@@ -556,7 +556,9 @@ int MergeAndShrinkHeuristic::main_loop(
         cout << "Final transition system size: "
              << fts.get_ts(final_index).get_size() << endl;
     } else {
-        cout << "Main loop terminated early. Statistics:" << endl;
+        cout << "Main loop terminated early (either because a factor is "
+                "unsolvable or the time or transitions limit was reached). "
+                "Statistics:" << endl;
     }
 
     cout << "Iterations with merge tiebreaking: "
@@ -675,12 +677,14 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
     }
 
     int final_index = main_loop(fts, timer);
-    if (final_index == -1) {
+    if (final_index == -2) {
         // Terminated main loop early due to reaching the time or transitions limit.
         finalize(fts);
     } else {
-        // Main loop terminated regularly and final_index points to the last
-        // factor, or it points to an unsolvable factor.
+        /*
+          Main loop terminated regularly and final_index points to the last
+          factor, or it points to an unsolvable factor.
+        */
         finalize_factor(fts, final_index);
     }
 }
