@@ -330,6 +330,7 @@ int MergeAndShrinkHeuristic::main_loop(
         }
     }
 
+    pair<int, int> score_based_merging_tiebreaking;
     vector<int> init_hvalue_increase;
     vector<int> remaining_labels;
     remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
