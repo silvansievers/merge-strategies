@@ -84,6 +84,10 @@ class MergeAndShrinkHeuristic : public Heuristic {
     bool ran_out_of_time(const utils::Timer &timer) const;
     bool too_many_transitions(int num_transitions) const;
     int find_best_factor(const FactoredTransitionSystem &fts) const;
+    void finalize_factor(FactoredTransitionSystem &fts, int index);
+    void finalize(FactoredTransitionSystem &fts);
+    int prune_atomic(FactoredTransitionSystem &fts) const;
+    int main_loop(FactoredTransitionSystem &fts, const utils::Timer &timer);
     void build(const utils::Timer &timer);
 
     void report_peak_memory_delta(bool final = false) const;
