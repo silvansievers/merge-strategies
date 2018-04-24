@@ -316,7 +316,6 @@ int MergeAndShrinkHeuristic::prune_atomic(FactoredTransitionSystem &fts) const {
 
 int MergeAndShrinkHeuristic::main_loop(
     FactoredTransitionSystem &fts, const utils::Timer &timer) {
-    pair<int, int> score_based_merging_tiebreaking;
     int maximum_intermediate_size = 0;
     int maximum_transitions_size = 0;
     for (int i = 0; i < fts.get_size(); ++i) {
