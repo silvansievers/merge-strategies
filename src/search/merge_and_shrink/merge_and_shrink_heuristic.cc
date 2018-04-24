@@ -53,8 +53,8 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
       max_time(opts.get<double>("max_time")),
       num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
-      starting_peak_memory(-1),
-      mas_representation(nullptr) {
+      partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))),
+      starting_peak_memory(-1) {
     assert(max_states_before_merge > 0);
     assert(max_states >= max_states_before_merge);
     assert(shrink_threshold_before_merge <= max_states_before_merge);
@@ -273,7 +273,6 @@ void MergeAndShrinkHeuristic::finalize_factor(
     FactoredTransitionSystem &fts, int index) {
     pair<unique_ptr<MergeAndShrinkRepresentation>, unique_ptr<Distances>>
     final_entry = fts.extract_factor(index);
-    mas_representation = move(final_entry.first);
     if (!final_entry.second->are_goal_distances_computed()) {
         const bool compute_init = false;
         const bool compute_goal = true;
@@ -281,12 +280,26 @@ void MergeAndShrinkHeuristic::finalize_factor(
             compute_init, compute_goal, verbosity);
     }
     assert(final_entry.second->are_goal_distances_computed());
-    mas_representation->set_distances(*final_entry.second);
+    final_entry.first->set_distances(*final_entry.second);
+    mas_representations.push_back(move(final_entry.first));
 }
 
 void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
-    int index = find_best_factor(fts);
-    finalize_factor(fts, index);
+    if (partial_mas_method == PartialMASMethod::Single) {
+        int index = find_best_factor(fts);
+        finalize_factor(fts, index);
+        cout << "Choosing factor at index " << index << " as single heuristic."
+             << endl;
+    } else if (partial_mas_method == PartialMASMethod::Maximum) {
+        for (int index : fts) {
+            finalize_factor(fts, index);
+        }
+        cout << "Using all factors in a maximum heuristic." << endl;
+    } else {
+        cerr << "Unknown partial merge-and-shrink method!" << endl;
+        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+    }
+    cout << endl;
 }
 
 int MergeAndShrinkHeuristic::prune_atomic(FactoredTransitionSystem &fts) const {
@@ -628,6 +641,7 @@ int MergeAndShrinkHeuristic::main_loop(
          << num_pruning_merging_for_symmetries << endl;
     cout << "Number of times merging for symmetries failed for any reason: "
          << num_failed_merging_for_symmetries << endl;
+    cout << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;
@@ -691,12 +705,16 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
 
 int MergeAndShrinkHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
-    int cost = mas_representation->get_value(state);
-    if (cost == PRUNED_STATE || cost == INF) {
-        // If state is unreachable or irrelevant, we encountered a dead end.
-        return DEAD_END;
+    int heuristic = 0;
+    for (const unique_ptr<MergeAndShrinkRepresentation> &mas_representation : mas_representations) {
+        int cost = mas_representation->get_value(state);
+        if (cost == PRUNED_STATE || cost == INF) {
+            // If state is unreachable or irrelevant, we encountered a dead end.
+            return DEAD_END;
+        }
+        heuristic = max(heuristic, cost);
     }
-    return cost;
+    return heuristic;
 }
 
 void MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(OptionParser &parser) {
@@ -922,6 +940,25 @@ static Heuristic *_parse(OptionParser &parser) {
         "breaking ties by preferring larger factors, to compute the heuristic.",
         "infinity",
         Bounds("0", "infinity"));
+    vector<string> partial_mas_method;
+    vector<string> partial_mas_method_docs;
+    partial_mas_method.push_back("single");
+    partial_mas_method_docs.push_back(
+        "single: use a single factor, chosen according to a simple heuristic "
+        "that looks for the highest h-value of the initial state, breaking "
+        "ties by preferring larger factors, breaking final ties by choosing "
+        "randomly.");
+    partial_mas_method.push_back("maximum");
+    partial_mas_method_docs.push_back(
+        "maximum: retain all remaining factors and compute the maximum "
+        "heuristic over all these abstractions.");
+    parser.add_enum_option(
+        "partial_mas_method",
+        partial_mas_method,
+        "Method to determine the final heuristic given an early abortion, "
+        "such as due to reaching the time or transitions limit.",
+        "single",
+        partial_mas_method_docs);
 
     Options opts = parser.parse();
     if (parser.help_mode()) {

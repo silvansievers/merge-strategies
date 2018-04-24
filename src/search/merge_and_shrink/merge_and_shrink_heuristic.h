@@ -77,9 +77,16 @@ class MergeAndShrinkHeuristic : public Heuristic {
     const Verbosity verbosity;
     const double max_time;
     const int num_transitions_to_abort;
+
+    enum class PartialMASMethod {
+        Single,
+        Maximum
+    };
+    const PartialMASMethod partial_mas_method;
+
     long starting_peak_memory;
-    // The final merge-and-shrink representation, storing goal distances.
-    std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
+    // The final merge-and-shrink representations, storing goal distances.
+    std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> mas_representations;
 
     bool ran_out_of_time(const utils::Timer &timer) const;
     bool too_many_transitions(int num_transitions) const;
