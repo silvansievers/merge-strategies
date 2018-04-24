@@ -127,9 +127,10 @@ public: // For copying transition systems within FTS
         return transitions_by_group_id[group_id];
     }
 
-private:
+public:
     // Statistics and output
     int compute_total_transitions() const;
+private:
     std::string get_description() const;
 public:
     TransitionSystem(

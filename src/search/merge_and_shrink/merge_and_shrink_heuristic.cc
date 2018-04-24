@@ -208,13 +208,19 @@ int MergeAndShrinkHeuristic::prune_atomic(FactoredTransitionSystem &fts) const {
 int MergeAndShrinkHeuristic::main_loop(
     FactoredTransitionSystem &fts, const utils::Timer &timer) {
     int maximum_intermediate_size = 0;
+    int maximum_transitions_size = 0;
     for (int i = 0; i < fts.get_size(); ++i) {
         int size = fts.get_ts(i).get_size();
         if (size > maximum_intermediate_size) {
             maximum_intermediate_size = size;
         }
+        int num_trans = fts.get_ts(i).compute_total_transitions();
+        if (num_trans > maximum_transitions_size) {
+            maximum_transitions_size = num_trans;
+        }
     }
 
+    pair<int, int> score_based_merging_tiebreaking;
     vector<int> init_hvalue_increase;
     vector<int> remaining_labels;
     remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
@@ -387,14 +393,10 @@ int MergeAndShrinkHeuristic::main_loop(
         cout << endl;
 
         ++iteration_counter;
-
-        pair<int, int> dfp_tiebreaking =
-        merge_strategy->get_tiebreaking_statistics();
-        cout << "Iterations with merge tiebreaking: "
-         << dfp_tiebreaking.first << endl;
-        cout << "Total tiebreaking merge candidates: "
-         << dfp_tiebreaking.second << endl;
     }
+
+    score_based_merging_tiebreaking =
+        merge_strategy->get_tiebreaking_statistics();
 
     if (final_index == -1) {
         /*
@@ -416,8 +418,14 @@ int MergeAndShrinkHeuristic::main_loop(
             "Statistics:" << endl;
     }
 
+    cout << "Iterations with merge tiebreaking: "
+         << score_based_merging_tiebreaking.first << endl;
+    cout << "Total tiebreaking merge candidates: "
+         << score_based_merging_tiebreaking.second << endl;
     cout << "Maximum intermediate abstraction size: "
          << maximum_intermediate_size << endl;
+    cout << "Maximum intermediate number of transitions: "
+         << maximum_transitions_size << endl;
     cout << "Init h value improvements: " << init_hvalue_increase << endl;
     cout << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
