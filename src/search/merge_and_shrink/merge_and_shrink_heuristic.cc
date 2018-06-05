@@ -1,6 +1,7 @@
 #include "merge_and_shrink_heuristic.h"
 
 #include "distances.h"
+#include "factor_scoring_functions.h"
 #include "factored_transition_system.h"
 #include "fts_factory.h"
 #include "label_reduction.h"
@@ -54,6 +55,9 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
       max_time(opts.get<double>("max_time")),
       num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
       partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))),
+      factor_scoring_functions(
+          opts.get_list<shared_ptr<FactorScoringFunction>>(
+              "factor_scoring_functions")),
       starting_peak_memory(-1) {
     assert(max_states_before_merge > 0);
     assert(max_states >= max_states_before_merge);
@@ -168,37 +172,6 @@ void MergeAndShrinkHeuristic::warn_on_unusual_options() const {
     }
 }
 
-vector<int> FactorScoringFunctionInitH::compute_scores(
-    const FactoredTransitionSystem &fts,
-    const vector<int> &indices) const {
-    vector<int> scores;
-    scores.reserve(indices.size());
-    for (int index : indices) {
-        scores.push_back(fts.get_init_state_goal_distance(index));
-    }
-    return scores;
-}
-
-vector<int> FactorScoringFunctionSize::compute_scores(
-    const FactoredTransitionSystem &fts,
-    const vector<int> &indices) const {
-    vector<int> scores;
-    scores.reserve(indices.size());
-    for (int index : indices) {
-        scores.push_back(fts.get_ts(index).get_size());
-    }
-    return scores;
-}
-
-vector<int> FactorScoringFunctionRandom::compute_scores(
-    const FactoredTransitionSystem &,
-    const vector<int> &indices) const {
-    vector<int> scores(indices.size());
-    iota(scores.begin(), scores.end(), 0);
-    random_shuffle(scores.begin(), scores.end());
-    return scores;
-}
-
 vector<int> get_remaining_candidates(
     const vector<int> &merge_candidates,
     const vector<int> &scores) {
@@ -246,23 +219,12 @@ int MergeAndShrinkHeuristic::find_best_factor(
         current_indices.push_back(index);
     }
 
-    vector<FactorScoringFunction *> factor_scoring_functions;
-    factor_scoring_functions.push_back(new FactorScoringFunctionInitH());
-    factor_scoring_functions.push_back(new FactorScoringFunctionSize());
-    factor_scoring_functions.push_back(new FactorScoringFunctionRandom());
-    for (size_t i = 0; i < factor_scoring_functions.size(); ++i) {
-        const FactorScoringFunction *fsf = factor_scoring_functions[i];
+    for (const shared_ptr<FactorScoringFunction> &fsf : factor_scoring_functions) {
         vector<int> scores = fsf->compute_scores(fts, current_indices);
         current_indices = get_remaining_candidates(current_indices, scores);
         if (current_indices.size() == 1) {
-            cout << "Finding best factor in iteration: " << i << endl;
             break;
         }
-    }
-
-    for (FactorScoringFunction *fsf : factor_scoring_functions) {
-        delete fsf;
-        fsf = nullptr;
     }
 
     assert(current_indices.size() == 1);
@@ -286,9 +248,12 @@ void MergeAndShrinkHeuristic::finalize_factor(
 
 void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
     if (partial_mas_method == PartialMASMethod::Single) {
+        cout << "Need to choose a single factor to serve as a heuristic." << endl;
         int index = find_best_factor(fts);
+        // We do not need the scoring functions anymore at this point.
+        factor_scoring_functions.clear();
         finalize_factor(fts, index);
-        cout << "Choosing factor at index " << index << " as single heuristic."
+        cout << "Chose single factor as heuristic: " << fts.get_ts(index).tag()
              << endl;
     } else if (partial_mas_method == PartialMASMethod::Maximum) {
         for (int index : fts) {
@@ -959,6 +924,10 @@ static Heuristic *_parse(OptionParser &parser) {
         "such as due to reaching the time or transitions limit.",
         "single",
         partial_mas_method_docs);
+    parser.add_list_option<shared_ptr<FactorScoringFunction>>(
+        "factor_scoring_functions",
+        "The list of factor scoring functions used to compute scores for "
+        "remaining factors when computing partial_mas_method.");
 
     Options opts = parser.parse();
     if (parser.help_mode()) {

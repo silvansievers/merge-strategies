@@ -10,6 +10,7 @@ class Timer;
 }
 
 namespace merge_and_shrink {
+class FactorScoringFunction;
 class FactoredTransitionSystem;
 class LabelReduction;
 class MergeAndShrinkRepresentation;
@@ -17,41 +18,6 @@ class MergeStrategyFactory;
 class ShrinkStrategy;
 class TransitionSystem;
 enum class Verbosity;
-
-class FactorScoringFunction {
-public:
-    virtual ~FactorScoringFunction() = default;
-    virtual std::vector<int> compute_scores(
-        const FactoredTransitionSystem &fts,
-        const std::vector<int> &indices) const = 0;
-};
-
-class FactorScoringFunctionInitH : public FactorScoringFunction {
-public:
-    FactorScoringFunctionInitH() = default;
-    virtual ~FactorScoringFunctionInitH() override = default;
-    virtual std::vector<int> compute_scores(
-        const FactoredTransitionSystem &fts,
-        const std::vector<int> &indices) const override;
-};
-
-class FactorScoringFunctionSize : public FactorScoringFunction {
-public:
-    FactorScoringFunctionSize() = default;
-    virtual ~FactorScoringFunctionSize() override = default;
-    virtual std::vector<int> compute_scores(
-        const FactoredTransitionSystem &fts,
-        const std::vector<int> &indices) const override;
-};
-
-class FactorScoringFunctionRandom : public FactorScoringFunction {
-public:
-    FactorScoringFunctionRandom() = default;
-    virtual ~FactorScoringFunctionRandom() override = default;
-    virtual std::vector<int> compute_scores(
-        const FactoredTransitionSystem &fts,
-        const std::vector<int> &indices) const override;
-};
 
 class MergeAndShrinkHeuristic : public Heuristic {
     // TODO: when the option parser supports it, the following should become
@@ -83,6 +49,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
         Maximum
     };
     const PartialMASMethod partial_mas_method;
+    std::vector<std::shared_ptr<FactorScoringFunction>> factor_scoring_functions;
 
     long starting_peak_memory;
     // The final merge-and-shrink representations, storing goal distances.
