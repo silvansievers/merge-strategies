@@ -4,6 +4,7 @@
 #include "../heuristic.h"
 
 #include <memory>
+#include <set>
 
 namespace utils {
 class Timer;
@@ -18,6 +19,12 @@ class MergeStrategyFactory;
 class ShrinkStrategy;
 class TransitionSystem;
 enum class Verbosity;
+
+enum class PartialMASMethod {
+    None,
+    Single,
+    Maximum
+};
 
 class MergeAndShrinkHeuristic : public Heuristic {
     // TODO: when the option parser supports it, the following should become
@@ -41,13 +48,12 @@ class MergeAndShrinkHeuristic : public Heuristic {
     const bool pruning_as_abstraction;
 
     const Verbosity verbosity;
+
+    // Options related to computing partial abstractions
     const double max_time;
     const int num_transitions_to_abort;
-
-    enum class PartialMASMethod {
-        Single,
-        Maximum
-    };
+    const int num_transitions_to_exclude;
+    std::set<int> allowed_indices;
     const PartialMASMethod partial_mas_method;
     std::vector<std::shared_ptr<FactorScoringFunction>> factor_scoring_functions;
 
@@ -57,6 +63,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
 
     bool ran_out_of_time(const utils::Timer &timer) const;
     bool too_many_transitions(int num_transitions) const;
+    bool exclude_if_too_many_transitions() const;
     int find_best_factor(const FactoredTransitionSystem &fts) const;
     void finalize_factor(FactoredTransitionSystem &fts, int index);
     void finalize(FactoredTransitionSystem &fts);

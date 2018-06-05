@@ -12,8 +12,9 @@ MergeStrategyStateless::MergeStrategyStateless(
       merge_selector(merge_selector) {
 }
 
-pair<int, int> MergeStrategyStateless::get_next() {
-    return merge_selector->select_merge(fts);
+pair<int, int> MergeStrategyStateless::get_next(
+    const vector<int> &allowed_indices) {
+    return merge_selector->select_merge(fts, allowed_indices);
 }
 
 pair<int, int> MergeStrategyStateless::get_tiebreaking_statistics() const {

@@ -1,6 +1,7 @@
 #ifndef MERGE_AND_SHRINK_MERGE_STRATEGY_H
 #define MERGE_AND_SHRINK_MERGE_STRATEGY_H
 
+#include <vector>
 #include <utility>
 
 namespace merge_and_shrink {
@@ -44,7 +45,8 @@ protected:
 public:
     explicit MergeStrategy(const FactoredTransitionSystem &fts);
     virtual ~MergeStrategy() = default;
-    virtual std::pair<int, int> get_next() = 0;
+    virtual std::pair<int, int> get_next(
+        const std::vector<int> &allowed_indices = std::vector<int>()) = 0;
 
     // tiebreaking statistics
     virtual std::pair<int, int> get_tiebreaking_statistics() const {
