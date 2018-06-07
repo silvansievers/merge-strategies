@@ -523,27 +523,29 @@ int MergeAndShrinkHeuristic::main_loop(
             break;
         }
 
-        allowed_indices.erase(merge_index1);
-        allowed_indices.erase(merge_index2);
-        if (num_trans <= num_transitions_to_exclude) {
-            allowed_indices.insert(merged_index);
-        } else {
-            cout << fts.get_ts(merged_index).tag()
-                 << "too many number of transitions, excluding "
-                    "from further consideration." << endl;
-        }
-
-        if (ran_out_of_time(timer)
-            || too_many_transitions(num_trans)
-            || allowed_indices.size() <= 1) {
+        if (exclude_if_too_many_transitions()) {
+            allowed_indices.erase(merge_index1);
+            allowed_indices.erase(merge_index2);
+            if (num_trans <= num_transitions_to_exclude) {
+                allowed_indices.insert(merged_index);
+            } else {
+                cout << fts.get_ts(merged_index).tag()
+                     << "too many number of transitions, excluding "
+                        "from further consideration." << endl;
+            }
             if (allowed_indices.size() <= 1) {
                 cout << "Not enough factors remaining with a low enough "
                         "number of transitions, stopping computation." << endl;
+                cout << endl;
+                final_index = -2;
+                break;
             }
+        }
+
+        if (ran_out_of_time(timer) || too_many_transitions(num_trans)) {
             final_index = -2;
             break;
         }
-
 
         // End-of-iteration output.
         if (verbosity >= Verbosity::VERBOSE) {
@@ -574,7 +576,7 @@ int MergeAndShrinkHeuristic::main_loop(
              << fts.get_ts(final_index).get_size() << endl;
     } else {
         cout << "Main loop terminated early (either because a factor is "
-                "unsolvable or the time or transitions limit was reached). "
+                "unsolvable or the time or transition limit was reached). "
                 "Statistics:" << endl;
     }
 
