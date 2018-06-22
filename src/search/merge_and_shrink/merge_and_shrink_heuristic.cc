@@ -547,14 +547,19 @@ int MergeAndShrinkHeuristic::main_loop(
             if (num_trans <= num_transitions_to_exclude) {
                 allowed_indices.insert(merged_index);
             } else {
-                cout << fts.get_ts(merged_index).tag()
-                     << "too many number of transitions, excluding "
-                        "from further consideration." << endl;
+                if (verbosity >= Verbosity::NORMAL) {
+                    cout << fts.get_ts(merged_index).tag()
+                         << "too many number of transitions, excluding "
+                            "from further consideration." << endl;
+                }
             }
             if (allowed_indices.size() <= 1) {
-                cout << "Not enough factors remaining with a low enough "
-                        "number of transitions, stopping computation." << endl;
-                cout << endl;
+                if (verbosity >= Verbosity::NORMAL) {
+                    cout << "Not enough factors remaining with a low enough "
+                            "number of transitions, stopping computation."
+                         << endl;
+                    cout << endl;
+                }
                 final_index = -2;
                 break;
             }
@@ -723,9 +728,11 @@ void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
         }
         if (exclude_if_too_many_transitions()) {
             if (num_transitions > num_transitions_to_exclude) {
-                cout << ts.tag()
-                     << "too many number of transitions, excluding "
-                        "from further consideration." << endl;
+                if (verbosity >= Verbosity::NORMAL) {
+                    cout << ts.tag()
+                         << "too many number of transitions, excluding "
+                            "from further consideration." << endl;
+                }
             } else {
                 allowed_indices.insert(index);
             }
