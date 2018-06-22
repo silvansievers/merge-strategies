@@ -104,7 +104,7 @@ TransitionSystem::TransitionSystem(const TransitionSystem &other)
       incorporated_variables(other.incorporated_variables),
       label_equivalence_relation(
           utils::make_unique_ptr<LabelEquivalenceRelation>(
-              *other.label_equivalence_relation.get())),
+              *other.label_equivalence_relation)),
       transitions_by_group_id(other.transitions_by_group_id),
       num_states(other.num_states),
       goal_states(other.goal_states),
@@ -187,7 +187,7 @@ unique_ptr<TransitionSystem> TransitionSystem::merge(
 
             // Create the new transitions for this bucket
             vector<Transition> new_transitions;
-            if (transitions1.size() && transitions2.size()
+            if (!transitions1.empty() && !transitions2.empty()
                 && transitions1.size() > new_transitions.max_size() / transitions2.size())
                 utils::exit_with(ExitCode::OUT_OF_MEMORY);
             new_transitions.reserve(transitions1.size() * transitions2.size());
@@ -472,7 +472,7 @@ void TransitionSystem::dump_dot_graph() const {
     cout << "    node [shape = none] start;" << endl;
     for (int i = 0; i < num_states; ++i) {
         bool is_init = (i == init_state);
-        bool is_goal = (goal_states[i] == true);
+        bool is_goal = goal_states[i];
         cout << "    node [shape = " << (is_goal ? "doublecircle" : "circle")
              << "] node" << i << ";" << endl;
         if (is_init)

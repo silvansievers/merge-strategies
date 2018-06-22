@@ -485,6 +485,7 @@ int MergeAndShrinkHeuristic::main_loop(
          << num_pruning_merging_for_symmetries << endl;
     cout << "Number of times merging for symmetries failed for any reason: "
          << num_failed_merging_for_symmetries << endl;
+    cout << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;
