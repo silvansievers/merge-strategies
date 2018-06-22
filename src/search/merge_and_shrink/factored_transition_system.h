@@ -130,6 +130,7 @@ public:
 
     void statistics(int index) const;
     void dump(int index) const;
+    void dump() const;
 
     const TransitionSystem &get_ts(int index) const {
         return *transition_systems[index];
@@ -172,7 +173,6 @@ public:
     bool is_active(int index) const;
     int get_init_state_goal_distance(int index) const;
     void remove(int index);
-    void dump() const;
 };
 }
 
