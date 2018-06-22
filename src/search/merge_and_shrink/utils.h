@@ -6,11 +6,17 @@
 #include <memory>
 #include <vector>
 
+namespace utils {
+class Timer;
+}
+
 namespace merge_and_shrink {
 class Distances;
 class FactoredTransitionSystem;
 class ShrinkStrategy;
 class TransitionSystem;
+
+extern void print_time(const utils::Timer &timer, std::string text);
 
 /*
   Compute target sizes for shrinking two transition systems with sizes size1

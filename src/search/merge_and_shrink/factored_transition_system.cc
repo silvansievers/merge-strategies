@@ -9,7 +9,6 @@
 #include "../utils/collections.h"
 #include "../utils/memory.h"
 #include "../utils/system.h"
-#include "../utils/timer.h"
 
 #include <cassert>
 
@@ -43,8 +42,7 @@ FactoredTransitionSystem::FactoredTransitionSystem(
     vector<unique_ptr<Distances>> &&distances,
     const bool compute_init_distances,
     const bool compute_goal_distances,
-    Verbosity verbosity,
-    const utils::Timer &timer)
+    Verbosity verbosity)
     : labels(move(labels)),
       transition_systems(move(transition_systems)),
       mas_representations(move(mas_representations)),
@@ -59,7 +57,6 @@ FactoredTransitionSystem::FactoredTransitionSystem(
         }
         assert(is_component_valid(index));
     }
-    cout << "done creating FTS " << timer() << endl;
 }
 
 FactoredTransitionSystem::FactoredTransitionSystem(FactoredTransitionSystem &&other)
