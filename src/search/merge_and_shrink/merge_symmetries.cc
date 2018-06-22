@@ -270,7 +270,13 @@ void MergeSymmetries::determine_merge_order() {
     }
 }
 
-pair<int, int> MergeSymmetries::get_next() {
+pair<int, int> MergeSymmetries::get_next(
+    const vector<int> &allowed_indices) {
+    if (!allowed_indices.empty()) {
+        cerr << "This merge strategy is not compatible with being computed "
+                "for a subset of indices" << endl;
+        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+    }
     ++iteration_counter;
     start_merging_for_symmetries = false;
     done_merging_for_symmetries = false;

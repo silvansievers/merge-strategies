@@ -4,12 +4,14 @@
 #include "../heuristic.h"
 
 #include <memory>
+#include <set>
 
 namespace utils {
 class Timer;
 }
 
 namespace merge_and_shrink {
+class FactorScoringFunction;
 class FactoredTransitionSystem;
 class LabelReduction;
 class MergeAndShrinkRepresentation;
@@ -17,6 +19,12 @@ class MergeStrategyFactory;
 class ShrinkStrategy;
 class TransitionSystem;
 enum class Verbosity;
+
+enum class PartialMASMethod {
+    None,
+    Single,
+    Maximum
+};
 
 class MergeAndShrinkHeuristic : public Heuristic {
     // TODO: when the option parser supports it, the following should become
@@ -40,11 +48,25 @@ class MergeAndShrinkHeuristic : public Heuristic {
     const bool pruning_as_abstraction;
 
     const Verbosity verbosity;
-    long starting_peak_memory;
-    // The final merge-and-shrink representation, storing goal distances.
-    std::unique_ptr<MergeAndShrinkRepresentation> mas_representation;
 
+    // Options related to computing partial abstractions
+    const double max_time;
+    const int num_transitions_to_abort;
+    const int num_transitions_to_exclude;
+    std::set<int> allowed_indices;
+    const PartialMASMethod partial_mas_method;
+    std::vector<std::shared_ptr<FactorScoringFunction>> factor_scoring_functions;
+
+    long starting_peak_memory;
+    // The final merge-and-shrink representations, storing goal distances.
+    std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> mas_representations;
+
+    bool ran_out_of_time(const utils::Timer &timer) const;
+    bool too_many_transitions(int num_transitions) const;
+    bool exclude_if_too_many_transitions() const;
+    int find_best_factor(const FactoredTransitionSystem &fts) const;
     void finalize_factor(FactoredTransitionSystem &fts, int index);
+    void finalize(FactoredTransitionSystem &fts);
     int prune_atomic(FactoredTransitionSystem &fts) const;
     int main_loop(FactoredTransitionSystem &fts, const utils::Timer &timer);
     void build(const utils::Timer &timer);

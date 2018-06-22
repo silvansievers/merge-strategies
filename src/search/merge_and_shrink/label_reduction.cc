@@ -31,6 +31,7 @@ LabelReduction::LabelReduction(const Options &options)
       lr_before_merging(options.get<bool>("before_merging")),
       lr_method(LabelReductionMethod(options.get_enum("method"))),
       lr_system_order(LabelReductionSystemOrder(options.get_enum("system_order"))),
+      ignore_costs(options.get<bool>("ignore_costs")),
       rng(utils::parse_rng_from_options(options)) {
 }
 
@@ -78,6 +79,11 @@ void LabelReduction::compute_label_mapping(
             if (labels.is_current_label(label_no)) {
                 // only consider non-reduced labels
                 int cost = labels.get_label_cost(label_no);
+                if (ignore_costs) {
+                    // If combining labels of different cost, we just collect
+                    // them in one bucket.
+                    cost = 0;
+                }
                 equivalent_label_nos[cost].push_back(label_no);
                 ++num_labels;
             }
@@ -364,6 +370,7 @@ static shared_ptr<LabelReduction>_parse(OptionParser &parser) {
                            "label_reduction_method.",
                            "RANDOM",
                            label_reduction_system_order_doc);
+    parser.add_option<bool>("ignore_costs", "ignore label costs", "false");
     // Add random_seed option.
     utils::add_rng_options(parser);
 

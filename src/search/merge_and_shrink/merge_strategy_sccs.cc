@@ -6,6 +6,8 @@
 #include "merge_tree_factory.h"
 #include "transition_system.h"
 
+#include "../utils/system.h"
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -32,7 +34,12 @@ MergeStrategySCCs::MergeStrategySCCs(
 MergeStrategySCCs::~MergeStrategySCCs() {
 }
 
-pair<int, int> MergeStrategySCCs::get_next() {
+pair<int, int> MergeStrategySCCs::get_next(const vector<int> &allowed_indices) {
+    if (!allowed_indices.empty()) {
+        cerr << "This merge strategy is not compatible with being computed "
+                "for a subset of indices" << endl;
+        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+    }
     // We did not already start merging an SCC/all finished SCCs, so we
     // do not have a current set of indices we want to finish merging.
     if (current_ts_indices.empty()) {

@@ -31,7 +31,8 @@ public:
         std::vector<std::vector<int>> non_singleton_cg_sccs,
         std::vector<int> indices_of_merged_sccs);
     virtual ~MergeStrategySCCs() override;
-    virtual std::pair<int, int> get_next() override;
+    virtual std::pair<int, int> get_next(
+        const std::vector<int> &allowed_indices = std::vector<int>()) override;
     virtual std::pair<int, int> get_tiebreaking_statistics() const override;
 };
 }

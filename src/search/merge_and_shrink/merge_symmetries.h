@@ -69,7 +69,8 @@ public:
         std::shared_ptr<MergeTreeFactory> merge_tree_factory,
         std::shared_ptr<MergeSelector> merge_selector);
     virtual ~MergeSymmetries() override = default;
-    virtual std::pair<int, int> get_next() override;
+    virtual std::pair<int, int> get_next(
+        const std::vector<int> &allowed_indices = std::vector<int>()) override;
     virtual bool started_merging_for_symmetries() const override {
         return start_merging_for_symmetries;
     }
