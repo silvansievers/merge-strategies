@@ -21,7 +21,7 @@ pair<int, int> MergeStrategyPrecomputed::get_next(
     if (!allowed_indices.empty()) {
         cerr << "Precomputed merge strategies are not compatible with being "
                 "computed for a subset of indices" << endl;
-        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     assert(!merge_tree->done());
     int next_merge_index = fts.get_size();

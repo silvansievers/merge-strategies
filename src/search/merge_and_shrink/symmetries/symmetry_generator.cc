@@ -38,7 +38,7 @@ int SymmetryGeneratorInfo::get_abs_state_by_index(const int index) const {
     assert(initialized());
     if (index < num_transition_systems) {
         cerr << "=====> Error!!!! index too low, in the ts index part!" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
     int ts_index = get_ts_index_by_index(index);
     return index - starting_index_by_ts_index[ts_index];
@@ -97,7 +97,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
                 if (mapped[from_index] && internally_affected[from_index]) {
                     cerr << "Transition system " << from_index << "both internally "
                          << "affected and mapped to another transition system" << endl;
-                    utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+                    utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
                 }
                 if (!overall_affected[from_index]) {
                     overall_affected[from_index] = true;
@@ -119,14 +119,14 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
                     if (mapped[from_abs_index] && internally_affected[from_abs_index]) {
                         cerr << "Transition system " << from_abs_index << "both internally "
                              << "affected and mapped to another transition system" << endl;
-                        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+                        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
                     }
                 } else {
                     if (static_cast<int>(automorphism[from_abs_index]) != to_abs_index) {
                         cerr << "State of transition system mapped to state of another"
                              << " transition system which differs from the transition systems'"
                              << " nodes mapping." << endl;
-                        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+                        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
                     }
                 }
             }

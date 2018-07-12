@@ -64,7 +64,7 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
 
     if (opts.contains("factor_scoring_functions")) {
         factor_scoring_functions = opts.get_list<shared_ptr<FactorScoringFunction>>(
-                "factor_scoring_functions");
+            "factor_scoring_functions");
     }
 
     utils::Timer timer;
@@ -286,7 +286,7 @@ void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
         }
     } else {
         cerr << "Unknown partial merge-and-shrink method!" << endl;
-        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     if (verbosity >= Verbosity::NORMAL) {
         cout << endl;
@@ -601,8 +601,8 @@ int MergeAndShrinkHeuristic::main_loop(
              << fts.get_ts(final_index).get_size() << endl;
     } else {
         cout << "Main loop terminated early (either because a factor is "
-                "unsolvable or the time or transition limit was reached). "
-                "Statistics:" << endl;
+            "unsolvable or the time or transition limit was reached). "
+            "Statistics:" << endl;
     }
 
     cout << "Iterations with merge tiebreaking: "
@@ -819,13 +819,13 @@ void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts
 
     if (max_states < 1) {
         cerr << "error: transition system size must be at least 1" << endl;
-        utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
     }
 
     if (max_states_before_merge < 1) {
         cerr << "error: transition system size before merge must be at least 1"
              << endl;
-        utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
     }
 
     if (threshold == -1) {
@@ -833,7 +833,7 @@ void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts
     }
     if (threshold < 1) {
         cerr << "error: threshold must be at least 1" << endl;
-        utils::exit_with(ExitCode::INPUT_ERROR);
+        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
     }
     if (threshold > max_states) {
         cout << "warning: threshold exceeds max_states, correcting" << endl;
@@ -1041,31 +1041,31 @@ static Heuristic *_parse(OptionParser &parser) {
         int num_transitions_to_exclude = opts.get<int>("num_transitions_to_exclude");
         PartialMASMethod partial_mas_method = static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"));
         if (partial_mas_method != PartialMASMethod::None
-                && (max_time == numeric_limits<double>::infinity()
-                    && num_transitions_to_abort == INF
-                    && num_transitions_to_exclude == INF)) {
+            && (max_time == numeric_limits<double>::infinity()
+                && num_transitions_to_abort == INF
+                && num_transitions_to_exclude == INF)) {
             cerr << "If using a partial merge-and-shrink method, you must "
-                    "use a finite value for at least one of max_time, "
-                    "num_transitions_to_abort, and num_transitions_to_exclude. "
+                "use a finite value for at least one of max_time, "
+                "num_transitions_to_abort, and num_transitions_to_exclude. "
                  << endl;
-            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
         if (partial_mas_method == PartialMASMethod::None
             && (max_time < INF
-                || num_transitions_to_abort < INF
-                || num_transitions_to_exclude < INF)) {
+            || num_transitions_to_abort < INF
+            || num_transitions_to_exclude < INF)) {
             cerr << "If using a finite value to any of max_time, "
-                    "num_transitions_to_abort, and num_transitions_to_exclude, "
-                    "you also must use a partial merge-and-shrink method."
+                "num_transitions_to_abort, and num_transitions_to_exclude, "
+                "you also must use a partial merge-and-shrink method."
                  << endl;
-            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
         if (partial_mas_method == PartialMASMethod::Single
             && !opts.contains("factor_scoring_functions")) {
             cerr << "If using the partial merge-and-shrink method single, "
-                    "you must specify a least one factor scoring function!"
+                "you must specify a least one factor scoring function!"
                  << endl;
-            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
         return nullptr;
     } else {

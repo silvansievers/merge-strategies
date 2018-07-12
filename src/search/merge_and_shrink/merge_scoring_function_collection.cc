@@ -574,7 +574,7 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
         } else if (avgh == AvgH::ABSOLUTE) {
             // TODO
             cerr << "AvgH not implemented" << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
         scores.push_back(score);
     }

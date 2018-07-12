@@ -41,7 +41,7 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
             cout << "Number of merges in the specified merge order: "
                  << merge_order_list.size() << endl;
             cerr << "Invalid size of merge order" << endl;
-            utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
         }
         map<int, MergeTreeNode*> index_to_tree;
         for (int atomic_ts_index = 0; atomic_ts_index < num_vars; ++atomic_ts_index) {
@@ -103,23 +103,23 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
     if (parser.dry_run()) {
         if (options.contains("merge_order_list") && options.contains("merge_order_tree_string")) {
             cerr << "Specifying a merge order and a merge tree is not possible!" << endl;
-            utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
         } else if (!options.contains("merge_order_list") && !options.contains("merge_order_tree_string")) {
             cerr << "Neither a merge order nor a merge tree was specified!" << endl;
-            utils::exit_with(ExitCode::INPUT_ERROR);
+            utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
         }
         if (options.contains("merge_order_list")) {
             vector<vector<int>> merge_order = options.get_list<vector<int>>("merge_order_list");
             if (merge_order.empty()) {
                 cerr << "Got empty merge order, aborting" << endl;
-                utils::exit_with(ExitCode::INPUT_ERROR);
+                utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
             }
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order_list must "
                             "contain exactly two elements!" << endl;
                     cout << pair << endl;
-                    utils::exit_with(ExitCode::INPUT_ERROR);
+                    utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
                 }
             }
         }

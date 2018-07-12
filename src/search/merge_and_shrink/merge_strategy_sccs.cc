@@ -38,7 +38,7 @@ pair<int, int> MergeStrategySCCs::get_next(const vector<int> &allowed_indices) {
     if (!allowed_indices.empty()) {
         cerr << "This merge strategy is not compatible with being computed "
                 "for a subset of indices" << endl;
-        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     // We did not already start merging an SCC/all finished SCCs, so we
     // do not have a current set of indices we want to finish merging.

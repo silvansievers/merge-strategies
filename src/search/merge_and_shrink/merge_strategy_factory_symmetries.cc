@@ -165,14 +165,14 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
             && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limit or "
                 "bliss_total_time_budget but not both" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
     bool merge_tree = options.contains("merge_tree");
     bool merge_selector = options.contains("merge_selector");
     if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
         cerr << "You have to specify exactly one of the options merge_tree "
                 "and merge_selector!" << endl;
-        utils::exit_with(utils::ExitCode::INPUT_ERROR);
+        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     if (parser.dry_run())
         return nullptr;

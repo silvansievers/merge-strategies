@@ -114,7 +114,7 @@ void MergeSymmetries::determine_merge_order() {
         int number_overall_affected_transition_systems = overall_affected_transition_systems.size();
         if (number_overall_affected_transition_systems < 1) {
             cerr << "Something is wrong! The generator is the identity generator." << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
         if (number_overall_affected_transition_systems > 1) {
             if (symmetries_for_merging == SMALLEST
@@ -275,7 +275,7 @@ pair<int, int> MergeSymmetries::get_next(
     if (!allowed_indices.empty()) {
         cerr << "This merge strategy is not compatible with being computed "
                 "for a subset of indices" << endl;
-        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     ++iteration_counter;
     start_merging_for_symmetries = false;
@@ -361,7 +361,7 @@ pair<int, int> MergeSymmetries::get_next(
             next_merge = merge_order.front();
             if (!fts.is_active(next_merge.first) || !fts.is_active(next_merge.second)) {
                 cerr << "Problem with the merge order: invalid indices!" << endl;
-                utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+                utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
             }
             merge_order.erase(merge_order.begin());
         }

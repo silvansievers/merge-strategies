@@ -128,7 +128,7 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
             cerr << "At least two merge candidates have the exact same best "
                     "score! Did you forget to include a randomizing scoring "
                     "function for tie-breaking?" << endl;
-            utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
         }
     }
 
@@ -200,7 +200,7 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         if (weights.size() != functions.size()) {
             cerr << "Number of weights differs from number of scoring "
                     "functions" << endl;
-            utils::exit_with(utils::ExitCode::INPUT_ERROR);
+            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
     }
 
