@@ -60,5 +60,5 @@ static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
         return make_shared<MergeScoringFunctionLinear>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin("sf_linear", _parse);
+static options::Plugin<MergeScoringFunction> _plugin("sf_linear", _parse);
 }

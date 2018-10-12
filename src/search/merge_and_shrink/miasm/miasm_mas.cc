@@ -170,7 +170,7 @@ int MiasmAbstraction::build_transition_system(
     return cache[G];
 }
 
-static MiasmAbstraction *_parse(OptionParser &parser) {
+static shared_ptr<MiasmAbstraction> _parse(OptionParser &parser) {
     // Merge strategy option.
 //    parser.add_option<shared_ptr<MergeStrategy>>(
 //        "merge_strategy",
@@ -196,7 +196,7 @@ static MiasmAbstraction *_parse(OptionParser &parser) {
     if (parser.dry_run()) {
         return 0;
     } else {
-        return new MiasmAbstraction(opts);
+        return make_shared<MiasmAbstraction>(opts);
     }
 }
 

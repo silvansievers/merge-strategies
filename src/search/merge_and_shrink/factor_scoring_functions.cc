@@ -6,6 +6,9 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 
+#include "../utils/rng_options.h"
+#include "../utils/rng.h"
+
 #include <algorithm>
 
 using namespace std;
@@ -29,7 +32,7 @@ static shared_ptr<FactorScoringFunction> _parse_fsf_inith(options::OptionParser 
         return make_shared<FactorScoringFunctionInitH>();
 }
 
-static options::PluginShared<FactorScoringFunction> _plugin_fsf_inith("fsf_inith", _parse_fsf_inith);
+static options::Plugin<FactorScoringFunction> _plugin_fsf_inith("fsf_inith", _parse_fsf_inith);
 
 
 vector<int> FactorScoringFunctionSize::compute_scores(
@@ -50,30 +53,36 @@ static shared_ptr<FactorScoringFunction> _parse_fsf_size(options::OptionParser &
         return make_shared<FactorScoringFunctionSize>();
 }
 
-static options::PluginShared<FactorScoringFunction> _plugin_fsf_size("fsf_size", _parse_fsf_size);
+static options::Plugin<FactorScoringFunction> _plugin_fsf_size("fsf_size", _parse_fsf_size);
 
-// TODO: use our rng
+FactorScoringFunctionRandom::FactorScoringFunctionRandom(
+    const options::Options &options) :
+    rng(utils::parse_rng_from_options(options)) {
+}
+
 vector<int> FactorScoringFunctionRandom::compute_scores(
     const FactoredTransitionSystem &,
     const vector<int> &indices) const {
     vector<int> scores(indices.size());
     iota(scores.begin(), scores.end(), 0);
-    random_shuffle(scores.begin(), scores.end());
+    rng->shuffle(scores);
     return scores;
 }
 
 static shared_ptr<FactorScoringFunction> _parse_fsf_random(options::OptionParser &parser) {
+    utils::add_rng_options(parser);
+    options::Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
     else
-        return make_shared<FactorScoringFunctionRandom>();
+        return make_shared<FactorScoringFunctionRandom>(opts);
 }
 
-static options::PluginShared<FactorScoringFunction> _plugin_fsf_random("fsf_random", _parse_fsf_random);
+static options::Plugin<FactorScoringFunction> _plugin_fsf_random("fsf_random", _parse_fsf_random);
 
 static options::PluginTypePlugin<FactorScoringFunction> _type_plugin(
     "FactorScoringFunction",
     "This page describes various factor scoring functions. A factor scoring "
     "function, given an FTS and a list of factor indices to be considered, "
-    "computes a score for each factor. Maximal scores are considered best. ");
+    "computes a score for each factor. Maximal scores are considered best.");
 }

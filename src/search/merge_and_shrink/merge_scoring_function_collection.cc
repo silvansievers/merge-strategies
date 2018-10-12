@@ -87,7 +87,7 @@ static shared_ptr<MergeScoringFunction>_parse_cg(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionCausalConnection>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_cg("causal_connection", _parse_cg);
+static options::Plugin<MergeScoringFunction> _plugin_cg("causal_connection", _parse_cg);
 
 
 
@@ -156,7 +156,7 @@ static shared_ptr<MergeScoringFunction>_parse_bcg(options::OptionParser &parser)
         return make_shared<MergeScoringFunctionBooleanCausalConnection>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_bcg("boolean_causal_connection", _parse_bcg);
+static options::Plugin<MergeScoringFunction> _plugin_bcg("boolean_causal_connection", _parse_bcg);
 
 
 
@@ -227,7 +227,7 @@ static shared_ptr<MergeScoringFunction>_parse_na(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionNonAdditivity>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_na("non_additivity", _parse_na);
+static options::Plugin<MergeScoringFunction> _plugin_na("non_additivity", _parse_na);
 
 
 
@@ -296,7 +296,7 @@ static shared_ptr<MergeScoringFunction>_parse_tsq(options::OptionParser &parser)
         return make_shared<MergeScoringFunctionTransitionsStatesQuotient>(options);
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_tsq("transitions_states_quotient", _parse_tsq);
+static options::Plugin<MergeScoringFunction> _plugin_tsq("transitions_states_quotient", _parse_tsq);
 
 
 
@@ -406,7 +406,7 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionInitH>(options);
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_ih("init_h", _parse_ih);
+static options::Plugin<MergeScoringFunction> _plugin_ih("init_h", _parse_ih);
 
 
 
@@ -517,7 +517,7 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
         return make_shared<MergeScoringFunctionMaxFGH>(options);
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_fgh("max_fgh", _parse_fgh);
+static options::Plugin<MergeScoringFunction> _plugin_fgh("max_fgh", _parse_fgh);
 
 
 
@@ -617,7 +617,7 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionAvgH>(options);
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_ah("avg_h", _parse_ah);
+static options::Plugin<MergeScoringFunction> _plugin_ah("avg_h", _parse_ah);
 
 
 
@@ -657,7 +657,7 @@ static shared_ptr<MergeScoringFunction>_parse_grf(options::OptionParser &parser)
         return make_shared<MergeScoringFunctionGoalRelevanceFine>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_grf("goal_relevance_fine", _parse_grf);
+static options::Plugin<MergeScoringFunction> _plugin_grf("goal_relevance_fine", _parse_grf);
 
 
 
@@ -693,7 +693,7 @@ static shared_ptr<MergeScoringFunction>_parse_nv(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionNumVariables>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_nv("num_variables", _parse_nv);
+static options::Plugin<MergeScoringFunction> _plugin_nv("num_variables", _parse_nv);
 
 
 
@@ -776,7 +776,7 @@ static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionShrinkPerfectly>(options);
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_sp("perfect_shrinking", _parse_sp);
+static options::Plugin<MergeScoringFunction> _plugin_sp("perfect_shrinking", _parse_sp);
 
 
 
@@ -809,7 +809,7 @@ static shared_ptr<MergeScoringFunction>_parse_nt(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionNumTransitions>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_nt("num_transitions", _parse_nt);
+static options::Plugin<MergeScoringFunction> _plugin_nt("num_transitions", _parse_nt);
 
 
 
@@ -889,7 +889,7 @@ static shared_ptr<MergeScoringFunction>_parse_lro(options::OptionParser &parser)
         return make_shared<MergeScoringFunctionLROpportunities>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_lro("lr_opportunities", _parse_lro);
+static options::Plugin<MergeScoringFunction> _plugin_lro("lr_opportunities", _parse_lro);
 
 
 
@@ -977,7 +977,7 @@ static shared_ptr<MergeScoringFunction>_parse_mlro(options::OptionParser &parser
         return make_shared<MergeScoringFunctionMoreLROpportunities>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_mlro("more_lr_opportunities", _parse_mlro);
+static options::Plugin<MergeScoringFunction> _plugin_mlro("more_lr_opportunities", _parse_mlro);
 
 
 
@@ -1022,5 +1022,5 @@ static shared_ptr<MergeScoringFunction>_parse_mx(options::OptionParser &parser) 
         return make_shared<MergeScoringFunctionMutexes>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin_mx("mutexes", _parse_mx);
+static options::Plugin<MergeScoringFunction> _plugin_mx("mutexes", _parse_mx);
 }

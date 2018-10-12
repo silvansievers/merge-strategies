@@ -210,6 +210,6 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         return make_shared<MergeSelectorScoreBasedWeightedSum>(opts);
 }
 
-static options::PluginShared<MergeSelector> _plugin(
+static options::Plugin<MergeSelector> _plugin(
     "score_based_weighted_sum", _parse);
 }

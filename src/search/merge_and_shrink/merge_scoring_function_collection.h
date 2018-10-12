@@ -6,7 +6,6 @@
 #include "../utils/hash.h"
 
 #include <memory>
-#include <unordered_map>
 
 namespace options {
 class Options;
@@ -289,7 +288,7 @@ public:
 
 
 class MergeScoringFunctionLROpportunities : public MergeScoringFunction {
-    std::unordered_map<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
+    utils::HashMap<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
 protected:
     virtual std::string name() const override;
 public:
@@ -311,7 +310,7 @@ public:
 
 
 class MergeScoringFunctionMoreLROpportunities : public MergeScoringFunction {
-    std::unordered_map<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
+    utils::HashMap<std::pair<int, int>, int> ts_pair_to_combinable_label_count;
 protected:
     virtual std::string name() const override;
 public:

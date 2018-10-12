@@ -173,7 +173,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
       This is for merge_symmetries, to avoid creating a MiasmAbstraction if
       miasm is not the fallback strategy.
     */
-    parser.add_option<MiasmAbstraction *>(
+    parser.add_option<shared_ptr<MiasmAbstraction>>(
         MiasmAbstraction::option_key(),
         "",
         options::OptionParser::NONE);
@@ -257,5 +257,5 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
     return make_shared<MergeTreeFactoryMiasm>(opts);
 }
 
-static options::PluginShared<MergeTreeFactory> _plugin("miasm", _parse);
+static options::Plugin<MergeTreeFactory> _plugin("miasm", _parse);
 }

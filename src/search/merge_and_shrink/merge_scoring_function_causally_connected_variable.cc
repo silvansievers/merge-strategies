@@ -92,5 +92,5 @@ static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
         return make_shared<MergeScoringFunctionCausallyConnectedVariable>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin("causally_connected_variable", _parse);
+static options::Plugin<MergeScoringFunction> _plugin("causally_connected_variable", _parse);
 }

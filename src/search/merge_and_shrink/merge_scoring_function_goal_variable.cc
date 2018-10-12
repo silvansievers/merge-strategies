@@ -59,5 +59,5 @@ static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
         return make_shared<MergeScoringFunctionGoalVariable>();
 }
 
-static options::PluginShared<MergeScoringFunction> _plugin("goal_variable", _parse);
+static options::Plugin<MergeScoringFunction> _plugin("goal_variable", _parse);
 }

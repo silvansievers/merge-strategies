@@ -118,7 +118,7 @@ public:
     SinkSetSearch(const options::Options &opts, const TaskProxy &task_proxy);
 public:
     /** @brief used to build the abstraction on a subset */
-    MiasmAbstraction *miasm_abstraction;
+    std::shared_ptr<MiasmAbstraction> miasm_abstraction;
     /** @name Search Limit Options */
     //@{
 protected:

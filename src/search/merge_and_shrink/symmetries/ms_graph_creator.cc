@@ -11,8 +11,6 @@
 #include "../../bliss/graph.h"
 #include "../../bliss/defs.h"
 
-#include "../../globals.h"
-
 #include "../../utils/timer.h"
 
 #include <cassert>

@@ -180,5 +180,5 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
         return make_shared<MergeStrategyFactorySymmetries>(options);
 }
 
-static options::PluginShared<MergeStrategyFactory> _plugin("merge_symmetries", _parse);
+static options::Plugin<MergeStrategyFactory> _plugin("merge_symmetries", _parse);
 }

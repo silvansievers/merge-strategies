@@ -44,7 +44,7 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const TaskProxy &task_proxy)
         cerr << "Must specify 'miasm_merge_and_shrink' option for merge_miasm" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    miasm_abstraction = opts.get<MiasmAbstraction *>(MiasmAbstraction::option_key());
+    miasm_abstraction = opts.get<shared_ptr<MiasmAbstraction>>(MiasmAbstraction::option_key());
     miasm_abstraction->initialize(task_proxy);
 }
 

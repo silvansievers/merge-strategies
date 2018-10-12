@@ -70,8 +70,8 @@ public:
         std::vector<std::unique_ptr<TransitionSystem>> &&transition_systems,
         std::vector<std::unique_ptr<MergeAndShrinkRepresentation>> &&mas_representations,
         std::vector<std::unique_ptr<Distances>> &&distances,
-        const bool compute_init_distances,
-        const bool compute_goal_distances,
+        bool compute_init_distances,
+        bool compute_goal_distances,
         Verbosity verbosity);
     FactoredTransitionSystem(FactoredTransitionSystem &&other);
     ~FactoredTransitionSystem();
@@ -166,6 +166,12 @@ public:
     }
 
     bool is_active(int index) const;
+
+    /*
+      Returns infinity iff the transition system at the given index is
+      unsolvable, and otherwise the goal distance estimate for its initial
+      state.
+    */
     int get_init_state_goal_distance(int index) const;
     void remove(int index);
 };

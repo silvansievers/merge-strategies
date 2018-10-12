@@ -129,5 +129,5 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
     }
 }
 
-static options::PluginShared<MergeTreeFactory> _plugin("manual", _parse);
+static options::Plugin<MergeTreeFactory> _plugin("manual", _parse);
 }
