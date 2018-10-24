@@ -189,9 +189,10 @@ bool MergeAndShrinkAlgorithm::prune_fts(
     FactoredTransitionSystem &fts, const utils::Timer &timer) const {
     /*
       Prune all factors according to the chosen options. Stop early if one
-      factor is unsolvable and return its index.
+      factor is unsolvable. Return true iff unsolvable.
     */
     bool pruned = false;
+    bool unsolvable = false;
     for (int index = 0; index < fts.get_size(); ++index) {
         if (prune_unreachable_states || prune_irrelevant_states) {
             pair<bool, bool> pruned_factor = prune_step(
@@ -204,13 +205,14 @@ bool MergeAndShrinkAlgorithm::prune_fts(
             pruned = pruned || pruned_factor.first || pruned_factor.second;
         }
         if (!fts.is_factor_solvable(index)) {
-            return true;
+            unsolvable =  true;
+            break;
         }
     }
     if (verbosity >= Verbosity::NORMAL && pruned) {
         print_time(timer, "after pruning atomic factors");
     }
-    return false;
+    return unsolvable;
 }
 
 void MergeAndShrinkAlgorithm::main_loop(
