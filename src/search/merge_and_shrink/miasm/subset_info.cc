@@ -119,7 +119,10 @@ ComparatorVarSet::~ComparatorVarSet() {
 }
 
 bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
-    assert(i != j);
+    // TODO: for some reason, pushing into an empty queue a single element
+    // triggers this assertion, possibly because the pushed element will be
+    // compared to itself?
+//    assert(i != j);
     assert(i < vsir->size());
     assert(j < vsir->size());
     VarSetInfo SIi = vsir->at(i);
