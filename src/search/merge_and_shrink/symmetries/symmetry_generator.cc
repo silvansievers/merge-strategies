@@ -25,7 +25,7 @@ bool SymmetryGeneratorInfo::initialized() const {
             && !starting_index_by_ts_index.empty();
 }
 
-int SymmetryGeneratorInfo::get_ts_index_by_index(const int index) const {
+int SymmetryGeneratorInfo::get_transition_system_index_by_index(const int index) const {
     assert(initialized());
     if (index < num_transition_systems) {
         cout << "=====> WARNING!!!! Check that this is done on purpose!" << endl;
@@ -40,7 +40,7 @@ int SymmetryGeneratorInfo::get_abs_state_by_index(const int index) const {
         cerr << "=====> Error!!!! index too low, in the ts index part!" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
-    int ts_index = get_ts_index_by_index(index);
+    int ts_index = get_transition_system_index_by_index(index);
     return index - starting_index_by_ts_index[ts_index];
 }
 
@@ -104,8 +104,8 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
                     overall_affected_transition_systems.push_back(from_index);
                 }
             } else {
-                int from_abs_index = sym_gen_info->get_ts_index_by_index(from_index);
-                int to_abs_index = sym_gen_info->get_ts_index_by_index(to_index);
+                int from_abs_index = sym_gen_info->get_transition_system_index_by_index(from_index);
+                int to_abs_index = sym_gen_info->get_transition_system_index_by_index(to_index);
                 if (!overall_affected[from_abs_index]) {
                     overall_affected[from_abs_index] = true;
                     overall_affected_transition_systems.push_back(from_abs_index);

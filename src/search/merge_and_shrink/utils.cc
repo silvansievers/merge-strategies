@@ -81,7 +81,7 @@ bool shrink_factor(
       TODO: think about factoring out common logic of this function and the
       function copy_and_shrink_ts in merge_scoring_function_miasm_utils.cc.
     */
-    const TransitionSystem &ts = fts.get_ts(index);
+    const TransitionSystem &ts = fts.get_transition_system(index);
     int num_states = ts.get_size();
     if (num_states > min(new_size, shrink_threshold_before_merge)) {
         if (verbosity >= Verbosity::VERBOSE) {
@@ -117,8 +117,8 @@ bool shrink_before_merge_step(
       max_states and max_states_before_merge.
     */
     pair<int, int> new_sizes = compute_shrink_sizes(
-        fts.get_ts(index1).get_size(),
-        fts.get_ts(index2).get_size(),
+        fts.get_transition_system(index1).get_size(),
+        fts.get_transition_system(index2).get_size(),
         max_states_before_merge,
         max_states);
 
@@ -246,7 +246,7 @@ pair<bool, bool> prune_step(
     bool pruning_as_abstraction,
     Verbosity verbosity) {
     assert(prune_unreachable_states || prune_irrelevant_states);
-    const TransitionSystem &ts = fts.get_ts(index);
+    const TransitionSystem &ts = fts.get_transition_system(index);
     const Distances &distances = fts.get_distances(index);
     pair<StateEquivalenceRelation, bool> state_equivalence_relation_and_pruned_unreachable =
         compute_pruning_equivalence_relation(
@@ -393,7 +393,7 @@ void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
     for (int ts_index = 0; ts_index < num_ts; ++ts_index) {
         if (fts.is_active(ts_index)) {
             vector<bool> irrelevant_labels(num_labels, false);
-            const TransitionSystem &ts = fts.get_ts(ts_index);
+            const TransitionSystem &ts = fts.get_transition_system(ts_index);
             for (const GroupAndTransitions &gat : ts) {
                 const vector<Transition> &transitions = gat.transitions;
                 bool group_relevant = false;

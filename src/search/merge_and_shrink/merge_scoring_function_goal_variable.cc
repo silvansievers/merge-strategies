@@ -21,9 +21,9 @@ vector<double> MergeScoringFunctionGoalVariable::compute_scores(
         int ts_index2 = merge_candidate.second;
         int score = INF;
         const vector<int> &variables1 =
-            fts.get_ts(ts_index1).get_incorporated_variables();
+            fts.get_transition_system(ts_index1).get_incorporated_variables();
         const vector<int> &variables2 =
-                fts.get_ts(ts_index2).get_incorporated_variables();
+                fts.get_transition_system(ts_index2).get_incorporated_variables();
         if ((variables1.size() == 1 && is_goal_variable[variables1.front()])
             || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
             score = 0;

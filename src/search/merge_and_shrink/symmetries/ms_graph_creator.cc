@@ -120,7 +120,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
     for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
         symmetry_generator_info->starting_index_by_ts_index.push_back(num_of_nodes);
         if (fts.is_active(ts_index)) {
-            const TransitionSystem &ts = fts.get_ts(ts_index);
+            const TransitionSystem &ts = fts.get_transition_system(ts_index);
             int num_states = ts.get_size();
             num_of_nodes += num_states;
             for (int state = 0; state < num_states; ++state) {
@@ -180,7 +180,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
     for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
         if (!fts.is_active(ts_index))
             continue;
-        const TransitionSystem &ts = fts.get_ts(ts_index);
+        const TransitionSystem &ts = fts.get_transition_system(ts_index);
         for (const GroupAndTransitions &gat : ts) {
             vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
             bliss_graph.add_edge(ts_index, vertex);

@@ -3,172 +3,41 @@
 #include "distances.h"
 #include "factor_scoring_functions.h"
 #include "factored_transition_system.h"
-#include "fts_factory.h"
-#include "label_reduction.h"
-#include "labels.h"
+#include "merge_and_shrink_algorithm.h"
 #include "merge_and_shrink_representation.h"
-#include "merge_strategy.h"
-#include "merge_strategy_factory.h"
-#include "shrink_strategy.h"
 #include "transition_system.h"
 #include "types.h"
-#include "utils.h"
 
 #include "../option_parser.h"
 #include "../plugin.h"
 
 #include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
-#include "../utils/markup.h"
-#include "../utils/math.h"
-#include "../utils/memory.h"
-#include "../utils/system.h"
-#include "../utils/timer.h"
 
-#include <algorithm>
+#include "../utils/markup.h"
+#include "../utils/system.h"
+
 #include <cassert>
 #include <iostream>
-#include <string>
 #include <utility>
-#include <vector>
 
 using namespace std;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
-MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const Options &opts)
+MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const options::Options &opts)
     : Heuristic(opts),
-      merge_strategy_factory(opts.get<shared_ptr<MergeStrategyFactory>>("merge_strategy")),
-      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
-      label_reduction(nullptr),
-      max_states(opts.get<int>("max_states")),
-      max_states_before_merge(opts.get<int>("max_states_before_merge")),
-      shrink_threshold_before_merge(opts.get<int>("threshold_before_merge")),
-      prune_unreachable_states(opts.get<bool>("prune_unreachable_states")),
-      prune_irrelevant_states(opts.get<bool>("prune_irrelevant_states")),
-      pruning_as_abstraction(opts.get<bool>("pruning_as_abstraction")),
       verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
-      max_time(opts.get<double>("max_time")),
-      num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
-      num_transitions_to_exclude(opts.get<int>("num_transitions_to_exclude")),
-      partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))),
-      starting_peak_memory(-1) {
-    assert(max_states_before_merge > 0);
-    assert(max_states >= max_states_before_merge);
-    assert(shrink_threshold_before_merge <= max_states_before_merge);
-
-    if (opts.contains("label_reduction")) {
-        label_reduction = opts.get<shared_ptr<LabelReduction>>("label_reduction");
-        label_reduction->initialize(task_proxy);
-    }
-
+      partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))) {
     if (opts.contains("factor_scoring_functions")) {
         factor_scoring_functions = opts.get_list<shared_ptr<FactorScoringFunction>>(
             "factor_scoring_functions");
     }
 
-    utils::Timer timer;
     cout << "Initializing merge-and-shrink heuristic..." << endl;
-    starting_peak_memory = utils::get_peak_memory_in_kb();
-    task_properties::verify_no_axioms(task_proxy);
-    dump_options();
-    warn_on_unusual_options();
-    cout << endl;
-
-    build(timer);
-    const bool final = true;
-    report_peak_memory_delta(final);
-    cout << "Done initializing merge-and-shrink heuristic [" << timer << "]"
-         << endl;
-    cout << endl;
-}
-
-void MergeAndShrinkHeuristic::report_peak_memory_delta(bool final) const {
-    if (final)
-        cout << "Final";
-    else
-        cout << "Current";
-    cout << " peak memory increase of merge-and-shrink computation: "
-         << utils::get_peak_memory_in_kb() - starting_peak_memory << " KB"
-         << endl;
-}
-
-void MergeAndShrinkHeuristic::dump_options() const {
-    if (merge_strategy_factory) { // deleted after merge strategy extraction
-        merge_strategy_factory->dump_options();
-        cout << endl;
-    }
-
-    cout << "Options related to size limits and shrinking: " << endl;
-    cout << "Transition system size limit: " << max_states << endl
-         << "Transition system size limit right before merge: "
-         << max_states_before_merge << endl;
-    cout << "Threshold to trigger shrinking right before merge: "
-         << shrink_threshold_before_merge << endl;
-    cout << endl;
-
-    shrink_strategy->dump_options();
-    cout << endl;
-
-    if (label_reduction) {
-        label_reduction->dump_options();
-    } else {
-        cout << "Label reduction disabled" << endl;
-    }
-    cout << endl;
-
-    cout << "Verbosity: ";
-    switch (verbosity) {
-    case Verbosity::SILENT:
-        cout << "silent";
-        break;
-    case Verbosity::NORMAL:
-        cout << "normal";
-        break;
-    case Verbosity::VERBOSE:
-        cout << "verbose";
-        break;
-    }
-    cout << endl;
-}
-
-void MergeAndShrinkHeuristic::warn_on_unusual_options() const {
-    string dashes(79, '=');
-    if (!label_reduction) {
-        cout << dashes << endl
-             << "WARNING! You did not enable label reduction.\nThis may "
-            "drastically reduce the performance of merge-and-shrink!"
-             << endl << dashes << endl;
-    } else if (label_reduction->reduce_before_merging() && label_reduction->reduce_before_shrinking()) {
-        cout << dashes << endl
-             << "WARNING! You set label reduction to be applied twice in each merge-and-shrink\n"
-            "iteration, both before shrinking and merging. This double computation effort\n"
-            "does not pay off for most configurations!"
-             << endl << dashes << endl;
-    } else {
-        if (label_reduction->reduce_before_shrinking() &&
-            (shrink_strategy->get_name() == "f-preserving"
-             || shrink_strategy->get_name() == "random")) {
-            cout << dashes << endl
-                 << "WARNING! Bucket-based shrink strategies such as f-preserving random perform\n"
-                "best if used with label reduction before merging, not before shrinking!"
-                 << endl << dashes << endl;
-        }
-        if (label_reduction->reduce_before_merging() &&
-            shrink_strategy->get_name() == "bisimulation") {
-            cout << dashes << endl
-                 << "WARNING! Shrinking based on bisimulation performs best if used with label\n"
-                "reduction before shrinking, not before merging!"
-                 << endl << dashes << endl;
-        }
-    }
-
-    if (!prune_unreachable_states || !prune_irrelevant_states) {
-        cout << dashes << endl
-             << "WARNING! Pruning is (partially) turned off!\nThis may "
-            "drastically reduce the performance of merge-and-shrink!"
-             << endl << dashes << endl;
-    }
+    MergeAndShrinkAlgorithm algorithm(opts);
+    FactoredTransitionSystem fts = algorithm.build_factored_transition_system(task_proxy);
+    finalize(fts);
+    cout << "Done initializing merge-and-shrink heuristic." << endl << endl;
 }
 
 vector<int> get_remaining_candidates(
@@ -189,34 +58,6 @@ vector<int> get_remaining_candidates(
         }
     }
     return result;
-}
-
-bool MergeAndShrinkHeuristic::ran_out_of_time(
-    const utils::Timer &timer) const {
-    if (timer() > max_time) {
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Ran out of time, stopping computation." << endl;
-            cout << endl;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool MergeAndShrinkHeuristic::too_many_transitions(int num_transitions) const {
-    if (num_transitions > num_transitions_to_abort) {
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Factor has too many transitions, stopping computation."
-                 << endl;
-            cout << endl;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool MergeAndShrinkHeuristic::exclude_if_too_many_transitions() const {
-    return num_transitions_to_exclude != INF;
 }
 
 int MergeAndShrinkHeuristic::find_best_factor(
@@ -254,502 +95,72 @@ void MergeAndShrinkHeuristic::finalize_factor(
 }
 
 void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
-    assert(partial_mas_method != PartialMASMethod::None);
-    int active_factors_count = 0;
-    for (int index = 0; index < fts.get_size(); ++index) {
-        if (fts.is_active(index)) {
-            ++active_factors_count;
-        }
-    }
+    /*
+      TODO: This method has quite a bit of fiddling with aspects of
+      transition systems and the merge-and-shrink representation (checking
+      whether distances have been computed; computing them) that we would
+      like to have at a lower level. See also the TODO in
+      factored_transition_system.h on improving the interface of that class
+      (and also related classes like TransitionSystem etc).
+    */
+
+    int active_factors_count = fts.get_num_active_entries();
     if (verbosity >= Verbosity::NORMAL) {
         cout << "Number of remaining factors: " << active_factors_count << endl;
     }
-    if (partial_mas_method == PartialMASMethod::Single) {
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Need to choose a single factor to serve as a heuristic."
-                 << endl;
-        }
-        int index = find_best_factor(fts);
-        // We do not need the scoring functions anymore at this point.
-        factor_scoring_functions.clear();
-        finalize_factor(fts, index);
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Chose single factor as heuristic: " << fts.get_ts(index).tag()
-                 << endl;
-        }
-    } else if (partial_mas_method == PartialMASMethod::Maximum) {
-        for (int index : fts) {
-            finalize_factor(fts, index);
-        }
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Use all factors in a maximum heuristic." << endl;
-        }
-    } else {
-        cerr << "Unknown partial merge-and-shrink method!" << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
-    }
-    if (verbosity >= Verbosity::NORMAL) {
-        cout << endl;
-    }
-}
 
-int MergeAndShrinkHeuristic::prune_fts(
-    FactoredTransitionSystem &fts, const utils::Timer &timer) const {
-    /*
-      Prune all factors according to the chosen options. Stop early if one
-      factor is unsolvable and return its index.
-    */
-    int unsolvable_index = -1;
-    bool pruned = false;
     for (int index = 0; index < fts.get_size(); ++index) {
-        if (prune_unreachable_states || prune_irrelevant_states) {
-            pair<bool, bool> pruned_factor = prune_step(
-                fts,
-                index,
-                prune_unreachable_states,
-                prune_irrelevant_states,
-                pruning_as_abstraction,
-                verbosity);
-            pruned = pruned || pruned_factor.first || pruned_factor.second;
-        }
-        if (!fts.is_factor_solvable(index)) {
-            unsolvable_index = index;
-            break;
-        }
-    }
-    if (verbosity >= Verbosity::NORMAL && pruned) {
-        print_time(timer, "after pruning atomic factors");
-    }
-    return unsolvable_index;
-}
-
-int MergeAndShrinkHeuristic::main_loop(
-    FactoredTransitionSystem &fts, const utils::Timer &timer) {
-    int maximum_intermediate_size = 0;
-    int maximum_transitions_size = 0;
-    for (int i = 0; i < fts.get_size(); ++i) {
-        int size = fts.get_ts(i).get_size();
-        if (size > maximum_intermediate_size) {
-            maximum_intermediate_size = size;
-        }
-        int num_trans = fts.get_ts(i).compute_total_transitions();
-        if (num_trans > maximum_transitions_size) {
-            maximum_transitions_size = num_trans;
+        if (fts.is_active(index) && !fts.is_factor_solvable(index)) {
+            finalize_factor(fts, index);
+            cout << "Use the unsolvable factor as heuristic: "
+                 << fts.get_transition_system(index).tag()
+                 << endl;
+            return;
         }
     }
 
-    pair<int, int> score_based_merging_tiebreaking;
-    vector<int> init_hvalue_increase;
-    vector<int> remaining_labels;
-    remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
-    bool still_perfect = true;
-    vector<pair<int, int>> merge_order;
-    vector<double> relative_pruning_per_iteration;
-    int num_attempts_merging_for_symmetries = 0;
-    int num_imperfect_shrinking_merging_for_symmetries = 0;
-    int num_pruning_merging_for_symmetries = 0;
-    int num_failed_merging_for_symmetries = 0;
-    bool merging_for_symmetries = true;
-    bool currently_shrink_perfect_for_symmetries = true;
-    bool currently_prune_perfect_for_symmetries = true;
-
-    unique_ptr<MergeStrategy> merge_strategy =
-        merge_strategy_factory->compute_merge_strategy(task_proxy, fts);
-    merge_strategy_factory = nullptr;
-
-    int iteration_counter = 0;
-    int final_index = -1;
-    while (fts.get_num_active_entries() > 1) {
-        // Choose next transition systems to merge
-        vector<int> vec_allowed_indices;;
-        if (exclude_if_too_many_transitions()) {
-            vec_allowed_indices = vector<int>(
-                allowed_indices.begin(), allowed_indices.end());
-        }
-        pair<int, int> merge_indices = merge_strategy->get_next(vec_allowed_indices);
-        if (ran_out_of_time(timer)) {
-            final_index = -2;
-            break;
-        }
-        if (merge_strategy->ended_merging_for_symmetries()) {
-            merging_for_symmetries = false;
-            if (!currently_shrink_perfect_for_symmetries) {
-                ++num_imperfect_shrinking_merging_for_symmetries;
-            }
-            if (!currently_prune_perfect_for_symmetries) {
-                ++num_pruning_merging_for_symmetries;
-            }
-            if (!currently_shrink_perfect_for_symmetries ||
-                !currently_prune_perfect_for_symmetries) {
-                ++num_failed_merging_for_symmetries;
-            }
-        }
-        if (merge_strategy->started_merging_for_symmetries()) {
-            ++num_attempts_merging_for_symmetries;
-            merging_for_symmetries = true;
-            currently_shrink_perfect_for_symmetries = true;
-            currently_prune_perfect_for_symmetries = true;
-        }
-        int merge_index1 = merge_indices.first;
-        int merge_index2 = merge_indices.second;
-        assert(merge_index1 != merge_index2);
-        merge_order.push_back(merge_indices);
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << "Next pair of indices: ("
-                 << merge_index1 << ", " << merge_index2 << ")" << endl;
-            if (verbosity >= Verbosity::VERBOSE) {
-                fts.statistics(merge_index1);
-                fts.statistics(merge_index2);
-            }
-            print_time(timer, "after computation of next merge");
-        }
-
-        // Label reduction (before shrinking)
-        if (label_reduction && label_reduction->reduce_before_shrinking()) {
-            bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
-            if (verbosity >= Verbosity::NORMAL && reduced) {
-                print_time(timer, "after label reduction");
-            }
-            remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
-        }
-
-        if (ran_out_of_time(timer)) {
-            final_index = -2;
-            break;
-        }
-
-        // Shrinking
-        bool shrunk = shrink_before_merge_step(
-            fts,
-            merge_index1,
-            merge_index2,
-            max_states,
-            max_states_before_merge,
-            shrink_threshold_before_merge,
-            *shrink_strategy,
-            verbosity);
-        if (verbosity >= Verbosity::NORMAL && shrunk) {
-            print_time(timer, "after shrinking");
-        }
-        if (merging_for_symmetries && currently_shrink_perfect_for_symmetries && shrunk) {
-            currently_shrink_perfect_for_symmetries = false;
-        }
-
-        const vector<double> &miss_qualified_states_ratios =
-            shrink_strategy->get_miss_qualified_states_ratios();
-        int size = miss_qualified_states_ratios.size();
-        if (size >= 2 && still_perfect &&
-            (miss_qualified_states_ratios[size - 1]
-             || miss_qualified_states_ratios[size - 2])) {
-            // The test for size >= 2 is to ensure we actually record
-            // this kind of statistics -- currently only with bisimulation
-            // shrinking.
-            cout << "not perfect anymore in iteration " << iteration_counter << endl;
-            still_perfect = false;
-        }
-
-        if (ran_out_of_time(timer)) {
-            final_index = -2;
-            break;
-        }
-
-        // Label reduction (before merging)
-        if (label_reduction && label_reduction->reduce_before_merging()) {
-            bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
-            if (verbosity >= Verbosity::NORMAL && reduced) {
-                print_time(timer, "after label reduction");
-            }
-            remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
-        }
-
-        if (ran_out_of_time(timer)) {
-            final_index = -2;
-            break;
-        }
-
-        int init_dist1 = fts.get_init_state_goal_distance(merge_index1);
-        int init_dist2 = fts.get_init_state_goal_distance(merge_index2);
-
-        // Merging
-        int merged_index = fts.merge(merge_index1, merge_index2, verbosity);
-        int abs_size = fts.get_ts(merged_index).get_size();
-        if (abs_size > maximum_intermediate_size) {
-            maximum_intermediate_size = abs_size;
-        }
-        int num_trans = fts.get_ts(merged_index).compute_total_transitions();
-        if (num_trans > maximum_transitions_size) {
-            maximum_transitions_size = num_trans;
-        }
-        int new_init_dist = fts.get_init_state_goal_distance(merged_index);
-        int difference = new_init_dist - max(init_dist1, init_dist2);
-        init_hvalue_increase.push_back(difference);
-
-        if (verbosity >= Verbosity::NORMAL) {
-            if (verbosity >= Verbosity::VERBOSE) {
-                fts.statistics(merged_index);
-                cout << "Difference of init h values: " << difference << endl;
-            }
-            print_time(timer, "after merging");
-        }
-
-        // We do not check for num transitions here but only after pruning
-        // to allow recovering a too large product.
-        if (ran_out_of_time(timer)) {
-            final_index = -2;
-            break;
-        }
-
-        // Pruning
-        if (prune_unreachable_states || prune_irrelevant_states) {
-            int old_size = fts.get_ts(merged_index).get_size();
-            pair<bool, bool> pruned_and_pruned_unreachable = prune_step(
-                fts,
-                merged_index,
-                prune_unreachable_states,
-                prune_irrelevant_states,
-                pruning_as_abstraction,
-                verbosity);
-            double new_size = fts.get_ts(merged_index).get_size();
-            assert(new_size <= old_size);
-            relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(old_size));
-            if (verbosity >= Verbosity::NORMAL && pruned_and_pruned_unreachable.first) {
-                if (verbosity >= Verbosity::VERBOSE) {
-                    fts.statistics(merged_index);
-                }
-                print_time(timer, "after pruning");
-            }
-            if (pruned_and_pruned_unreachable.first &&
-                pruned_and_pruned_unreachable.second &&
-                merging_for_symmetries &&
-                currently_prune_perfect_for_symmetries) {
-                currently_prune_perfect_for_symmetries = false;
-            }
-        }
-
-        /*
-          NOTE: both the shrink strategy classes and the construction
-          of the composite transition system require the input
-          transition systems to be non-empty, i.e. the initial state
-          not to be pruned/not to be evaluated as infinity.
-        */
-        if (!fts.is_factor_solvable(merged_index)) {
-            if (verbosity >= Verbosity::NORMAL) {
-                cout << "Abstract problem is unsolvable, stopping computation."
-                     << endl << endl;
-            }
-            final_index = merged_index;
-            break;
-        }
-
-        if (exclude_if_too_many_transitions()) {
-            allowed_indices.erase(merge_index1);
-            allowed_indices.erase(merge_index2);
-            if (num_trans <= num_transitions_to_exclude) {
-                allowed_indices.insert(merged_index);
-            } else {
-                if (verbosity >= Verbosity::NORMAL) {
-                    cout << fts.get_ts(merged_index).tag()
-                         << "too many number of transitions, excluding "
-                            "from further consideration." << endl;
-                }
-            }
-            if (allowed_indices.size() <= 1) {
-                if (verbosity >= Verbosity::NORMAL) {
-                    cout << "Not enough factors remaining with a low enough "
-                            "number of transitions, stopping computation."
-                         << endl;
-                    cout << endl;
-                }
-                final_index = -2;
-                break;
-            }
-        }
-
-        if (ran_out_of_time(timer) || too_many_transitions(num_trans)) {
-            final_index = -2;
-            break;
-        }
-
-        // End-of-iteration output.
-        if (verbosity >= Verbosity::VERBOSE) {
-            report_peak_memory_delta();
-        }
-        if (verbosity >= Verbosity::NORMAL) {
-            cout << endl;
-        }
-
-        ++iteration_counter;
-    }
-
-    score_based_merging_tiebreaking =
-        merge_strategy->get_tiebreaking_statistics();
-
-    if (final_index == -1) {
+    if (active_factors_count == 1) {
         /*
           We regularly finished the merge-and-shrink construction, i.e., we
           merged all transition systems and are left with one solvable
           transition system. This assumes that merges are always appended at
           the end.
         */
-        for (int index = 0; index < fts.get_size() - 1; ++index) {
+        int last_factor_index = fts.get_size() - 1;
+        for (int index = 0; index < last_factor_index; ++index) {
             assert(!fts.is_active(index));
         }
-        final_index = fts.get_size() - 1;
-        assert(fts.is_factor_solvable(final_index));
-        cout << "Main loop terminated regularly. Statistics:" << endl;
-        cout << "Final transition system size: "
-             << fts.get_ts(final_index).get_size() << endl;
+        finalize_factor(fts, last_factor_index);
+        cout << "Use the only solvable factor as heuristic: "
+             << fts.get_transition_system(last_factor_index).tag()
+             << endl;
     } else {
-        cout << "Main loop terminated early (either because a factor is "
-            "unsolvable or the time or transition limit was reached). "
-            "Statistics:" << endl;
-    }
-
-    cout << "Iterations with merge tiebreaking: "
-         << score_based_merging_tiebreaking.first << endl;
-    cout << "Total tiebreaking merge candidates: "
-         << score_based_merging_tiebreaking.second << endl;
-    cout << "Maximum intermediate abstraction size: "
-         << maximum_intermediate_size << endl;
-    cout << "Maximum intermediate number of transitions: "
-         << maximum_transitions_size << endl;
-    cout << "Init h value improvements: " << init_hvalue_increase << endl;
-    cout << "Course of label reduction: " << remaining_labels << endl;
-    const vector<double> &miss_qualified_states_ratios =
-        shrink_strategy->get_miss_qualified_states_ratios();
-    cout << "Course of miss qualified states shrinking: "
-         << miss_qualified_states_ratios << endl;
-    double summed_values = 0;
-    for (double value : miss_qualified_states_ratios) {
-        summed_values += value;
-    }
-    size_t number_of_shrinks = miss_qualified_states_ratios.size();
-    double average_imperfect_shrinking = 0;
-    if (number_of_shrinks) {
-        average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
-    }
-    cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
-    cout << "Merge order: [";
-    bool linear_order = true;
-    int next_index = task_proxy.get_variables().size();
-    for (size_t i = 0; i < merge_order.size(); ++i) {
-        pair<int, int> merge = merge_order[i];
-        cout << "(" << merge.first << ", " << merge.second << ")";
-        if (i != merge_order.size() - 1) {
-            cout << ", ";
-        }
-        if (linear_order && i != 0) {
-            if (merge.first != next_index && merge.second != next_index) {
-                linear_order = false;
+        assert(partial_mas_method != PartialMASMethod::None);
+        if (partial_mas_method == PartialMASMethod::Single) {
+            if (verbosity >= Verbosity::NORMAL) {
+                cout << "Need to choose a single factor to serve as a heuristic."
+                     << endl;
             }
-            ++next_index;
-        }
-    }
-    cout << "]" << endl;
-    if (linear_order) {
-        cout << "Linear merge order" << endl;
-    } else {
-         cout << "Non-linear merge order" << endl;
-    }
-    cout << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
-    double summed_pruning = 0;
-    for (double pruning : relative_pruning_per_iteration) {
-        summed_pruning += pruning;
-    }
-    // If relative_pruning_per_iteration are empty, then because the instance is unsolvable.
-    // In this case, we return 0, which is the worst value possible for pruning.
-    double average_pruning = 0;
-    if (!relative_pruning_per_iteration.empty()) {
-        average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
-    }
-    cout << "Average relative pruning: " << average_pruning << endl;
-
-    cout << "Number of attempts to merge for symmetries: "
-         << num_attempts_merging_for_symmetries << endl;
-    cout << "Number of times non-perfect shrinking interfered merging for symmetries: "
-         << num_imperfect_shrinking_merging_for_symmetries << endl;
-    cout << "Number of times pruning interfered merging for symmetries: "
-         << num_pruning_merging_for_symmetries << endl;
-    cout << "Number of times merging for symmetries failed for any reason: "
-         << num_failed_merging_for_symmetries << endl;
-    cout << endl;
-
-    shrink_strategy = nullptr;
-    label_reduction = nullptr;
-
-    return final_index;
-}
-
-void MergeAndShrinkHeuristic::build(const utils::Timer &timer) {
-    const bool compute_init_distances =
-        shrink_strategy->requires_init_distances() ||
-        merge_strategy_factory->requires_init_distances() ||
-        prune_unreachable_states;
-    const bool compute_goal_distances =
-        shrink_strategy->requires_goal_distances() ||
-        merge_strategy_factory->requires_goal_distances() ||
-        prune_irrelevant_states;
-    FactoredTransitionSystem fts =
-        create_factored_transition_system(
-            task_proxy,
-            compute_init_distances,
-            compute_goal_distances,
-            verbosity,
-            max_time,
-            timer);
-    if (verbosity >= Verbosity::NORMAL) {
-        print_time(timer, "after computation of atomic transition systems");
-    }
-    int unsolvable_index = prune_fts(fts, timer);
-    if (unsolvable_index != -1) {
-        cout << "Atomic factor is unsolvable, stopping computation."
-             << endl << endl;
-        // Use the unsolvable factor as the final abstraction.
-        finalize_factor(fts, unsolvable_index);
-        return;
-    }
-    if (verbosity >= Verbosity::NORMAL) {
-        cout << endl;
-    }
-
-    if (ran_out_of_time(timer)) {
-        // Ran out of time, do not proceed with main loop.
-        finalize(fts);
-        return;
-    }
-
-    for (int index = 0; index < fts.get_size(); ++index) {
-        const TransitionSystem &ts = fts.get_ts(index);
-        int num_transitions = ts.compute_total_transitions();
-        if (too_many_transitions(num_transitions)) {
-            // A factor grew too many transitions, do not proceed with main loop.
-            finalize(fts);
-            return;
-        }
-        if (exclude_if_too_many_transitions()) {
-            if (num_transitions > num_transitions_to_exclude) {
-                if (verbosity >= Verbosity::NORMAL) {
-                    cout << ts.tag()
-                         << "too many number of transitions, excluding "
-                            "from further consideration." << endl;
-                }
-            } else {
-                allowed_indices.insert(index);
+            int index = find_best_factor(fts);
+            // We do not need the scoring functions anymore at this point.
+            factor_scoring_functions.clear();
+            finalize_factor(fts, index);
+            if (verbosity >= Verbosity::NORMAL) {
+                cout << "Chose single factor as heuristic: "
+                     << fts.get_transition_system(index).tag()
+                     << endl;
             }
+        } else if (partial_mas_method == PartialMASMethod::Maximum) {
+            for (int index : fts) {
+                finalize_factor(fts, index);
+            }
+            if (verbosity >= Verbosity::NORMAL) {
+                cout << "Use all factors in a maximum heuristic." << endl;
+            }
+        } else {
+            cerr << "Unknown partial merge-and-shrink method!" << endl;
+            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
         }
-    }
-
-    int final_index = main_loop(fts, timer);
-    if (final_index == -2) {
-        // Main loop terminated early due to reaching the time or transition limit.
-        finalize(fts);
-    } else {
-        /*
-          Main loop terminated regularly and final_index points to the last
-          factor, or it terminated early and final_index points to an unsolvable
-          factor. In both cases, we use this factor as the final abstraction.
-        */
-        finalize_factor(fts, final_index);
     }
 }
 
@@ -767,85 +178,7 @@ int MergeAndShrinkHeuristic::compute_heuristic(const GlobalState &global_state) 
     return heuristic;
 }
 
-void MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(OptionParser &parser) {
-    parser.add_option<int>(
-        "max_states",
-        "maximum transition system size allowed at any time point.",
-        "-1",
-        Bounds("-1", "infinity"));
-    parser.add_option<int>(
-        "max_states_before_merge",
-        "maximum transition system size allowed for two transition systems "
-        "before being merged to form the synchronized product.",
-        "-1",
-        Bounds("-1", "infinity"));
-    parser.add_option<int>(
-        "threshold_before_merge",
-        "If a transition system, before being merged, surpasses this soft "
-        "transition system size limit, the shrink strategy is called to "
-        "possibly shrink the transition system.",
-        "-1",
-        Bounds("-1", "infinity"));
-}
-
-void MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(Options &opts) {
-    int max_states = opts.get<int>("max_states");
-    int max_states_before_merge = opts.get<int>("max_states_before_merge");
-    int threshold = opts.get<int>("threshold_before_merge");
-
-    // If none of the two state limits has been set: set default limit.
-    if (max_states == -1 && max_states_before_merge == -1) {
-        max_states = 50000;
-    }
-
-    // If exactly one of the max_states options has been set, set the other
-    // so that it imposes no further limits.
-    if (max_states_before_merge == -1) {
-        max_states_before_merge = max_states;
-    } else if (max_states == -1) {
-        int n = max_states_before_merge;
-        if (utils::is_product_within_limit(n, n, INF)) {
-            max_states = n * n;
-        } else {
-            max_states = INF;
-        }
-    }
-
-    if (max_states_before_merge > max_states) {
-        cout << "warning: max_states_before_merge exceeds max_states, "
-             << "correcting." << endl;
-        max_states_before_merge = max_states;
-    }
-
-    if (max_states < 1) {
-        cerr << "error: transition system size must be at least 1" << endl;
-        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
-    }
-
-    if (max_states_before_merge < 1) {
-        cerr << "error: transition system size before merge must be at least 1"
-             << endl;
-        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
-    }
-
-    if (threshold == -1) {
-        threshold = max_states;
-    }
-    if (threshold < 1) {
-        cerr << "error: threshold must be at least 1" << endl;
-        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
-    }
-    if (threshold > max_states) {
-        cout << "warning: threshold exceeds max_states, correcting" << endl;
-        threshold = max_states;
-    }
-
-    opts.set<int>("max_states", max_states);
-    opts.set<int>("max_states_before_merge", max_states_before_merge);
-    opts.set<int>("threshold_before_merge", threshold);
-}
-
-static shared_ptr<Heuristic> _parse(OptionParser &parser) {
+static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
     parser.document_synopsis(
         "Merge-and-shrink heuristic",
         "This heuristic implements the algorithm described in the following "
@@ -919,154 +252,64 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "syntax differs. See the recommendation in the file "
         "merge_and_shrink_heuristic.cc for an example configuration.");
 
-    // Merge strategy option.
-    parser.add_option<shared_ptr<MergeStrategyFactory>>(
-        "merge_strategy",
-        "See detailed documentation for merge strategies. "
-        "We currently recommend SCC-DFP, which can be achieved using "
-        "{{{merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector="
-        "score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order"
-        "]))}}}");
-
-    // Shrink strategy option.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "See detailed documentation for shrink strategies. "
-        "We currently recommend non-greedy shrink_bisimulation, which can be "
-        "achieved using {{{shrink_strategy=shrink_bisimulation(greedy=false)}}}");
-
-    // Label reduction option.
-    parser.add_option<shared_ptr<LabelReduction>>(
-        "label_reduction",
-        "See detailed documentation for labels. There is currently only "
-        "one 'option' to use label_reduction, which is {{{label_reduction=exact}}} "
-        "Also note the interaction with shrink strategies.",
-        OptionParser::NONE);
-
-    // Pruning options.
-    parser.add_option<bool>(
-        "prune_unreachable_states",
-        "If true, prune abstract states unreachable from the initial state.",
-        "true");
-    parser.add_option<bool>(
-        "prune_irrelevant_states",
-        "If true, prune abstract states from which no goal state can be "
-        "reached.",
-        "true");
-    parser.add_option<bool>(
-        "pruning_as_abstraction",
-        "If true, perform pruning by not removing pruned states, but mapping "
-        "them to two single states representing unreachable and irrelevant "
-        "states respectively.",
-        "false");
-
-    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
+    add_merge_and_shrink_algorithm_options_to_parser(parser);
 
-    vector<string> verbosity_levels;
-    vector<string> verbosity_level_docs;
-    verbosity_levels.push_back("silent");
-    verbosity_level_docs.push_back(
-        "silent: no output during construction, only starting and final "
-        "statistics");
-    verbosity_levels.push_back("normal");
-    verbosity_level_docs.push_back(
-        "normal: basic output during construction, starting and final "
-        "statistics");
-    verbosity_levels.push_back("verbose");
-    verbosity_level_docs.push_back(
-        "verbose: full output during construction, starting and final "
-        "statistics");
-    parser.add_enum_option(
-        "verbosity",
-        verbosity_levels,
-        "Option to specify the level of verbosity.",
-        "verbose",
-        verbosity_level_docs);
-
-    parser.add_option<double>(
-        "max_time",
-        "A limit in seconds on the computation time of the heuristic. "
-        "If the limit is surpassed, the algorithm terminates, leaving the "
-        "chosen partial_mas_method to compute a heuristic from the set of "
-        "remaining factors.",
-        "infinity",
-        Bounds("0.0", "infinity"));
-    parser.add_option<int>(
-        "num_transitions_to_abort",
-        "A limit on the number of transitions of any factor during the "
-        "computation. Once this limit is reached, the algorithm terminates, "
-        "leaving the chosen partial_mas_method to compute a heuristic from the "
-        "set of remaining factors.",
-        "infinity",
-        Bounds("0", "infinity"));
-    parser.add_option<int>(
-        "num_transitions_to_exclude",
-        "A limit on the number of transitions of any factor during the "
-        "computation. Once a factor reaches this limit, it is excluded from "
-        "further considerations of the algorithm.",
-        "infinity",
-        Bounds("0", "infinity"));
     vector<string> partial_mas_method;
-    vector<string> partial_mas_method_docs;
-    partial_mas_method.push_back("none");
-    partial_mas_method_docs.push_back(
-        "none: attempt to compute a merge-and-shrink abstraction over all "
-        "variables of the planning task. Do not set a finite value for any of"
-        "the options max_time, num_transitions_to_abort, or "
-        "num_transitions_to_exluce.");
-    partial_mas_method.push_back("single");
-    partial_mas_method_docs.push_back(
-        "single: choose a single factor of the remaining factors to serve as"
-        "the abstraction for the heuristic. The factor is chosen according to "
-        "the factor scoring functions provided via factor_scoring_functions.");
-    partial_mas_method.push_back("maximum");
-    partial_mas_method_docs.push_back(
-        "maximum: retain all remaining factors and compute the maximum "
-        "heuristic over all these abstractions.");
-    parser.add_enum_option(
-        "partial_mas_method",
-        partial_mas_method,
-        "Method to determine the final heuristic given an early abortion, "
-        "such as due to reaching the time or transitions limit.",
-        "none",
-        partial_mas_method_docs);
-    parser.add_list_option<shared_ptr<FactorScoringFunction>>(
-        "factor_scoring_functions",
-        "The list of factor scoring functions used to compute scores for "
-        "remaining factors if computing partial merge-and-shrink abstractions, "
-        "i.e., if partial_mas_method != none.",
-        options::OptionParser::NONE);
+        vector<string> partial_mas_method_docs;
+        partial_mas_method.push_back("none");
+        partial_mas_method_docs.push_back(
+            "none: attempt to compute a merge-and-shrink abstraction over all "
+            "variables of the planning task. Do not set a finite value for any of"
+            "the options max_time or num_transitions_to_abort");
+        partial_mas_method.push_back("single");
+        partial_mas_method_docs.push_back(
+            "single: choose a single factor of the remaining factors to serve as"
+            "the abstraction for the heuristic. The factor is chosen according to "
+            "the factor scoring functions provided via factor_scoring_functions.");
+        partial_mas_method.push_back("maximum");
+        partial_mas_method_docs.push_back(
+            "maximum: retain all remaining factors and compute the maximum "
+            "heuristic over all these abstractions.");
+        parser.add_enum_option(
+            "partial_mas_method",
+            partial_mas_method,
+            "Method to determine the final heuristic given an early abortion, "
+            "such as due to reaching the time or transitions limit.",
+            "none",
+            partial_mas_method_docs);
+        parser.add_list_option<shared_ptr<FactorScoringFunction>>(
+            "factor_scoring_functions",
+            "The list of factor scoring functions used to compute scores for "
+            "remaining factors if computing partial merge-and-shrink abstractions, "
+            "i.e., if partial_mas_method != none.",
+            options::OptionParser::NONE);
 
-    Options opts = parser.parse();
+    options::Options opts = parser.parse();
     if (parser.help_mode()) {
         return nullptr;
     }
 
-    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(opts);
+    handle_shrink_limit_options_defaults(opts);
 
     if (parser.dry_run()) {
         double max_time = opts.get<double>("max_time");
         int num_transitions_to_abort = opts.get<int>("num_transitions_to_abort");
-        int num_transitions_to_exclude = opts.get<int>("num_transitions_to_exclude");
         PartialMASMethod partial_mas_method = static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"));
         if (partial_mas_method != PartialMASMethod::None
             && (max_time == numeric_limits<double>::infinity()
-                && num_transitions_to_abort == INF
-                && num_transitions_to_exclude == INF)) {
+                && num_transitions_to_abort == INF)) {
             cerr << "If using a partial merge-and-shrink method, you must "
-                "use a finite value for at least one of max_time, "
-                "num_transitions_to_abort, and num_transitions_to_exclude. "
+                "use a finite value for at least one of max_time and "
+                "num_transitions_to_abort. "
                  << endl;
             utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
         if (partial_mas_method == PartialMASMethod::None
-            && (max_time < INF
-            || num_transitions_to_abort < INF
-            || num_transitions_to_exclude < INF)) {
-            cerr << "If using a finite value to any of max_time, "
-                "num_transitions_to_abort, and num_transitions_to_exclude, "
-                "you also must use a partial merge-and-shrink method."
+            && (max_time < INF || num_transitions_to_abort < INF)) {
+            cerr << "If using a finite value to any of max_time and "
+                "num_transitions_to_abort, you also must use a partial "
+                "merge-and-shrink method."
                  << endl;
             utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
@@ -1083,5 +326,5 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
     }
 }
 
-static Plugin<Evaluator> _plugin("merge_and_shrink", _parse);
+static options::Plugin<Evaluator> _plugin("merge_and_shrink", _parse);
 }

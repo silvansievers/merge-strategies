@@ -413,7 +413,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
     vector<var_set_t> newly_built;
     int ts_index =
         miasm_abstraction->build_transition_system(S, newly_built, vsir);
-    const TransitionSystem &ts = miasm_abstraction->fts->get_ts(ts_index);
+    const TransitionSystem &ts = miasm_abstraction->fts->get_transition_system(ts_index);
 
     /* initialize the ratio and gain */
     const vector<int> &var_id_set = ts.get_incorporated_variables();

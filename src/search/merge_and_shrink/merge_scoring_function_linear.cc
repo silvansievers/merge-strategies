@@ -18,7 +18,7 @@ vector<double> MergeScoringFunctionLinear::compute_scores(
     set<int> composite_indices;
     for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
         if (fts.is_active(ts_index)) {
-            int num_vars = fts.get_ts(ts_index).get_incorporated_variables().size();
+            int num_vars = fts.get_transition_system(ts_index).get_incorporated_variables().size();
             if (num_vars > 1) {
                 composite_indices.insert(ts_index);
             }

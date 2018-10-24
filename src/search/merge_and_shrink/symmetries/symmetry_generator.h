@@ -37,8 +37,8 @@ struct SymmetryGeneratorInfo {
     SymmetryGeneratorInfo();
     bool initialized() const;
     // Returns the transition system index corresponding to the given index
-    int get_ts_index_by_index(const int index) const;
-    // Returns the abstract state (of the transition system get_ts_index_by_index())
+    int get_transition_system_index_by_index(const int index) const;
+    // Returns the abstract state (of the transition system get_transition_system_index_by_index())
     // corresponding to the given index
     int get_abs_state_by_index(const int index) const;
     // Returns the index given the transition system index and an abstract state

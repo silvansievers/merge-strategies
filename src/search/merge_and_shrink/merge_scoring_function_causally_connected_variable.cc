@@ -27,7 +27,7 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
     set<int> composite_indices;
     for (int ts_index = 0; ts_index < fts.get_size(); ++ts_index) {
         if (fts.is_active(ts_index)) {
-            int num_vars = fts.get_ts(ts_index).get_incorporated_variables().size();
+            int num_vars = fts.get_transition_system(ts_index).get_incorporated_variables().size();
             if (num_vars > 1) {
                 composite_indices.insert(ts_index);
             }
@@ -36,7 +36,7 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
 
     vector<int> composite_vars;
     for (int ts_index : composite_indices) {
-        const vector<int> &vars = fts.get_ts(ts_index).get_incorporated_variables();
+        const vector<int> &vars = fts.get_transition_system(ts_index).get_incorporated_variables();
         composite_vars.insert(composite_vars.end(), vars.begin(), vars.end());
     }
 
@@ -56,9 +56,9 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
         int ts_index2 = merge_candidate.second;
         int score = INF;
         const vector<int> &variables1 =
-            fts.get_ts(ts_index1).get_incorporated_variables();
+            fts.get_transition_system(ts_index1).get_incorporated_variables();
         const vector<int> &variables2 =
-                fts.get_ts(ts_index2).get_incorporated_variables();
+                fts.get_transition_system(ts_index2).get_incorporated_variables();
         if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
             || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
             score = 0;

@@ -3,7 +3,7 @@
 #include "distances.h"
 #include "factored_transition_system.h"
 #include "labels.h"
-#include "merge_and_shrink_heuristic.h"
+#include "merge_and_shrink_algorithm.h"
 #include "shrink_bisimulation.h"
 #include "transition_system.h"
 #include "utils.h"
@@ -29,8 +29,8 @@ vector<double> MergeScoringFunctionCausalConnection::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
-        const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
+        const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
+        const vector<int> ts2_var_nos = fts.get_transition_system(ts_index2).get_incorporated_variables();
         int edge_count = 0;
         for (int ts1_var_no : ts1_var_nos) {
             for (int ts2_var_no : ts2_var_nos) {
@@ -99,8 +99,8 @@ vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
-        const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
+        const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
+        const vector<int> ts2_var_nos = fts.get_transition_system(ts_index2).get_incorporated_variables();
         bool result = false;
         for (int ts1_var_no : ts1_var_nos) {
             for (int ts2_var_no : ts2_var_nos) {
@@ -168,8 +168,8 @@ vector<double> MergeScoringFunctionNonAdditivity::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
-        const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
+        const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
+        const vector<int> ts2_var_nos = fts.get_transition_system(ts_index2).get_incorporated_variables();
         int not_additive_pair_count = 0;
         for (int ts1_var_no : ts1_var_nos) {
             for (int ts2_var_no : ts2_var_nos) {
@@ -245,8 +245,8 @@ vector<double> MergeScoringFunctionTransitionsStatesQuotient::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates ) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
-        const TransitionSystem &ts1 = fts.get_ts(ts_index1);
-        const TransitionSystem &ts2 = fts.get_ts(ts_index2);
+        const TransitionSystem &ts1 = fts.get_transition_system(ts_index1);
+        const TransitionSystem &ts2 = fts.get_transition_system(ts_index2);
         double product_states = ts1.get_size() * ts2.get_size();
         double product_transitions = compute_number_of_product_transitions(ts1, ts2);
 
@@ -395,10 +395,10 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
         "shrink_strategy",
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
-    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
+    add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
-    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+    handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
         return nullptr;
@@ -506,10 +506,10 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
         "shrink_strategy",
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
-    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
+    add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
-    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+    handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
         return nullptr;
@@ -606,10 +606,10 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
         "shrink_strategy",
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
-    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
+    add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
-    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+    handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
         return nullptr;
@@ -631,10 +631,10 @@ vector<double> MergeScoringFunctionGoalRelevanceFine::compute_scores(
         int ts_index2 = merge_candidate.second;
         // score value in [-2,0]
         int pair_weight = 0;
-        if (is_goal_relevant(fts.get_ts(ts_index1))) {
+        if (is_goal_relevant(fts.get_transition_system(ts_index1))) {
             --pair_weight;
         }
-        if (is_goal_relevant(fts.get_ts(ts_index2))) {
+        if (is_goal_relevant(fts.get_transition_system(ts_index2))) {
             --pair_weight;
         }
         scores.push_back(pair_weight);
@@ -671,8 +671,8 @@ vector<double> MergeScoringFunctionNumVariables::compute_scores(
         int ts_index2 = merge_candidate.second;
         // score value in [-num_variables+1, -2]
         int num_variables =
-            fts.get_ts(ts_index1).get_incorporated_variables().size() +
-            fts.get_ts(ts_index2).get_incorporated_variables().size();
+            fts.get_transition_system(ts_index1).get_incorporated_variables().size() +
+            fts.get_transition_system(ts_index2).get_incorporated_variables().size();
         scores.push_back(- num_variables);
     }
     return scores;
@@ -765,10 +765,10 @@ static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) 
         "shrink_strategy",
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
-    MergeAndShrinkHeuristic::add_shrink_limit_options_to_parser(parser);
+    add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
-    MergeAndShrinkHeuristic::handle_shrink_limit_options_defaults(options);
+    handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
         return nullptr;
@@ -789,7 +789,7 @@ vector<double> MergeScoringFunctionNumTransitions::compute_scores(
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // return value in [0,infinity[
-        scores.push_back(compute_number_of_product_transitions(fts.get_ts(ts_index1), fts.get_ts(ts_index2)));
+        scores.push_back(compute_number_of_product_transitions(fts.get_transition_system(ts_index1), fts.get_transition_system(ts_index2)));
     }
     return scores;
 }
@@ -922,7 +922,7 @@ vector<double> MergeScoringFunctionMoreLROpportunities::compute_scores(
                                             continue;
                                         }
                                         if (fts.is_active(ts_index3)) {
-                                            const TransitionSystem &ts3 = fts.get_ts(ts_index3);
+                                            const TransitionSystem &ts3 = fts.get_transition_system(ts_index3);
                                             if (ts3.get_group_id_for_label(label_no1)
                                                 != ts3.get_group_id_for_label(label_no2)) {
                                                 equivalent_in_all_other_ts = false;
@@ -990,8 +990,8 @@ vector<double> MergeScoringFunctionMutexes::compute_scores(
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // return value in [0,infinity)
-        const vector<int> ts1_var_nos = fts.get_ts(ts_index1).get_incorporated_variables();
-        const vector<int> ts2_var_nos = fts.get_ts(ts_index2).get_incorporated_variables();
+        const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
+        const vector<int> ts2_var_nos = fts.get_transition_system(ts_index2).get_incorporated_variables();
         int mutex_pair_count = 0;
         for (int ts1_var_no : ts1_var_nos) {
             for (int ts2_var_no : ts2_var_nos) {
