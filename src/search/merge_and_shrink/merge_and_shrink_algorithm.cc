@@ -26,6 +26,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -252,6 +253,7 @@ void MergeAndShrinkAlgorithm::main_loop(
     merge_strategy_factory = nullptr;
 
     int iteration_counter = 0;
+    set<int> allowed_indices;
     while (fts.get_num_active_entries() > 1) {
         // Choose next transition systems to merge
         vector<int> vec_allowed_indices;;

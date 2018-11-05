@@ -2,7 +2,6 @@
 #define MERGE_AND_SHRINK_MERGE_AND_SHRINK_ALGORITHM_H
 
 #include <memory>
-#include <set>
 
 class TaskProxy;
 
@@ -51,7 +50,6 @@ class MergeAndShrinkAlgorithm {
     const double max_time;
     const int num_transitions_to_abort;
     const int num_transitions_to_exclude;
-    std::set<int> allowed_indices;
 
     long starting_peak_memory;
 
