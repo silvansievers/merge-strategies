@@ -161,7 +161,9 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
         options::OptionParser::NONE);
 
     options::Options options = parser.parse();
-    if (options.get<int>("bliss_call_time_limit")
+    if (parser.help_mode()) {
+        return nullptr;
+    } else if (options.get<int>("bliss_call_time_limit")
             && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limit or "
                 "bliss_total_time_budget but not both" << endl;

@@ -192,6 +192,9 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         "false");
 
     options::Options opts = parser.parse();
+    if (parser.help_mode()) {
+        return nullptr;
+    }
 
     vector<shared_ptr<MergeScoringFunction>> functions =
         opts.get_list<shared_ptr<MergeScoringFunction>>("scoring_functions");

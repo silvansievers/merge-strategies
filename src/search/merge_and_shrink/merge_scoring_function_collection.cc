@@ -81,7 +81,7 @@ static shared_ptr<MergeScoringFunction>_parse_cg(options::OptionParser &parser) 
         "causal connection",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionCausalConnection>();
@@ -150,7 +150,7 @@ static shared_ptr<MergeScoringFunction>_parse_bcg(options::OptionParser &parser)
         "boolean causal connection",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionBooleanCausalConnection>();
@@ -221,7 +221,7 @@ static shared_ptr<MergeScoringFunction>_parse_na(options::OptionParser &parser) 
         "non additivity",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionNonAdditivity>();
@@ -290,7 +290,7 @@ static shared_ptr<MergeScoringFunction>_parse_tsq(options::OptionParser &parser)
         "false");
 
     options::Options options = parser.parse();
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionTransitionsStatesQuotient>(options);
@@ -398,6 +398,10 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
     add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    if (parser.help_mode()) {
+        return nullptr;
+    }
+
     handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
@@ -509,6 +513,10 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
     add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    if (parser.help_mode()) {
+        return nullptr;
+    }
+
     handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
@@ -609,6 +617,10 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
     add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    if (parser.help_mode()) {
+        return nullptr;
+    }
+
     handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
@@ -651,7 +663,7 @@ static shared_ptr<MergeScoringFunction>_parse_grf(options::OptionParser &parser)
         "fine goal relevance",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionGoalRelevanceFine>();
@@ -687,7 +699,7 @@ static shared_ptr<MergeScoringFunction>_parse_nv(options::OptionParser &parser) 
         "number of variable",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionNumVariables>();
@@ -768,6 +780,10 @@ static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) 
     add_transition_system_size_limit_options_to_parser(parser);
 
     options::Options options = parser.parse();
+    if (parser.help_mode()) {
+        return nullptr;
+    }
+
     handle_shrink_limit_options_defaults(options);
 
     if (parser.dry_run())
@@ -803,7 +819,7 @@ static shared_ptr<MergeScoringFunction>_parse_nt(options::OptionParser &parser) 
         "number of transitions",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionNumTransitions>();
@@ -883,7 +899,7 @@ static shared_ptr<MergeScoringFunction>_parse_lro(options::OptionParser &parser)
         "label reduction opportunities",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionLROpportunities>();
@@ -971,7 +987,7 @@ static shared_ptr<MergeScoringFunction>_parse_mlro(options::OptionParser &parser
         "more label reduction opportunities",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionMoreLROpportunities>();
@@ -1016,7 +1032,7 @@ static shared_ptr<MergeScoringFunction>_parse_mx(options::OptionParser &parser) 
         "mutexes",
         "This scoring function assigns a merge candidate a value of 0 iff "
         "TODO.");
-    if (parser.dry_run())
+    if (parser.help_mode() || parser.dry_run())
         return nullptr;
     else
         return make_shared<MergeScoringFunctionMutexes>();

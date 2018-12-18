@@ -101,7 +101,9 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
         options::OptionParser::NONE);
 
     options::Options options = parser.parse();
-    if (parser.dry_run()) {
+    if (parser.help_mode()) {
+        return nullptr;
+    } else if (parser.dry_run()) {
         if (options.contains("merge_order_list") && options.contains("merge_order_tree_string")) {
             cerr << "Specifying a merge order and a merge tree is not possible!" << endl;
             utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);

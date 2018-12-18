@@ -198,5 +198,9 @@ static shared_ptr<MiasmAbstraction> _parse(OptionParser &parser) {
     }
 }
 
+static options::PluginTypePlugin<MiasmAbstraction> _type_plugin(
+    "MiasmAbstraction",
+    "This page describes the single option for using miasm abstractions.");
+
 static Plugin<MiasmAbstraction> _plugin(MiasmAbstraction::plugin_key(), _parse);
 }
