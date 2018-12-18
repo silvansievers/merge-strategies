@@ -127,17 +127,18 @@ public: // For copying transition systems within FTS
         return transitions_by_group_id[group_id];
     }
 
+    // Statistics and output
+    int compute_total_transitions() const;
     std::string get_description() const;
 public:
     TransitionSystem(
         int num_variables,
         std::vector<int> &&incorporated_variables,
         std::unique_ptr<LabelEquivalenceRelation> &&label_equivalence_relation,
-        std::vector<std::vector<Transition>> &&transitions_by_label,
+        std::vector<std::vector<Transition>> &&transitions_by_group_id,
         int num_states,
         std::vector<bool> &&goal_states,
-        int init_state,
-        bool compute_label_equivalence_relation);
+        int init_state);
     TransitionSystem(const TransitionSystem &other);
     ~TransitionSystem();
     /*
@@ -199,11 +200,11 @@ public:
       sorted (by source, by target) and there are no duplicates.
     */
     bool are_transitions_sorted_unique() const;
+    bool in_sync_with_label_equivalence_relation() const;
 
     bool is_solvable(const Distances &distances) const;
     void dump_dot_graph() const;
     void dump_labels_and_transitions() const;
-    int compute_total_transitions() const;
     void statistics() const;
 
     int get_size() const {

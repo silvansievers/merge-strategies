@@ -18,6 +18,7 @@
 
 #include "../task_utils/task_properties.h"
 
+#include "../utils/countdown_timer.h"
 #include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/math.h"
@@ -38,6 +39,10 @@ using options::Options;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
+static void log_progress(const utils::Timer &timer, string msg) {
+    cout << "M&S algorithm timer: " << timer << " (" << msg << ")" << endl;
+}
+
 MergeAndShrinkAlgorithm::MergeAndShrinkAlgorithm(const Options &opts) :
     merge_strategy_factory(opts.get<shared_ptr<MergeStrategyFactory>>("merge_strategy")),
     shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
@@ -49,7 +54,7 @@ MergeAndShrinkAlgorithm::MergeAndShrinkAlgorithm(const Options &opts) :
     prune_irrelevant_states(opts.get<bool>("prune_irrelevant_states")),
     pruning_as_abstraction(opts.get<bool>("pruning_as_abstraction")),
     verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
-    max_time(opts.get<double>("max_time")),
+    main_loop_max_time(opts.get<double>("main_loop_max_time")),
     num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
     num_transitions_to_exclude(opts.get<int>("num_transitions_to_exclude")),
     starting_peak_memory(0) {
@@ -147,8 +152,8 @@ void MergeAndShrinkAlgorithm::warn_on_unusual_options() const {
 }
 
 bool MergeAndShrinkAlgorithm::ran_out_of_time(
-    const utils::Timer &timer) const {
-    if (timer() > max_time) {
+    const utils::CountdownTimer &timer) const {
+    if (timer.is_expired()) {
         if (verbosity >= Verbosity::NORMAL) {
             cout << "Ran out of time, stopping computation." << endl;
             cout << endl;
@@ -186,40 +191,19 @@ bool MergeAndShrinkAlgorithm::exclude_if_too_many_transitions() const {
     return num_transitions_to_exclude != INF;
 }
 
-bool MergeAndShrinkAlgorithm::prune_fts(
-    FactoredTransitionSystem &fts, const utils::Timer &timer) const {
-    /*
-      Prune all factors according to the chosen options. Stop early if one
-      factor is unsolvable. Return true iff unsolvable.
-    */
-    bool pruned = false;
-    bool unsolvable = false;
-    for (int index = 0; index < fts.get_size(); ++index) {
-        if (prune_unreachable_states || prune_irrelevant_states) {
-            pair<bool, bool> pruned_factor = prune_step(
-                fts,
-                index,
-                prune_unreachable_states,
-                prune_irrelevant_states,
-                pruning_as_abstraction,
-                verbosity);
-            pruned = pruned || pruned_factor.first || pruned_factor.second;
-        }
-        if (!fts.is_factor_solvable(index)) {
-            unsolvable =  true;
-            break;
-        }
-    }
-    if (verbosity >= Verbosity::NORMAL && pruned) {
-        print_time(timer, "after pruning atomic factors");
-    }
-    return unsolvable;
-}
-
 void MergeAndShrinkAlgorithm::main_loop(
     FactoredTransitionSystem &fts,
-    const TaskProxy &task_proxy,
-    const utils::Timer &timer) {
+    const TaskProxy &task_proxy) {
+    utils::CountdownTimer timer(main_loop_max_time);
+    if (verbosity >= Verbosity::NORMAL) {
+        cout << "Starting main loop ";
+        if (main_loop_max_time == numeric_limits<double>::infinity()) {
+            cout << "without a time limit." << endl;
+        } else {
+            cout << "with a time limit of "
+                 << main_loop_max_time << "s." << endl;
+        }
+    }
     int maximum_intermediate_size = 0;
     int maximum_transitions_size = 0;
     for (int i = 0; i < fts.get_size(); ++i) {
@@ -252,6 +236,11 @@ void MergeAndShrinkAlgorithm::main_loop(
         merge_strategy_factory->compute_merge_strategy(task_proxy, fts);
     merge_strategy_factory = nullptr;
 
+    auto log_main_loop_progress = [&timer](const string &msg) {
+            cout << "M&S algorithm main loop timer: "
+                 << timer.get_elapsed_time()
+                 << " (" << msg << ")" << endl;
+        };
     int iteration_counter = 0;
     set<int> allowed_indices;
     while (fts.get_num_active_entries() > 1) {
@@ -295,14 +284,14 @@ void MergeAndShrinkAlgorithm::main_loop(
                 fts.statistics(merge_index1);
                 fts.statistics(merge_index2);
             }
-            print_time(timer, "after computation of next merge");
+            log_main_loop_progress("after computation of next merge");
         }
 
         // Label reduction (before shrinking)
         if (label_reduction && label_reduction->reduce_before_shrinking()) {
             bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
             if (verbosity >= Verbosity::NORMAL && reduced) {
-                print_time(timer, "after label reduction");
+                log_main_loop_progress("after label reduction");
             }
             remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
         }
@@ -322,7 +311,7 @@ void MergeAndShrinkAlgorithm::main_loop(
             *shrink_strategy,
             verbosity);
         if (verbosity >= Verbosity::NORMAL && shrunk) {
-            print_time(timer, "after shrinking");
+            log_main_loop_progress("after shrinking");
         }
         if (merging_for_symmetries && currently_shrink_perfect_for_symmetries && shrunk) {
             currently_shrink_perfect_for_symmetries = false;
@@ -349,7 +338,7 @@ void MergeAndShrinkAlgorithm::main_loop(
         if (label_reduction && label_reduction->reduce_before_merging()) {
             bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
             if (verbosity >= Verbosity::NORMAL && reduced) {
-                print_time(timer, "after label reduction");
+                log_main_loop_progress("after label reduction");
             }
             remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
         }
@@ -380,7 +369,7 @@ void MergeAndShrinkAlgorithm::main_loop(
                 fts.statistics(merged_index);
                 cout << "Difference of init h values: " << difference << endl;
             }
-            print_time(timer, "after merging");
+            log_main_loop_progress("after merging");
         }
 
         // We do not check for num transitions here but only after pruning
@@ -406,7 +395,7 @@ void MergeAndShrinkAlgorithm::main_loop(
                 if (verbosity >= Verbosity::VERBOSE) {
                     fts.statistics(merged_index);
                 }
-                print_time(timer, "after pruning");
+                log_main_loop_progress("after pruning");
             }
             if (pruned_and_pruned_unreachable.first &&
                 pruned_and_pruned_unreachable.second &&
@@ -469,6 +458,7 @@ void MergeAndShrinkAlgorithm::main_loop(
     }
 
     cout << "End of merge-and-shrink algorithm, statistics:" << endl;
+    cout << "Main loop runtime: " << timer.get_elapsed_time() << endl;
     cout << "Maximum intermediate abstraction size: "
          << maximum_intermediate_size << endl;
     score_based_merging_tiebreaking =
@@ -577,26 +567,47 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
             task_proxy,
             compute_init_distances,
             compute_goal_distances,
-            verbosity,
-            max_time,
-            timer);
+            verbosity);
     if (verbosity >= Verbosity::NORMAL) {
-        print_time(timer, "after computation of atomic transition systems");
+        log_progress(timer, "after computation of atomic factors");
     }
-    // TODO: think about if we can prune already while creating the atomic FTS.
-    bool unsolvable = prune_fts(fts, timer);
-    if (verbosity >= Verbosity::NORMAL) {
+
+    /*
+      Prune all atomic factors according to the chosen options. Stop early if
+      one factor is unsolvable.
+
+      TODO: think about if we can prune already while creating the atomic FTS.
+    */
+    bool pruned = false;
+    bool unsolvable = false;
+    for (int index = 0; index < fts.get_size(); ++index) {
+        assert(fts.is_active(index));
+        if (prune_unreachable_states || prune_irrelevant_states) {
+            pair<bool, bool> pruned_and_pruned_unreachable = prune_step(
+                fts,
+                index,
+                prune_unreachable_states,
+                prune_irrelevant_states,
+                pruning_as_abstraction,
+                verbosity);
+            pruned = pruned || pruned_and_pruned_unreachable.first;
+        }
+        if (!fts.is_factor_solvable(index)) {
+            unsolvable = true;
+            break;
+        }
+    }
+    if (verbosity >= Verbosity::NORMAL && pruned) {
+        log_progress(timer, "after pruning atomic factors");
         cout << endl;
     }
 
     if (unsolvable) {
         cout << "Atomic FTS is unsolvable, stopping computation." << endl;
-    } else if (ran_out_of_time(timer)) {
-        // Ran out of time, do not proceed with main loop.
     } else if (too_many_transitions(fts)) {
         // A factor grew too many transitions, do not proceed with main loop.
-    } else {
-        main_loop(fts, task_proxy, timer);
+    } else if (main_loop_max_time > 0) {
+        main_loop(fts, task_proxy);
     }
     const bool final = true;
     report_peak_memory_delta(final);
@@ -671,11 +682,10 @@ void add_merge_and_shrink_algorithm_options_to_parser(OptionParser &parser) {
         verbosity_level_docs);
 
     parser.add_option<double>(
-        "max_time",
-        "A limit in seconds on the computation time of the heuristic. "
-        "If the limit is surpassed, the algorithm terminates, leaving the "
-        "chosen partial_mas_method to compute a heuristic from the set of "
-        "remaining factors.",
+        "main_loop_max_time",
+        "A limit in seconds on the runtime of the main loop of the algorithm. "
+        "If the limit is exceeded, the algorithm terminates, potentially "
+        "returning a factored transition system with several factors.",
         "infinity",
         Bounds("0.0", "infinity"));
     parser.add_option<int>(

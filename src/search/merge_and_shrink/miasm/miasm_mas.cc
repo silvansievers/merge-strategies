@@ -77,11 +77,9 @@ void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
     assert(!fts);
     const bool compute_init_distances = true;
     const bool compute_goal_distances = true;
-    const int max_time = INF;
-    utils::Timer timer;
     fts = make_shared<FactoredTransitionSystem>(
         create_factored_transition_system(
-            task_proxy, compute_init_distances, compute_goal_distances, verbosity, max_time, timer));
+            task_proxy, compute_init_distances, compute_goal_distances, verbosity));
     for (int index = 0; index < fts->get_size(); ++index) {
         prune_step(
             *fts,

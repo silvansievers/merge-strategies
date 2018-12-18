@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <map>
 
 using namespace std;
 using utils::ExitCode;

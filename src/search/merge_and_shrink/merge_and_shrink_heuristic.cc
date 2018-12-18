@@ -1,7 +1,6 @@
 #include "merge_and_shrink_heuristic.h"
 
 #include "distances.h"
-#include "factor_scoring_functions.h"
 #include "factored_transition_system.h"
 #include "merge_and_shrink_algorithm.h"
 #include "merge_and_shrink_representation.h"
@@ -26,13 +25,7 @@ using utils::ExitCode;
 namespace merge_and_shrink {
 MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const options::Options &opts)
     : Heuristic(opts),
-      verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))),
-      partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))) {
-    if (opts.contains("factor_scoring_functions")) {
-        factor_scoring_functions = opts.get_list<shared_ptr<FactorScoringFunction>>(
-            "factor_scoring_functions");
-    }
-
+      verbosity(static_cast<Verbosity>(opts.get_enum("verbosity"))) {
     cout << "Initializing merge-and-shrink heuristic..." << endl;
     MergeAndShrinkAlgorithm algorithm(opts);
     FactoredTransitionSystem fts = algorithm.build_factored_transition_system(task_proxy);
@@ -40,58 +33,19 @@ MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const options::Options &opts)
     cout << "Done initializing merge-and-shrink heuristic." << endl << endl;
 }
 
-vector<int> get_remaining_candidates(
-    const vector<int> &merge_candidates,
-    const vector<int> &scores) {
-    assert(merge_candidates.size() == scores.size());
-    int best_score = -1;
-    for (int score : scores) {
-        if (score > best_score) {
-            best_score = score;
-        }
-    }
-
-    vector<int> result;
-    for (size_t i = 0; i < scores.size(); ++i) {
-        if (scores[i] == best_score) {
-            result.push_back(merge_candidates[i]);
-        }
-    }
-    return result;
-}
-
-int MergeAndShrinkHeuristic::find_best_factor(
-    const FactoredTransitionSystem &fts) const {
-    vector<int> current_indices;
-    for (int index : fts) {
-        current_indices.push_back(index);
-    }
-
-    for (const shared_ptr<FactorScoringFunction> &fsf : factor_scoring_functions) {
-        vector<int> scores = fsf->compute_scores(fts, current_indices);
-        current_indices = get_remaining_candidates(current_indices, scores);
-        if (current_indices.size() == 1) {
-            break;
-        }
-    }
-
-    assert(current_indices.size() == 1);
-    return current_indices.front();
-}
-
 void MergeAndShrinkHeuristic::finalize_factor(
     FactoredTransitionSystem &fts, int index) {
-    pair<unique_ptr<MergeAndShrinkRepresentation>, unique_ptr<Distances>>
-    final_entry = fts.extract_factor(index);
-    if (!final_entry.second->are_goal_distances_computed()) {
+    auto final_entry = fts.extract_factor(index);
+    unique_ptr<MergeAndShrinkRepresentation> mas_representation = move(final_entry.first);
+    unique_ptr<Distances> distances = move(final_entry.second);
+    if (!distances->are_goal_distances_computed()) {
         const bool compute_init = false;
         const bool compute_goal = true;
-        final_entry.second->compute_distances(
-            compute_init, compute_goal, verbosity);
+        distances->compute_distances(compute_init, compute_goal, verbosity);
     }
-    assert(final_entry.second->are_goal_distances_computed());
-    final_entry.first->set_distances(*final_entry.second);
-    mas_representations.push_back(move(final_entry.first));
+    assert(distances->are_goal_distances_computed());
+    mas_representation->set_distances(*distances);
+    mas_representations.push_back(move(mas_representation));
 }
 
 void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
@@ -109,59 +63,28 @@ void MergeAndShrinkHeuristic::finalize(FactoredTransitionSystem &fts) {
         cout << "Number of remaining factors: " << active_factors_count << endl;
     }
 
-    for (int index = 0; index < fts.get_size(); ++index) {
-        if (fts.is_active(index) && !fts.is_factor_solvable(index)) {
+    // Check if there is an unsolvable factor. If so, use it as heuristic.
+    for (int index : fts) {
+        if (!fts.is_factor_solvable(index)) {
             finalize_factor(fts, index);
-            cout << "Use the unsolvable factor as heuristic: "
-                 << fts.get_transition_system(index).tag()
-                 << endl;
+            if (verbosity >= Verbosity::NORMAL) {
+                cout << fts.get_transition_system(index).tag()
+                     << "use this unsolvable factor as heuristic."
+                     << endl;
+            }
             return;
         }
     }
 
-    if (active_factors_count == 1) {
-        /*
-          We regularly finished the merge-and-shrink construction, i.e., we
-          merged all transition systems and are left with one solvable
-          transition system. This assumes that merges are always appended at
-          the end.
-        */
-        int last_factor_index = fts.get_size() - 1;
-        for (int index = 0; index < last_factor_index; ++index) {
-            assert(!fts.is_active(index));
-        }
-        finalize_factor(fts, last_factor_index);
-        cout << "Use the only solvable factor as heuristic: "
-             << fts.get_transition_system(last_factor_index).tag()
-             << endl;
-    } else {
-        assert(partial_mas_method != PartialMASMethod::None);
-        if (partial_mas_method == PartialMASMethod::Single) {
-            if (verbosity >= Verbosity::NORMAL) {
-                cout << "Need to choose a single factor to serve as a heuristic."
-                     << endl;
-            }
-            int index = find_best_factor(fts);
-            // We do not need the scoring functions anymore at this point.
-            factor_scoring_functions.clear();
-            finalize_factor(fts, index);
-            if (verbosity >= Verbosity::NORMAL) {
-                cout << "Chose single factor as heuristic: "
-                     << fts.get_transition_system(index).tag()
-                     << endl;
-            }
-        } else if (partial_mas_method == PartialMASMethod::Maximum) {
-            for (int index : fts) {
-                finalize_factor(fts, index);
-            }
-            if (verbosity >= Verbosity::NORMAL) {
-                cout << "Use all factors in a maximum heuristic." << endl;
-            }
-        } else {
-            cerr << "Unknown partial merge-and-shrink method!" << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
-        }
+    // Iterate over all remaining factors and extract them.
+    for (int index : fts) {
+        finalize_factor(fts, index);
     }
+    if (verbosity >= Verbosity::NORMAL) {
+        cout << "Use all factors in a maximum heuristic." << endl;
+    }
+
+    assert(static_cast<int>(mas_representations.size()) == active_factors_count);
 }
 
 int MergeAndShrinkHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -211,7 +134,18 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
             "Proceedings of the 26th International Conference on Automated "
             "Planning and Scheduling (ICAPS 2016)",
             "294-298",
-            "AAAI Press 2016"));
+            "AAAI Press 2016") + "\n" +
+        "Details of the algorithms and the implementation are described in the "
+        "paper" + utils::format_paper_reference(
+            {"Silvan Sievers"},
+            "Merge-and-Shrink Heuristics for Classical Planning: Efficient "
+            "Implementation and Partial Abstractions.",
+            "https://ai.dmi.unibas.ch/papers/sievers-socs2018.pdf",
+            "Proceedings of the 11th Annual Symposium on Combinatorial Search "
+            "(SoCS 2018)",
+            "90-98",
+            "AAAI Press 2018")
+        );
     parser.document_language_support("action costs", "supported");
     parser.document_language_support("conditional effects", "supported (but see note)");
     parser.document_language_support("axioms", "not supported");
@@ -239,6 +173,13 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
         "of the search.");
     parser.document_note(
         "Note",
+        "When using a time limit on the main loop of the merge-and-shrink "
+        "algorithm, the heuristic will compute the maximum over all heuristics "
+        "induced by the remaining factors if terminating the merge-and-shrink "
+        "algorithm early. Exception: if there is an unsolvable factor, it will"
+        "be used as the exclusive heuristic since the problem is unsolvable.");
+    parser.document_note(
+        "Note",
         "A currently recommended good configuration uses bisimulation "
         "based shrinking, the merge strategy SCC-DFP, and the appropriate "
         "label reduction setting (max_states has been altered to be between "
@@ -254,37 +195,6 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
 
     Heuristic::add_options_to_parser(parser);
     add_merge_and_shrink_algorithm_options_to_parser(parser);
-
-    vector<string> partial_mas_method;
-        vector<string> partial_mas_method_docs;
-        partial_mas_method.push_back("none");
-        partial_mas_method_docs.push_back(
-            "none: attempt to compute a merge-and-shrink abstraction over all "
-            "variables of the planning task. Do not set a finite value for any of"
-            "the options max_time or num_transitions_to_abort");
-        partial_mas_method.push_back("single");
-        partial_mas_method_docs.push_back(
-            "single: choose a single factor of the remaining factors to serve as"
-            "the abstraction for the heuristic. The factor is chosen according to "
-            "the factor scoring functions provided via factor_scoring_functions.");
-        partial_mas_method.push_back("maximum");
-        partial_mas_method_docs.push_back(
-            "maximum: retain all remaining factors and compute the maximum "
-            "heuristic over all these abstractions.");
-        parser.add_enum_option(
-            "partial_mas_method",
-            partial_mas_method,
-            "Method to determine the final heuristic given an early abortion, "
-            "such as due to reaching the time or transitions limit.",
-            "none",
-            partial_mas_method_docs);
-        parser.add_list_option<shared_ptr<FactorScoringFunction>>(
-            "factor_scoring_functions",
-            "The list of factor scoring functions used to compute scores for "
-            "remaining factors if computing partial merge-and-shrink abstractions, "
-            "i.e., if partial_mas_method != none.",
-            options::OptionParser::NONE);
-
     options::Options opts = parser.parse();
     if (parser.help_mode()) {
         return nullptr;
@@ -293,33 +203,6 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
     handle_shrink_limit_options_defaults(opts);
 
     if (parser.dry_run()) {
-        double max_time = opts.get<double>("max_time");
-        int num_transitions_to_abort = opts.get<int>("num_transitions_to_abort");
-        PartialMASMethod partial_mas_method = static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"));
-        if (partial_mas_method != PartialMASMethod::None
-            && (max_time == numeric_limits<double>::infinity()
-                && num_transitions_to_abort == INF)) {
-            cerr << "If using a partial merge-and-shrink method, you must "
-                "use a finite value for at least one of max_time and "
-                "num_transitions_to_abort. "
-                 << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-        }
-        if (partial_mas_method == PartialMASMethod::None
-            && (max_time < INF || num_transitions_to_abort < INF)) {
-            cerr << "If using a finite value to any of max_time and "
-                "num_transitions_to_abort, you also must use a partial "
-                "merge-and-shrink method."
-                 << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-        }
-        if (partial_mas_method == PartialMASMethod::Single
-            && !opts.contains("factor_scoring_functions")) {
-            cerr << "If using the partial merge-and-shrink method single, "
-                "you must specify a least one factor scoring function!"
-                 << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-        }
         return nullptr;
     } else {
         return make_shared<MergeAndShrinkHeuristic>(opts);

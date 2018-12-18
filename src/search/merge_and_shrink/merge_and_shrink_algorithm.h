@@ -11,7 +11,7 @@ class Options;
 }
 
 namespace utils {
-class Timer;
+class CountdownTimer;
 }
 
 namespace merge_and_shrink {
@@ -20,7 +20,6 @@ class LabelReduction;
 class MergeAndShrinkRepresentation;
 class MergeStrategyFactory;
 class ShrinkStrategy;
-class TransitionSystem;
 enum class Verbosity;
 
 class MergeAndShrinkAlgorithm {
@@ -47,23 +46,20 @@ class MergeAndShrinkAlgorithm {
     const Verbosity verbosity;
 
     // Options related to computing partial abstractions
-    const double max_time;
+    const double main_loop_max_time;
     const int num_transitions_to_abort;
     const int num_transitions_to_exclude;
 
     long starting_peak_memory;
 
-    bool ran_out_of_time(const utils::Timer &timer) const;
+    bool ran_out_of_time(const utils::CountdownTimer &timer) const;
     bool too_many_transitions(const FactoredTransitionSystem &fts, int index) const;
     bool too_many_transitions(const FactoredTransitionSystem &fts) const;
     bool exclude_if_too_many_transitions() const;
-    // Return true iff fts has been detected to be unsolvable.
-    bool prune_fts(FactoredTransitionSystem &fts, const utils::Timer &timer) const;
     void statistics(int maximum_intermediate_size) const;
     void main_loop(
         FactoredTransitionSystem &fts,
-        const TaskProxy &task_proxy,
-        const utils::Timer &timer);
+        const TaskProxy &task_proxy);
 
     void report_peak_memory_delta(bool final = false) const;
 public:
