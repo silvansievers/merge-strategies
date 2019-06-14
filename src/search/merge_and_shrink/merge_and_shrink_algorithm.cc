@@ -454,7 +454,7 @@ void MergeAndShrinkAlgorithm::main_loop(
          << maximum_intermediate_size << endl;
     score_based_merging_tiebreaking =
         merge_strategy->get_tiebreaking_statistics();
-cout << "Iterations with merge tiebreaking: "
+    cout << "Iterations with merge tiebreaking: "
          << score_based_merging_tiebreaking.first << endl;
     cout << "Total tiebreaking merge candidates: "
          << score_based_merging_tiebreaking.second << endl;
@@ -592,7 +592,7 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
         cout << endl;
     }
 
-    if (!unsolvable && too_many_transitions(fts) && main_loop_max_time > 0) {
+    if (!unsolvable && !too_many_transitions(fts) && main_loop_max_time > 0) {
         main_loop(fts, task_proxy);
     }
     const bool final = true;
