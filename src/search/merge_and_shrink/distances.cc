@@ -4,6 +4,7 @@
 #include "transition_system.h"
 
 #include "../algorithms/priority_queues.h"
+#include "../utils/logging.h"
 
 #include <cassert>
 #include <deque>
@@ -80,13 +81,8 @@ void Distances::compute_init_distances_unit_cost() {
     }
 
     deque<int> queue;
-    // TODO: This is an oddly inefficient initialization! Fix it.
-    for (int state = 0; state < get_num_states(); ++state) {
-        if (state == transition_system.get_init_state()) {
-            init_distances[state] = 0;
-            queue.push_back(state);
-        }
-    }
+    queue.push_back(transition_system.get_init_state());
+    init_distances[transition_system.get_init_state()] = 0;
     breadth_first_search(forward_graph, queue, init_distances);
 }
 
@@ -149,13 +145,8 @@ void Distances::compute_init_distances_general_cost() {
     // TODO: Reuse the same queue for multiple computations to save speed?
     //       Also see compute_goal_distances_general_cost.
     priority_queues::AdaptiveQueue<int> queue;
-    // TODO: This is an oddly inefficient initialization! Fix it.
-    for (int state = 0; state < get_num_states(); ++state) {
-        if (state == transition_system.get_init_state()) {
-            init_distances[state] = 0;
-            queue.push(0, state);
-        }
-    }
+    init_distances[transition_system.get_init_state()] = 0;
+    queue.push(0, transition_system.get_init_state());
     dijkstra_search(forward_graph, queue, init_distances);
 }
 
@@ -186,7 +177,7 @@ void Distances::compute_goal_distances_general_cost() {
 void Distances::compute_distances(
     bool compute_init_distances,
     bool compute_goal_distances,
-    Verbosity verbosity) {
+    utils::Verbosity verbosity) {
     assert(compute_init_distances || compute_goal_distances);
     /*
       This method does the following:
@@ -215,16 +206,17 @@ void Distances::compute_distances(
         assert(init_distances.empty() && goal_distances.empty());
     }
 
-    if (verbosity >= Verbosity::VERBOSE) {
+    if (verbosity >= utils::Verbosity::VERBOSE) {
         cout << transition_system.tag();
     }
 
     int num_states = get_num_states();
     if (num_states == 0) {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << "empty transition system, no distances to compute" << endl;
         }
         init_distances_computed = true;
+        goal_distances_computed = true;
         return;
     }
 
@@ -234,7 +226,7 @@ void Distances::compute_distances(
     if (compute_goal_distances) {
         goal_distances.resize(num_states, INF);
     }
-    if (verbosity >= Verbosity::VERBOSE) {
+    if (verbosity >= utils::Verbosity::VERBOSE) {
         cout << "computing ";
         if (compute_init_distances && compute_goal_distances) {
             cout << "init and goal";
@@ -246,7 +238,7 @@ void Distances::compute_distances(
         cout << " distances using ";
     }
     if (is_unit_cost()) {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << "unit-cost";
         }
         if (compute_init_distances) {
@@ -256,7 +248,7 @@ void Distances::compute_distances(
             compute_goal_distances_unit_cost();
         }
     } else {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << "general-cost";
         }
         if (compute_init_distances) {
@@ -266,7 +258,7 @@ void Distances::compute_distances(
             compute_goal_distances_general_cost();
         }
     }
-    if (verbosity >= Verbosity::VERBOSE) {
+    if (verbosity >= utils::Verbosity::VERBOSE) {
         cout << " algorithm" << endl;
     }
 
@@ -282,7 +274,7 @@ void Distances::apply_abstraction(
     const StateEquivalenceRelation &state_equivalence_relation,
     bool compute_init_distances,
     bool compute_goal_distances,
-    Verbosity verbosity) {
+    utils::Verbosity verbosity) {
     if (compute_init_distances) {
         assert(are_init_distances_computed());
         assert(state_equivalence_relation.size() < init_distances.size());
@@ -342,7 +334,7 @@ void Distances::apply_abstraction(
     }
 
     if (must_recompute) {
-        if (verbosity >= Verbosity::VERBOSE) {
+        if (verbosity >= utils::Verbosity::VERBOSE) {
             cout << transition_system.tag()
                  << "simplification was not f-preserving!" << endl;
         }

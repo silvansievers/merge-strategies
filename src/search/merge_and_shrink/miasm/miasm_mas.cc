@@ -15,6 +15,7 @@
 #include "../../plugin.h"
 //#include "../../utilities.h"
 
+#include "../utils/logging.h"
 #include "../utils/timer.h"
 
 #include <cassert>
@@ -31,7 +32,7 @@ using namespace mst;
 MiasmAbstraction::MiasmAbstraction(const Options &)
     : //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
-      verbosity(Verbosity::SILENT),
+      verbosity(utils::Verbosity::SILENT),
       prune_unreachable_states(true),
       prune_irrelevant_states(true),
       pruning_as_abstraction(false),

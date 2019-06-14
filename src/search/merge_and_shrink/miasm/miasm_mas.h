@@ -16,6 +16,10 @@ namespace options {
 class Options;
 }
 
+namespace utils {
+enum class Verbosity;
+}
+
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
 //class LabelReduction;
@@ -27,7 +31,7 @@ class MiasmAbstraction {
 //    std::shared_ptr<MergeStrategy> merge_strategy;
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
 //    std::shared_ptr<LabelReduction> label_reduction;
-    Verbosity verbosity;
+    const utils::Verbosity verbosity;
     const bool prune_unreachable_states;
     const bool prune_irrelevant_states;
     const bool pruning_as_abstraction;

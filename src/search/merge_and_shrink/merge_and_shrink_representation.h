@@ -17,15 +17,18 @@ public:
     explicit MergeAndShrinkRepresentation(int domain_size);
     virtual ~MergeAndShrinkRepresentation() = 0;
 
-    // Store distances instead of abstract state numbers.
-    virtual void set_distances(const Distances &) = 0;
     int get_domain_size() const;
 
-    // Return the abstract state or the goal distance, depending on whether
-    // set_distances has been used or not.
-    virtual int get_value(const State &state) const = 0;
+    // Store distances instead of abstract state numbers.
+    virtual void set_distances(const Distances &) = 0;
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) = 0;
+    /* Return the abstract state or the goal distance, depending on whether
+      set_distances has been used or not. */
+    virtual int get_value(const State &state) const = 0;
+    /* Check if this or any component merge-and-shrink representation contains
+       PRUNED_STATE. */
+    virtual bool is_pruned() const = 0;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const = 0;
     virtual void dump() const = 0;
 };
@@ -44,6 +47,7 @@ public:
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) override;
     virtual int get_value(const State &state) const override;
+    virtual bool is_pruned() const override;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const override {
         try {
             const MergeAndShrinkRepresentationLeaf &tmp = dynamic_cast<const MergeAndShrinkRepresentationLeaf &>(other);
@@ -75,6 +79,7 @@ public:
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) override;
     virtual int get_value(const State &state) const override;
+    virtual bool is_pruned() const override;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const override {
         try {
             const MergeAndShrinkRepresentationMerge &tmp = dynamic_cast<const MergeAndShrinkRepresentationMerge &>(other);
