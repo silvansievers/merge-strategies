@@ -255,18 +255,16 @@ bool FactoredTransitionSystem::is_factor_solvable(int index) const {
 
 bool FactoredTransitionSystem::is_factor_trivial(int index) const {
     assert(is_component_valid(index));
-    bool is_pruned = mas_representations[index]->is_pruned();
-    if (is_pruned) {
+    if (!mas_representations[index]->is_total()) {
         return false;
-    } else {
-        const TransitionSystem &ts = *transition_systems[index];
-        for (int state = 0; state < ts.get_size(); ++state) {
-            if (!ts.is_goal_state(state)) {
-                return false;
-            }
-        }
-        return true;
     }
+    const TransitionSystem &ts = *transition_systems[index];
+    for (int state = 0; state < ts.get_size(); ++state) {
+        if (!ts.is_goal_state(state)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool FactoredTransitionSystem::is_active(int index) const {

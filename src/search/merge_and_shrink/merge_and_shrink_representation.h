@@ -23,12 +23,16 @@ public:
     virtual void set_distances(const Distances &) = 0;
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) = 0;
-    /* Return the abstract state or the goal distance, depending on whether
-      set_distances has been used or not. */
+    /*
+      Return the value that state is mapped to. This is either an abstract
+      state (if set_distances has not been called) or a distance (if it has).
+      If the represented function is not total, the returned value is DEAD_END
+      if the abstract state is PRUNED_STATE or if the (distance) value is INF.
+    */
     virtual int get_value(const State &state) const = 0;
-    /* Check if this or any component merge-and-shrink representation contains
-       PRUNED_STATE. */
-    virtual bool is_pruned() const = 0;
+    /* Return true iff the represented function is total, i.e., does not map
+       to PRUNED_STATE. */
+    virtual bool is_total() const = 0;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const = 0;
     virtual void dump() const = 0;
 };
@@ -47,7 +51,7 @@ public:
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) override;
     virtual int get_value(const State &state) const override;
-    virtual bool is_pruned() const override;
+    virtual bool is_total() const override;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const override {
         try {
             const MergeAndShrinkRepresentationLeaf &tmp = dynamic_cast<const MergeAndShrinkRepresentationLeaf &>(other);
@@ -79,7 +83,7 @@ public:
     virtual void apply_abstraction_to_lookup_table(
         const std::vector<int> &abstraction_mapping) override;
     virtual int get_value(const State &state) const override;
-    virtual bool is_pruned() const override;
+    virtual bool is_total() const override;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const override {
         try {
             const MergeAndShrinkRepresentationMerge &tmp = dynamic_cast<const MergeAndShrinkRepresentationMerge &>(other);

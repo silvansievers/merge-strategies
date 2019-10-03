@@ -47,7 +47,7 @@ bool Distances::is_unit_cost() const {
       that the actual shortest-path algorithms (e.g.
       compute_goal_distances_general_cost) do.
     */
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         if (label_group.get_cost() != 1)
             return false;
@@ -73,7 +73,7 @@ static void breadth_first_search(
 
 void Distances::compute_init_distances_unit_cost() {
     vector<vector<int>> forward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const vector<Transition> &transitions = gat.transitions;
         for (const Transition &transition : transitions) {
             forward_graph[transition.src].push_back(transition.target);
@@ -88,7 +88,7 @@ void Distances::compute_init_distances_unit_cost() {
 
 void Distances::compute_goal_distances_unit_cost() {
     vector<vector<int>> backward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const vector<Transition> &transitions = gat.transitions;
         for (const Transition &transition : transitions) {
             backward_graph[transition.target].push_back(transition.src);
@@ -132,7 +132,7 @@ static void dijkstra_search(
 
 void Distances::compute_init_distances_general_cost() {
     vector<vector<pair<int, int>>> forward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         const vector<Transition> &transitions = gat.transitions;
         int cost = label_group.get_cost();
@@ -152,7 +152,7 @@ void Distances::compute_init_distances_general_cost() {
 
 void Distances::compute_goal_distances_general_cost() {
     vector<vector<pair<int, int>>> backward_graph(get_num_states());
-    for (const GroupAndTransitions &gat : transition_system) {
+    for (GroupAndTransitions gat : transition_system) {
         const LabelGroup &label_group = gat.label_group;
         const vector<Transition> &transitions = gat.transitions;
         int cost = label_group.get_cost();
@@ -348,11 +348,26 @@ void Distances::apply_abstraction(
 }
 
 void Distances::dump() const {
-    cout << "Distances: ";
-    for (size_t i = 0; i < goal_distances.size(); ++i) {
-        cout << i << ": " << goal_distances[i] << ", ";
+    if (are_init_distances_computed()) {
+        cout << "Init distances: ";
+        for (size_t i = 0; i < init_distances.size(); ++i) {
+            cout << i << ": " << init_distances[i];
+            if (i != init_distances.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
     }
-    cout << endl;
+    if (are_goal_distances_computed()) {
+        cout << "Goal distances: ";
+        for (size_t i = 0; i < goal_distances.size(); ++i) {
+            cout << i << ": " << goal_distances[i] << ", ";
+            if (i != goal_distances.size() - 1) {
+                cout << ", ";
+            }
+        }
+        cout << endl;
+    }
 }
 
 void Distances::statistics() const {

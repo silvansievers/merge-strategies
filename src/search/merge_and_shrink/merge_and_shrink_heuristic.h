@@ -33,7 +33,7 @@ class MergeAndShrinkHeuristic : public Heuristic {
     int find_best_factor(const FactoredTransitionSystem &fts) const;
     void extract_factor(FactoredTransitionSystem &fts, int index);
     bool extract_unsolvable_factor(FactoredTransitionSystem &fts);
-    int extract_nontrivial_factors(FactoredTransitionSystem &fts);
+    void extract_nontrivial_factors(FactoredTransitionSystem &fts);
     void extract_factors(FactoredTransitionSystem &fts);
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
