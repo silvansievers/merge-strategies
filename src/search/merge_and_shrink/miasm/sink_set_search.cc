@@ -525,6 +525,10 @@ ComparatorSTLPriorityQueue::~ComparatorSTLPriorityQueue() {
 bool ComparatorSTLPriorityQueue::operator()(const size_t i,
                                             const size_t j) const {
     assert(vsir && priority);
+    if (i == j) {
+        // Irreflexity requirement: operator()(a, a) == false
+        return false;
+    }
     return !(ComparatorVarSet::operator ()(i, j));
 }
 }

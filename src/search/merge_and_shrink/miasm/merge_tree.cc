@@ -29,6 +29,10 @@ ComparatorSortPacking::~ComparatorSortPacking() {
 
 bool ComparatorSortPacking::operator()(
     const set<int> &set_i, const set<int> &set_j) const {
+    if (set_i == set_j) {
+        // Irreflexity requirement: operator()(a, a) == false
+        return false;
+    }
     /* if the sizes of two sets are the same,
      * compare the first (the smallest) variables in the sets */
     if (set_i.size() == set_j.size()) {
