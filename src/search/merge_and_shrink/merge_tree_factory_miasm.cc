@@ -10,6 +10,7 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/system.h"
 
 #include <iostream>
@@ -47,11 +48,11 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 //    cerr << "max packing" << max_packing << endl;
     if (max_packing.size() == task_proxy.get_variables().size()) {
         trivial_partitioning = true;
-        cout << "Found a trivial variable partitioning, ";
+        utils::g_log << "Found a trivial variable partitioning, ";
         if (fallback_merge_selector) {
-            cout << "using fallback merge strategy" << endl;
+            utils::g_log << "using fallback merge strategy" << endl;
         } else {
-            cout << "but no fallback merge strategy specified." << endl;
+            utils::g_log << "but no fallback merge strategy specified." << endl;
         }
     }
 

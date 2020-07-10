@@ -48,7 +48,7 @@ MergeTreeNode::MergeTreeNode(string tree_string)
       right_child(nullptr),
       ts_index(-1) {
     assert(!tree_string.empty());
-//        cout << "building tree for string " << tree_string << endl;
+//        utils::g_log << "building tree for string " << tree_string << endl;
     char &c = tree_string[0];
     if (c == 'y') {
         ABORT("ill-specified string");
@@ -85,7 +85,7 @@ MergeTreeNode::MergeTreeNode(string tree_string)
         right_child = new MergeTreeNode(right_sub_tree_string);
     } else {
         string to_be_index = tree_string.substr(0, tree_string.size() - 2);
-//            cout << "to be index: " << to_be_index << endl;
+//            utils::g_log << "to be index: " << to_be_index << endl;
         ts_index = stoi(to_be_index);
     }
 }

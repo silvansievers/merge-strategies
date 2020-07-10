@@ -74,13 +74,13 @@ void MergeSymmetries::dump_statistics() {
         sort(bliss_times.begin(), bliss_times.end());
         double summed_up_bliss_times = 0;
         size_t total_bliss_calls = bliss_times.size();
-        cout << "Total bliss calls: " << total_bliss_calls << endl;
+        utils::g_log << "Total bliss calls: " << total_bliss_calls << endl;
         for (size_t i = 0; i < total_bliss_calls; ++i) {
             summed_up_bliss_times += bliss_times[i];
         }
         double average_bliss_time = summed_up_bliss_times
                 / (double) total_bliss_calls;
-        cout << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
+        utils::g_log << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
         double median_bliss_time;
         if (total_bliss_calls % 2 == 0) {
             size_t lower_median_index = (total_bliss_calls - 1) / 2;
@@ -92,7 +92,7 @@ void MergeSymmetries::dump_statistics() {
             size_t median_index = total_bliss_calls / 2;
             median_bliss_time = bliss_times[median_index];
         }
-        cout << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
+        utils::g_log << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
 }
 
@@ -135,32 +135,32 @@ void MergeSymmetries::determine_merge_order() {
         // Dump generator properties -- warning! lots of output!
 //        const vector<int> &internally_affected_transition_systems =
 //            generator->get_internally_affected_transition_systems();
-//        cout << "Generator " << generator_index << endl;
+//        utils::g_log << "Generator " << generator_index << endl;
 //        for (size_t i = 0; i < mapped_transition_systems.size(); ++i) {
 //            int abs_index = mapped_transition_systems[i];
 //            int to_index = generator->get_value(abs_index);
-//            cout << transition_systems[abs_index]->tag() << " mapped to " <<
+//            utils::g_log << transition_systems[abs_index]->tag() << " mapped to " <<
 //                    transition_systems[to_index]->tag();
 //            if (generator->internally_affects(abs_index))
-//                cout << " (and also internally affected)";
-//            cout << endl;
+//                utils::g_log << " (and also internally affected)";
+//            utils::g_log << endl;
 //        }
 //        for (size_t i = 0; i < internally_affected_transition_systems.size(); ++i) {
 //            int abs_index = internally_affected_transition_systems[i];
 //            assert(!generator->maps(abs_index));
-//            cout << transition_systems[abs_index]->tag() << " internally affected" << endl;
+//            utils::g_log << transition_systems[abs_index]->tag() << " internally affected" << endl;
 //        }
     }
 
     if (chosen_generator_for_merging == -1) {
         // There are only atomic generators, nothing to merge for.
-        cout << "Found only atomic generators, not merging for symmetries."
+        utils::g_log << "Found only atomic generators, not merging for symmetries."
              << endl;
         return;
     }
 
     const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
-    cout << "Affected transition system indices of chosen generator: "
+    utils::g_log << "Affected transition system indices of chosen generator: "
          << generator->get_overall_affected_transition_systems() << endl;
 
     if (internal_merging == SECONDARY) {
@@ -263,9 +263,9 @@ void MergeSymmetries::determine_merge_order() {
             ++number_of_merges;
         }
 
-        cout << "Chosen internal merge order: " << endl;
+        utils::g_log << "Chosen internal merge order: " << endl;
         for (size_t i = 0; i < merge_order.size(); ++i) {
-            cout << merge_order[i].first << ", " << merge_order[i].second << endl;
+            utils::g_log << merge_order[i].first << ", " << merge_order[i].second << endl;
         }
     }
 }
@@ -297,7 +297,7 @@ pair<int, int> MergeSymmetries::get_next(
             } else if (bliss_call_time_limit) {
                 time_limit = bliss_call_time_limit;
             }
-            cout << "Setting bliss time limit to " << time_limit << endl;
+            utils::g_log << "Setting bliss time limit to " << time_limit << endl;
             double bliss_time = symmetry_group->find_symmetries(fts, time_limit);
             if (symmetry_group->is_bliss_limit_reached()) {
                 bliss_limit_reached = true;
@@ -314,7 +314,7 @@ pair<int, int> MergeSymmetries::get_next(
                         start_merging_for_symmetries = true;
                         if (pure_fallback_strategy) {
                             pure_fallback_strategy = false;
-                            cout << "not pure fallback strategy anymore" << endl;
+                            utils::g_log << "not pure fallback strategy anymore" << endl;
                         }
                     }
                 }
@@ -329,7 +329,7 @@ pair<int, int> MergeSymmetries::get_next(
                     // reached to true in any case.
                     bliss_limit_reached = true;
                 }
-                cout << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
+                utils::g_log << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
             }
 
             // If using a merge tree factory, compute a merge tree for this set

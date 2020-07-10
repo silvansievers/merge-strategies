@@ -15,6 +15,7 @@
 #include "../options/options.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
 #include "../utils/system.h"
 
 #include <algorithm>
@@ -38,51 +39,51 @@ MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
 }
 
 void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
-    cout << "Options for merge symmetries:" << endl;
-    cout << "    symmetries for merging: ";
+    utils::g_log << "Options for merge symmetries:" << endl;
+    utils::g_log << "    symmetries for merging: ";
     int symmetries_for_merging = options.get<SymmetriesForMerging>("symmetries_for_merging");
     switch (symmetries_for_merging) {
         case 0: {
-            cout << "none";
+            utils::g_log << "none";
             break;
         }
         case 1: {
-            cout << "smallest";
+            utils::g_log << "smallest";
             break;
         }
         case 2: {
-            cout << "largest";
+            utils::g_log << "largest";
             break;
         }
     }
-    cout << endl;
+    utils::g_log << endl;
     if (symmetries_for_merging) {
-        cout << "    internal merging: ";
+        utils::g_log << "    internal merging: ";
         switch (options.get<InternalMerging>("internal_merging")) {
             case 0: {
-                cout << "linear";
+                utils::g_log << "linear";
                 break;
             }
             case 1: {
-                cout << "non linear";
+                utils::g_log << "non linear";
                 break;
             }
             case 2: {
-                cout << "secondary";
+                utils::g_log << "secondary";
                 break;
             }
         }
-        cout << endl;
+        utils::g_log << endl;
     }
-    cout << "    maxium number of m&s iterations with bliss: "
+    utils::g_log << "    maxium number of m&s iterations with bliss: "
          << options.get<int>("max_bliss_iterations") << endl;
-    cout << "    time limit for single bliss calls (0 means unlimited): "
+    utils::g_log << "    time limit for single bliss calls (0 means unlimited): "
          << options.get<int>("bliss_call_time_limit") << endl;
-    cout << "    total time budget for bliss (0 means unlimited): "
+    utils::g_log << "    total time budget for bliss (0 means unlimited): "
          << options.get<int>("bliss_total_time_budget") << endl;
-    cout << "    stabilize transition systems: "
+    utils::g_log << "    stabilize transition systems: "
          << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
-    cout << "    fallback merge strategy: " << endl;
+    utils::g_log << "    fallback merge strategy: " << endl;
     if (merge_tree_factory) {
         merge_tree_factory->dump_options();
     }

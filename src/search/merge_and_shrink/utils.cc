@@ -181,7 +181,7 @@ pair<StateEquivalenceRelation, bool> compute_pruning_equivalence_relation(
         }
         if (verbosity >= utils::Verbosity::VERBOSE &&
             (unreachable_count || irrelevant_count)) {
-            cout << ts.tag()
+            utils::g_log << ts.tag()
                  << "unreachable: " << unreachable_count << " states, "
                  << "irrelevant: " << irrelevant_count << " states " << endl;
         }

@@ -7,6 +7,8 @@
 #include "../options/options.h"
 #include "../options/plugin.h"
 
+#include "../utils/logging.h"
+
 using namespace std;
 
 namespace merge_and_shrink {
@@ -144,7 +146,7 @@ void MergeSelectorScoreBasedWeightedSum::dump_specific_options() const {
         const shared_ptr<MergeScoringFunction> &scoring_function =
          merge_scoring_functions[i];
         scoring_function->dump_options();
-        cout << "associated weight: " << weights[i] << endl;
+        utils::g_log << "associated weight: " << weights[i] << endl;
     }
 }
 

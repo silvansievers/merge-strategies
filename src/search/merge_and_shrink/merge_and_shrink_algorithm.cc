@@ -161,9 +161,9 @@ bool MergeAndShrinkAlgorithm::too_many_transitions(const FactoredTransitionSyste
     int num_transitions = fts.get_transition_system(index).compute_total_transitions();
     if (num_transitions > num_transitions_to_abort) {
         if (verbosity >= utils::Verbosity::NORMAL) {
-            cout << "Factor has too many transitions, stopping computation."
+            utils::g_log << "Factor has too many transitions, stopping computation."
                  << endl;
-            cout << endl;
+            utils::g_log << endl;
         }
         return true;
     }
@@ -323,7 +323,7 @@ void MergeAndShrinkAlgorithm::main_loop(
             // The test for size >= 2 is to ensure we actually record
             // this kind of statistics -- currently only with bisimulation
             // shrinking.
-            cout << "not perfect anymore in iteration " << iteration_counter << endl;
+            utils::g_log << "not perfect anymore in iteration " << iteration_counter << endl;
             still_perfect = false;
         }
 
@@ -364,7 +364,7 @@ void MergeAndShrinkAlgorithm::main_loop(
         if (verbosity >= utils::Verbosity::NORMAL) {
             if (verbosity >= utils::Verbosity::VERBOSE) {
                 fts.statistics(merged_index);
-                cout << "Difference of init h values: " << difference << endl;
+                utils::g_log << "Difference of init h values: " << difference << endl;
             }
             log_main_loop_progress("after merging");
         }
@@ -423,17 +423,17 @@ void MergeAndShrinkAlgorithm::main_loop(
                 allowed_indices.insert(merged_index);
             } else {
                 if (verbosity >= utils::Verbosity::NORMAL) {
-                    cout << fts.get_transition_system(merged_index).tag()
+                    utils::g_log << fts.get_transition_system(merged_index).tag()
                          << "too many number of transitions, excluding "
                             "from further consideration." << endl;
                 }
             }
             if (allowed_indices.size() <= 1) {
                 if (verbosity >= utils::Verbosity::NORMAL) {
-                    cout << "Not enough factors remaining with a low enough "
+                    utils::g_log << "Not enough factors remaining with a low enough "
                             "number of transitions, stopping computation."
                          << endl;
-                    cout << endl;
+                    utils::g_log << endl;
                 }
                 break;
             }
@@ -460,17 +460,17 @@ void MergeAndShrinkAlgorithm::main_loop(
                  << maximum_intermediate_size << endl;
     score_based_merging_tiebreaking =
         merge_strategy->get_tiebreaking_statistics();
-    cout << "Iterations with merge tiebreaking: "
+    utils::g_log << "Iterations with merge tiebreaking: "
          << score_based_merging_tiebreaking.first << endl;
-    cout << "Total tiebreaking merge candidates: "
+    utils::g_log << "Total tiebreaking merge candidates: "
          << score_based_merging_tiebreaking.second << endl;
-    cout << "Maximum intermediate number of transitions: "
+    utils::g_log << "Maximum intermediate number of transitions: "
          << maximum_transitions_size << endl;
-    cout << "Init h value improvements: " << init_hvalue_increase << endl;
-    cout << "Course of label reduction: " << remaining_labels << endl;
+    utils::g_log << "Init h value improvements: " << init_hvalue_increase << endl;
+    utils::g_log << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
         shrink_strategy->get_miss_qualified_states_ratios();
-    cout << "Course of miss qualified states shrinking: "
+    utils::g_log << "Course of miss qualified states shrinking: "
          << miss_qualified_states_ratios << endl;
     double summed_values = 0;
     for (double value : miss_qualified_states_ratios) {
@@ -481,15 +481,15 @@ void MergeAndShrinkAlgorithm::main_loop(
     if (number_of_shrinks) {
         average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
     }
-    cout << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
-    cout << "Merge order: [";
+    utils::g_log << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
+    utils::g_log << "Merge order: [";
     bool linear_order = true;
     int next_index = task_proxy.get_variables().size();
     for (size_t i = 0; i < merge_order.size(); ++i) {
         pair<int, int> merge = merge_order[i];
-        cout << "(" << merge.first << ", " << merge.second << ")";
+        utils::g_log << "(" << merge.first << ", " << merge.second << ")";
         if (i != merge_order.size() - 1) {
-            cout << ", ";
+            utils::g_log << ", ";
         }
         if (linear_order && i != 0) {
             if (merge.first != next_index && merge.second != next_index) {
@@ -498,13 +498,13 @@ void MergeAndShrinkAlgorithm::main_loop(
             ++next_index;
         }
     }
-    cout << "]" << endl;
+    utils::g_log << "]" << endl;
     if (linear_order) {
-        cout << "Linear merge order" << endl;
+        utils::g_log << "Linear merge order" << endl;
     } else {
-         cout << "Non-linear merge order" << endl;
+         utils::g_log << "Non-linear merge order" << endl;
     }
-    cout << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
+    utils::g_log << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
     double summed_pruning = 0;
     for (double pruning : relative_pruning_per_iteration) {
         summed_pruning += pruning;
@@ -515,17 +515,17 @@ void MergeAndShrinkAlgorithm::main_loop(
     if (!relative_pruning_per_iteration.empty()) {
         average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
     }
-    cout << "Average relative pruning: " << average_pruning << endl;
+    utils::g_log << "Average relative pruning: " << average_pruning << endl;
 
-    cout << "Number of attempts to merge for symmetries: "
+    utils::g_log << "Number of attempts to merge for symmetries: "
          << num_attempts_merging_for_symmetries << endl;
-    cout << "Number of times non-perfect shrinking interfered merging for symmetries: "
+    utils::g_log << "Number of times non-perfect shrinking interfered merging for symmetries: "
          << num_imperfect_shrinking_merging_for_symmetries << endl;
-    cout << "Number of times pruning interfered merging for symmetries: "
+    utils::g_log << "Number of times pruning interfered merging for symmetries: "
          << num_pruning_merging_for_symmetries << endl;
-    cout << "Number of times merging for symmetries failed for any reason: "
+    utils::g_log << "Number of times merging for symmetries failed for any reason: "
          << num_failed_merging_for_symmetries << endl;
-    cout << endl;
+    utils::g_log << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;

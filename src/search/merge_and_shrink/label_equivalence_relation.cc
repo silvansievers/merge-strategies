@@ -2,6 +2,8 @@
 
 #include "labels.h"
 
+#include "../utils/logging.h"
+
 #include <cassert>
 #include <iostream>
 
@@ -145,10 +147,10 @@ int LabelEquivalenceRelation::add_label_group(const vector<int> &new_labels) {
 //            int label_no = *label_it;
 //            if (label_to_positions[label_no].first != static_cast<int>(group_id) ||
 //                *label_to_positions[label_no].second != *label_it) {
-//                cout << label_no << " has inconsistent entries" << endl;
-//                cout << label_to_positions[label_no].first << " "
+//                utils::g_log << label_no << " has inconsistent entries" << endl;
+//                utils::g_log << label_to_positions[label_no].first << " "
 //                     << group_id << endl;
-//                cout << *label_to_positions[label_no].second << " "
+//                utils::g_log << *label_to_positions[label_no].second << " "
 //                     << *label_it << endl;
 //                consistent = false;
 //                break;
@@ -175,13 +177,13 @@ bool LabelEquivalenceRelation::operator==(const LabelEquivalenceRelation &other)
 }
 
 void LabelEquivalenceRelation::dump() const {
-    cout << "label equiv rel:" << endl;
+    utils::g_log << "label equiv rel:" << endl;
     for (const LabelGroup &group : grouped_labels) {
         if (!group.empty()) {
             for (LabelConstIter label_it = group.begin(); label_it != group.end(); ++label_it) {
-                cout << *label_it << ", ";
+                utils::g_log << *label_it << ", ";
             }
-            cout << endl;
+            utils::g_log << endl;
         }
     }
 }
