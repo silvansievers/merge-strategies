@@ -27,18 +27,18 @@ using utils::ExitCode;
 namespace merge_and_shrink {
 MergeAndShrinkHeuristic::MergeAndShrinkHeuristic(const options::Options &opts)
     : Heuristic(opts),
-      verbosity(static_cast<utils::Verbosity>(opts.get_enum("verbosity"))),
-      partial_mas_method(static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"))) {
+      verbosity(opts.get<utils::Verbosity>("verbosity")),
+      partial_mas_method(opts.get<PartialMASMethod>("partial_mas_method")) {
     if (opts.contains("factor_scoring_functions")) {
         factor_scoring_functions = opts.get_list<shared_ptr<FactorScoringFunction>>(
             "factor_scoring_functions");
     }
 
-    cout << "Initializing merge-and-shrink heuristic..." << endl;
+    utils::g_log << "Initializing merge-and-shrink heuristic..." << endl;
     MergeAndShrinkAlgorithm algorithm(opts);
     FactoredTransitionSystem fts = algorithm.build_factored_transition_system(task_proxy);
     extract_factors(fts);
-    cout << "Done initializing merge-and-shrink heuristic." << endl << endl;
+    utils::g_log << "Done initializing merge-and-shrink heuristic." << endl << endl;
 }
 
 vector<int> get_remaining_candidates(
@@ -113,9 +113,9 @@ bool MergeAndShrinkHeuristic::extract_unsolvable_factor(FactoredTransitionSystem
             mas_representations.reserve(1);
             extract_factor(fts, index);
             if (verbosity >= utils::Verbosity::NORMAL) {
-                cout << fts.get_transition_system(index).tag()
-                     << "use this unsolvable factor as heuristic."
-                     << endl;
+                utils::g_log << fts.get_transition_system(index).tag()
+                             << "use this unsolvable factor as heuristic."
+                             << endl;
             }
             return true;
         }
@@ -128,8 +128,8 @@ void MergeAndShrinkHeuristic::extract_nontrivial_factors(FactoredTransitionSyste
     for (int index : fts) {
         if (fts.is_factor_trivial(index)) {
             if (verbosity >= utils::Verbosity::VERBOSE) {
-                cout << fts.get_transition_system(index).tag()
-                     << "is trivial." << endl;
+                utils::g_log << fts.get_transition_system(index).tag()
+                             << "is trivial." << endl;
             }
         } else {
             extract_factor(fts, index);
@@ -150,7 +150,7 @@ void MergeAndShrinkHeuristic::extract_factors(FactoredTransitionSystem &fts) {
 
     int num_active_factors = fts.get_num_active_entries();
     if (verbosity >= utils::Verbosity::NORMAL) {
-        cout << "Number of remaining factors: " << num_active_factors << endl;
+        utils::g_log << "Number of remaining factors: " << num_active_factors << endl;
     }
 
     bool unsolvalbe = extract_unsolvable_factor(fts);
@@ -160,7 +160,7 @@ void MergeAndShrinkHeuristic::extract_factors(FactoredTransitionSystem &fts) {
 
     int num_factors_kept = mas_representations.size();
     if (verbosity >= utils::Verbosity::NORMAL) {
-        cout << "Number of factors kept: " << num_factors_kept << endl;
+        utils::g_log << "Number of factors kept: " << num_factors_kept << endl;
     }
 }
 
@@ -290,7 +290,7 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
     partial_mas_method_docs.push_back(
         "maximum: retain all remaining factors and compute the maximum "
         "heuristic over all these abstractions.");
-    parser.add_enum_option(
+    parser.add_enum_option<PartialMASMethod>(
         "partial_mas_method",
         partial_mas_method,
         "Method to determine the final heuristic given an early abortion, "
@@ -314,7 +314,7 @@ static shared_ptr<Heuristic> _parse(options::OptionParser &parser) {
     if (parser.dry_run()) {
         double main_loop_max_time = opts.get<double>("main_loop_max_time");
         int num_transitions_to_abort = opts.get<int>("num_transitions_to_abort");
-        PartialMASMethod partial_mas_method = static_cast<PartialMASMethod>(opts.get_enum("partial_mas_method"));
+        PartialMASMethod partial_mas_method = opts.get<PartialMASMethod>("partial_mas_method");
         if (partial_mas_method != PartialMASMethod::None
             && (main_loop_max_time == numeric_limits<double>::infinity()
                 && num_transitions_to_abort == INF)) {

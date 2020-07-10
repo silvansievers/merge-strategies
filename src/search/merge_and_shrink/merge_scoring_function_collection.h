@@ -104,13 +104,13 @@ public:
 };
 
 
+enum class InitH {
+    IMPROVEMENT,
+    ABSOLUTE,
+    SUM
+};
 
 class MergeScoringFunctionInitH : public MergeScoringFunction {
-    enum class InitH {
-        IMPROVEMENT,
-        ABSOLUTE,
-        SUM
-    };
     InitH inith;
     std::shared_ptr<ShrinkStrategy> shrink_stratey;
     const int max_states;
@@ -135,13 +135,13 @@ public:
 };
 
 
+enum class FGH {
+    F,
+    G,
+    H
+};
 
 class MergeScoringFunctionMaxFGH : public MergeScoringFunction {
-    enum class FGH {
-        F,
-        G,
-        H
-    };
     FGH fgh;
     std::shared_ptr<ShrinkStrategy> shrink_stratey;
     const int max_states;
@@ -166,13 +166,13 @@ public:
 };
 
 
+enum class AvgH {
+    IMPROVEMENT,
+    ABSOLUTE,
+    SUM
+};
 
 class MergeScoringFunctionAvgH : public MergeScoringFunction {
-    enum class AvgH {
-        IMPROVEMENT,
-        ABSOLUTE,
-        SUM
-    };
     AvgH avgh;
     std::shared_ptr<ShrinkStrategy> shrink_stratey;
     const int max_states;

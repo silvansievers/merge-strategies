@@ -40,7 +40,7 @@ MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
 void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     cout << "Options for merge symmetries:" << endl;
     cout << "    symmetries for merging: ";
-    int symmetries_for_merging = options.get_enum("symmetries_for_merging");
+    int symmetries_for_merging = options.get<SymmetriesForMerging>("symmetries_for_merging");
     switch (symmetries_for_merging) {
         case 0: {
             cout << "none";
@@ -58,13 +58,17 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     cout << endl;
     if (symmetries_for_merging) {
         cout << "    internal merging: ";
-        switch (options.get_enum("internal_merging")) {
+        switch (options.get<InternalMerging>("internal_merging")) {
             case 0: {
                 cout << "linear";
                 break;
             }
             case 1: {
                 cout << "non linear";
+                break;
+            }
+            case 2: {
+                cout << "secondary";
                 break;
             }
         }
@@ -121,7 +125,7 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     symmetries_for_merging.push_back("NO_MERGING");
     symmetries_for_merging.push_back("SMALLEST");
     symmetries_for_merging.push_back("LARGEST");
-    parser.add_enum_option("symmetries_for_merging",
+    parser.add_enum_option<SymmetriesForMerging>("symmetries_for_merging",
                            symmetries_for_merging,
                            "choose the type of symmetries that should determine "
                            "the set of transition systems to be merged: "
@@ -131,7 +135,7 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
     internal_merging.push_back("SECONDARY");
-    parser.add_enum_option("internal_merging",
+    parser.add_enum_option<InternalMerging>("internal_merging",
                            internal_merging,
                            "choose the order in which to merge the set of "
                            "transition systems to be merged: "

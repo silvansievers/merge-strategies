@@ -17,23 +17,23 @@ class MergeSelector;
 class MergeTree;
 class MergeTreeFactory;
 class SymmetryGroup;
+
+enum SymmetriesForMerging {
+    NO_MERGING,
+    SMALLEST,
+    LARGEST
+};
+
+enum InternalMerging {
+    LINEAR,
+    NON_LINEAR,
+    SECONDARY
+};
+
 class MergeSymmetries : public MergeStrategy {
     const int num_merges;
-
-    enum SymmetriesForMerging {
-        NO_MERGING,
-        SMALLEST,
-        LARGEST
-    };
     const SymmetriesForMerging symmetries_for_merging;
-
-    enum InternalMerging {
-        LINEAR,
-        NON_LINEAR,
-        SECONDARY
-    };
     const InternalMerging internal_merging;
-
     const int max_bliss_iterations;
     const int bliss_call_time_limit;
 

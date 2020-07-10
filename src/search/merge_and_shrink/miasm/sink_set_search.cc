@@ -33,10 +33,10 @@ SinkSetSearch::SinkSetSearch(const Options &opts, const TaskProxy &task_proxy)
       memory_limit(opts.get<int>("memory_limit")),
       size_limit(opts.get<int>("size_limit")),
       clique_limit(opts.get<int>("clique_limit")),
-      opt_prior(EnumPriority(opts.get_enum("priority"))),
-      opt_expa(EnumExpand(opts.get_enum("expand"))),
-      opt_gain(EnumGain(opts.get_enum("gain"))),
-      opt_prune(EnumPrune(opts.get_enum("prune"))),
+      opt_prior(opts.get<EnumPriority>("priority")),
+      opt_expa(opts.get<EnumExpand>("expand")),
+      opt_gain(opts.get<EnumGain>("gain")),
+      opt_prune(opts.get<EnumPrune>("prune")),
       pq(ComparatorSTLPriorityQueue(task_proxy, &vsir, &opt_prior)) {
 //    cerr << __PRETTY_FUNCTION__ << endl;
 //    dump_options(cerr, "\n    ");

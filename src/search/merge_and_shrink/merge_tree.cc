@@ -169,9 +169,9 @@ void MergeTreeNode::inorder(int offset, int current_indentation) const {
         right_child->inorder(offset, current_indentation + offset);
     }
     for (int i = 0; i < current_indentation; ++i) {
-        cout << " ";
+        utils::g_log << " ";
     }
-    cout << ts_index << endl;
+    utils::g_log << ts_index << endl;
     if (left_child) {
         left_child->inorder(offset, current_indentation + offset);
     }
@@ -333,8 +333,8 @@ void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
 }
 
 void MergeTree::inorder_traversal(int indentation_offset) const {
-    cout << "Merge tree, read from left to right (90° rotated tree): "
-         << endl;
+    utils::g_log << "Merge tree, read from left to right (90° rotated tree): "
+                 << endl;
     return root->inorder(indentation_offset, 0);
 }
 }

@@ -302,7 +302,7 @@ static options::Plugin<MergeScoringFunction> _plugin_tsq("transitions_states_quo
 
 MergeScoringFunctionInitH::MergeScoringFunctionInitH(
     const options::Options &options)
-    : inith(static_cast<InitH>(options.get_enum("choice"))),
+    : inith(options.get<InitH>("choice")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
       max_states_before_merge(options.get<int>("max_states_before_merge")),
@@ -380,7 +380,7 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
     inith_values.push_back("improvement");
     inith_values.push_back("absolute");
     inith_values.push_back("sum");
-    parser.add_enum_option(
+    parser.add_enum_option<InitH>(
         "choice",
         inith_values,
         "improvement: init h value of the merge minus the maximum of previous "
@@ -416,7 +416,7 @@ static options::Plugin<MergeScoringFunction> _plugin_ih("init_h", _parse_ih);
 
 MergeScoringFunctionMaxFGH::MergeScoringFunctionMaxFGH(
     const options::Options &options)
-    : fgh(static_cast<FGH>(options.get_enum("fgh"))),
+    : fgh(options.get<FGH>("fgh")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
       max_states_before_merge(options.get<int>("max_states_before_merge")),
@@ -502,7 +502,7 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
     fgh_values.push_back("f");
     fgh_values.push_back("g");
     fgh_values.push_back("h");
-    parser.add_enum_option("fgh", fgh_values, "f, g, or h", "f");
+    parser.add_enum_option<FGH>("fgh", fgh_values, "f, g, or h", "f");
 
     // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
     // instead of having the identical options here again.
@@ -531,7 +531,7 @@ static options::Plugin<MergeScoringFunction> _plugin_fgh("max_fgh", _parse_fgh);
 
 MergeScoringFunctionAvgH::MergeScoringFunctionAvgH(
     const options::Options &options)
-    : avgh(static_cast<AvgH>(options.get_enum("choice"))),
+    : avgh(options.get<AvgH>("choice")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
       max_states_before_merge(options.get<int>("max_states_before_merge")),
@@ -602,7 +602,7 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
     avgh_value.push_back("improvement");
     avgh_value.push_back("absolute");
     avgh_value.push_back("sum");
-    parser.add_enum_option(
+    parser.add_enum_option<AvgH>(
         "choice",
         avgh_value,
         "improvement, sum, or absolute h value",

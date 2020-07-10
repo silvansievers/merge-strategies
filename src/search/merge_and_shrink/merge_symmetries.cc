@@ -30,8 +30,8 @@ MergeSymmetries::MergeSymmetries(
     std::shared_ptr<MergeSelector> merge_selector)
     : MergeStrategy(fts),
       num_merges(task_proxy.get_variables().size() - 1),
-      symmetries_for_merging(SymmetriesForMerging(options.get_enum("symmetries_for_merging"))),
-      internal_merging(InternalMerging(options.get_enum("internal_merging"))),
+      symmetries_for_merging(options.get<SymmetriesForMerging>("symmetries_for_merging")),
+      internal_merging(options.get<InternalMerging>("internal_merging")),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),

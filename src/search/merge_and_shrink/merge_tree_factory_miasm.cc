@@ -22,8 +22,8 @@ namespace merge_and_shrink {
 MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
     : MergeTreeFactory(opts),
       options(opts),
-      miasm_internal(MiasmInternal(opts.get_enum("miasm_internal"))),
-      miasm_external(MiasmExternal(opts.get_enum("miasm_external"))),
+      miasm_internal(opts.get<MiasmInternal>("miasm_internal")),
+      miasm_external(opts.get<MiasmExternal>("miasm_external")),
       fallback_merge_selector(nullptr),
       trivial_partitioning(false) {
     // TODO: We would like to store sink_set_search instead of options here,
@@ -152,7 +152,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     vector<string> enum_strings;
     enum_strings.push_back("level");
     enum_strings.push_back("reverse_level");
-    parser.add_enum_option("miasm_internal",
+    parser.add_enum_option<MiasmInternal>("miasm_internal",
                            enum_strings,
                            "",
                            "level");
@@ -162,7 +162,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("num_var_cgl");
     enum_strings.push_back("rnr_size_cgl");
     enum_strings.push_back("cgrl");
-    parser.add_enum_option("miasm_external",
+    parser.add_enum_option<MiasmExternal>("miasm_external",
                            enum_strings,
                            "",
                            "num_var_cgl");
@@ -206,7 +206,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("fifo");
     enum_strings.push_back("ratio");
     enum_strings.push_back("gain");
-    parser.add_enum_option("priority", enum_strings,
+    parser.add_enum_option<EnumPriority>("priority", enum_strings,
                            "the order in which the subsets "
                            "are dequeued in the priority queue",
                            "gain");
@@ -216,7 +216,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.clear();
     enum_strings.push_back("single");
     enum_strings.push_back("none");
-    parser.add_enum_option("expand", enum_strings,
+    parser.add_enum_option<EnumExpand>("expand", enum_strings,
                            "which new subsets should be added into the search"
                            "priority queue",
                            "single");
@@ -227,7 +227,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("pool_accur");
     enum_strings.push_back("all_guess");
     enum_strings.push_back("all_accur");
-    parser.add_enum_option("gain", enum_strings,
+    parser.add_enum_option<EnumGain>("gain", enum_strings,
                            "",
                            "all_accur");
 
@@ -235,7 +235,7 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.clear();
     enum_strings.push_back("none");
     enum_strings.push_back("cgwc_mutex");
-    parser.add_enum_option("prune", enum_strings,
+    parser.add_enum_option<EnumPrune>("prune", enum_strings,
                            "",
                            "none");
 

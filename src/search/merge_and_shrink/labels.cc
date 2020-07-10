@@ -3,6 +3,7 @@
 #include "types.h"
 
 #include "../utils/collections.h"
+#include "../utils/logging.h"
 #include "../utils/memory.h"
 
 #include <cassert>
@@ -98,12 +99,12 @@ bool Labels::operator==(const Labels &other) const {
 }
 
 void Labels::dump_labels() const {
-    cout << "active labels:" << endl;
+    utils::g_log << "active labels:" << endl;
     for (size_t label_no = 0; label_no < labels.size(); ++label_no) {
         if (labels[label_no]) {
-            cout << "label " << label_no
-                 << ", cost " << labels[label_no]->get_cost()
-                 << endl;
+            utils::g_log << "label " << label_no
+                         << ", cost " << labels[label_no]->get_cost()
+                         << endl;
         }
     }
 }
