@@ -1,0 +1,6 @@
+there are two extra heads on branch ms-symetries
+281999db706d (bug fix)
+9b1897648388 (different coloring of nodes in bliss graph)
+
+they were used in experiments in the scripts repo, last revision before removal of those experiment scripts:
+16bb2d3f5b72
