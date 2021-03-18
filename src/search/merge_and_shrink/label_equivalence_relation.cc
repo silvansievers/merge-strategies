@@ -164,8 +164,8 @@ bool LabelEquivalenceRelation::operator==(const LabelEquivalenceRelation &other)
     assert(grouped_labels == other.grouped_labels);
     assert(label_to_positions.size() == other.label_to_positions.size());
     bool label_to_positions_consistent = true;
-    for (size_t i = 0; i < label_to_positions.size(); ++i) {
-        if (label_to_positions[i].first != other.label_to_positions[i].first) {
+    for (int label_no = 0; label_no < labels.get_size(); ++label_no) {
+        if (labels.is_current_label(label_no) && label_to_positions[label_no].first != other.label_to_positions[label_no].first) {
             // we cannot compare the iterators, i.e. the 'second' entries,
             // because they may be invalid
             label_to_positions_consistent = false;
