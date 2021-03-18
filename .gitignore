@@ -5,5 +5,7 @@ __pycache__/
 /builds/
 /experiments/issue*/.venv/
 /experiments/issue*/data/
+/experiments/merge-strategies/.venv/
+/experiments/merge-strategies/data/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
