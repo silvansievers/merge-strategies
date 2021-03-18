@@ -36,6 +36,11 @@ MergeSelectorScoreBasedWeightedSum::MergeSelectorScoreBasedWeightedSum(
     } else {
         weights.resize(merge_scoring_functions.size(), 1);
     }
+    if (normalize) {
+        // TODO: normalizing infinite values doesn't work.
+        cerr << "Normalizing scores currently doesn't work." << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
+    }
 }
 
 void MergeSelectorScoreBasedWeightedSum::initialize(
@@ -55,26 +60,26 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
     int num_merge_candidates = merge_candidates.size();
 
     // Compute all raw score values
-    vector<vector<double>> unnormalized_scores(num_functions);
+    vector<vector<double>> scores(num_functions);
     for (int function_index = 0; function_index < num_functions;
          ++function_index) {
         const shared_ptr<MergeScoringFunction> &scoring_function =
             merge_scoring_functions[function_index];
-        unnormalized_scores[function_index] = scoring_function->compute_scores(
+        scores[function_index] = scoring_function->compute_scores(
             fts, merge_candidates);
     }
+//    cout << "raw scores " << scores << endl;
 
     // If desired, normalize all scores.
-    vector<vector<double>> normalized_scores;
     if (normalize) {
+        vector<vector<double>> normalized_scores;
         normalized_scores.resize(num_functions);
         for (int function_index = 0; function_index < (num_functions);
              ++function_index) {
-            const vector<double> &function_unn_scores =
-                unnormalized_scores[function_index];
+            const vector<double> &raw_scores = scores[function_index];
             double min_score = INF;
             double max_score = MINUSINF;
-            for (double score : function_unn_scores) {
+            for (double score : raw_scores) {
                 if (score < min_score) {
                     min_score = score;
                 }
@@ -86,44 +91,71 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
             vector<double> &function_normalized_scores =
                 normalized_scores[function_index];
             function_normalized_scores.reserve(num_merge_candidates);
-            for (double score: function_unn_scores) {
+            for (double score: raw_scores) {
                 double normalized_score = normalize_value(
                     min_score, max_score, score);
                 function_normalized_scores.push_back(normalized_score);
             }
         }
-        vector<vector<double>>().swap(unnormalized_scores);
+        scores.swap(normalized_scores);
     }
+//    cout << "normalized scores " << scores << endl;
 
     // Compute the weighted sum over all (normalized) scores.
-    vector<double> weighted_sum(num_merge_candidates, 0);
-    for (int function_index = 0; function_index < num_functions;
-         ++function_index) {
-        int function_weight = weights[function_index];
-        for (int merge_index = 0; merge_index < num_merge_candidates;
-             ++merge_index) {
-            weighted_sum[merge_index] += function_weight *
-                (normalize ?
-                 normalized_scores[function_index][merge_index] :
-                 unnormalized_scores[function_index][merge_index]);
+    vector<double> weighted_sums;
+    weighted_sums.reserve(num_merge_candidates);
+    for (int merge_index = 0; merge_index < num_merge_candidates;
+         ++merge_index) {
+        double weighted_sum = 0;
+        // First check if any weight is MINUSINF which takes precedence.
+        for (int function_index = 0; function_index < num_functions;
+             ++function_index) {
+            double score = scores[function_index][merge_index];
+            if (score == MINUSINF) {
+                weighted_sum = MINUSINF;
+                break;
+            }
         }
+        if (weighted_sum == 0) {
+            bool all_scores_infinity = true;
+            for (int function_index = 0; function_index < num_functions;
+                 ++function_index) {
+                double score = scores[function_index][merge_index];
+                int function_weight = weights[function_index];
+                if (score != INF) {
+                    weighted_sum += function_weight * score;
+                    all_scores_infinity = false;
+                }
+            }
+            if (all_scores_infinity) {
+                weighted_sum = INF;
+            }
+        }
+        weighted_sums.push_back(weighted_sum);
     }
+//    cout << "weighted sums: " << weighted_sums << endl;
 
-    // Find the loweste scoring merge candidate.
+    // Find the lowest scoring merge candidate.
     int best_merge_index = -1;
     double best_score = INF;
     for (int merge_index = 0; merge_index < num_merge_candidates;
          ++merge_index) {
-        if (weighted_sum[merge_index] < best_score) {
-            best_score = weighted_sum[merge_index];
+        if (weighted_sums[merge_index] < best_score) {
+            best_score = weighted_sums[merge_index];
             best_merge_index = merge_index;
         }
+    }
+    if (best_score == INF) {
+        cerr << "All weighted summed scores are positive infinity. This "
+                "cannot happen when including the total order scoring "
+                "function for tie-breaking." << endl;
+        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
 
     int best_score_counter = 0;
     for (int merge_index = 0; merge_index < num_merge_candidates;
          ++merge_index) {
-        if (weighted_sum[merge_index] == best_score) {
+        if (weighted_sums[merge_index] == best_score) {
             ++best_score_counter;
         }
         if (best_score_counter > 1) {
@@ -189,8 +221,8 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         options::OptionParser::NONE);
     parser.add_option<bool>(
         "normalize",
-        "Scores as computing by the score functions will be normalized "
-        "to bin in the interval [0, 1] iff true.",
+        "Scores as compute by the score functions will be normalized "
+        "to be in the interval [0, 1] iff true.",
         "false");
 
     options::Options opts = parser.parse();
