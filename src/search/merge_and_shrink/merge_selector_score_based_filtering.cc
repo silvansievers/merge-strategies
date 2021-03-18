@@ -21,13 +21,6 @@ MergeSelectorScoreBasedFiltering::MergeSelectorScoreBasedFiltering(
       total_tiebreaking_pair_count(0) {
 }
 
-MergeSelectorScoreBasedFiltering::MergeSelectorScoreBasedFiltering(
-    vector<shared_ptr<MergeScoringFunction>> scoring_functions)
-    : merge_scoring_functions(move(scoring_functions)),
-      iterations_with_tiebreaking(0),
-      total_tiebreaking_pair_count(0) {
-}
-
 vector<pair<int, int>> MergeSelectorScoreBasedFiltering::get_remaining_candidates(
     const vector<pair<int, int>> &merge_candidates,
     const vector<double> &scores) const {
