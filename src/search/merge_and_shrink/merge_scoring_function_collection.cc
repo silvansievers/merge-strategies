@@ -742,7 +742,7 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         if (ts.is_solvable(distances)) {
             options::Options options;
             options.set<bool>("greedy", false);
-            options.set<int>("at_limit", 0);
+            options.set<AtLimit>("at_limit", AtLimit::RETURN);
             ShrinkBisimulation shrink_bisim(options);
             int size_before = ts.get_size();
             int size_after =
