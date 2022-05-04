@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace utils {
-enum class Verbosity;
+class LogProxy;
 }
 
 namespace merge_and_shrink {
@@ -55,7 +55,7 @@ extern bool shrink_before_merge_step(
     int max_states_before_merge,
     int shrink_threshold_before_merge,
     const ShrinkStrategy &shrink_strategy,
-    utils::Verbosity verbosity);
+    utils::LogProxy &log);
 
 /*
   Prune unreachable and/or irrelevant states of the factor at index. This
@@ -71,7 +71,7 @@ extern std::pair<bool, bool> prune_step(
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
     bool pruning_as_abstraction,
-    utils::Verbosity verbosity);
+    utils::LogProxy &log);
 
 /*
   Compute the abstraction mapping based on the given state equivalence
@@ -97,9 +97,9 @@ extern std::pair<std::unique_ptr<TransitionSystem>, std::unique_ptr<Distances>> 
     int max_states,
     int max_states_before_merge,
     int shrink_threshold_before_merge,
-    const bool prune_unreachable_states,
-    const bool prune_irrelevant_states,
-    const bool pruning_as_abstraction);
+    bool prune_unreachable_states,
+    bool prune_irrelevant_states,
+    bool pruning_as_abstraction);
 
 extern int compute_number_of_product_transitions(
     const TransitionSystem &ts1, const TransitionSystem &ts2);

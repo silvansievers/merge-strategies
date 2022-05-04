@@ -117,7 +117,7 @@ string MergeTreeFactoryMiasm::name() const {
     return "miasm";
 }
 
-void MergeTreeFactoryMiasm::dump_tree_specific_options() const {
+void MergeTreeFactoryMiasm::dump_tree_specific_options(utils::LogProxy &) const {
     // TODO
 }
 

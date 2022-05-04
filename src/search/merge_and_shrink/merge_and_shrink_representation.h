@@ -7,6 +7,10 @@
 
 class State;
 
+namespace utils {
+class LogProxy;
+}
+
 namespace merge_and_shrink {
 class Distances;
 class MergeAndShrinkRepresentation {
@@ -34,7 +38,7 @@ public:
        to PRUNED_STATE. */
     virtual bool is_total() const = 0;
     virtual bool operator==(const MergeAndShrinkRepresentation &other) const = 0;
-    virtual void dump() const = 0;
+    virtual void dump(utils::LogProxy &log) const = 0;
 };
 
 
@@ -64,7 +68,7 @@ public:
             return false;
         }
     }
-    virtual void dump() const override;
+    virtual void dump(utils::LogProxy &log) const override;
 };
 
 
@@ -97,7 +101,7 @@ public:
             return false;
         }
     }
-    virtual void dump() const override;
+    virtual void dump(utils::LogProxy &log) const override;
 };
 }
 

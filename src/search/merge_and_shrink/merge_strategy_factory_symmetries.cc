@@ -26,7 +26,7 @@ using namespace std;
 namespace merge_and_shrink {
 MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
     const options::Options &options)
-    : MergeStrategyFactory(),
+    : MergeStrategyFactory(options),
       options(options),
       merge_tree_factory(nullptr),
       merge_selector(nullptr) {
@@ -39,56 +39,56 @@ MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
 }
 
 void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
-    utils::g_log << "Options for merge symmetries:" << endl;
-    utils::g_log << "    symmetries for merging: ";
+    log << "Options for merge symmetries:" << endl;
+    log << "    symmetries for merging: ";
     int symmetries_for_merging = options.get<SymmetriesForMerging>("symmetries_for_merging");
     switch (symmetries_for_merging) {
         case 0: {
-            utils::g_log << "none";
+            log << "none";
             break;
         }
         case 1: {
-            utils::g_log << "smallest";
+            log << "smallest";
             break;
         }
         case 2: {
-            utils::g_log << "largest";
+            log << "largest";
             break;
         }
     }
-    utils::g_log << endl;
+    log << endl;
     if (symmetries_for_merging) {
-        utils::g_log << "    internal merging: ";
+        log << "    internal merging: ";
         switch (options.get<InternalMerging>("internal_merging")) {
             case 0: {
-                utils::g_log << "linear";
+                log << "linear";
                 break;
             }
             case 1: {
-                utils::g_log << "non linear";
+                log << "non linear";
                 break;
             }
             case 2: {
-                utils::g_log << "secondary";
+                log << "secondary";
                 break;
             }
         }
-        utils::g_log << endl;
+        log << endl;
     }
-    utils::g_log << "    maxium number of m&s iterations with bliss: "
-         << options.get<int>("max_bliss_iterations") << endl;
-    utils::g_log << "    time limit for single bliss calls (0 means unlimited): "
-         << options.get<int>("bliss_call_time_limit") << endl;
-    utils::g_log << "    total time budget for bliss (0 means unlimited): "
-         << options.get<int>("bliss_total_time_budget") << endl;
-    utils::g_log << "    stabilize transition systems: "
-         << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
-    utils::g_log << "    fallback merge strategy: " << endl;
+    log << "    maxium number of m&s iterations with bliss: "
+        << options.get<int>("max_bliss_iterations") << endl;
+    log << "    time limit for single bliss calls (0 means unlimited): "
+        << options.get<int>("bliss_call_time_limit") << endl;
+    log << "    total time budget for bliss (0 means unlimited): "
+        << options.get<int>("bliss_total_time_budget") << endl;
+    log << "    stabilize transition systems: "
+        << (options.get<bool>("stabilize_transition_systems") ? "yes" : "no") << endl;
+    log << "    fallback merge strategy: " << endl;
     if (merge_tree_factory) {
-        merge_tree_factory->dump_options();
+        merge_tree_factory->dump_options(log);
     }
     if (merge_selector) {
-        merge_selector->dump_options();
+        merge_selector->dump_options(log);
     }
 }
 

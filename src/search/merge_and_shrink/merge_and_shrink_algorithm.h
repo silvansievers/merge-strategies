@@ -1,6 +1,8 @@
 #ifndef MERGE_AND_SHRINK_MERGE_AND_SHRINK_ALGORITHM_H
 #define MERGE_AND_SHRINK_MERGE_AND_SHRINK_ALGORITHM_H
 
+#include "../utils/logging.h"
+
 #include <memory>
 
 class TaskProxy;
@@ -12,7 +14,6 @@ class Options;
 
 namespace utils {
 class CountdownTimer;
-enum class Verbosity;
 }
 
 namespace merge_and_shrink {
@@ -42,7 +43,7 @@ class MergeAndShrinkAlgorithm {
     const bool prune_irrelevant_states;
     const bool pruning_as_abstraction;
 
-    const utils::Verbosity verbosity;
+    mutable utils::LogProxy log;
 
     // Options related to computing partial abstractions
     const double main_loop_max_time;

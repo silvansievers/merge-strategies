@@ -32,7 +32,7 @@ using namespace mst;
 MiasmAbstraction::MiasmAbstraction(const Options &)
     : //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
-      verbosity(utils::Verbosity::SILENT),
+      log(utils::get_silent_log()),
       prune_unreachable_states(true),
       prune_irrelevant_states(true),
       pruning_as_abstraction(false),
@@ -80,7 +80,7 @@ void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
     const bool compute_goal_distances = true;
     fts = make_shared<FactoredTransitionSystem>(
         create_factored_transition_system(
-            task_proxy, compute_init_distances, compute_goal_distances, verbosity));
+            task_proxy, compute_init_distances, compute_goal_distances, log));
     for (int index = 0; index < fts->get_size(); ++index) {
         prune_step(
             *fts,
@@ -88,7 +88,7 @@ void MiasmAbstraction::initialize(const TaskProxy &task_proxy) {
             prune_unreachable_states,
             prune_irrelevant_states,
             pruning_as_abstraction,
-            verbosity);
+            log);
     }
 
     assert(static_cast<int>(task_proxy.get_variables().size()) == fts->get_size());
@@ -152,7 +152,7 @@ int MiasmAbstraction::build_transition_system(
     int right_ts_index = build_transition_system(right_set,
                                                  newly_built, vsir);
     const bool invalidating_merge = false;
-    int new_ts_index = fts->merge(left_ts_index, right_ts_index, verbosity,
+    int new_ts_index = fts->merge(left_ts_index, right_ts_index, log,
                                   invalidating_merge);
     prune_step(
         *fts,
@@ -160,7 +160,7 @@ int MiasmAbstraction::build_transition_system(
         prune_unreachable_states,
         prune_irrelevant_states,
         pruning_as_abstraction,
-        verbosity);
+        log);
 
     newly_built.push_back(G);
     cache.insert(pair<var_set_t, int>(G, new_ts_index));

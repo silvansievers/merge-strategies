@@ -5,6 +5,8 @@
 
 #include "../types.h"
 
+#include "../utils/logging.h"
+
 #include "../../task_proxy.h"
 
 #include <memory>
@@ -14,10 +16,6 @@
 
 namespace options {
 class Options;
-}
-
-namespace utils {
-enum class Verbosity;
 }
 
 namespace merge_and_shrink {
@@ -31,7 +29,7 @@ class MiasmAbstraction {
 //    std::shared_ptr<MergeStrategy> merge_strategy;
 //    std::shared_ptr<ShrinkStrategy> shrink_strategy;
 //    std::shared_ptr<LabelReduction> label_reduction;
-    const utils::Verbosity verbosity;
+    mutable utils::LogProxy log;
     const bool prune_unreachable_states;
     const bool prune_irrelevant_states;
     const bool pruning_as_abstraction;

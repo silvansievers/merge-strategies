@@ -21,7 +21,7 @@ class MergeSelectorScoreBasedWeightedSum : public MergeSelector {
     bool normalize;
 protected:
     virtual std::string name() const override;
-    virtual void dump_specific_options() const override;
+    virtual void dump_selector_specific_options(utils::LogProxy &log) const override;
 public:
     explicit MergeSelectorScoreBasedWeightedSum(const options::Options &options);
     virtual ~MergeSelectorScoreBasedWeightedSum() override = default;

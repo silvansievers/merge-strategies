@@ -19,7 +19,6 @@
 #include "../task_utils/task_properties.h"
 
 #include "../utils/countdown_timer.h"
-#include "../utils/logging.h"
 #include "../utils/markup.h"
 #include "../utils/math.h"
 #include "../utils/system.h"
@@ -39,8 +38,8 @@ using options::Options;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
-static void log_progress(const utils::Timer &timer, string msg) {
-    utils::g_log << "M&S algorithm timer: " << timer << " (" << msg << ")" << endl;
+static void log_progress(const utils::Timer &timer, string msg, utils::LogProxy &log) {
+    log << "M&S algorithm timer: " << timer << " (" << msg << ")" << endl;
 }
 
 MergeAndShrinkAlgorithm::MergeAndShrinkAlgorithm(const Options &opts) :
@@ -53,7 +52,7 @@ MergeAndShrinkAlgorithm::MergeAndShrinkAlgorithm(const Options &opts) :
     prune_unreachable_states(opts.get<bool>("prune_unreachable_states")),
     prune_irrelevant_states(opts.get<bool>("prune_irrelevant_states")),
     pruning_as_abstraction(opts.get<bool>("pruning_as_abstraction")),
-    verbosity(opts.get<utils::Verbosity>("verbosity")),
+    log(utils::get_log_from_options(opts)),
     main_loop_max_time(opts.get<double>("main_loop_max_time")),
     num_transitions_to_abort(opts.get<int>("num_transitions_to_abort")),
     num_transitions_to_exclude(opts.get<int>("num_transitions_to_exclude")),
@@ -65,92 +64,92 @@ MergeAndShrinkAlgorithm::MergeAndShrinkAlgorithm(const Options &opts) :
 
 void MergeAndShrinkAlgorithm::report_peak_memory_delta(bool final) const {
     if (final)
-        utils::g_log << "Final";
+        log << "Final";
     else
-        utils::g_log << "Current";
-    utils::g_log << " peak memory increase of merge-and-shrink algorithm: "
-                 << utils::get_peak_memory_in_kb() - starting_peak_memory << " KB"
-                 << endl;
+        log << "Current";
+    log << " peak memory increase of merge-and-shrink algorithm: "
+        << utils::get_peak_memory_in_kb() - starting_peak_memory << " KB"
+        << endl;
 }
 
 void MergeAndShrinkAlgorithm::dump_options() const {
-    if (verbosity >= utils::Verbosity::NORMAL) {
+    if (log.is_at_least_normal()) {
         if (merge_strategy_factory) { // deleted after merge strategy extraction
             merge_strategy_factory->dump_options();
-            utils::g_log << endl;
+            log << endl;
         }
 
-        utils::g_log << "Options related to size limits and shrinking: " << endl;
-        utils::g_log << "Transition system size limit: " << max_states << endl
-                     << "Transition system size limit right before merge: "
-                     << max_states_before_merge << endl;
-        utils::g_log << "Threshold to trigger shrinking right before merge: "
-                     << shrink_threshold_before_merge << endl;
-        utils::g_log << endl;
+        log << "Options related to size limits and shrinking: " << endl;
+        log << "Transition system size limit: " << max_states << endl
+            << "Transition system size limit right before merge: "
+            << max_states_before_merge << endl;
+        log << "Threshold to trigger shrinking right before merge: "
+            << shrink_threshold_before_merge << endl;
+        log << endl;
 
-        utils::g_log << "Pruning unreachable states: "
-                     << (prune_unreachable_states ? "yes" : "no") << endl;
-        utils::g_log << "Pruning irrelevant states: "
-                     << (prune_irrelevant_states ? "yes" : "no") << endl;
-        utils::g_log << endl;
+        log << "Pruning unreachable states: "
+            << (prune_unreachable_states ? "yes" : "no") << endl;
+        log << "Pruning irrelevant states: "
+            << (prune_irrelevant_states ? "yes" : "no") << endl;
+        log << endl;
 
         if (label_reduction) {
-            label_reduction->dump_options();
+            label_reduction->dump_options(log);
         } else {
-            utils::g_log << "Label reduction disabled" << endl;
+            log << "Label reduction disabled" << endl;
         }
-        utils::g_log << endl;
+        log << endl;
 
-        utils::g_log << "Main loop max time in seconds: " << main_loop_max_time << endl;
-        utils::g_log << endl;
+        log << "Main loop max time in seconds: " << main_loop_max_time << endl;
+        log << endl;
     }
 }
 
 void MergeAndShrinkAlgorithm::warn_on_unusual_options() const {
     string dashes(79, '=');
     if (!label_reduction) {
-        utils::g_log << dashes << endl
-                     << "WARNING! You did not enable label reduction.\nThis may "
+        log << dashes << endl
+            << "WARNING! You did not enable label reduction.\nThis may "
             "drastically reduce the performance of merge-and-shrink!"
-                     << endl << dashes << endl;
+            << endl << dashes << endl;
     } else if (label_reduction->reduce_before_merging() && label_reduction->reduce_before_shrinking()) {
-        utils::g_log << dashes << endl
-                     << "WARNING! You set label reduction to be applied twice in each merge-and-shrink\n"
+        log << dashes << endl
+            << "WARNING! You set label reduction to be applied twice in each merge-and-shrink\n"
             "iteration, both before shrinking and merging. This double computation effort\n"
             "does not pay off for most configurations!"
-                     << endl << dashes << endl;
+            << endl << dashes << endl;
     } else {
         if (label_reduction->reduce_before_shrinking() &&
             (shrink_strategy->get_name() == "f-preserving"
              || shrink_strategy->get_name() == "random")) {
-            utils::g_log << dashes << endl
-                         << "WARNING! Bucket-based shrink strategies such as f-preserving random perform\n"
+            log << dashes << endl
+                << "WARNING! Bucket-based shrink strategies such as f-preserving random perform\n"
                 "best if used with label reduction before merging, not before shrinking!"
-                         << endl << dashes << endl;
+                << endl << dashes << endl;
         }
         if (label_reduction->reduce_before_merging() &&
             shrink_strategy->get_name() == "bisimulation") {
-            utils::g_log << dashes << endl
-                         << "WARNING! Shrinking based on bisimulation performs best if used with label\n"
+            log << dashes << endl
+                << "WARNING! Shrinking based on bisimulation performs best if used with label\n"
                 "reduction before shrinking, not before merging!"
-                         << endl << dashes << endl;
+                << endl << dashes << endl;
         }
     }
 
     if (!prune_unreachable_states || !prune_irrelevant_states) {
-        utils::g_log << dashes << endl
-                     << "WARNING! Pruning is (partially) turned off!\nThis may "
+        log << dashes << endl
+            << "WARNING! Pruning is (partially) turned off!\nThis may "
             "drastically reduce the performance of merge-and-shrink!"
-                     << endl << dashes << endl;
+            << endl << dashes << endl;
     }
 }
 
 bool MergeAndShrinkAlgorithm::ran_out_of_time(
     const utils::CountdownTimer &timer) const {
     if (timer.is_expired()) {
-        if (verbosity >= utils::Verbosity::NORMAL) {
-            utils::g_log << "Ran out of time, stopping computation." << endl;
-            utils::g_log << endl;
+        if (log.is_at_least_normal()) {
+            log << "Ran out of time, stopping computation." << endl;
+            log << endl;
         }
         return true;
     }
@@ -160,10 +159,10 @@ bool MergeAndShrinkAlgorithm::ran_out_of_time(
 bool MergeAndShrinkAlgorithm::too_many_transitions(const FactoredTransitionSystem &fts, int index) const {
     int num_transitions = fts.get_transition_system(index).compute_total_transitions();
     if (num_transitions > num_transitions_to_abort) {
-        if (verbosity >= utils::Verbosity::NORMAL) {
-            utils::g_log << "Factor has too many transitions, stopping computation."
+        if (log.is_at_least_normal()) {
+            log << "Factor has too many transitions, stopping computation."
                  << endl;
-            utils::g_log << endl;
+            log << endl;
         }
         return true;
     }
@@ -189,13 +188,13 @@ void MergeAndShrinkAlgorithm::main_loop(
     FactoredTransitionSystem &fts,
     const TaskProxy &task_proxy) {
     utils::CountdownTimer timer(main_loop_max_time);
-    if (verbosity >= utils::Verbosity::NORMAL) {
-        utils::g_log << "Starting main loop ";
+    if (log.is_at_least_normal()) {
+        log << "Starting main loop ";
         if (main_loop_max_time == numeric_limits<double>::infinity()) {
-            utils::g_log << "without a time limit." << endl;
+            log << "without a time limit." << endl;
         } else {
-            utils::g_log << "with a time limit of "
-                         << main_loop_max_time << "s." << endl;
+            log << "with a time limit of "
+                << main_loop_max_time << "s." << endl;
         }
     }
     int maximum_intermediate_size = 0;
@@ -233,10 +232,10 @@ void MergeAndShrinkAlgorithm::main_loop(
         merge_strategy_factory->compute_merge_strategy(task_proxy, fts);
     merge_strategy_factory = nullptr;
 
-    auto log_main_loop_progress = [&timer](const string &msg) {
-            utils::g_log << "M&S algorithm main loop timer: "
-                         << timer.get_elapsed_time()
-                         << " (" << msg << ")" << endl;
+    auto log_main_loop_progress = [&timer, this](const string &msg) {
+            log << "M&S algorithm main loop timer: "
+                << timer.get_elapsed_time()
+                << " (" << msg << ")" << endl;
         };
     int iteration_counter = 0;
     set<int> allowed_indices;
@@ -274,20 +273,20 @@ void MergeAndShrinkAlgorithm::main_loop(
         int merge_index2 = merge_indices.second;
         assert(merge_index1 != merge_index2);
         merge_order.push_back(merge_indices);
-        if (verbosity >= utils::Verbosity::NORMAL) {
-            utils::g_log << "Next pair of indices: ("
-                         << merge_index1 << ", " << merge_index2 << ")" << endl;
-            if (verbosity >= utils::Verbosity::VERBOSE) {
-                fts.statistics(merge_index1);
-                fts.statistics(merge_index2);
+        if (log.is_at_least_normal()) {
+            log << "Next pair of indices: ("
+                << merge_index1 << ", " << merge_index2 << ")" << endl;
+            if (log.is_at_least_verbose()) {
+                fts.statistics(merge_index1, log);
+                fts.statistics(merge_index2, log);
             }
             log_main_loop_progress("after computation of next merge");
         }
 
         // Label reduction (before shrinking)
         if (label_reduction && label_reduction->reduce_before_shrinking()) {
-            bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
-            if (verbosity >= utils::Verbosity::NORMAL && reduced) {
+            bool reduced = label_reduction->reduce(merge_indices, fts, log);
+            if (log.is_at_least_normal() && reduced) {
                 log_main_loop_progress("after label reduction");
             }
             remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
@@ -306,8 +305,8 @@ void MergeAndShrinkAlgorithm::main_loop(
             max_states_before_merge,
             shrink_threshold_before_merge,
             *shrink_strategy,
-            verbosity);
-        if (verbosity >= utils::Verbosity::NORMAL && shrunk) {
+            log);
+        if (log.is_at_least_normal() && shrunk) {
             log_main_loop_progress("after shrinking");
         }
         if (merging_for_symmetries && currently_shrink_perfect_for_symmetries && shrunk) {
@@ -323,7 +322,7 @@ void MergeAndShrinkAlgorithm::main_loop(
             // The test for size >= 2 is to ensure we actually record
             // this kind of statistics -- currently only with bisimulation
             // shrinking.
-            utils::g_log << "not perfect anymore in iteration " << iteration_counter << endl;
+            log << "not perfect anymore in iteration " << iteration_counter << endl;
             still_perfect = false;
         }
 
@@ -333,8 +332,8 @@ void MergeAndShrinkAlgorithm::main_loop(
 
         // Label reduction (before merging)
         if (label_reduction && label_reduction->reduce_before_merging()) {
-            bool reduced = label_reduction->reduce(merge_indices, fts, verbosity);
-            if (verbosity >= utils::Verbosity::NORMAL && reduced) {
+            bool reduced = label_reduction->reduce(merge_indices, fts, log);
+            if (log.is_at_least_normal() && reduced) {
                 log_main_loop_progress("after label reduction");
             }
             remaining_labels.push_back(fts.get_labels().compute_number_active_labels());
@@ -348,7 +347,7 @@ void MergeAndShrinkAlgorithm::main_loop(
         int init_dist2 = fts.get_init_state_goal_distance(merge_index2);
 
         // Merging
-        int merged_index = fts.merge(merge_index1, merge_index2, verbosity);
+        int merged_index = fts.merge(merge_index1, merge_index2, log);
         int abs_size = fts.get_transition_system(merged_index).get_size();
         if (abs_size > maximum_intermediate_size) {
             maximum_intermediate_size = abs_size;
@@ -361,10 +360,10 @@ void MergeAndShrinkAlgorithm::main_loop(
         int difference = new_init_dist - max(init_dist1, init_dist2);
         init_hvalue_increase.push_back(difference);
 
-        if (verbosity >= utils::Verbosity::NORMAL) {
-            if (verbosity >= utils::Verbosity::VERBOSE) {
-                fts.statistics(merged_index);
-                utils::g_log << "Difference of init h values: " << difference << endl;
+        if (log.is_at_least_normal()) {
+            if (log.is_at_least_verbose()) {
+                fts.statistics(merged_index, log);
+                log << "Difference of init h values: " << difference << endl;
             }
             log_main_loop_progress("after merging");
         }
@@ -384,13 +383,13 @@ void MergeAndShrinkAlgorithm::main_loop(
                 prune_unreachable_states,
                 prune_irrelevant_states,
                 pruning_as_abstraction,
-                verbosity);
+            log);
             double new_size = fts.get_transition_system(merged_index).get_size();
             assert(new_size <= old_size);
             relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(old_size));
-            if (verbosity >= utils::Verbosity::NORMAL && pruned_and_pruned_unreachable.first) {
-                if (verbosity >= utils::Verbosity::VERBOSE) {
-                    fts.statistics(merged_index);
+            if (log.is_at_least_normal() && pruned_and_pruned_unreachable.first) {
+                if (log.is_at_least_verbose()) {
+                    fts.statistics(merged_index, log);
                 }
                 log_main_loop_progress("after pruning");
             }
@@ -409,8 +408,8 @@ void MergeAndShrinkAlgorithm::main_loop(
           not to be pruned/not to be evaluated as infinity.
         */
         if (!fts.is_factor_solvable(merged_index)) {
-            if (verbosity >= utils::Verbosity::NORMAL) {
-                utils::g_log << "Abstract problem is unsolvable, stopping "
+            if (log.is_at_least_normal()) {
+                log << "Abstract problem is unsolvable, stopping "
                     "computation. " << endl << endl;
             }
             break;
@@ -422,18 +421,18 @@ void MergeAndShrinkAlgorithm::main_loop(
             if (num_trans <= num_transitions_to_exclude) {
                 allowed_indices.insert(merged_index);
             } else {
-                if (verbosity >= utils::Verbosity::NORMAL) {
-                    utils::g_log << fts.get_transition_system(merged_index).tag()
-                         << "too many number of transitions, excluding "
+                if (log.is_at_least_normal()) {
+                    log << fts.get_transition_system(merged_index).tag()
+                        << "too many number of transitions, excluding "
                             "from further consideration." << endl;
                 }
             }
             if (allowed_indices.size() <= 1) {
-                if (verbosity >= utils::Verbosity::NORMAL) {
-                    utils::g_log << "Not enough factors remaining with a low enough "
+                if (log.is_at_least_normal()) {
+                    log << "Not enough factors remaining with a low enough "
                             "number of transitions, stopping computation."
-                         << endl;
-                    utils::g_log << endl;
+                        << endl;
+                    log << endl;
                 }
                 break;
             }
@@ -444,33 +443,34 @@ void MergeAndShrinkAlgorithm::main_loop(
         }
 
         // End-of-iteration output.
-        if (verbosity >= utils::Verbosity::VERBOSE) {
+        if (log.is_at_least_verbose()) {
             report_peak_memory_delta();
         }
-        if (verbosity >= utils::Verbosity::NORMAL) {
-            utils::g_log << endl;
+        if (log.is_at_least_normal()) {
+            log << endl;
         }
 
         ++iteration_counter;
     }
 
-    utils::g_log << "End of merge-and-shrink algorithm, statistics:" << endl;
-    utils::g_log << "Main loop runtime: " << timer.get_elapsed_time() << endl;
-    utils::g_log << "Maximum intermediate abstraction size: "
-                 << maximum_intermediate_size << endl;
+    log << "End of merge-and-shrink algorithm, statistics:" << endl;
+    log << "Main loop runtime: " << timer.get_elapsed_time() << endl;
+    log << "Maximum intermediate abstraction size: "
+        << maximum_intermediate_size << endl;
+
     score_based_merging_tiebreaking =
         merge_strategy->get_tiebreaking_statistics();
-    utils::g_log << "Iterations with merge tiebreaking: "
+    log << "Iterations with merge tiebreaking: "
          << score_based_merging_tiebreaking.first << endl;
-    utils::g_log << "Total tiebreaking merge candidates: "
+    log << "Total tiebreaking merge candidates: "
          << score_based_merging_tiebreaking.second << endl;
-    utils::g_log << "Maximum intermediate number of transitions: "
+    log << "Maximum intermediate number of transitions: "
          << maximum_transitions_size << endl;
-    utils::g_log << "Init h value improvements: " << init_hvalue_increase << endl;
-    utils::g_log << "Course of label reduction: " << remaining_labels << endl;
+    log << "Init h value improvements: " << init_hvalue_increase << endl;
+    log << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
         shrink_strategy->get_miss_qualified_states_ratios();
-    utils::g_log << "Course of miss qualified states shrinking: "
+    log << "Course of miss qualified states shrinking: "
          << miss_qualified_states_ratios << endl;
     double summed_values = 0;
     for (double value : miss_qualified_states_ratios) {
@@ -481,15 +481,15 @@ void MergeAndShrinkAlgorithm::main_loop(
     if (number_of_shrinks) {
         average_imperfect_shrinking = summed_values / static_cast<double>(number_of_shrinks);
     }
-    utils::g_log << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
-    utils::g_log << "Merge order: [";
+    log << "Average imperfect shrinking: " << average_imperfect_shrinking << endl;
+    log << "Merge order: [";
     bool linear_order = true;
     int next_index = task_proxy.get_variables().size();
     for (size_t i = 0; i < merge_order.size(); ++i) {
         pair<int, int> merge = merge_order[i];
-        utils::g_log << "(" << merge.first << ", " << merge.second << ")";
+        log << "(" << merge.first << ", " << merge.second << ")";
         if (i != merge_order.size() - 1) {
-            utils::g_log << ", ";
+            log << ", ";
         }
         if (linear_order && i != 0) {
             if (merge.first != next_index && merge.second != next_index) {
@@ -498,13 +498,13 @@ void MergeAndShrinkAlgorithm::main_loop(
             ++next_index;
         }
     }
-    utils::g_log << "]" << endl;
+    log << "]" << endl;
     if (linear_order) {
-        utils::g_log << "Linear merge order" << endl;
+        log << "Linear merge order" << endl;
     } else {
-         utils::g_log << "Non-linear merge order" << endl;
+         log << "Non-linear merge order" << endl;
     }
-    utils::g_log << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
+    log << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
     double summed_pruning = 0;
     for (double pruning : relative_pruning_per_iteration) {
         summed_pruning += pruning;
@@ -515,17 +515,17 @@ void MergeAndShrinkAlgorithm::main_loop(
     if (!relative_pruning_per_iteration.empty()) {
         average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
     }
-    utils::g_log << "Average relative pruning: " << average_pruning << endl;
+    log << "Average relative pruning: " << average_pruning << endl;
 
-    utils::g_log << "Number of attempts to merge for symmetries: "
+    log << "Number of attempts to merge for symmetries: "
          << num_attempts_merging_for_symmetries << endl;
-    utils::g_log << "Number of times non-perfect shrinking interfered merging for symmetries: "
+    log << "Number of times non-perfect shrinking interfered merging for symmetries: "
          << num_imperfect_shrinking_merging_for_symmetries << endl;
-    utils::g_log << "Number of times pruning interfered merging for symmetries: "
+    log << "Number of times pruning interfered merging for symmetries: "
          << num_pruning_merging_for_symmetries << endl;
-    utils::g_log << "Number of times merging for symmetries failed for any reason: "
+    log << "Number of times merging for symmetries failed for any reason: "
          << num_failed_merging_for_symmetries << endl;
-    utils::g_log << endl;
+    log << endl;
 
     shrink_strategy = nullptr;
     label_reduction = nullptr;
@@ -541,11 +541,11 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
     starting_peak_memory = utils::get_peak_memory_in_kb();
 
     utils::Timer timer;
-    utils::g_log << "Running merge-and-shrink algorithm..." << endl;
+    log << "Running merge-and-shrink algorithm..." << endl;
     task_properties::verify_no_axioms(task_proxy);
     dump_options();
     warn_on_unusual_options();
-    utils::g_log << endl;
+    log << endl;
 
     const bool compute_init_distances =
         shrink_strategy->requires_init_distances() ||
@@ -560,9 +560,9 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
             task_proxy,
             compute_init_distances,
             compute_goal_distances,
-            verbosity);
-    if (verbosity >= utils::Verbosity::NORMAL) {
-        log_progress(timer, "after computation of atomic factors");
+            log);
+    if (log.is_at_least_normal()) {
+        log_progress(timer, "after computation of atomic factors", log);
     }
 
     /*
@@ -582,20 +582,20 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
                 prune_unreachable_states,
                 prune_irrelevant_states,
                 pruning_as_abstraction,
-                verbosity);
+            log);
             pruned = pruned || pruned_and_pruned_unreachable.first;
         }
         if (!fts.is_factor_solvable(index)) {
-            utils::g_log << "Atomic FTS is unsolvable, stopping computation." << endl;
+            log << "Atomic FTS is unsolvable, stopping computation." << endl;
             unsolvable = true;
             break;
         }
     }
-    if (verbosity >= utils::Verbosity::NORMAL) {
+    if (log.is_at_least_normal()) {
         if (pruned) {
-            log_progress(timer, "after pruning atomic factors");
+            log_progress(timer, "after pruning atomic factors", log);
         }
-        utils::g_log << endl;
+        log << endl;
     }
 
     if (!unsolvable && !too_many_transitions(fts) && main_loop_max_time > 0) {
@@ -603,8 +603,8 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
     }
     const bool final = true;
     report_peak_memory_delta(final);
-    utils::g_log << "Merge-and-shrink algorithm runtime: " << timer << endl;
-    utils::g_log << endl;
+    log << "Merge-and-shrink algorithm runtime: " << timer << endl;
+    log << endl;
     return fts;
 }
 
@@ -658,7 +658,7 @@ void add_merge_and_shrink_algorithm_options_to_parser(OptionParser &parser) {
       verbose: full output during construction, starting and final statistics
       debug: full output with additional debug output
     */
-    utils::add_verbosity_option_to_parser(parser);
+    utils::add_log_options_to_parser(parser);
 
     parser.add_option<double>(
         "main_loop_max_time",

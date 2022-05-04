@@ -212,12 +212,13 @@ string MergeSelectorScoreBasedWeightedSum::name() const {
     return "score based weighted sum";
 }
 
-void MergeSelectorScoreBasedWeightedSum::dump_specific_options() const {
+void MergeSelectorScoreBasedWeightedSum::dump_selector_specific_options(
+    utils::LogProxy &log) const {
     for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
         const shared_ptr<MergeScoringFunction> &scoring_function =
          merge_scoring_functions[i];
-        scoring_function->dump_options();
-        utils::g_log << "associated weight: " << weights[i] << endl;
+        scoring_function->dump_options(log);
+        log << "associated weight: " << weights[i] << endl;
     }
 }
 

@@ -20,12 +20,12 @@ using namespace std;
 namespace merge_and_shrink {
 MergeStrategyFactoryPrecomputed::MergeStrategyFactoryPrecomputed(
     options::Options &options)
-    : merge_tree_factory(options.get<shared_ptr<MergeTreeFactory>>("merge_tree")) {
+    : MergeStrategyFactory(options),
+      merge_tree_factory(options.get<shared_ptr<MergeTreeFactory>>("merge_tree")) {
 }
 
 unique_ptr<MergeStrategy> MergeStrategyFactoryPrecomputed::compute_merge_strategy(
-    const TaskProxy &task_proxy,
-    const FactoredTransitionSystem &fts) {
+    const TaskProxy &task_proxy, const FactoredTransitionSystem &fts) {
     unique_ptr<MergeTree> merge_tree =
         merge_tree_factory->compute_merge_tree(task_proxy);
     if (merge_tree_factory->get_name() == "miasm") {
@@ -54,7 +54,7 @@ string MergeStrategyFactoryPrecomputed::name() const {
 }
 
 void MergeStrategyFactoryPrecomputed::dump_strategy_specific_options() const {
-    merge_tree_factory->dump_options();
+    merge_tree_factory->dump_options(log);
 }
 
 static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
@@ -76,6 +76,8 @@ static shared_ptr<MergeStrategyFactory>_parse(options::OptionParser &parser) {
     parser.add_option<shared_ptr<MergeTreeFactory>>(
         "merge_tree",
         "The precomputed merge tree.");
+
+    add_merge_strategy_options_to_parser(parser);
 
     options::Options opts = parser.parse();
     if (parser.dry_run())

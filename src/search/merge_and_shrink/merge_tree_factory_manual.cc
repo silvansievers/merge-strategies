@@ -37,9 +37,9 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
     if (!merge_order_list.empty()) {
         int num_merges = num_vars - 1;
         if (static_cast<int>(merge_order_list.size()) != num_merges) {
-            utils::g_log << "Number of merges in the given task: "
+            cerr << "Number of merges in the given task: "
                  << num_merges << endl;
-            utils::g_log << "Number of merges in the specified merge order: "
+            cerr << "Number of merges in the specified merge order: "
                  << merge_order_list.size() << endl;
             cerr << "Invalid size of merge order" << endl;
             utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
@@ -72,12 +72,12 @@ string MergeTreeFactoryManual::name() const {
     return "manual";
 }
 
-void MergeTreeFactoryManual::dump_tree_specific_options() const {
+void MergeTreeFactoryManual::dump_tree_specific_options(utils::LogProxy &log) const {
     if (!merge_order_list.empty()) {
-        utils::g_log << "given merge order, as list: " << merge_order_list << endl;
+        log << "given merge order, as list: " << merge_order_list << endl;
     } else {
         assert(!merge_order_tree_string.empty());
-        utils::g_log << "given merge order, as string: " << merge_order_tree_string << endl;
+        log << "given merge order, as string: " << merge_order_tree_string << endl;
     }
 }
 
@@ -121,7 +121,7 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order_list must "
                             "contain exactly two elements!" << endl;
-                    utils::g_log << pair << endl;
+                    cerr << pair << endl;
                     utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
                 }
             }

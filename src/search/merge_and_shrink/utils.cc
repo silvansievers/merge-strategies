@@ -72,7 +72,7 @@ bool shrink_factor(
     int new_size,
     int shrink_threshold_before_merge,
     const ShrinkStrategy &shrink_strategy,
-    utils::Verbosity verbosity) {
+    utils::LogProxy &log) {
     /*
       TODO: think about factoring out common logic of this function and the
       function copy_and_shrink_ts in merge_scoring_function_miasm_utils.cc.
@@ -80,21 +80,21 @@ bool shrink_factor(
     const TransitionSystem &ts = fts.get_transition_system(index);
     int num_states = ts.get_size();
     if (num_states > min(new_size, shrink_threshold_before_merge)) {
-        if (verbosity >= utils::Verbosity::VERBOSE) {
-            utils::g_log << ts.tag() << "current size: " << num_states;
+        if (log.is_at_least_verbose()) {
+            log << ts.tag() << "current size: " << num_states;
             if (new_size < num_states)
-                utils::g_log << " (new size limit: " << new_size;
+                log << " (new size limit: " << new_size;
             else
-                utils::g_log << " (shrink threshold: " << shrink_threshold_before_merge;
-            utils::g_log << ")" << endl;
+                log << " (shrink threshold: " << shrink_threshold_before_merge;
+            log << ")" << endl;
         }
 
         const Distances &distances = fts.get_distances(index);
         StateEquivalenceRelation equivalence_relation =
-            shrink_strategy.compute_equivalence_relation(ts, distances, new_size);
+            shrink_strategy.compute_equivalence_relation(ts, distances, new_size, log);
         // TODO: We currently violate this; see issue250
         //assert(equivalence_relation.size() <= target_size);
-        return fts.apply_abstraction(index, equivalence_relation, verbosity);
+        return fts.apply_abstraction(index, equivalence_relation, log);
     }
     return false;
 }
@@ -107,7 +107,7 @@ bool shrink_before_merge_step(
     int max_states_before_merge,
     int shrink_threshold_before_merge,
     const ShrinkStrategy &shrink_strategy,
-    utils::Verbosity verbosity) {
+    utils::LogProxy &log) {
     /*
       Compute the size limit for both transition systems as imposed by
       max_states and max_states_before_merge.
@@ -131,9 +131,9 @@ bool shrink_before_merge_step(
         new_sizes.first,
         shrink_threshold_before_merge,
         shrink_strategy,
-        verbosity);
-    if (verbosity >= utils::Verbosity::VERBOSE && shrunk1) {
-        fts.statistics(index1);
+        log);
+    if (log.is_at_least_verbose() && shrunk1) {
+        fts.statistics(index1, log);
     }
     bool shrunk2 = shrink_factor(
         fts,
@@ -141,9 +141,9 @@ bool shrink_before_merge_step(
         new_sizes.second,
         shrink_threshold_before_merge,
         shrink_strategy,
-        verbosity);
-    if (verbosity >= utils::Verbosity::VERBOSE && shrunk2) {
-        fts.statistics(index2);
+        log);
+    if (log.is_at_least_verbose() && shrunk2) {
+        fts.statistics(index2, log);
     }
     return shrunk1 || shrunk2;
 }
@@ -154,7 +154,8 @@ pair<StateEquivalenceRelation, bool> compute_pruning_equivalence_relation(
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
     bool pruning_as_abstraction,
-    utils::Verbosity verbosity) {
+    utils::LogProxy &log) {
+    assert(prune_unreachable_states || prune_irrelevant_states);
     int num_states = ts.get_size();
     StateEquivalenceRelation state_equivalence_relation;
     state_equivalence_relation.reserve(num_states);
@@ -179,11 +180,11 @@ pair<StateEquivalenceRelation, bool> compute_pruning_equivalence_relation(
                 state_equivalence_relation.push_back(state_equivalence_class);
             }
         }
-        if (verbosity >= utils::Verbosity::VERBOSE &&
+        if (log.is_at_least_verbose() &&
             (unreachable_count || irrelevant_count)) {
-            utils::g_log << ts.tag()
-                 << "unreachable: " << unreachable_count << " states, "
-                 << "irrelevant: " << irrelevant_count << " states " << endl;
+            log << ts.tag()
+                << "unreachable: " << unreachable_count << " states, "
+                << "irrelevant: " << irrelevant_count << " states " << endl;
         }
         if (unreachable_count) {
             state_equivalence_relation.push_back(unreachable_states);
@@ -220,12 +221,12 @@ pair<StateEquivalenceRelation, bool> compute_pruning_equivalence_relation(
                 state_equivalence_relation.push_back(state_equivalence_class);
             }
         }
-        if (verbosity >= utils::Verbosity::VERBOSE &&
+        if (log.is_at_least_verbose() &&
             (unreachable_count || irrelevant_count)) {
-            utils::g_log << ts.tag()
-                         << "unreachable: " << unreachable_count << " states, "
-                         << "irrelevant: " << irrelevant_count << " states ("
-                         << "total dead: " << dead_count << " states)" << endl;
+            log << ts.tag()
+                << "unreachable: " << unreachable_count << " states, "
+                << "irrelevant: " << irrelevant_count << " states ("
+                << "total dead: " << dead_count << " states)" << endl;
         }
         if (unreachable_count) {
             pruned_unreachable_states = true;
@@ -240,7 +241,7 @@ pair<bool, bool> prune_step(
     bool prune_unreachable_states,
     bool prune_irrelevant_states,
     bool pruning_as_abstraction,
-    utils::Verbosity verbosity) {
+    utils::LogProxy &log) {
     assert(prune_unreachable_states || prune_irrelevant_states);
     const TransitionSystem &ts = fts.get_transition_system(index);
     const Distances &distances = fts.get_distances(index);
@@ -251,9 +252,9 @@ pair<bool, bool> prune_step(
             prune_unreachable_states,
             prune_irrelevant_states,
             pruning_as_abstraction,
-            verbosity);
+            log);
     bool pruned = fts.apply_abstraction(
-        index, state_equivalence_relation_and_pruned_unreachable.first, verbosity);
+        index, state_equivalence_relation_and_pruned_unreachable.first, log);
     return make_pair(
         pruned, state_equivalence_relation_and_pruned_unreachable.second);
 }
@@ -291,9 +292,10 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
     int max_states,
     int max_states_before_merge,
     int shrink_threshold_before_merge,
-    const bool prune_unreachable_states,
-    const bool prune_irrelevant_states,
-    const bool pruning_as_abstraction) {
+    bool prune_unreachable_states,
+    bool prune_irrelevant_states,
+    bool pruning_as_abstraction) {
+    utils::LogProxy silent_log = utils::get_silent_log();
     unique_ptr<TransitionSystem> product =
         shrink_before_merge_externally(
             fts,
@@ -302,13 +304,16 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
             shrink_strategy,
             max_states,
             max_states_before_merge,
-            shrink_threshold_before_merge);
+            shrink_threshold_before_merge,
+            silent_log);
 
     unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
-    utils::Verbosity verbosity = utils::Verbosity::SILENT;
     // Pruning unreachable states requires init distance information, pruning
     // irrelevant states requires goal distance information. Also below.
-    distances->compute_distances(prune_unreachable_states, prune_irrelevant_states, verbosity);
+    distances->compute_distances(
+        prune_unreachable_states,
+        prune_irrelevant_states,
+        silent_log);
 
     if (prune_unreachable_states || prune_irrelevant_states) {
         // Prune the result.
@@ -319,11 +324,11 @@ pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> shrink_merge_prune_ext
                 prune_unreachable_states,
                 prune_irrelevant_states,
                 pruning_as_abstraction,
-                verbosity);
+                silent_log);
         const StateEquivalenceRelation &equiv_rel = equiv_rel_and_pruned_unreachable.first;
         if (static_cast<int>(equiv_rel.size()) < product->get_size()) {
-            product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), verbosity);
-            distances->apply_abstraction(equiv_rel, prune_unreachable_states, prune_irrelevant_states, verbosity);
+            product->apply_abstraction(equiv_rel, compute_abstraction_mapping(product->get_size(), equiv_rel), silent_log);
+            distances->apply_abstraction(equiv_rel, prune_unreachable_states, prune_irrelevant_states, silent_log);
         }
     }
 

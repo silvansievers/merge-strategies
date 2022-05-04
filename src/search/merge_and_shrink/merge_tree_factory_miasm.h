@@ -51,7 +51,7 @@ private:
     MiasmMergeTree *compute_miasm_merge_tree(const TaskProxy &task_proxy);
 protected:
     virtual std::string name() const override;
-    virtual void dump_tree_specific_options() const override;
+    virtual void dump_tree_specific_options(utils::LogProxy &log) const override;
 public:
     /** @brief The option-based constructor */
     explicit MergeTreeFactoryMiasm(const options::Options &opts);

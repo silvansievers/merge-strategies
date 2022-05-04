@@ -744,10 +744,11 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
             options.set<bool>("greedy", false);
             options.set<AtLimit>("at_limit", AtLimit::RETURN);
             ShrinkBisimulation shrink_bisim(options);
+            utils::LogProxy silent_log = utils::get_silent_log();
             int size_before = ts.get_size();
             int size_after =
                 shrink_bisim.compute_equivalence_relation(
-                    ts, distances, size_before).size();
+                    ts, distances, size_before, silent_log).size();
             assert(size_after <= size_before);
             int difference = size_before - size_after;
             score = - static_cast<double>(difference) /

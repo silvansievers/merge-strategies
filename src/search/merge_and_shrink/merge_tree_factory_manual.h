@@ -17,7 +17,7 @@ class MergeTreeFactoryManual : public MergeTreeFactory {
     std::string merge_order_tree_string;
 protected:
     virtual std::string name() const override;
-    virtual void dump_tree_specific_options() const override;
+    virtual void dump_tree_specific_options(utils::LogProxy &log) const override;
 public:
     explicit MergeTreeFactoryManual(const options::Options &options);
     virtual ~MergeTreeFactoryManual() override = default;
