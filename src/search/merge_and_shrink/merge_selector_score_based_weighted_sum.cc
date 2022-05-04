@@ -29,8 +29,8 @@ double normalize_value(double min_score, double max_score, double score) {
 MergeSelectorScoreBasedWeightedSum::MergeSelectorScoreBasedWeightedSum(
     const options::Options &options)
     : merge_scoring_functions(
-         options.get_list<shared_ptr<MergeScoringFunction>>(
-             "scoring_functions")),
+          options.get_list<shared_ptr<MergeScoringFunction>>(
+              "scoring_functions")),
       normalize(options.get<bool>("normalize")) {
     if (options.contains("weights")) {
         weights = options.get_list<int>("weights");
@@ -44,9 +44,9 @@ MergeSelectorScoreBasedWeightedSum::MergeSelectorScoreBasedWeightedSum(
     }
     if (merge_scoring_functions.back()->get_name() != "total order") {
         cerr << "This merge selector requires using the total order scoring "
-                "function as the last in the list for tie-breaking in cases "
-                "where two or more merge candidates have the same best "
-                "weighted sum as score." << endl;
+            "function as the last in the list for tie-breaking in cases "
+            "where two or more merge candidates have the same best "
+            "weighted sum as score." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
 }
@@ -181,8 +181,8 @@ pair<int, int> MergeSelectorScoreBasedWeightedSum::select_merge(
     }
     if (best_score == INF) {
         cerr << "All weighted summed scores are positive infinity. This "
-                "cannot happen when including the total order scoring "
-                "function for tie-breaking." << endl;
+            "cannot happen when including the total order scoring "
+            "function for tie-breaking." << endl;
         utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
 
@@ -216,7 +216,7 @@ void MergeSelectorScoreBasedWeightedSum::dump_selector_specific_options(
     utils::LogProxy &log) const {
     for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
         const shared_ptr<MergeScoringFunction> &scoring_function =
-         merge_scoring_functions[i];
+            merge_scoring_functions[i];
         scoring_function->dump_options(log);
         log << "associated weight: " << weights[i] << endl;
     }
@@ -276,7 +276,7 @@ static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
         vector<int> weights = opts.get_list<int>("weights");
         if (weights.size() != functions.size()) {
             cerr << "Number of weights differs from number of scoring "
-                    "functions" << endl;
+                "functions" << endl;
             utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
         }
     }

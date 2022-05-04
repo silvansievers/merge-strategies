@@ -161,7 +161,7 @@ bool MergeAndShrinkAlgorithm::too_many_transitions(const FactoredTransitionSyste
     if (num_transitions > num_transitions_to_abort) {
         if (log.is_at_least_normal()) {
             log << "Factor has too many transitions, stopping computation."
-                 << endl;
+                << endl;
             log << endl;
         }
         return true;
@@ -241,7 +241,7 @@ void MergeAndShrinkAlgorithm::main_loop(
     set<int> allowed_indices;
     while (fts.get_num_active_entries() > 1) {
         // Choose next transition systems to merge
-        vector<int> vec_allowed_indices;;
+        vector<int> vec_allowed_indices;
         if (exclude_if_too_many_transitions()) {
             vec_allowed_indices = vector<int>(
                 allowed_indices.begin(), allowed_indices.end());
@@ -383,7 +383,7 @@ void MergeAndShrinkAlgorithm::main_loop(
                 prune_unreachable_states,
                 prune_irrelevant_states,
                 pruning_as_abstraction,
-            log);
+                log);
             double new_size = fts.get_transition_system(merged_index).get_size();
             assert(new_size <= old_size);
             relative_pruning_per_iteration.push_back(1 - new_size / static_cast<double>(old_size));
@@ -424,13 +424,13 @@ void MergeAndShrinkAlgorithm::main_loop(
                 if (log.is_at_least_normal()) {
                     log << fts.get_transition_system(merged_index).tag()
                         << "too many number of transitions, excluding "
-                            "from further consideration." << endl;
+                        "from further consideration." << endl;
                 }
             }
             if (allowed_indices.size() <= 1) {
                 if (log.is_at_least_normal()) {
                     log << "Not enough factors remaining with a low enough "
-                            "number of transitions, stopping computation."
+                        "number of transitions, stopping computation."
                         << endl;
                     log << endl;
                 }
@@ -461,17 +461,17 @@ void MergeAndShrinkAlgorithm::main_loop(
     score_based_merging_tiebreaking =
         merge_strategy->get_tiebreaking_statistics();
     log << "Iterations with merge tiebreaking: "
-         << score_based_merging_tiebreaking.first << endl;
+        << score_based_merging_tiebreaking.first << endl;
     log << "Total tiebreaking merge candidates: "
-         << score_based_merging_tiebreaking.second << endl;
+        << score_based_merging_tiebreaking.second << endl;
     log << "Maximum intermediate number of transitions: "
-         << maximum_transitions_size << endl;
+        << maximum_transitions_size << endl;
     log << "Init h value improvements: " << init_hvalue_increase << endl;
     log << "Course of label reduction: " << remaining_labels << endl;
     const vector<double> &miss_qualified_states_ratios =
         shrink_strategy->get_miss_qualified_states_ratios();
     log << "Course of miss qualified states shrinking: "
-         << miss_qualified_states_ratios << endl;
+        << miss_qualified_states_ratios << endl;
     double summed_values = 0;
     for (double value : miss_qualified_states_ratios) {
         summed_values += value;
@@ -502,7 +502,7 @@ void MergeAndShrinkAlgorithm::main_loop(
     if (linear_order) {
         log << "Linear merge order" << endl;
     } else {
-         log << "Non-linear merge order" << endl;
+        log << "Non-linear merge order" << endl;
     }
     log << "Relative pruning per iteration: " << relative_pruning_per_iteration << endl;
     double summed_pruning = 0;
@@ -513,18 +513,18 @@ void MergeAndShrinkAlgorithm::main_loop(
     // In this case, we return 0, which is the worst value possible for pruning.
     double average_pruning = 0;
     if (!relative_pruning_per_iteration.empty()) {
-        average_pruning =  summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
+        average_pruning = summed_pruning / static_cast<double>(relative_pruning_per_iteration.size());
     }
     log << "Average relative pruning: " << average_pruning << endl;
 
     log << "Number of attempts to merge for symmetries: "
-         << num_attempts_merging_for_symmetries << endl;
+        << num_attempts_merging_for_symmetries << endl;
     log << "Number of times non-perfect shrinking interfered merging for symmetries: "
-         << num_imperfect_shrinking_merging_for_symmetries << endl;
+        << num_imperfect_shrinking_merging_for_symmetries << endl;
     log << "Number of times pruning interfered merging for symmetries: "
-         << num_pruning_merging_for_symmetries << endl;
+        << num_pruning_merging_for_symmetries << endl;
     log << "Number of times merging for symmetries failed for any reason: "
-         << num_failed_merging_for_symmetries << endl;
+        << num_failed_merging_for_symmetries << endl;
     log << endl;
 
     shrink_strategy = nullptr;
@@ -582,7 +582,7 @@ FactoredTransitionSystem MergeAndShrinkAlgorithm::build_factored_transition_syst
                 prune_unreachable_states,
                 prune_irrelevant_states,
                 pruning_as_abstraction,
-            log);
+                log);
             pruned = pruned || pruned_and_pruned_unreachable.first;
         }
         if (!fts.is_factor_solvable(index)) {

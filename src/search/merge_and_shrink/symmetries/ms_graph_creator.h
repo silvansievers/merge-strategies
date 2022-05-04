@@ -4,7 +4,7 @@
 #include <memory>
 
 namespace bliss {
-    class Digraph;
+class Digraph;
 }
 
 namespace utils {
@@ -37,7 +37,7 @@ class MSGraphCreator {
 
     void create_bliss_directed_graph(const FactoredTransitionSystem &fts,
                                      bliss::Digraph &bliss_graph,
-                                     SymmetryGeneratorInfo *symmetry_generator_info) const ;
+                                     SymmetryGeneratorInfo *symmetry_generator_info) const;
 public:
     MSGraphCreator(
         const bool debug,

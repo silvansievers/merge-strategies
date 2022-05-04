@@ -40,10 +40,10 @@ private:
     /** @name Protected: Result Data */
     //@{
     /** @brief the sink sets */
-    std::vector<std::set<int> > sink_sets;
+    std::vector<std::set<int>> sink_sets;
     /** @brief The mutually disjoint subsets which together minimize the
      * ratio of R&R states */
-    std::vector<std::set<int> > max_packing;
+    std::vector<std::set<int>> max_packing;
     //@}
     // HACK! For MIASM to have a fallback strategy.
     std::shared_ptr<MergeSelector> fallback_merge_selector;

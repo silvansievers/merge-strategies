@@ -246,11 +246,11 @@ void MergeTree::update(pair<int, int> merge, int new_index, bool miasm_hack) {
         MergeTreeNode *surviving_node = nullptr;
         MergeTreeNode *removed_node = nullptr;
         if (update_option == UpdateOption::USE_FIRST ||
-                (miasm_hack && root == first_parent)) {
+            (miasm_hack && root == first_parent)) {
             surviving_node = first_parent;
             removed_node = second_parent;
         } else if (update_option == UpdateOption::USE_SECOND ||
-                (miasm_hack && root == second_parent)) {
+                   (miasm_hack && root == second_parent)) {
             surviving_node = second_parent;
             removed_node = first_parent;
         } else if (update_option == UpdateOption::USE_RANDOM) {

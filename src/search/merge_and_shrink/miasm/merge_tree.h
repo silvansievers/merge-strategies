@@ -53,27 +53,27 @@ protected:
     const MiasmExternal &ext;
 };
 
-void merge_subs(const tree<std::set<int> > &left,
-                const tree<std::set<int> > &right,
-                tree<std::set<int> > &merged);
+void merge_subs(const tree<std::set<int>> &left,
+                const tree<std::set<int>> &right,
+                tree<std::set<int>> &merged);
 
 class MiasmMergeTree {
 public:
-    MiasmMergeTree(const std::vector<std::set<int> > &packing_,
+    MiasmMergeTree(const std::vector<std::set<int>> &packing_,
                    const MiasmInternal internal_,
                    const MiasmExternal external_,
                    const VarSetInfoRegistry *p_si,
                    const TaskProxy &task_proxy);
     std::pair<int, int> select_next_and_update(int next_ts_index);
 private:
-    tree<std::set<int> > merge_tree;
-    std::vector<std::set<int> > packing;
+    tree<std::set<int>> merge_tree;
+    std::vector<std::set<int>> packing;
     const MiasmInternal internal;
     const MiasmExternal external;
     const causal_graph::CausalGraph &causal_graph;
 private:
     void get_internal_tree(const std::set<int> &varset,
-                           tree<std::set<int> > &internal_tree);
+                           tree<std::set<int>> &internal_tree);
 private:
     void update_pred(const std::size_t i);
     std::set<int> pred;

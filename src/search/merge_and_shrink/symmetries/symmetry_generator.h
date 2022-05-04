@@ -54,7 +54,7 @@ struct SymmetryGeneratorInfo {
 
 class SymmetryGenerator {
     const SymmetryGeneratorInfo *sym_gen_info;
-    int* value;
+    int *value;
 
     bool borrowed_buffer;
     bool identity_generator;
@@ -74,7 +74,7 @@ class SymmetryGenerator {
     int get_value(int ind) const;
 public:
     SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info,
-                      const unsigned int* automorphism);
+                      const unsigned int *automorphism);
     ~SymmetryGenerator();
 
     bool identity() const;
@@ -91,7 +91,7 @@ public:
     //const std::vector<std::vector<int> > &get_cycles() const {
     //    return cycles;
     //}
-    void compute_cycles(std::vector<std::vector<int> > &cycles) const;
+    void compute_cycles(std::vector<std::vector<int>> &cycles) const;
     //void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
     void dump(utils::LogProxy &log) const;
     void dump_value(utils::LogProxy &log) const;

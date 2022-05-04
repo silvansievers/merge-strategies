@@ -187,7 +187,7 @@ int FactoredTransitionSystem::merge(
         if (dynamic_cast<MergeAndShrinkRepresentationLeaf *>(mas_representations[index1].get())) {
             hr1 = utils::make_unique_ptr<MergeAndShrinkRepresentationLeaf>(
                 dynamic_cast<MergeAndShrinkRepresentationLeaf *>
-                    (mas_representations[index1].get()));
+                (mas_representations[index1].get()));
         } else {
             hr1 = utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(
                 dynamic_cast<MergeAndShrinkRepresentationMerge *>(
@@ -196,12 +196,12 @@ int FactoredTransitionSystem::merge(
         unique_ptr<MergeAndShrinkRepresentation> hr2 = nullptr;
         if (dynamic_cast<MergeAndShrinkRepresentationLeaf *>(mas_representations[index2].get())) {
             hr2 = utils::make_unique_ptr<MergeAndShrinkRepresentationLeaf>(
-                        dynamic_cast<MergeAndShrinkRepresentationLeaf *>
-                        (mas_representations[index2].get()));
+                dynamic_cast<MergeAndShrinkRepresentationLeaf *>
+                (mas_representations[index2].get()));
         } else {
             hr2 = utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(
-                        dynamic_cast<MergeAndShrinkRepresentationMerge *>(
-                            mas_representations[index2].get()));
+                dynamic_cast<MergeAndShrinkRepresentationMerge *>(
+                    mas_representations[index2].get()));
         }
         mas_representations.push_back(
             utils::make_unique_ptr<MergeAndShrinkRepresentationMerge>(

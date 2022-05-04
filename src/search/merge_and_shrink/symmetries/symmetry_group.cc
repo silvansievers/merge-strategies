@@ -33,7 +33,7 @@ SymmetryGroup::~SymmetryGroup() {
 }
 
 void SymmetryGroup::create_symmetry_generator(const unsigned int *automorphism) {
-    SymmetryGenerator* symmetry_generator = new SymmetryGenerator(symmetry_generator_info, automorphism);
+    SymmetryGenerator *symmetry_generator = new SymmetryGenerator(symmetry_generator_info, automorphism);
     if (!symmetry_generator->identity()) {
         symmetry_generators.push_back(symmetry_generator);
     } else {
@@ -48,7 +48,7 @@ double SymmetryGroup::find_symmetries(
 }
 
 void SymmetryGroup::reset() {
-    for (size_t i = 0; i < symmetry_generators.size(); i++){
+    for (size_t i = 0; i < symmetry_generators.size(); i++) {
         delete symmetry_generators[i];
         symmetry_generators[i] = nullptr;
     }

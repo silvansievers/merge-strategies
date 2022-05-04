@@ -49,7 +49,6 @@ public:
         const mst::var_set_t &G,
         std::vector<mst::var_set_t> &newly_built,
         const VarSetInfoRegistry &vsir);
-
 };
 }
 

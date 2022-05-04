@@ -15,7 +15,7 @@ var_set_t singleton(const var_t &var);
 
 std::set<var_set_t> get_mutex_pairs_var();
 
-typedef std::vector<std::vector<int> > var_relation_t;
+typedef std::vector<std::vector<int>> var_relation_t;
 var_relation_t get_mutex_pairs_relation();
 }
 }

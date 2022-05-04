@@ -26,7 +26,7 @@ vector<double> MergeScoringFunctionCausalConnection::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
@@ -96,7 +96,7 @@ vector<double> MergeScoringFunctionBooleanCausalConnection::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
@@ -165,7 +165,7 @@ vector<double> MergeScoringFunctionNonAdditivity::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const vector<int> ts1_var_nos = fts.get_transition_system(ts_index1).get_incorporated_variables();
@@ -231,9 +231,8 @@ static options::Plugin<MergeScoringFunction> _plugin_na("non_additivity", _parse
 
 
 
-MergeScoringFunctionTransitionsStatesQuotient::
-    MergeScoringFunctionTransitionsStatesQuotient(
-        const options::Options &options)
+MergeScoringFunctionTransitionsStatesQuotient::MergeScoringFunctionTransitionsStatesQuotient(
+    const options::Options &options)
     : prefer_high(options.get<bool>("prefer_high")) {
 }
 
@@ -242,7 +241,7 @@ vector<double> MergeScoringFunctionTransitionsStatesQuotient::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const TransitionSystem &ts1 = fts.get_transition_system(ts_index1);
@@ -314,24 +313,24 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-infinity,0]
         double score = 1;
         if (inith == InitH::SUM) {
-            score = - (fts.get_init_state_goal_distance(ts_index1) +
-                    fts.get_init_state_goal_distance(ts_index2));
+            score = -(fts.get_init_state_goal_distance(ts_index1) +
+                      fts.get_init_state_goal_distance(ts_index2));
         } else {
             const bool prune_unreachable_states = true;
             const bool prune_irrelevant_states = true;
             const bool pruning_as_abstraction = false;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                    shrink_merge_prune_externally(
-                        fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                        max_states_before_merge, shrink_threshold_before_merge,
-                        prune_unreachable_states, prune_irrelevant_states,
-                        pruning_as_abstraction);
+                shrink_merge_prune_externally(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge,
+                    prune_unreachable_states, prune_irrelevant_states,
+                    pruning_as_abstraction);
             const TransitionSystem &ts = *merge.first;
             const Distances &distances = *merge.second;
 
@@ -342,13 +341,13 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
                 // initial state has been pruned
                 new_init_h = INF;
             }
-            if (inith ==  InitH::ABSOLUTE) {
+            if (inith == InitH::ABSOLUTE) {
                 if (new_init_h == INF) {
                     score = MINUSINF;
                 } else {
-                    score = - new_init_h;
+                    score = -new_init_h;
                 }
-            } else if (inith ==  InitH::IMPROVEMENT) {
+            } else if (inith == InitH::IMPROVEMENT) {
                 int old_init_h = max(fts.get_init_state_goal_distance(ts_index1),
                                      fts.get_init_state_goal_distance(ts_index2));
                 int difference = new_init_h - old_init_h;
@@ -357,7 +356,7 @@ vector<double> MergeScoringFunctionInitH::compute_scores(
                 } else if (!old_init_h) {
                     score = MINUSINF;
                 } else {
-                    score = - static_cast<double>(difference) / static_cast<double>(old_init_h);
+                    score = -static_cast<double>(difference) / static_cast<double>(old_init_h);
                 }
             }
         }
@@ -428,18 +427,18 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const bool prune_unreachable_states = true;
         const bool prune_irrelevant_states = true;
         const bool pruning_as_abstraction = false;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                shrink_merge_prune_externally(
-                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                    max_states_before_merge, shrink_threshold_before_merge,
-                    prune_unreachable_states, prune_irrelevant_states,
-                    pruning_as_abstraction);
+            shrink_merge_prune_externally(
+                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                max_states_before_merge, shrink_threshold_before_merge,
+                prune_unreachable_states, prune_irrelevant_states,
+                pruning_as_abstraction);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 
@@ -473,11 +472,11 @@ vector<double> MergeScoringFunctionMaxFGH::compute_scores(
                 max_f = max(max_f, f);
             }
             if (fgh == FGH::F) {
-                score = - max_f;
+                score = -max_f;
             } else if (fgh == FGH::G) {
-                score = - max_g;
+                score = -max_g;
             } else if (fgh == FGH::H) {
-                score = - max_h;
+                score = -max_h;
             }
         } else {
             // initial state has been pruned
@@ -543,7 +542,7 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-infinity,infinity]
@@ -553,11 +552,11 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
             const bool prune_irrelevant_states = true;
             const bool pruning_as_abstraction = false;
             pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                    shrink_merge_prune_externally(
-                        fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                        max_states_before_merge, shrink_threshold_before_merge,
-                        prune_unreachable_states, prune_irrelevant_states,
-                        pruning_as_abstraction);
+                shrink_merge_prune_externally(
+                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                    max_states_before_merge, shrink_threshold_before_merge,
+                    prune_unreachable_states, prune_irrelevant_states,
+                    pruning_as_abstraction);
             const Distances &distances = *merge.second;
             double new_average_h = compute_average_h_value(distances);
             double old_average_h = max(compute_average_h_value(fts.get_distances(ts_index1)),
@@ -573,12 +572,12 @@ vector<double> MergeScoringFunctionAvgH::compute_scores(
                     score = MINUSINF;
                 }
             } else {
-                score = - static_cast<double>(difference) / static_cast<double>(old_average_h);
+                score = -static_cast<double>(difference) / static_cast<double>(old_average_h);
             }
         } else if (avgh == AvgH::SUM) {
             double average_h_sum = compute_average_h_value(fts.get_distances(ts_index1)) +
-                                   compute_average_h_value(fts.get_distances(ts_index2));
-            score = - average_h_sum;
+                compute_average_h_value(fts.get_distances(ts_index2));
+            score = -average_h_sum;
         } else if (avgh == AvgH::ABSOLUTE) {
             // TODO
             cerr << "AvgH not implemented" << endl;
@@ -638,7 +637,7 @@ vector<double> MergeScoringFunctionGoalRelevanceFine::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-2,0]
@@ -678,14 +677,14 @@ vector<double> MergeScoringFunctionNumVariables::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-num_variables+1, -2]
         int num_variables =
             fts.get_transition_system(ts_index1).get_incorporated_variables().size() +
             fts.get_transition_system(ts_index2).get_incorporated_variables().size();
-        scores.push_back(- num_variables);
+        scores.push_back(-num_variables);
     }
     return scores;
 }
@@ -722,18 +721,18 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         const bool prune_unreachable_states = true;
         const bool prune_irrelevant_states = true;
         const bool pruning_as_abstraction = false;
         pair<unique_ptr<TransitionSystem>, unique_ptr<Distances>> merge =
-                shrink_merge_prune_externally(
-                    fts, ts_index1, ts_index2, *shrink_stratey, max_states,
-                    max_states_before_merge, shrink_threshold_before_merge,
-                    prune_unreachable_states, prune_irrelevant_states,
-                    pruning_as_abstraction);
+            shrink_merge_prune_externally(
+                fts, ts_index1, ts_index2, *shrink_stratey, max_states,
+                max_states_before_merge, shrink_threshold_before_merge,
+                prune_unreachable_states, prune_irrelevant_states,
+                pruning_as_abstraction);
         const TransitionSystem &ts = *merge.first;
         const Distances &distances = *merge.second;
 
@@ -751,8 +750,8 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
                     ts, distances, size_before, silent_log).size();
             assert(size_after <= size_before);
             int difference = size_before - size_after;
-            score = - static_cast<double>(difference) /
-                    static_cast<double>(size_before);
+            score = -static_cast<double>(difference) /
+                static_cast<double>(size_before);
         } else {
             score = MINUSINF;
         }
@@ -802,7 +801,7 @@ vector<double> MergeScoringFunctionNumTransitions::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // return value in [0,infinity[
@@ -874,14 +873,14 @@ vector<double> MergeScoringFunctionLROpportunities::compute_scores(
 
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-infinity,0]
         int combinable_labels = ts_pair_to_combinable_label_count[make_pair(ts_index1, ts_index2)];
         if (combinable_labels >= 2) {
             // need at least two labels to profit from label reduction
-            scores.push_back(- combinable_labels);
+            scores.push_back(-combinable_labels);
         } else {
             scores.push_back(0);
         }
@@ -962,14 +961,14 @@ vector<double> MergeScoringFunctionMoreLROpportunities::compute_scores(
     }
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // score value in [-infinity,0]
         int combinable_label_pairs = ts_pair_to_combinable_label_count[make_pair(ts_index1, ts_index2)];
         if (combinable_label_pairs >= 1) {
             // need at least one label pair to profit from label reduction
-            scores.push_back(- combinable_label_pairs);
+            scores.push_back(-combinable_label_pairs);
         } else {
             scores.push_back(0);
         }
@@ -1003,7 +1002,7 @@ vector<double> MergeScoringFunctionMutexes::compute_scores(
     const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (pair<int, int> merge_candidate : merge_candidates ) {
+    for (pair<int, int> merge_candidate : merge_candidates) {
         int ts_index1 = merge_candidate.first;
         int ts_index2 = merge_candidate.second;
         // return value in [0,infinity)

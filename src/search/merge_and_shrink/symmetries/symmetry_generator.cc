@@ -20,9 +20,9 @@ SymmetryGeneratorInfo::SymmetryGeneratorInfo() {
 
 bool SymmetryGeneratorInfo::initialized() const {
     return num_transition_systems != -1
-            && num_ts_and_states != -1
-            && !ts_index_by_index.empty()
-            && !starting_index_by_ts_index.empty();
+           && num_ts_and_states != -1
+           && !ts_index_by_index.empty()
+           && !starting_index_by_ts_index.empty();
 }
 
 int SymmetryGeneratorInfo::get_transition_system_index_by_index(const int index) const {
@@ -81,7 +81,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
     internally_affected.resize(num_transition_systems, false);
     mapped.resize(num_transition_systems, false);
     overall_affected.resize(num_transition_systems, false);
-    for (int from_index = 0; from_index < sym_gen_info->num_ts_and_states; from_index++){
+    for (int from_index = 0; from_index < sym_gen_info->num_ts_and_states; from_index++) {
         int to_index = automorphism[from_index];
         value[from_index] = to_index;
 
@@ -140,7 +140,7 @@ SymmetryGenerator::SymmetryGenerator(const SymmetryGeneratorInfo *sym_gen_info_,
     //    compute_cycles();
 }
 
-SymmetryGenerator::~SymmetryGenerator(){
+SymmetryGenerator::~SymmetryGenerator() {
     _deallocate();
 }
 
@@ -177,7 +177,7 @@ void SymmetryGenerator::_deallocate() {
 //    }
 //}
 
-void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) const {
+void SymmetryGenerator::compute_cycles(vector<vector<int>> &cycles) const {
     int num_transition_systems = sym_gen_info->num_transition_systems;
     vector<bool> marked(num_transition_systems, false);
     for (int abs_index = 0; abs_index < num_transition_systems; ++abs_index) {
@@ -249,7 +249,7 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 //    }
 //}
 
-bool SymmetryGenerator::identity() const{
+bool SymmetryGenerator::identity() const {
     if (identity_generator)
         assert(internally_affected_transition_systems.empty());
     return identity_generator;
@@ -260,12 +260,12 @@ int SymmetryGenerator::get_value(int ind) const {
 }
 
 void SymmetryGenerator::dump(utils::LogProxy &log) const {
-    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
+    for (int i = 0; i < sym_gen_info->num_ts_and_states; i++) {
         if (get_value(i) != i)
             log << setw(4) << i;
     }
     log << endl;
-    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
+    for (int i = 0; i < sym_gen_info->num_ts_and_states; i++) {
         if (get_value(i) != i)
             log << setw(4) << get_value(i);
     }
@@ -283,7 +283,7 @@ void SymmetryGenerator::dump_value(utils::LogProxy &log) const {
 
 void SymmetryGenerator::dump_all(utils::LogProxy &log) const {
     log << "values:" << endl;
-    for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
+    for (int i = 0; i < sym_gen_info->num_ts_and_states; i++) {
         log << value[i] << ", ";
     }
     log << endl;

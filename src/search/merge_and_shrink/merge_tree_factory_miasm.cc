@@ -88,7 +88,7 @@ unique_ptr<MergeTree> MergeTreeFactoryMiasm::compute_merge_tree(
 
     // compute the merge tree in MergeTree form from the order
     // TODO: change the miasm computation to use it directly!
-    map<int, MergeTreeNode*> index_to_tree;
+    map<int, MergeTreeNode *> index_to_tree;
     for (int atomic_ts_index = 0; atomic_ts_index < num_ts; ++atomic_ts_index) {
         index_to_tree[atomic_ts_index] = new MergeTreeNode(atomic_ts_index);
     }
@@ -154,9 +154,9 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("level");
     enum_strings.push_back("reverse_level");
     parser.add_enum_option<MiasmInternal>("miasm_internal",
-                           enum_strings,
-                           "",
-                           "level");
+                                          enum_strings,
+                                          "",
+                                          "level");
 
     //DEFINE_ENUM_OPT(MiasmExternal, "miasm_external", NUM_VAR_CGL)
     enum_strings.clear();
@@ -164,9 +164,9 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("rnr_size_cgl");
     enum_strings.push_back("cgrl");
     parser.add_enum_option<MiasmExternal>("miasm_external",
-                           enum_strings,
-                           "",
-                           "num_var_cgl");
+                                          enum_strings,
+                                          "",
+                                          "num_var_cgl");
 
     /*
       SinkSetSearch options
@@ -208,9 +208,9 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("ratio");
     enum_strings.push_back("gain");
     parser.add_enum_option<EnumPriority>("priority", enum_strings,
-                           "the order in which the subsets "
-                           "are dequeued in the priority queue",
-                           "gain");
+                                         "the order in which the subsets "
+                                         "are dequeued in the priority queue",
+                                         "gain");
 
 
     //DEFINE_ENUM_OPT(EnumExpand, "expand", SINGLE)
@@ -218,9 +218,9 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("single");
     enum_strings.push_back("none");
     parser.add_enum_option<EnumExpand>("expand", enum_strings,
-                           "which new subsets should be added into the search"
-                           "priority queue",
-                           "single");
+                                       "which new subsets should be added into the search"
+                                       "priority queue",
+                                       "single");
 
     //DEFINE_ENUM_OPT(EnumGain, "gain", ALL_ACCUR)
     enum_strings.clear();
@@ -229,16 +229,16 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     enum_strings.push_back("all_guess");
     enum_strings.push_back("all_accur");
     parser.add_enum_option<EnumGain>("gain", enum_strings,
-                           "",
-                           "all_accur");
+                                     "",
+                                     "all_accur");
 
     //DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
     enum_strings.clear();
     enum_strings.push_back("none");
     enum_strings.push_back("cgwc_mutex");
     parser.add_enum_option<EnumPrune>("prune", enum_strings,
-                           "",
-                           "none");
+                                      "",
+                                      "none");
 
     parser.add_option<shared_ptr<MergeSelector>>(
         "fallback_merge_selector",

@@ -84,8 +84,8 @@ public:
     }
 
     bool operator==(const Distances &other) const {
-        return init_distances == other.init_distances && goal_distances == other.goal_distances 
-            && init_distances_computed == other.init_distances_computed && goal_distances_computed == other.goal_distances_computed;
+        return init_distances == other.init_distances && goal_distances == other.goal_distances
+               && init_distances_computed == other.init_distances_computed && goal_distances_computed == other.goal_distances_computed;
     }
 
     void dump(utils::LogProxy &log) const;

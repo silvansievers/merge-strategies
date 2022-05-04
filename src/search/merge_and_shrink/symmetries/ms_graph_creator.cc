@@ -24,14 +24,14 @@ static void out_of_memory_handler() {
     throw bliss::BlissMemoryOut();
 }
 
-void add_automorphism(void* param, unsigned int, const unsigned int *automorphism) {
-    SymmetryGroup *symmetry_group = (SymmetryGroup*) param;
+void add_automorphism(void *param, unsigned int, const unsigned int *automorphism) {
+    SymmetryGroup *symmetry_group = (SymmetryGroup *)param;
     symmetry_group->create_symmetry_generator(automorphism);
 }
 
 MSGraphCreator::MSGraphCreator(
-    const bool debug, 
-    const bool stabilize_transition_systems, 
+    const bool debug,
+    const bool stabilize_transition_systems,
     utils::LogProxy &log)
     : debug(debug),
       stabilize_transition_systems(stabilize_transition_systems),
@@ -48,7 +48,7 @@ double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
         log << "Creating the bliss graph..." << timer << endl;
         bliss::Digraph bliss_graph = bliss::Digraph();
         create_bliss_directed_graph(fts, bliss_graph, symmetry_generator_info);
-    //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
+        //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
         bliss_graph.set_time_limit(bliss_time_limit);
         bliss::Stats stats1;
@@ -85,7 +85,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
       transition systems there are.
     */
     int num_transition_systems = fts.get_size();
-    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
+    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
         if (stabilize_transition_systems || !fts.is_active(ts_index)) {
             // Either the transition system is inactive or all transition systems are stabilized.
             node_color_added_val++;
@@ -100,13 +100,13 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
             */
             vertex = bliss_graph.add_vertex(TRANSITION_SYSTEM_VERTEX + node_color_added_val);
         } else {
-          vertex = bliss_graph.add_vertex(TRANSITION_SYSTEM_VERTEX);
+            vertex = bliss_graph.add_vertex(TRANSITION_SYSTEM_VERTEX);
         }
 
         if (debug) {
             log << "    node" << vertex << " [shape=circle, label=ts"
-                 << ts_index << "]; // color: "
-                 << TRANSITION_SYSTEM_VERTEX + node_color_added_val << endl;
+                << ts_index << "]; // color: "
+                << TRANSITION_SYSTEM_VERTEX + node_color_added_val << endl;
         }
     }
 
@@ -155,7 +155,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
     const Labels &labels = fts.get_labels();
     int num_labels = labels.get_size();
     vector<int> label_to_vertex(num_labels, -1);
-    for (int label_no = 0; label_no < num_labels; ++label_no){
+    for (int label_no = 0; label_no < num_labels; ++label_no) {
         if (!labels.is_current_label(label_no))
             continue;
 
@@ -164,7 +164,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
 
         if (debug) {
             log << "    node" << label_to_vertex[label_no]
-                << " [shape=circle, label=label_no" << label_no  << "]; // color: "
+                << " [shape=circle, label=label_no" << label_no << "]; // color: "
                 << LABEL_VERTEX + label_cost + node_color_added_val
                 << endl;
         }
@@ -181,7 +181,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
       have an incoming edge from their source state vertex and an outoing
       edge to their target state vertex.
     */
-    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index){
+    for (int ts_index = 0; ts_index < num_transition_systems; ++ts_index) {
         if (!fts.is_active(ts_index))
             continue;
         const TransitionSystem &ts = fts.get_transition_system(ts_index);
@@ -206,7 +206,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 }
             }
 
-            const vector<Transition>& transitions = gat.transitions;
+            const vector<Transition> &transitions = gat.transitions;
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(

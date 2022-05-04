@@ -21,7 +21,7 @@ class SymmetryGeneratorInfo;
 class SymmetryGroup {
     MSGraphCreator *gc;
     SymmetryGeneratorInfo *symmetry_generator_info;
-    std::vector<const SymmetryGenerator*> symmetry_generators;
+    std::vector<const SymmetryGenerator *> symmetry_generators;
 
     bool bliss_limit_reached; // computation of bliss threw bliss or memory exception
 public:

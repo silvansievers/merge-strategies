@@ -182,7 +182,7 @@ public:
     void k_subsets(const mst::var_set_t &s, const std::size_t k,
                    std::vector<mst::var_set_t> &ks);
     /*TODO: move to a genearl class*/
-    static std::vector<std::vector<int> > generate_combinations(
+    static std::vector<std::vector<int>> generate_combinations(
         const int n, const int k);
     /** @name Protected/Public: Best-First Search */
     //@{

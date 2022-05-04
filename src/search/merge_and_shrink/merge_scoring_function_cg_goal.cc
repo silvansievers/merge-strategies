@@ -73,11 +73,11 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
             const vector<int> &connected_vars1 = cg.get_eff_to_pre(var1);
             const vector<int> &connected_vars2 = cg.get_eff_to_pre(var2);
             if ((is_goal_variable[var1] &&
-                    find(connected_vars1.begin(), connected_vars1.end(), var2)
-                         != connected_vars1.end())
+                 find(connected_vars1.begin(), connected_vars1.end(), var2)
+                 != connected_vars1.end())
                 || (is_goal_variable[var2] &&
                     find(connected_vars2.begin(), connected_vars2.end(), var1)
-                         != connected_vars2.end())) {
+                    != connected_vars2.end())) {
                 // Goal variable plus causally connected variable.
                 if (cg_before_goal) {
                     // If we prefer CG over Goal, this is perfect.
@@ -101,7 +101,7 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
                     || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
                     score = 0;
                 } else if ((variables1.size() == 1 && is_goal_variable[variables1.front()])
-                    || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
+                           || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
                     score = 1;
                 }
             } else {
@@ -109,7 +109,7 @@ vector<double> MergeScoringFunctionCgGoal::compute_scores(
                     || (variables2.size() == 1 && is_goal_variable[variables2.front()])) {
                     score = 0;
                 } else if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
-                    || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
+                           || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
                     score = 1;
                 }
             }

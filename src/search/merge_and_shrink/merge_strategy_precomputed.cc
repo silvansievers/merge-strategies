@@ -20,7 +20,7 @@ pair<int, int> MergeStrategyPrecomputed::get_next(
     const vector<int> &allowed_indices) {
     if (!allowed_indices.empty()) {
         cerr << "Precomputed merge strategies are not compatible with being "
-                "computed for a subset of indices" << endl;
+            "computed for a subset of indices" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     assert(!merge_tree->done());

@@ -67,7 +67,7 @@ bool ComparatorSortPacking::operator()(
 }
 
 
-MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
+MiasmMergeTree::MiasmMergeTree(const vector<set<int>> &packing_,
                                const MiasmInternal internal_,
                                const MiasmExternal external_,
                                const VarSetInfoRegistry *p_si,
@@ -135,8 +135,8 @@ MiasmMergeTree::MiasmMergeTree(const vector<set<int> > &packing_,
                 if (merge_tree.empty()) {
                     get_internal_tree(packing[i], merge_tree);
                 } else {
-                    tree<set<int> > left(merge_tree);
-                    tree<set<int> > right;
+                    tree<set<int>> left(merge_tree);
+                    tree<set<int>> right;
                     get_internal_tree(packing[i], right);
                     merge_tree.clear();
                     merge_subs(left, right, merge_tree);
@@ -152,9 +152,9 @@ pair<int, int> MiasmMergeTree::select_next_and_update(int next_ts_index) {
     for (tree<set<int>>::leaf_iterator i_node = merge_tree.begin_leaf();
          i_node != merge_tree.end_leaf(); i_node++) {
         for (tree<set<int>>::leaf_iterator j_node = i_node;
-            j_node != merge_tree.end_leaf(); j_node++) {
+             j_node != merge_tree.end_leaf(); j_node++) {
             if (merge_tree.parent(i_node) == merge_tree.parent(j_node)
-                 && i_node != j_node) {
+                && i_node != j_node) {
                 set<int> &var_set1 = *i_node;
                 set<int> &var_set2 = *j_node;
                 assert(var_set1.size() == 1);
@@ -189,7 +189,7 @@ void MiasmMergeTree::update_pred(const size_t i) {
 }
 
 void MiasmMergeTree::get_internal_tree(const set<int> &varset,
-                                       tree<set<int> > &internal_tree) {
+                                       tree<set<int>> &internal_tree) {
     vector<int> ordered_varset(varset.begin(), varset.end());
 
     if (internal == MiasmInternal::REVERSE_LEVEL) {
@@ -204,8 +204,8 @@ void MiasmMergeTree::get_internal_tree(const set<int> &varset,
         if (internal_tree.size() == 0) {
             internal_tree.insert(internal_tree.begin(), s);
         } else {
-            tree<set<int> > left(internal_tree);
-            tree<set<int> > right;
+            tree<set<int>> left(internal_tree);
+            tree<set<int>> right;
             right.insert(right.begin(), s);
             internal_tree.clear();
             merge_subs(left, right, internal_tree);
@@ -213,15 +213,15 @@ void MiasmMergeTree::get_internal_tree(const set<int> &varset,
     }
 }
 
-void merge_subs(const tree<set<int> > &left,
-                const tree<set<int> > &right,
-                tree<set<int> > &merged) {
+void merge_subs(const tree<set<int>> &left,
+                const tree<set<int>> &right,
+                tree<set<int>> &merged) {
     set<int> merged_set;
     set<int> left_set = *(left.begin());
     set<int> right_set = *(right.begin());
-    std::set_union(left_set.begin(), left_set.end(),
-                   right_set.begin(), right_set.end(),
-                   std::inserter(merged_set, merged_set.begin()));
+    set_union(left_set.begin(), left_set.end(),
+              right_set.begin(), right_set.end(),
+              inserter(merged_set, merged_set.begin()));
 
     merged.insert(merged.begin(), merged_set);
 

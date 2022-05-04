@@ -26,8 +26,8 @@ MergeSymmetries::MergeSymmetries(
     const FactoredTransitionSystem &fts,
     const options::Options &options,
     const TaskProxy &task_proxy,
-    std::shared_ptr<MergeTreeFactory> merge_tree_factory,
-    std::shared_ptr<MergeSelector> merge_selector)
+    shared_ptr<MergeTreeFactory> merge_tree_factory,
+    shared_ptr<MergeSelector> merge_selector)
     : MergeStrategy(fts),
       num_merges(task_proxy.get_variables().size() - 1),
       symmetries_for_merging(options.get<SymmetriesForMerging>("symmetries_for_merging")),
@@ -81,7 +81,7 @@ void MergeSymmetries::dump_statistics() {
             summed_up_bliss_times += bliss_times[i];
         }
         double average_bliss_time = summed_up_bliss_times
-                / (double) total_bliss_calls;
+            / (double)total_bliss_calls;
         log << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
         double median_bliss_time;
         if (total_bliss_calls % 2 == 0) {
@@ -89,7 +89,7 @@ void MergeSymmetries::dump_statistics() {
             size_t higher_median_index = lower_median_index + 1;
             median_bliss_time = (bliss_times[lower_median_index]
                                  + bliss_times[higher_median_index])
-                    / 2.0;
+                / 2.0;
         } else {
             size_t median_index = total_bliss_calls / 2;
             median_bliss_time = bliss_times[median_index];
@@ -120,16 +120,16 @@ void MergeSymmetries::determine_merge_order() {
         }
         if (number_overall_affected_transition_systems > 1) {
             if (symmetries_for_merging == SMALLEST
-                    && number_overall_affected_transition_systems
-                    < smallest_generator_affected_transition_systems_size) {
-                smallest_generator_affected_transition_systems_size
-                        = number_overall_affected_transition_systems;
+                && number_overall_affected_transition_systems
+                < smallest_generator_affected_transition_systems_size) {
+                smallest_generator_affected_transition_systems_size =
+                    number_overall_affected_transition_systems;
                 chosen_generator_for_merging = generator_index;
             } else if (symmetries_for_merging == LARGEST
-                          && number_overall_affected_transition_systems
-                          > largest_generator_affected_transition_systems_size) {
-                largest_generator_affected_transition_systems_size
-                        = number_overall_affected_transition_systems;
+                       && number_overall_affected_transition_systems
+                       > largest_generator_affected_transition_systems_size) {
+                largest_generator_affected_transition_systems_size =
+                    number_overall_affected_transition_systems;
                 chosen_generator_for_merging = generator_index;
             }
         }
@@ -157,13 +157,13 @@ void MergeSymmetries::determine_merge_order() {
     if (chosen_generator_for_merging == -1) {
         // There are only atomic generators, nothing to merge for.
         log << "Found only atomic generators, not merging for symmetries."
-             << endl;
+            << endl;
         return;
     }
 
     const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
     log << "Affected transition system indices of chosen generator: "
-         << generator->get_overall_affected_transition_systems() << endl;
+        << generator->get_overall_affected_transition_systems() << endl;
 
     if (internal_merging == SECONDARY) {
         assert(current_ts_indices.empty());
@@ -184,7 +184,7 @@ void MergeSymmetries::determine_merge_order() {
       as given by fast downward.
     */
     if (symmetries_for_merging != NO_MERGING) {
-        vector<vector<int> > cycles;
+        vector<vector<int>> cycles;
         vector<int> merge_linear_transition_systems;
 
         // Always include all mapped transition systems
@@ -213,7 +213,7 @@ void MergeSymmetries::determine_merge_order() {
           merged linearly after the mapped ones).
         */
         const vector<int> &internally_affected_transition_systems =
-             generator->get_internally_affected_transition_systems();
+            generator->get_internally_affected_transition_systems();
         merge_linear_transition_systems.insert(merge_linear_transition_systems.end(),
                                                internally_affected_transition_systems.begin(),
                                                internally_affected_transition_systems.end());
@@ -276,7 +276,7 @@ pair<int, int> MergeSymmetries::get_next(
     const vector<int> &allowed_indices) {
     if (!allowed_indices.empty()) {
         cerr << "This merge strategy is not compatible with being computed "
-                "for a subset of indices" << endl;
+            "for a subset of indices" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_UNSUPPORTED);
     }
     ++iteration_counter;

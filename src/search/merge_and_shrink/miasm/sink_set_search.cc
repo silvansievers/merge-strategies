@@ -73,8 +73,8 @@ void SinkSetSearch::dump_options(ostream &os, const string sep) const {
 }
 
 void SinkSetSearch::get_sink_set(vector<var_set_t> &sink_set) {
-    std::sort(sink_set_idx.begin(), sink_set_idx.end(),
-              ComparatorVarSet(task_proxy, &vsir, VarSetCmpType::BY_RATIO));
+    sort(sink_set_idx.begin(), sink_set_idx.end(),
+         ComparatorVarSet(task_proxy, &vsir, VarSetCmpType::BY_RATIO));
 
 //    for (size_t i = 0; i < sink_set_idx.size(); i++) {
 //        cerr << vsir[sink_set_idx[i]].variables << ": "
@@ -127,7 +127,7 @@ void SinkSetSearch::kickstart() {
         enqueue(*s);
     }
 
-    vector<set<var_set_t> > mutex_pair_cliques;
+    vector<set<var_set_t>> mutex_pair_cliques;
     mutex_pair_cliques.push_back(mutex_pair_vars);
     for (size_t i = 3; i <= (size_t)clique_limit; i++) {
         set<var_set_t> larger;
@@ -146,11 +146,11 @@ void SinkSetSearch::kickstart() {
 
     /* put CG strongly connected componets into the priority queue */
 //    cerr << "strongly connected components :" << endl;
-    vector<vector<int> > cg_succ;
+    vector<vector<int>> cg_succ;
     for (int i = 0; i < static_cast<int>(task_proxy.get_variables().size()); i++) {
         cg_succ.push_back(causal_graph.get_successors(i));
     }
-    vector<vector<int> > sccs(sccs::compute_maximal_sccs(cg_succ));
+    vector<vector<int>> sccs(sccs::compute_maximal_sccs(cg_succ));
 
     for (size_t i = 0; i < sccs.size(); ++i) {
         var_set_t scc(sccs[i].begin(), sccs[i].end());
@@ -196,10 +196,10 @@ void SinkSetSearch::update_gain(const var_set_t &S, const size_t Si) {
         var_set_t K[2];
         double K_r[2];
         K[0] = check_sets[i];
-        std::set_difference(
+        set_difference(
             S.begin(), S.end(),
             K[0].begin(), K[0].end(),
-            std::inserter(K[1], K[1].begin()));
+            inserter(K[1], K[1].begin()));
 //            cerr << K[0] << " * " << K[1] << endl;
         for (size_t j = 0; j < 2; j++) {
             K_r[j] = 1;
@@ -207,7 +207,6 @@ void SinkSetSearch::update_gain(const var_set_t &S, const size_t Si) {
                 K_r[j] = vsir[K[j]].ratio;
             } else if (opt_gain == EnumGain::POOL_ACCUR ||
                        opt_gain == EnumGain::ALL_ACCUR) {
-
                 compute_varset_info(K[j]);
                 assert(vsir.contain(K[j]));
                 K_r[j] = vsir[K[j]].ratio;
@@ -259,9 +258,9 @@ bool SinkSetSearch::enqueue(const var_set_t &S, pair<size_t, size_t> P) {
         const VarSetInfo &L = vsir[P.first];
         const VarSetInfo &R = vsir[P.second];
         estimated_size += combinatorial_size(L.variables, task_proxy) *
-                          L.ratio;
+            L.ratio;
         estimated_size += combinatorial_size(R.variables, task_proxy) *
-                          R.ratio;
+            R.ratio;
     } else {
         estimated_size = combinatorial_size(S, task_proxy);
     }
@@ -420,7 +419,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
     set<int> var_id_set2(var_id_set.begin(), var_id_set.end());
     assert(S == var_id_set2);
     vsi.ratio = (double)ts.get_size() /
-                combinatorial_size(var_id_set2, task_proxy);
+        combinatorial_size(var_id_set2, task_proxy);
     /* defaul gain */
     vsi.gain = 1.0 - vsi.ratio;
 
@@ -445,7 +444,7 @@ void SinkSetSearch::compute_varset_info(const var_set_t &S,
 
 void SinkSetSearch::k_subsets(const var_set_t &S, const size_t k,
                               vector<var_set_t> &ks) {
-    vector<vector<int> > ac = generate_combinations(S.size(), k);
+    vector<vector<int>> ac = generate_combinations(S.size(), k);
     vector<int> s2v(S.begin(), S.end());
     for (size_t i = 0; i < ac.size(); i++) {
         var_set_t subset;
@@ -458,10 +457,10 @@ void SinkSetSearch::k_subsets(const var_set_t &S, const size_t k,
 }
 
 
-vector<vector<int> > SinkSetSearch::generate_combinations(
+vector<vector<int>> SinkSetSearch::generate_combinations(
     const int n, const int t) {
     assert(t > 0);
-    vector<vector<int> > ac;
+    vector<vector<int>> ac;
     vector<int> c;
     for (int i = 0; i < t; i++) {
         c.push_back(i);

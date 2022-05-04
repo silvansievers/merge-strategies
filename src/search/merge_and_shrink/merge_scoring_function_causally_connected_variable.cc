@@ -15,8 +15,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeScoringFunctionCausallyConnectedVariable::
-MergeScoringFunctionCausallyConnectedVariable()
+MergeScoringFunctionCausallyConnectedVariable::MergeScoringFunctionCausallyConnectedVariable()
     : // HACK!
       task_proxy(*tasks::g_root_task) {
 }
@@ -58,7 +57,7 @@ vector<double> MergeScoringFunctionCausallyConnectedVariable::compute_scores(
         const vector<int> &variables1 =
             fts.get_transition_system(ts_index1).get_incorporated_variables();
         const vector<int> &variables2 =
-                fts.get_transition_system(ts_index2).get_incorporated_variables();
+            fts.get_transition_system(ts_index2).get_incorporated_variables();
         if ((variables1.size() == 1 && is_causal_predecessor[variables1.front()])
             || (variables2.size() == 1 && is_causal_predecessor[variables2.front()])) {
             score = 0;

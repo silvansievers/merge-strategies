@@ -130,7 +130,7 @@ bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
     /* */
     VarSetCmpType cmp_type_temp(cmp_type);
     if (cmp_type_temp == VarSetCmpType::BY_GAIN) {
-        if (std::abs(SIi.gain - SIj.gain) >= DBL_EPSILON) {
+        if (abs(SIi.gain - SIj.gain) >= DBL_EPSILON) {
             return SIi.gain > SIj.gain;
         } else {
             cmp_type_temp = VarSetCmpType::BY_RATIO;
@@ -138,11 +138,11 @@ bool ComparatorVarSet::operator()(const size_t i, const size_t j) const {
     }
 
     if (cmp_type_temp == VarSetCmpType::BY_RATIO) {
-//        cerr << "std::abs(SIi.ratio - SIj.ratio)"
-//             << std::abs(SIi.ratio - SIj.ratio) << endl;
+//        cerr << "abs(SIi.ratio - SIj.ratio)"
+//             << abs(SIi.ratio - SIj.ratio) << endl;
 //        cerr << "DBL_EPSILON"
 //             << DBL_EPSILON << endl;
-        if (std::abs(SIi.ratio - SIj.ratio) >= DBL_EPSILON) {
+        if (abs(SIi.ratio - SIj.ratio) >= DBL_EPSILON) {
             return SIi.ratio < SIj.ratio;
         } else {
             cmp_type_temp = VarSetCmpType::BY_COMB_SIZE;

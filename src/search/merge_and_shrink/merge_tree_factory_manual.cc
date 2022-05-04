@@ -44,7 +44,7 @@ unique_ptr<MergeTree> MergeTreeFactoryManual::compute_merge_tree(
             cerr << "Invalid size of merge order" << endl;
             utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
         }
-        map<int, MergeTreeNode*> index_to_tree;
+        map<int, MergeTreeNode *> index_to_tree;
         for (int atomic_ts_index = 0; atomic_ts_index < num_vars; ++atomic_ts_index) {
             index_to_tree[atomic_ts_index] = new MergeTreeNode(atomic_ts_index);
         }
@@ -120,7 +120,7 @@ static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
                     cerr << "Every element in the list merge_order_list must "
-                            "contain exactly two elements!" << endl;
+                        "contain exactly two elements!" << endl;
                     cerr << pair << endl;
                     utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
                 }

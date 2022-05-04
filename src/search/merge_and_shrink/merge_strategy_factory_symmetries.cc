@@ -43,35 +43,41 @@ void MergeStrategyFactorySymmetries::dump_strategy_specific_options() const {
     log << "    symmetries for merging: ";
     int symmetries_for_merging = options.get<SymmetriesForMerging>("symmetries_for_merging");
     switch (symmetries_for_merging) {
-        case 0: {
-            log << "none";
-            break;
-        }
-        case 1: {
-            log << "smallest";
-            break;
-        }
-        case 2: {
-            log << "largest";
-            break;
-        }
+    case 0:
+    {
+        log << "none";
+        break;
+    }
+    case 1:
+    {
+        log << "smallest";
+        break;
+    }
+    case 2:
+    {
+        log << "largest";
+        break;
+    }
     }
     log << endl;
     if (symmetries_for_merging) {
         log << "    internal merging: ";
         switch (options.get<InternalMerging>("internal_merging")) {
-            case 0: {
-                log << "linear";
-                break;
-            }
-            case 1: {
-                log << "non linear";
-                break;
-            }
-            case 2: {
-                log << "secondary";
-                break;
-            }
+        case 0:
+        {
+            log << "linear";
+            break;
+        }
+        case 1:
+        {
+            log << "non linear";
+            break;
+        }
+        case 2:
+        {
+            log << "secondary";
+            break;
+        }
         }
         log << endl;
     }
@@ -127,25 +133,25 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     symmetries_for_merging.push_back("SMALLEST");
     symmetries_for_merging.push_back("LARGEST");
     parser.add_enum_option<SymmetriesForMerging>("symmetries_for_merging",
-                           symmetries_for_merging,
-                           "choose the type of symmetries that should determine "
-                           "the set of transition systems to be merged: "
-                           "the smallest or the largest",
-                           "SMALLEST");
+                                                 symmetries_for_merging,
+                                                 "choose the type of symmetries that should determine "
+                                                 "the set of transition systems to be merged: "
+                                                 "the smallest or the largest",
+                                                 "SMALLEST");
     vector<string> internal_merging;
     internal_merging.push_back("LINEAR");
     internal_merging.push_back("NON_LINEAR");
     internal_merging.push_back("SECONDARY");
     parser.add_enum_option<InternalMerging>("internal_merging",
-                           internal_merging,
-                           "choose the order in which to merge the set of "
-                           "transition systems to be merged: "
-                           "linear (obvious), "
-                           "non linear, which means to first merge every cycle, "
-                           "and then the resulting intermediate transition systems, "
-                           "secondary: use secondary merge strategy, i.e. either "
-                           "a merge tree factory or a merge selector.",
-                           "LINEAR");
+                                            internal_merging,
+                                            "choose the order in which to merge the set of "
+                                            "transition systems to be merged: "
+                                            "linear (obvious), "
+                                            "non linear, which means to first merge every cycle, "
+                                            "and then the resulting intermediate transition systems, "
+                                            "secondary: use secondary merge strategy, i.e. either "
+                                            "a merge tree factory or a merge selector.",
+                                            "LINEAR");
 
     // Options for GraphCreator
     parser.add_option<bool>("stabilize_transition_systems", "compute symmetries that "
@@ -171,16 +177,16 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
     if (parser.help_mode()) {
         return nullptr;
     } else if (options.get<int>("bliss_call_time_limit")
-            && options.get<int>("bliss_total_time_budget")) {
+               && options.get<int>("bliss_total_time_budget")) {
         cerr << "Please only specify bliss_call_time_limit or "
-                "bliss_total_time_budget but not both" << endl;
+            "bliss_total_time_budget but not both" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
     bool merge_tree = options.contains("merge_tree");
     bool merge_selector = options.contains("merge_selector");
     if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
         cerr << "You have to specify exactly one of the options merge_tree "
-                "and merge_selector!" << endl;
+            "and merge_selector!" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
     if (parser.dry_run())
