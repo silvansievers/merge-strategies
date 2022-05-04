@@ -22,9 +22,9 @@ using namespace std;
 
 namespace merge_and_shrink {
 SymmetryGroup::SymmetryGroup(
-    const bool debug, const bool stabilize_transition_systems)
+    const bool debug, const bool stabilize_transition_systems, utils::LogProxy &log)
     : bliss_limit_reached(false) {
-    gc = new MSGraphCreator(debug, stabilize_transition_systems);
+    gc = new MSGraphCreator(debug, stabilize_transition_systems, log);
 }
 
 SymmetryGroup::~SymmetryGroup() {

@@ -3,6 +3,10 @@
 
 #include <vector>
 
+namespace utils {
+class LogProxy;
+}
+
 /*
   This struct stores information about how to convert indices as used in the
   bliss graph and hence as used by symmetry generators into transition systems
@@ -44,8 +48,8 @@ struct SymmetryGeneratorInfo {
     // Returns the index given the transition system index and an abstract state
     // of that transition system.
     int get_index_by_ts_index_and_abs_state(const int var, const int val) const;
-    void dump() const;
-    void dump_var_by_val() const;
+    void dump(utils::LogProxy &log) const;
+    void dump_var_by_val(utils::LogProxy &log) const;
 };
 
 class SymmetryGenerator {
@@ -89,9 +93,9 @@ public:
     //}
     void compute_cycles(std::vector<std::vector<int> > &cycles) const;
     //void get_mappings_for_cycles(std::vector<std::vector<std::pair<int, std::vector<int> > > > &mapping) const;
-    void dump() const;
-    void dump_value() const;
-    void dump_all() const;
+    void dump(utils::LogProxy &log) const;
+    void dump_value(utils::LogProxy &log) const;
+    void dump_all(utils::LogProxy &log) const;
 };
 }
 

@@ -7,6 +7,10 @@ namespace bliss {
     class Digraph;
 }
 
+namespace utils {
+class LogProxy;
+}
+
 /**
  * This class is using bliss for finding symmetries of the given set of transition systems.
  */
@@ -29,12 +33,16 @@ class MSGraphCreator {
     // Options
     const bool debug; //generate dot-readable output
     const bool stabilize_transition_systems;
+    utils::LogProxy &log;
 
     void create_bliss_directed_graph(const FactoredTransitionSystem &fts,
                                      bliss::Digraph &bliss_graph,
                                      SymmetryGeneratorInfo *symmetry_generator_info) const ;
 public:
-    MSGraphCreator(const bool debug, const bool stabilize_transition_systems);
+    MSGraphCreator(
+        const bool debug,
+        const bool stabilize_transition_systems,
+        utils::LogProxy &log);
     double compute_symmetries(const FactoredTransitionSystem &fts,
                               SymmetryGroup *symmetry_group,
                               SymmetryGeneratorInfo *symmetry_generator_info,

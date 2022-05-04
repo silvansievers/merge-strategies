@@ -30,9 +30,12 @@ void add_automorphism(void* param, unsigned int, const unsigned int *automorphis
 }
 
 MSGraphCreator::MSGraphCreator(
-    const bool debug, const bool stabilize_transition_systems)
+    const bool debug, 
+    const bool stabilize_transition_systems, 
+    utils::LogProxy &log)
     : debug(debug),
-      stabilize_transition_systems(stabilize_transition_systems) {
+      stabilize_transition_systems(stabilize_transition_systems),
+      log(log) {
 }
 
 double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
@@ -42,18 +45,18 @@ double MSGraphCreator::compute_symmetries(const FactoredTransitionSystem &fts,
     utils::Timer timer;
     new_handler original_new_handler = set_new_handler(out_of_memory_handler);
     try {
-        utils::g_log << "Creating the bliss graph..." << timer << endl;
+        log << "Creating the bliss graph..." << timer << endl;
         bliss::Digraph bliss_graph = bliss::Digraph();
         create_bliss_directed_graph(fts, bliss_graph, symmetry_generator_info);
     //    bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_flm);
         bliss_graph.set_splitting_heuristic(bliss::Digraph::shs_fs);
         bliss_graph.set_time_limit(bliss_time_limit);
         bliss::Stats stats1;
-        utils::g_log << "Searching for automorphisms... " << timer << endl;
+        log << "Searching for automorphisms... " << timer << endl;
         bliss_graph.find_automorphisms(stats1, &(add_automorphism), symmetry_group);
-        utils::g_log << "Got " << symmetry_group->get_num_generators()
-             << " group generators" << endl;
-        utils::g_log << "Done computing symmetries: " << timer << endl;
+        log << "Got " << symmetry_group->get_num_generators()
+            << " group generators" << endl;
+        log << "Done computing symmetries: " << timer << endl;
     } catch (bliss::BlissException &e) {
         e.dump();
         symmetry_group->set_bliss_limit_reached();
@@ -66,9 +69,9 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                                                  bliss::Digraph &bliss_graph,
                                                  SymmetryGeneratorInfo *symmetry_generator_info) const {
     if (debug) {
-        utils::g_log << "digraph pdg";
-        utils::g_log << " {" << endl;
-        utils::g_log << "    node [shape = none] start;" << endl;
+        log << "digraph pdg";
+        log << " {" << endl;
+        log << "    node [shape = none] start;" << endl;
     }
 
     int vertex = 0;
@@ -101,7 +104,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
         }
 
         if (debug) {
-            utils::g_log << "    node" << vertex << " [shape=circle, label=ts"
+            log << "    node" << vertex << " [shape=circle, label=ts"
                  << ts_index << "]; // color: "
                  << TRANSITION_SYSTEM_VERTEX + node_color_added_val << endl;
         }
@@ -134,11 +137,11 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 bliss_graph.add_edge(ts_index, vertex);
 
                 if (debug) {
-                    utils::g_log << "    node" << vertex << " [shape=circle, label=ts"
-                         << ts_index << "_state" << state << "]; // color: "
-                         << (ts.is_goal_state(state) ? GOAL_VERTEX : ABSTRACT_STATE_VERTEX) + node_color_added_val
-                         << endl;
-                    utils::g_log << "    node" << ts_index << " -> node" << vertex << ";" << endl;
+                    log << "    node" << vertex << " [shape=circle, label=ts"
+                        << ts_index << "_state" << state << "]; // color: "
+                        << (ts.is_goal_state(state) ? GOAL_VERTEX : ABSTRACT_STATE_VERTEX) + node_color_added_val
+                        << endl;
+                    log << "    node" << ts_index << " -> node" << vertex << ";" << endl;
                 }
             }
         }
@@ -160,10 +163,10 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
         label_to_vertex[label_no] = bliss_graph.add_vertex(LABEL_VERTEX + label_cost + node_color_added_val);
 
         if (debug) {
-            utils::g_log << "    node" << label_to_vertex[label_no]
-                 << " [shape=circle, label=label_no" << label_no  << "]; // color: "
-                 << LABEL_VERTEX + label_cost + node_color_added_val
-                 << endl;
+            log << "    node" << label_to_vertex[label_no]
+                << " [shape=circle, label=label_no" << label_no  << "]; // color: "
+                << LABEL_VERTEX + label_cost + node_color_added_val
+                << endl;
         }
     }
 
@@ -187,11 +190,11 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
             bliss_graph.add_edge(ts_index, vertex);
 
             if (debug) {
-                utils::g_log << "    node" << vertex << " [shape=circle, label=label_group_ts"
-                     << ts_index << "]; // color: "
-                     << LABEL_GROUP_VERTEX + node_color_added_val
-                     << endl;
-                utils::g_log << "    node" << ts_index << " -> node" << vertex << endl;
+                log << "    node" << vertex << " [shape=circle, label=label_group_ts"
+                    << ts_index << "]; // color: "
+                    << LABEL_GROUP_VERTEX + node_color_added_val
+                    << endl;
+                log << "    node" << ts_index << " -> node" << vertex << endl;
             }
 
             const LabelGroup &label_group = gat.label_group;
@@ -199,7 +202,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 bliss_graph.add_edge(label_to_vertex[label_no], vertex);
 
                 if (debug) {
-                    utils::g_log << "    node" << label_to_vertex[label_no] << " -> node" << vertex << ";" << endl;
+                    log << "    node" << label_to_vertex[label_no] << " -> node" << vertex << ";" << endl;
                 }
             }
 
@@ -217,20 +220,20 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 bliss_graph.add_edge(transition_vertex, target_vertex);
 
                 if (debug) {
-                    utils::g_log << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
-                         << ts_index << "]; // color: "
-                         << TRANSITION_VERTEX + node_color_added_val
-                         << endl;
-                    utils::g_log << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
-                    utils::g_log << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
-                    utils::g_log << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
+                    log << "    node" << transition_vertex << " [shape=circle, label=transition_ts"
+                        << ts_index << "]; // color: "
+                        << TRANSITION_VERTEX + node_color_added_val
+                        << endl;
+                    log << "    node" << source_vertex << " -> node" << transition_vertex << ";" << endl;
+                    log << "    node" << transition_vertex << " -> node" << target_vertex << ";" << endl;
+                    log << "    node" << vertex << " -> node" << transition_vertex << ";" << endl;
                 }
             }
         }
     }
 
     if (debug) {
-        utils::g_log << "}" << endl;
+        log << "}" << endl;
     }
 }
 }

@@ -49,23 +49,23 @@ int SymmetryGeneratorInfo::get_index_by_ts_index_and_abs_state(int ts_index, int
     return starting_index_by_ts_index[ts_index] + abs_state;
 }
 
-void SymmetryGeneratorInfo::dump() const {
-    utils::g_log << "num transition systems: " << num_transition_systems << endl;
-    utils::g_log << "num abs and states: " << num_ts_and_states << endl;
-    utils::g_log << "ts_index_by_index" << endl;
-    utils::g_log << ts_index_by_index << endl;
-    utils::g_log << "starting_index_by_ts_index" << endl;
-    utils::g_log << starting_index_by_ts_index << endl;
+void SymmetryGeneratorInfo::dump(utils::LogProxy &log) const {
+    log << "num transition systems: " << num_transition_systems << endl;
+    log << "num abs and states: " << num_ts_and_states << endl;
+    log << "ts_index_by_index" << endl;
+    log << ts_index_by_index << endl;
+    log << "starting_index_by_ts_index" << endl;
+    log << starting_index_by_ts_index << endl;
 }
 
-void SymmetryGeneratorInfo::dump_var_by_val() const {
+void SymmetryGeneratorInfo::dump_var_by_val(utils::LogProxy &log) const {
     int size = num_ts_and_states - num_transition_systems;
     for (int i = 0; i < size; ++i) {
-        utils::g_log << i << ": " << ts_index_by_index[i];
+        log << i << ": " << ts_index_by_index[i];
         if (i != size - 1)
-            utils::g_log << ", ";
+            log << ", ";
     }
-    utils::g_log << endl;
+    log << endl;
 }
 
 
@@ -205,8 +205,8 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 //        const vector<int> &cycle = cycles[cycle_no];
 //        vector<pair<int, vector<int> > > cycle_mappings;
 //        cycle_mappings.reserve(cycle.size());
-//        utils::g_log << "cycle " << cycle_no << endl;
-//        utils::g_log << sym_gen_info->dom_sum_by_var << endl;
+//        log << "cycle " << cycle_no << endl;
+//        log << sym_gen_info->dom_sum_by_var << endl;
 //        dump_value();
 //        sym_gen_info->dump_var_by_val();
 //        for (size_t i = 0; i < cycle.size(); ++i) {
@@ -216,7 +216,7 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 //                to_abs_index = cycle[i + 1];
 //            else
 //                to_abs_index = cycle[0];
-//            utils::g_log << "transition system " << from_abs_index << " -> " << to_abs_index << endl;
+//            log << "transition system " << from_abs_index << " -> " << to_abs_index << endl;
 //            vector<int> internal_abs_mapping;
 //            size_t value_index = 0;
 //            while (sym_gen_info->var_by_val[value_index] != from_abs_index) {
@@ -226,20 +226,20 @@ void SymmetryGenerator::compute_cycles(std::vector<std::vector<int> > &cycles) c
 //            while (value_index < sym_gen_info->num_abs_and_states - sym_gen_info->num_transition_systems && sym_gen_info->var_by_val[value_index] == from_abs_index) {
 //                // the entry x in var_by_val corresponds to the index
 //                // x + num_transition_systems in value[]
-//                //utils::g_log << "value_index " << value_index << endl;
+//                //log << "value_index " << value_index << endl;
 //                int from_index = value_index + sym_gen_info->num_transition_systems;
-//                //utils::g_log << "from_index " << from_index << endl;
+//                //log << "from_index " << from_index << endl;
 //                int to_index = value[from_index];
-//                //utils::g_log << "to_index " << to_index << endl;
+//                //log << "to_index " << to_index << endl;
 //                //assert(sym_gen_info->get_var_by_index(to_index) == to_abs_index);
 //                int to_abs_index = sym_gen_info->get_var_by_index(to_index);
-//                //utils::g_log << "to_abs_index " << to_abs_index << endl;
+//                //log << "to_abs_index " << to_abs_index << endl;
 //                if (i != cycle.size() - 1)
 //                    assert(to_abs_index == cycle[i + 1]);
 //                else
 //                    assert(to_abs_index == cycle[0]);
 //                int to_state_index = to_index - sym_gen_info->dom_sum_by_var[to_abs_index];
-//                utils::g_log << from_index - sym_gen_info->dom_sum_by_var[from_abs_index] << " -> " << to_state_index << endl;
+//                log << from_index - sym_gen_info->dom_sum_by_var[from_abs_index] << " -> " << to_state_index << endl;
 //                internal_abs_mapping.push_back(to_state_index);
 //                ++value_index;
 //            }
@@ -259,36 +259,36 @@ int SymmetryGenerator::get_value(int ind) const {
     return value[ind];
 }
 
-void SymmetryGenerator::dump() const {
+void SymmetryGenerator::dump(utils::LogProxy &log) const {
     for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
         if (get_value(i) != i)
-            utils::g_log << setw(4) << i;
+            log << setw(4) << i;
     }
-    utils::g_log << endl;
+    log << endl;
     for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
         if (get_value(i) != i)
-            utils::g_log << setw(4) << get_value(i);
+            log << setw(4) << get_value(i);
     }
-    utils::g_log << endl;
+    log << endl;
 }
 
-void SymmetryGenerator::dump_value() const {
+void SymmetryGenerator::dump_value(utils::LogProxy &log) const {
     for (int i = 0; i < sym_gen_info->num_ts_and_states; ++i) {
-        utils::g_log << i << " -> " << value[i];
+        log << i << " -> " << value[i];
         if (i != sym_gen_info->num_ts_and_states - 1)
-            utils::g_log << ", ";
+            log << ", ";
     }
-    utils::g_log << endl;
+    log << endl;
 }
 
-void SymmetryGenerator::dump_all() const {
-    utils::g_log << "values:" << endl;
+void SymmetryGenerator::dump_all(utils::LogProxy &log) const {
+    log << "values:" << endl;
     for(int i = 0; i < sym_gen_info->num_ts_and_states; i++){
-        utils::g_log << value[i] << ", ";
+        log << value[i] << ", ";
     }
-    utils::g_log << endl;
-    utils::g_log << "borrowed buffer: " << borrowed_buffer << endl;
-    utils::g_log << "identiy perm: " << identity_generator << endl;
-    sym_gen_info->dump();
+    log << endl;
+    log << "borrowed buffer: " << borrowed_buffer << endl;
+    log << "identiy perm: " << identity_generator << endl;
+    sym_gen_info->dump(log);
 }
 }

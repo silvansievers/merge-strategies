@@ -7,6 +7,10 @@
 #include <unordered_set>
 #include <vector>
 
+namespace utils {
+class LogProxy;
+}
+
 namespace merge_and_shrink {
 class Labels;
 
@@ -122,7 +126,7 @@ public:
     }
 //    bool consistent();
     bool operator==(const LabelEquivalenceRelation &other) const;
-    void dump() const;
+    void dump(utils::LogProxy &log) const;
 };
 }
 

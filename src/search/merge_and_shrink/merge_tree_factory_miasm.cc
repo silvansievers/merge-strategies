@@ -10,7 +10,6 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 
-#include "../utils/logging.h"
 #include "../utils/system.h"
 
 #include <iostream>
@@ -26,7 +25,8 @@ MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
       miasm_internal(opts.get<MiasmInternal>("miasm_internal")),
       miasm_external(opts.get<MiasmExternal>("miasm_external")),
       fallback_merge_selector(nullptr),
-      trivial_partitioning(false) {
+      trivial_partitioning(false),
+      log(utils::get_log_from_options(opts)) {
     // TODO: We would like to store sink_set_search instead of options here,
     // but it requires a task object.
     if (options.contains("fallback_merge_selector")) {
@@ -48,11 +48,11 @@ MiasmMergeTree *MergeTreeFactoryMiasm::compute_miasm_merge_tree(
 //    cerr << "max packing" << max_packing << endl;
     if (max_packing.size() == task_proxy.get_variables().size()) {
         trivial_partitioning = true;
-        utils::g_log << "Found a trivial variable partitioning, ";
+        log << "Found a trivial variable partitioning, ";
         if (fallback_merge_selector) {
-            utils::g_log << "using fallback merge strategy" << endl;
+            log << "using fallback merge strategy" << endl;
         } else {
-            utils::g_log << "but no fallback merge strategy specified." << endl;
+            log << "but no fallback merge strategy specified." << endl;
         }
     }
 
@@ -245,6 +245,8 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
         "the fallback merge 'strategy' to use if a stateless strategy should"
         "be used.",
         options::OptionParser::NONE);
+
+    utils::add_log_options_to_parser(parser);
 }
 
 static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {

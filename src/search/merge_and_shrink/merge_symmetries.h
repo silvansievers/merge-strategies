@@ -3,6 +3,8 @@
 
 #include "merge_strategy.h"
 
+#include "../utils/logging.h"
+
 #include <memory>
 #include <vector>
 
@@ -36,6 +38,7 @@ class MergeSymmetries : public MergeStrategy {
     const InternalMerging internal_merging;
     const int max_bliss_iterations;
     const int bliss_call_time_limit;
+    utils::LogProxy log;
 
     std::unique_ptr<SymmetryGroup> symmetry_group;
     double bliss_remaining_time_budget;

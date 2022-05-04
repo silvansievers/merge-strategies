@@ -147,10 +147,10 @@ int LabelEquivalenceRelation::add_label_group(const vector<int> &new_labels) {
 //            int label_no = *label_it;
 //            if (label_to_positions[label_no].first != static_cast<int>(group_id) ||
 //                *label_to_positions[label_no].second != *label_it) {
-//                utils::g_log << label_no << " has inconsistent entries" << endl;
-//                utils::g_log << label_to_positions[label_no].first << " "
+//                log << label_no << " has inconsistent entries" << endl;
+//                log << label_to_positions[label_no].first << " "
 //                     << group_id << endl;
-//                utils::g_log << *label_to_positions[label_no].second << " "
+//                log << *label_to_positions[label_no].second << " "
 //                     << *label_it << endl;
 //                consistent = false;
 //                break;
@@ -176,14 +176,14 @@ bool LabelEquivalenceRelation::operator==(const LabelEquivalenceRelation &other)
     return grouped_labels == other.grouped_labels && label_to_positions_consistent;
 }
 
-void LabelEquivalenceRelation::dump() const {
-    utils::g_log << "label equiv rel:" << endl;
+void LabelEquivalenceRelation::dump(utils::LogProxy &log) const {
+    log << "label equiv rel:" << endl;
     for (const LabelGroup &group : grouped_labels) {
         if (!group.empty()) {
             for (LabelConstIter label_it = group.begin(); label_it != group.end(); ++label_it) {
-                utils::g_log << *label_it << ", ";
+                log << *label_it << ", ";
             }
-            utils::g_log << endl;
+            log << endl;
         }
     }
 }

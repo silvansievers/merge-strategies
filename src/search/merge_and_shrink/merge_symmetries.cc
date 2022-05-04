@@ -34,6 +34,7 @@ MergeSymmetries::MergeSymmetries(
       internal_merging(options.get<InternalMerging>("internal_merging")),
       max_bliss_iterations(options.get<int>("max_bliss_iterations")),
       bliss_call_time_limit(options.get<int>("bliss_call_time_limit")),
+      log(utils::get_log_from_options(options)),
       bliss_remaining_time_budget(options.get<int>("bliss_total_time_budget")),
       task_proxy(task_proxy),
       fallback_merge_tree_factory(merge_tree_factory),
@@ -47,7 +48,8 @@ MergeSymmetries::MergeSymmetries(
       done_merging_for_symmetries(false) {
     symmetry_group = utils::make_unique_ptr<SymmetryGroup>(
         options.get<bool>("debug_graph_creator"),
-        options.get<bool>("stabilize_transition_systems"));
+        options.get<bool>("stabilize_transition_systems"),
+        log);
     if (fallback_merge_tree_factory) {
         assert(!fallback_merge_selector);
         fallback_merge_tree = fallback_merge_tree_factory->compute_merge_tree(task_proxy);
@@ -74,13 +76,13 @@ void MergeSymmetries::dump_statistics() {
         sort(bliss_times.begin(), bliss_times.end());
         double summed_up_bliss_times = 0;
         size_t total_bliss_calls = bliss_times.size();
-        utils::g_log << "Total bliss calls: " << total_bliss_calls << endl;
+        log << "Total bliss calls: " << total_bliss_calls << endl;
         for (size_t i = 0; i < total_bliss_calls; ++i) {
             summed_up_bliss_times += bliss_times[i];
         }
         double average_bliss_time = summed_up_bliss_times
                 / (double) total_bliss_calls;
-        utils::g_log << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
+        log << setprecision(5) << fixed << "Average bliss time: " << average_bliss_time << endl;
         double median_bliss_time;
         if (total_bliss_calls % 2 == 0) {
             size_t lower_median_index = (total_bliss_calls - 1) / 2;
@@ -92,7 +94,7 @@ void MergeSymmetries::dump_statistics() {
             size_t median_index = total_bliss_calls / 2;
             median_bliss_time = bliss_times[median_index];
         }
-        utils::g_log << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
+        log << setprecision(5) << fixed << "Median bliss time: " << median_bliss_time << endl;
     }
 }
 
@@ -135,32 +137,32 @@ void MergeSymmetries::determine_merge_order() {
         // Dump generator properties -- warning! lots of output!
 //        const vector<int> &internally_affected_transition_systems =
 //            generator->get_internally_affected_transition_systems();
-//        utils::g_log << "Generator " << generator_index << endl;
+//        log << "Generator " << generator_index << endl;
 //        for (size_t i = 0; i < mapped_transition_systems.size(); ++i) {
 //            int abs_index = mapped_transition_systems[i];
 //            int to_index = generator->get_value(abs_index);
-//            utils::g_log << transition_systems[abs_index]->tag() << " mapped to " <<
+//            log << transition_systems[abs_index]->tag() << " mapped to " <<
 //                    transition_systems[to_index]->tag();
 //            if (generator->internally_affects(abs_index))
-//                utils::g_log << " (and also internally affected)";
-//            utils::g_log << endl;
+//                log << " (and also internally affected)";
+//            log << endl;
 //        }
 //        for (size_t i = 0; i < internally_affected_transition_systems.size(); ++i) {
 //            int abs_index = internally_affected_transition_systems[i];
 //            assert(!generator->maps(abs_index));
-//            utils::g_log << transition_systems[abs_index]->tag() << " internally affected" << endl;
+//            log << transition_systems[abs_index]->tag() << " internally affected" << endl;
 //        }
     }
 
     if (chosen_generator_for_merging == -1) {
         // There are only atomic generators, nothing to merge for.
-        utils::g_log << "Found only atomic generators, not merging for symmetries."
+        log << "Found only atomic generators, not merging for symmetries."
              << endl;
         return;
     }
 
     const SymmetryGenerator *generator = symmetry_group->get_generator(chosen_generator_for_merging);
-    utils::g_log << "Affected transition system indices of chosen generator: "
+    log << "Affected transition system indices of chosen generator: "
          << generator->get_overall_affected_transition_systems() << endl;
 
     if (internal_merging == SECONDARY) {
@@ -263,9 +265,9 @@ void MergeSymmetries::determine_merge_order() {
             ++number_of_merges;
         }
 
-        utils::g_log << "Chosen internal merge order: " << endl;
+        log << "Chosen internal merge order: " << endl;
         for (size_t i = 0; i < merge_order.size(); ++i) {
-            utils::g_log << merge_order[i].first << ", " << merge_order[i].second << endl;
+            log << merge_order[i].first << ", " << merge_order[i].second << endl;
         }
     }
 }
@@ -297,7 +299,7 @@ pair<int, int> MergeSymmetries::get_next(
             } else if (bliss_call_time_limit) {
                 time_limit = bliss_call_time_limit;
             }
-            utils::g_log << "Setting bliss time limit to " << time_limit << endl;
+            log << "Setting bliss time limit to " << time_limit << endl;
             double bliss_time = symmetry_group->find_symmetries(fts, time_limit);
             if (symmetry_group->is_bliss_limit_reached()) {
                 bliss_limit_reached = true;
@@ -314,7 +316,7 @@ pair<int, int> MergeSymmetries::get_next(
                         start_merging_for_symmetries = true;
                         if (pure_fallback_strategy) {
                             pure_fallback_strategy = false;
-                            utils::g_log << "not pure fallback strategy anymore" << endl;
+                            log << "not pure fallback strategy anymore" << endl;
                         }
                     }
                 }
@@ -329,7 +331,7 @@ pair<int, int> MergeSymmetries::get_next(
                     // reached to true in any case.
                     bliss_limit_reached = true;
                 }
-                utils::g_log << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
+                log << "Remaining bliss time budget " << bliss_remaining_time_budget << endl;
             }
 
             // If using a merge tree factory, compute a merge tree for this set

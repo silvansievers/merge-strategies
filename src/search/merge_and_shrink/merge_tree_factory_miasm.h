@@ -7,6 +7,8 @@
 
 #include "../options/options.h"
 
+#include "../utils/logging.h"
+
 #include <vector>
 #include <set>
 
@@ -47,6 +49,7 @@ private:
     std::shared_ptr<MergeSelector> fallback_merge_selector;
     // True iff the variable partitioning found is trivial.
     bool trivial_partitioning;
+    utils::LogProxy log;
 
     MiasmMergeTree *compute_miasm_merge_tree(const TaskProxy &task_proxy);
 protected:

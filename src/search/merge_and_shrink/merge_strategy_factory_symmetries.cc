@@ -165,6 +165,8 @@ static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
         "be used.",
         options::OptionParser::NONE);
 
+    add_merge_strategy_options_to_parser(parser);
+
     options::Options options = parser.parse();
     if (parser.help_mode()) {
         return nullptr;

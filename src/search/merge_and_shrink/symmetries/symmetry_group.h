@@ -8,6 +8,10 @@ namespace options {
 class Options;
 }
 
+namespace utils {
+class LogProxy;
+}
+
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
 class MSGraphCreator;
@@ -21,7 +25,10 @@ class SymmetryGroup {
 
     bool bliss_limit_reached; // computation of bliss threw bliss or memory exception
 public:
-    SymmetryGroup(const bool debug, const bool stabilize_transition_systems);
+    SymmetryGroup(
+        const bool debug,
+        const bool stabilize_transition_systems,
+        utils::LogProxy &log);
     ~SymmetryGroup();
 
     // method used by add_automorphism
