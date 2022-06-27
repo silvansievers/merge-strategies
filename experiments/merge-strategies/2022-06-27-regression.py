@@ -16,26 +16,15 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
 BENCHMARKS_DIR = os.environ['DOWNWARD_BENCHMARKS']
 REVISIONS = [
-    'e966ed5db5c644402c28fe1ec54a7b39403b6b75', # FD main base before latest merge from main
-    '5182b5afb1604b88af2270011affd6966f7a590b', # after issue1018 (PDB)
-    '5430e040442147efebec24e7e404feff248d973b', # after issue995 (landmarks)
-    '7516b8d7359049e284bf43fede87cfe1a33153dc', # after issue1007 (CEGAR PDBs)
-    '40cb509cf40931db2b038558ce2a85e27bfda381', # after issue1008 (pattern generators)
-    'bdfedac371f1daf3b80d9a74074c4172cabffb52', # after issue999 (landmarks)
-    '8eba9ac9629f038086e038816fde745eb3a82cf9', # after issue1032 (RNG in VariableOrderFinder)
-    'c39d79b53fc236743ff971b1ad42270ae15237e8', # after issue964 (logging)
-    '63907c8b0291d8eca910bf6ce5a5e2075b74f261', # after issue467 (landmarks)
-    'f277c0c482511a8f877e57d973dc6139cc1f17e7', # after issue1041 (landmarks)
-    'ec96fbdb53decee03658761e2945f33cf50b0f21', # after issue998 (landmarks)
-    '75a889eadc22aa8fea97c406364f0f0c64131671', # after issue983 (delete relaxation)
     '6769e68c6a728ab2a76cc12e2e6ae066f7fd289e', # after issue937 (landmarks)
     '2a9cc5a5a6870031808c4e896393c1c82d9289b2', # after issue1042 (limited pruning)
-    'b772e1c3454c4a750498b943fcb553a3e3634c37', # after issue1043 (logging) = FD 21.12
 ]
 CONFIGS = [
     IssueConfig('dfp-b50k-t900', ['--search', 'astar(merge_and_shrink(merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order])),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1,main_loop_max_time=900))']),
-    # IssueConfig('rl-b50k-t900', ['--search', 'astar(merge_and_shrink(merge_strategy=merge_precomputed(merge_tree=linear(variable_order=reverse_level)),shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1,main_loop_max_time=900))']),
-    # IssueConfig('sccs-dfp-b50k-t900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1,main_loop_max_time=900))']),
+    IssueConfig('lmcut', ['--search', 'astar(lmcut())']),
+    IssueConfig('cpdbs', ['--search', 'astar(cpdbs(multiple_cegar(max_pdb_size=1000000,max_collection_size=10000000,pattern_generation_max_time=infinity,total_max_time=3,stagnation_limit=20,blacklist_trigger_percentage=0.75,enable_blacklist_on_stagnation=true,random_seed=2018,verbosity=normal,use_wildcard_plans=false)),verbosity=normal)']),
+    IssueConfig('bjolp', ['--evaluator', 'lmc=lmcount(lm_merged([lm_rhw(),lm_hm(m=1)]),admissible=true)', '--search', 'astar(lmc,lazy_evaluator=lmc)']),
+    IssueConfig('blind', ['--search', 'astar(blind())']),
 ]
 
 SUITE = common_setup.DEFAULT_OPTIMAL_SUITE
@@ -92,21 +81,6 @@ attributes.extend(extra_attributes)
 
 exp.add_absolute_report_step(attributes=attributes)
 
-for i in range(1, len(REVISIONS)):
-    rev1 = REVISIONS[i-1]
-    rev2 = REVISIONS[i]
-    report_name=f'{exp.name}-compare-rev{i-1}-rev{i}'
-    report_file=Path(exp.eval_dir) / f'{report_name}.html'
-    exp.add_report(
-        ComparativeReport(
-            attributes=attributes,
-            algorithm_pairs=[
-                ('{}-dfp-b50k-t900'.format(rev1),
-                '{}-dfp-b50k-t900'.format(rev2)),
-            ],
-        ),
-        name=report_name,
-        outfile=report_file,
-    )
+exp.add_comparison_table_step(attributes=attributes)
 
 exp.run_steps()
