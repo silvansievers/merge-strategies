@@ -38,7 +38,7 @@ ENVIRONMENT = BaselSlurmEnvironment(
     # module -q load GCC/10.3.0
     # echo $PATH
     # echo $LD_LIBRARY_PATH
-    setup='export PATH=/scicore/soft/apps/binutils/2.36.1-GCCcore-10.3.0/bin:/scicore/soft/apps/CMake/3.20.1-GCCcore-10.3.0/bin:/scicore/soft/apps/libarchive/3.5.1-GCCcore-10.3.0/bin:/scicore/soft/apps/XZ/5.2.5-GCCcore-10.3.0/bin:/scicore/soft/apps/cURL/7.76.0-GCCcore-10.3.0/bin:/scicore/soft/apps/bzip2/1.0.8-GCCcore-10.3.0/bin:/scicore/soft/apps/ncurses/6.2-GCCcore-10.3.0/bin:/scicore/soft/apps/GCCcore/10.3.0/bin:/infai/sieverss/repos/bin:/infai/sieverss/local:/export/soft/lua_lmod/centos7/lmod/lmod/libexec:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin\nexport LD_LIBRARY_PATH=/scicore/soft/apps/binutils/2.36.1-GCCcore-10.3.0/lib:/scicore/soft/apps/libarchive/3.5.1-GCCcore-10.3.0/lib:/scicore/soft/apps/XZ/5.2.5-GCCcore-10.3.0/lib:/scicore/soft/apps/cURL/7.76.0-GCCcore-10.3.0/lib:/scicore/soft/apps/bzip2/1.0.8-GCCcore-10.3.0/lib:/scicore/soft/apps/zlib/1.2.11-GCCcore-10.3.0/lib:/scicore/soft/apps/ncurses/6.2-GCCcore-10.3.0/lib')
+    setup='module -q load CMake/3.20.1-GCCcore-10.3.0\nmodule -q load GCC/10.3.0')
 
 if common_setup.is_test_run():
     SUITE = IssueExperiment.DEFAULT_TEST_SUITE
