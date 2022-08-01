@@ -395,6 +395,8 @@ static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) 
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
     add_transition_system_size_limit_options_to_parser(parser);
+    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+    utils::add_log_options_to_parser(parser);
 
     options::Options options = parser.parse();
     if (parser.help_mode()) {
@@ -510,6 +512,8 @@ static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser)
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
     add_transition_system_size_limit_options_to_parser(parser);
+    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+    utils::add_log_options_to_parser(parser);
 
     options::Options options = parser.parse();
     if (parser.help_mode()) {
@@ -614,6 +618,8 @@ static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) 
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
     add_transition_system_size_limit_options_to_parser(parser);
+    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+    utils::add_log_options_to_parser(parser);
 
     options::Options options = parser.parse();
     if (parser.help_mode()) {
@@ -778,6 +784,8 @@ static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) 
         "The given shrink stratgy configuration should match the one "
         "given to merge_and_shrink.");
     add_transition_system_size_limit_options_to_parser(parser);
+    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+    utils::add_log_options_to_parser(parser);
 
     options::Options options = parser.parse();
     if (parser.help_mode()) {
