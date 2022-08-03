@@ -159,7 +159,7 @@ exp.add_step('publish-comparison-report', subprocess.call, ['publish', report_fi
 
 MIDDLE_REV='82a246792974adf880e4834762deef983d4389b1'
 exp.add_fetcher(
-    'data/2022-04-05-merge-strategies',
+    'data/2022-04-05-symmetries-eval',
     filter_algorithm=[
         '{}-b50k-cggl-largest-nonlinear-b60-time900'.format(MIDDLE_REV),
         '{}-b50k-dfp-largest-nonlinear-b60-time900'.format(MIDDLE_REV),
