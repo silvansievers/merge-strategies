@@ -389,7 +389,7 @@ void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
                                vector<vector<bool>> &ts_index_to_irrelevant_labels) {
     int num_ts = fts.get_size();
     ts_index_to_irrelevant_labels.resize(num_ts, vector<bool>());
-    int num_labels = fts.get_labels().get_num_active_labels();
+    int num_labels = fts.get_labels().get_num_total_labels();
     for (int ts_index = 0; ts_index < num_ts; ++ts_index) {
         if (fts.is_active(ts_index)) {
             vector<bool> irrelevant_labels(num_labels, false);

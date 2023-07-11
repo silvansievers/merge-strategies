@@ -851,7 +851,7 @@ vector<double> MergeScoringFunctionLROpportunities::compute_scores(
     // Compute the number of labels that are irrelevant in all other transition
     // systems than then current considered pair.
     int num_ts = fts.get_size();
-    int num_labels = fts.get_labels().get_num_active_labels();
+    int num_labels = fts.get_labels().get_num_total_labels();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
         if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
@@ -935,7 +935,7 @@ vector<double> MergeScoringFunctionMoreLROpportunities::compute_scores(
     // transition systems than then current considered pair.
     int num_ts = fts.get_size();
     const Labels &labels = fts.get_labels();
-    int num_labels = labels.get_num_active_labels();
+    int num_labels = labels.get_num_total_labels();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
         if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {

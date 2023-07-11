@@ -152,7 +152,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
       label, with a fixed "label color" plus its cost.
     */
     const Labels &labels = fts.get_labels();
-    int num_labels = labels.get_num_active_labels();
+    int num_labels = labels.get_num_total_labels();
     vector<int> label_to_vertex(num_labels, -1);
     for (int label_no = 0; label_no < num_labels; ++label_no) {
         if (!labels.is_active_label(label_no))
