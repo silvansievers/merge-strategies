@@ -3,20 +3,20 @@
 
 #include "merge_strategy_factory.h"
 
-#include "../options/options.h"
+#include "../plugins/options.h"
 
 namespace merge_and_shrink {
 class MergeTreeFactory;
 class MergeSelector;
 class MergeStrategyFactorySymmetries : public MergeStrategyFactory {
-    options::Options options;
+    plugins::Options options;
     std::shared_ptr<MergeTreeFactory> merge_tree_factory;
     std::shared_ptr<MergeSelector> merge_selector;
 protected:
     virtual std::string name() const;
     virtual void dump_strategy_specific_options() const override;
 public:
-    explicit MergeStrategyFactorySymmetries(const options::Options &options);
+    explicit MergeStrategyFactorySymmetries(const plugins::Options &options);
     virtual ~MergeStrategyFactorySymmetries() override = default;
     virtual std::unique_ptr<MergeStrategy> compute_merge_strategy(
         const TaskProxy &task_proxy,

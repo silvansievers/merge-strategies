@@ -5,13 +5,11 @@
 
 #include <vector>
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
 namespace merge_and_shrink {
-class BinaryTree;
-
 class MergeTreeFactoryManual : public MergeTreeFactory {
     std::vector<std::vector<int>> merge_order_list;
     std::string merge_order_tree_string;
@@ -19,7 +17,7 @@ protected:
     virtual std::string name() const override;
     virtual void dump_tree_specific_options(utils::LogProxy &log) const override;
 public:
-    explicit MergeTreeFactoryManual(const options::Options &options);
+    explicit MergeTreeFactoryManual(const plugins::Options &options);
     virtual ~MergeTreeFactoryManual() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
         const TaskProxy &task_proxy) override;

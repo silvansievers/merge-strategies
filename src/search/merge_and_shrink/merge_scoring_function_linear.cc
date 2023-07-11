@@ -3,8 +3,7 @@
 #include "factored_transition_system.h"
 #include "transition_system.h"
 
-#include "../options/option_parser.h"
-#include "../options/plugin.h"
+#include "../plugins/plugin.h"
 
 #include <iostream>
 #include <set>
@@ -42,23 +41,26 @@ string MergeScoringFunctionLinear::name() const {
     return "linear";
 }
 
-static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "Linear",
-        "This scoring function assigns all pairs containing the newest "
-        "composite transition system a score of 0, and ifinity otherwise. "
-        "The only exception is before the first merge, where there is no "
-        "composite transition system, and hence all candidates receive a "
-        "score of infinity.\n"
-        "Note that if there are several composite transition systems, the "
-        "strategy will not be linear anymore. This may still be useful if "
-        "used on a subset of transition systems to be merge linearly.");
+class MergeScoringFunctionLinearFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionLinear> {
+public:
+    MergeScoringFunctionLinearFeature() : TypedFeature("sf_linear") {
+        document_title("Linear");
+        document_synopsis(
+            "This scoring function assigns all pairs containing the newest "
+            "composite transition system a score of 0, and ifinity otherwise. "
+            "The only exception is before the first merge, where there is no "
+            "composite transition system, and hence all candidates receive a "
+            "score of infinity.\n"
+            "Note that if there are several composite transition systems, the "
+            "strategy will not be linear anymore. This may still be useful if "
+            "used on a subset of transition systems to be merge linearly.");
+    }
 
-    if (parser.dry_run())
-        return nullptr;
-    else
+    virtual shared_ptr<MergeScoringFunctionLinear> create_component(
+        const plugins::Options &, const utils::Context &) const override {
         return make_shared<MergeScoringFunctionLinear>();
-}
+    }
+};
 
-static options::Plugin<MergeScoringFunction> _plugin("sf_linear", _parse);
+static plugins::FeaturePlugin<MergeScoringFunctionLinearFeature> _plugin;
 }

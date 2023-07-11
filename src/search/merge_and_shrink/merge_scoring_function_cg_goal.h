@@ -5,7 +5,7 @@
 
 #include "../task_proxy.h"
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -17,7 +17,7 @@ class MergeScoringFunctionCgGoal : public MergeScoringFunction {
 protected:
     virtual std::string name() const override;
 public:
-    explicit MergeScoringFunctionCgGoal(const options::Options &options);
+    explicit MergeScoringFunctionCgGoal(const plugins::Options &options);
     virtual ~MergeScoringFunctionCgGoal() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,

@@ -5,9 +5,8 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../options/plugin.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 
 #include "../tasks/root_task.h"
 
@@ -17,7 +16,7 @@ using namespace std;
 
 namespace merge_and_shrink {
 MergeScoringFunctionCgGoal::MergeScoringFunctionCgGoal(
-    const options::Options &options)
+    const plugins::Options &options)
     : cg_before_goal(options.get<bool>("cg_before_goal")),
       // HACK!
       task_proxy(*tasks::g_root_task) {
@@ -134,29 +133,28 @@ string MergeScoringFunctionCgGoal::name() const {
     return "cg goal";
 }
 
-static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "CG Goal scoring",
-        "This scoring function assumes that all non-linear merge candidates "
-        "have been filtered out before. It assigns a merge candidate a value "
-        "based on at least one component being atomic and either corresponding "
-        "to a goal variable or a variable causally connected to some already "
-        "merged variable (i.e. one in 'the' composite transition system). "
-        "The user specifies whether CG or Goal should be preferred. The score "
-        "is 0 for all valid pairs in the sense of CG or Goal and infinity"
-        "otherwise. An exception is the case when there is no 'merged' "
-        "variable, i.e. no composite transition system yet. TODO");
-    parser.add_option<bool>(
-        "cg_before_goal",
-        "First look for a causally connected variable before looking for a "
-        "goal variable.",
-        "true");
-    options::Options options = parser.parse();
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionCgGoal>(options);
-}
+class MergeScoringFunctionCgGoalFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionCgGoal> {
+public:
+    MergeScoringFunctionCgGoalFeature() : TypedFeature("cg_goal") {
+        document_title("CG Goal scoring");
+        document_synopsis(
+            "This scoring function assumes that all non-linear merge candidates "
+            "have been filtered out before. It assigns a merge candidate a value "
+            "based on at least one component being atomic and either corresponding "
+            "to a goal variable or a variable causally connected to some already "
+            "merged variable (i.e. one in 'the' composite transition system). "
+            "The user specifies whether CG or Goal should be preferred. The score "
+            "is 0 for all valid pairs in the sense of CG or Goal and infinity"
+            "otherwise. An exception is the case when there is no 'merged' "
+            "variable, i.e. no composite transition system yet. TODO"
+        );
+        add_option<bool>(
+            "cg_before_goal",
+            "First look for a causally connected variable before looking for a "
+            "goal variable.",
+            "true");
+    }
+};
 
-static options::Plugin<MergeScoringFunction> _plugin("cg_goal", _parse);
+static plugins::FeaturePlugin<MergeScoringFunctionCgGoalFeature> _plugin;
 }

@@ -10,7 +10,7 @@
 
 class TaskProxy;
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -67,7 +67,7 @@ class MergeSymmetries : public MergeStrategy {
 public:
     MergeSymmetries(
         const FactoredTransitionSystem &fts,
-        const options::Options &options,
+        const plugins::Options &options,
         const TaskProxy &task_proxy,
         std::shared_ptr<MergeTreeFactory> merge_tree_factory,
         std::shared_ptr<MergeSelector> merge_selector);

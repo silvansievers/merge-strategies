@@ -8,7 +8,7 @@
 #include <memory>
 #include <vector>
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -23,7 +23,7 @@ protected:
     virtual std::string name() const override;
     virtual void dump_selector_specific_options(utils::LogProxy &log) const override;
 public:
-    explicit MergeSelectorScoreBasedWeightedSum(const options::Options &options);
+    explicit MergeSelectorScoreBasedWeightedSum(const plugins::Options &options);
     virtual ~MergeSelectorScoreBasedWeightedSum() override = default;
     virtual std::pair<int, int> select_merge(
         const FactoredTransitionSystem &fts,

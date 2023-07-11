@@ -3,9 +3,8 @@
 #include "factored_transition_system.h"
 #include "types.h"
 
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../options/plugin.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 
 #include "../utils/hash.h"
 #include "../utils/logging.h"
@@ -27,7 +26,7 @@ double normalize_value(double min_score, double max_score, double score) {
 }
 
 MergeSelectorScoreBasedWeightedSum::MergeSelectorScoreBasedWeightedSum(
-    const options::Options &options)
+    const plugins::Options &options)
     : merge_scoring_functions(
           options.get_list<shared_ptr<MergeScoringFunction>>(
               "scoring_functions")),
@@ -242,51 +241,45 @@ bool MergeSelectorScoreBasedWeightedSum::requires_goal_distances() const {
     return false;
 }
 
-static shared_ptr<MergeSelector>_parse(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "Score based weighted sum merge selector",
-        "This merge selector has a list of scoring functions. The final score "
-        "assigned to each merge candidate is the weighted sum over all "
-        "scores of all scoring functions, normalized to be in the interval "
-        "[0, 1]. The merge candidate with the minimum score is selected.");
-    parser.add_list_option<shared_ptr<MergeScoringFunction>>(
-        "scoring_functions",
-        "The list of scoring functions used to compute scores for candidates.");
-    parser.add_list_option<int>(
-        "weights",
-        "The list of weights to be used for the scoring functions. The list"
-        "must either be empty, in which case the same weight (1) for each"
-        "scoring function is assumed, or its size must match the number of"
-        "given scoring functions, assigning a weight to each.",
-        options::OptionParser::NONE);
-    parser.add_option<bool>(
-        "normalize",
-        "Scores as compute by the score functions will be normalized "
-        "to be in the interval [0, 1] iff true.",
-        "false");
-
-    options::Options opts = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
+class MergeSelectorScoreBasedWeightedSumFeature : public plugins::TypedFeature<MergeSelector, MergeSelectorScoreBasedWeightedSum> {
+public:
+    MergeSelectorScoreBasedWeightedSumFeature() : TypedFeature("score_based_weighted_sum") {
+        document_title("Score based weighted sum merge selector");
+        document_synopsis(
+            "This merge selector has a list of scoring functions. The final score "
+            "assigned to each merge candidate is the weighted sum over all "
+            "scores of all scoring functions, normalized to be in the interval "
+            "[0, 1]. The merge candidate with the minimum score is selected.");
+        add_list_option<shared_ptr<MergeScoringFunction>>(
+            "scoring_functions",
+            "The list of scoring functions used to compute scores for candidates.");
+        add_list_option<int>(
+            "weights",
+            "The list of weights to be used for the scoring functions. The list"
+            "must either be empty, in which case the same weight (1) for each"
+            "scoring function is assumed, or its size must match the number of"
+            "given scoring functions, assigning a weight to each.",
+            plugins::ArgumentInfo::NO_DEFAULT);
+        add_option<bool>(
+            "normalize",
+            "Scores as compute by the score functions will be normalized "
+            "to be in the interval [0, 1] iff true.",
+            "false");
     }
 
-    vector<shared_ptr<MergeScoringFunction>> functions =
-        opts.get_list<shared_ptr<MergeScoringFunction>>("scoring_functions");
-    if (opts.contains("weights")) {
-        vector<int> weights = opts.get_list<int>("weights");
-        if (weights.size() != functions.size()) {
-            cerr << "Number of weights differs from number of scoring "
-                "functions" << endl;
-            utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+    virtual shared_ptr<MergeSelectorScoreBasedWeightedSum> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        vector<shared_ptr<MergeScoringFunction>> functions =
+            options.get_list<shared_ptr<MergeScoringFunction>>("scoring_functions");
+        if (options.contains("weights")) {
+            vector<int> weights = options.get_list<int>("weights");
+            if (weights.size() != functions.size()) {
+                context.error("Number of weights differs from number of scoring "
+                        "functions");
+            }
         }
+        return make_shared<MergeSelectorScoreBasedWeightedSum>(options);
     }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeSelectorScoreBasedWeightedSum>(opts);
-}
-
-static options::Plugin<MergeSelector> _plugin(
-    "score_based_weighted_sum", _parse);
+static plugins::FeaturePlugin<MergeSelectorScoreBasedWeightedSumFeature> _plugin;
 }

@@ -2,7 +2,6 @@
 
 #include "distances.h"
 #include "factored_transition_system.h"
-#include "label_equivalence_relation.h"
 #include "labels.h"
 #include "merge_scoring_function_miasm_utils.h"
 #include "shrink_strategy.h"
@@ -345,9 +344,9 @@ int compute_number_of_product_transitions(
       transitions in the product.
     */
     int number_of_transitions = 0;
-    for (const GroupAndTransitions &gat : ts1) {
-        const LabelGroup &group1 = gat.label_group;
-        const vector<Transition> &transitions1 = gat.transitions;
+    for (const LocalLabelInfo &local_label_info : ts1) {
+        const LabelGroup &group1 = local_label_info.get_label_group();
+        const vector<Transition> &transitions1 = local_label_info.get_transitions();
 
         // Distribute the labels of this group among the "buckets"
         // corresponding to the groups of ts2.
@@ -360,7 +359,7 @@ int compute_number_of_product_transitions(
         // Now create the new groups together with their transitions.
         for (const auto &bucket : buckets) {
             const vector<Transition> &transitions2 =
-                ts2.get_transitions_for_group_id(bucket.first);
+                ts2.get_local_label_info(bucket.first).get_transitions();
             int new_transitions_for_new_group = transitions1.size() * transitions2.size();
             number_of_transitions += new_transitions_for_new_group;
         }
@@ -390,13 +389,13 @@ void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
                                vector<vector<bool>> &ts_index_to_irrelevant_labels) {
     int num_ts = fts.get_size();
     ts_index_to_irrelevant_labels.resize(num_ts, vector<bool>());
-    int num_labels = fts.get_labels().get_size();
+    int num_labels = fts.get_labels().get_num_active_labels();
     for (int ts_index = 0; ts_index < num_ts; ++ts_index) {
         if (fts.is_active(ts_index)) {
             vector<bool> irrelevant_labels(num_labels, false);
             const TransitionSystem &ts = fts.get_transition_system(ts_index);
-            for (const GroupAndTransitions &gat : ts) {
-                const vector<Transition> &transitions = gat.transitions;
+            for (const LocalLabelInfo &local_label_info : ts) {
+                const vector<Transition> &transitions = local_label_info.get_transitions();
                 bool group_relevant = false;
                 if (static_cast<int>(transitions.size()) == ts.get_size()) {
                     /*
@@ -413,7 +412,7 @@ void compute_irrelevant_labels(const FactoredTransitionSystem &fts,
                     group_relevant = true;
                 }
                 if (!group_relevant) {
-                    const LabelGroup &label_group = gat.label_group;
+                    const LabelGroup &label_group = local_label_info.get_label_group();
                     for (int label_no : label_group) {
                         irrelevant_labels[label_no] = true;
                     }

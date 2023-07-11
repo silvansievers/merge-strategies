@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -34,7 +34,7 @@ class MiasmAbstraction {
     const bool prune_irrelevant_states;
     const bool pruning_as_abstraction;
 public:
-    explicit MiasmAbstraction(const options::Options &opts);
+    explicit MiasmAbstraction(const plugins::Options &opts);
     static std::string option_key();
     static std::string plugin_key();
 

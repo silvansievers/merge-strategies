@@ -11,8 +11,9 @@
 #include "../utils.h"
 
 #include "../../heuristic.h"
-#include "../../option_parser.h"
-#include "../../plugin.h"
+#include "../../plugins/options.h"
+#include "../../plugins/plugin.h"
+
 //#include "../../utilities.h"
 
 #include "../utils/logging.h"
@@ -29,7 +30,7 @@ using namespace std;
 namespace merge_and_shrink {
 using namespace mst;
 
-MiasmAbstraction::MiasmAbstraction(const Options &)
+MiasmAbstraction::MiasmAbstraction(const plugins::Options &)
     : //      merge_strategy(opts.get<shared_ptr<MergeStrategy>>("merge_strategy")),
 //      shrink_strategy(opts.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       log(utils::get_silent_log()),
@@ -169,8 +170,12 @@ int MiasmAbstraction::build_transition_system(
     return cache[G];
 }
 
-static shared_ptr<MiasmAbstraction> _parse(OptionParser &parser) {
-    // Merge strategy option.
+static class MiasmAbstractionCategoryPlugin : public plugins::TypedCategoryPlugin<MiasmAbstraction> {
+public:
+    MiasmAbstractionCategoryPlugin() : TypedCategoryPlugin("MiasmAbstraction") {
+        document_synopsis(
+            "This page describes the single option for using miasm abstractions.");
+        // Merge strategy option.
 //    parser.add_option<shared_ptr<MergeStrategy>>(
 //        "merge_strategy",
 //        "See detailed documentation for merge strategies. "
@@ -182,26 +187,23 @@ static shared_ptr<MiasmAbstraction> _parse(OptionParser &parser) {
 //        "See detailed documentation for shrink strategies. "
 //        "We currently recommend shrink_bisimulation.");
 
-    // Label reduction option.
+        // Label reduction option.
 //    parser.add_option<shared_ptr<LabelReduction>>(
 //        "label_reduction",
 //        "See detailed documentation for labels. There is currently only "
 //        "one 'option' to use label_reduction. Also note the interaction "
 //        "with shrink strategies.",
 //        OptionParser::NONE);
-
-    Options opts = parser.parse();
-
-    if (parser.dry_run()) {
-        return 0;
-    } else {
-        return make_shared<MiasmAbstraction>(opts);
     }
 }
+_category_plugin;
 
-static options::PluginTypePlugin<MiasmAbstraction> _type_plugin(
-    "MiasmAbstraction",
-    "This page describes the single option for using miasm abstractions.");
+class MiasmAbstractionFeature : public plugins::TypedFeature<MiasmAbstraction, MiasmAbstraction> {
+public:
+    MiasmAbstractionFeature() : TypedFeature(MiasmAbstraction::plugin_key()) {
+        document_title("MIASM Abstraction");
+    }
+};
 
-static Plugin<MiasmAbstraction> _plugin(MiasmAbstraction::plugin_key(), _parse);
+static plugins::FeaturePlugin<MiasmAbstractionFeature> _plugin;
 }

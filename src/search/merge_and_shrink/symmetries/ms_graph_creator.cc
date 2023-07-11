@@ -4,7 +4,6 @@
 #include "symmetry_group.h"
 
 #include "../factored_transition_system.h"
-#include "../label_equivalence_relation.h"
 #include "../labels.h"
 #include "../transition_system.h"
 
@@ -153,10 +152,10 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
       label, with a fixed "label color" plus its cost.
     */
     const Labels &labels = fts.get_labels();
-    int num_labels = labels.get_size();
+    int num_labels = labels.get_num_active_labels();
     vector<int> label_to_vertex(num_labels, -1);
     for (int label_no = 0; label_no < num_labels; ++label_no) {
-        if (!labels.is_current_label(label_no))
+        if (!labels.is_active_label(label_no))
             continue;
 
         int label_cost = labels.get_label_cost(label_no);
@@ -185,7 +184,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
         if (!fts.is_active(ts_index))
             continue;
         const TransitionSystem &ts = fts.get_transition_system(ts_index);
-        for (const GroupAndTransitions &gat : ts) {
+        for (const LocalLabelInfo &local_label_info : ts) {
             vertex = bliss_graph.add_vertex(LABEL_GROUP_VERTEX + node_color_added_val);
             bliss_graph.add_edge(ts_index, vertex);
 
@@ -197,7 +196,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 log << "    node" << ts_index << " -> node" << vertex << endl;
             }
 
-            const LabelGroup &label_group = gat.label_group;
+            const LabelGroup &label_group = local_label_info.get_label_group();
             for (int label_no : label_group) {
                 bliss_graph.add_edge(label_to_vertex[label_no], vertex);
 
@@ -206,7 +205,7 @@ void MSGraphCreator::create_bliss_directed_graph(const FactoredTransitionSystem 
                 }
             }
 
-            const vector<Transition> &transitions = gat.transitions;
+            const vector<Transition> &transitions = local_label_info.get_transitions();
             for (size_t i = 0; i < transitions.size(); ++i) {
                 const Transition &trans = transitions[i];
                 int transition_vertex = bliss_graph.add_vertex(

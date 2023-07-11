@@ -11,9 +11,8 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../options/plugin.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 
 #include "../utils/logging.h"
 #include "../utils/system.h"
@@ -25,7 +24,7 @@ using namespace std;
 
 namespace merge_and_shrink {
 MergeStrategyFactorySymmetries::MergeStrategyFactorySymmetries(
-    const options::Options &options)
+    const plugins::Options &options)
     : MergeStrategyFactory(options),
       options(options),
       merge_tree_factory(nullptr),
@@ -117,83 +116,87 @@ string MergeStrategyFactorySymmetries::name() const {
     return "symmetries";
 }
 
-static shared_ptr<MergeStrategyFactory> _parse(options::OptionParser &parser) {
-    // Options for symmetries computation
-    parser.add_option<int>("max_bliss_iterations", "maximum ms iteration until "
-                           "which bliss is allowed to run.",
-                           "infinity");
-    parser.add_option<int>("bliss_call_time_limit", "time in seconds one bliss "
-                           "run is allowed to last at most (0 means no limit)",
-                           "0");
-    parser.add_option<int>("bliss_total_time_budget", "time in seconds bliss is "
-                           "allowed to run overall (0 means no limit)",
-                           "0");
-    vector<string> symmetries_for_merging;
-    symmetries_for_merging.push_back("NO_MERGING");
-    symmetries_for_merging.push_back("SMALLEST");
-    symmetries_for_merging.push_back("LARGEST");
-    parser.add_enum_option<SymmetriesForMerging>("symmetries_for_merging",
-                                                 symmetries_for_merging,
-                                                 "choose the type of symmetries that should determine "
-                                                 "the set of transition systems to be merged: "
-                                                 "the smallest or the largest",
-                                                 "SMALLEST");
-    vector<string> internal_merging;
-    internal_merging.push_back("LINEAR");
-    internal_merging.push_back("NON_LINEAR");
-    internal_merging.push_back("SECONDARY");
-    parser.add_enum_option<InternalMerging>("internal_merging",
-                                            internal_merging,
-                                            "choose the order in which to merge the set of "
-                                            "transition systems to be merged: "
-                                            "linear (obvious), "
-                                            "non linear, which means to first merge every cycle, "
-                                            "and then the resulting intermediate transition systems, "
-                                            "secondary: use secondary merge strategy, i.e. either "
-                                            "a merge tree factory or a merge selector.",
-                                            "LINEAR");
+class MergeStrategyFactorySymmetriesFeature : public plugins::TypedFeature<MergeStrategyFactory, MergeStrategyFactorySymmetries> {
+public:
+    MergeStrategyFactorySymmetriesFeature()
+        : TypedFeature("merge_symmetries") {
+        document_title("Merge strategy symmetries");
+        // Options for symmetries computation
+        add_option<int>("max_bliss_iterations", "maximum ms iteration until "
+                                                       "which bliss is allowed to run.",
+                               "infinity");
+        add_option<int>("bliss_call_time_limit", "time in seconds one bliss "
+                                                        "run is allowed to last at most (0 means no limit)",
+                               "0");
+        add_option<int>("bliss_total_time_budget", "time in seconds bliss is "
+                                                          "allowed to run overall (0 means no limit)",
+                               "0");
 
-    // Options for GraphCreator
-    parser.add_option<bool>("stabilize_transition_systems", "compute symmetries that "
-                            "stabilize transition systems, i.e. that are local.", "false");
-    parser.add_option<bool>("debug_graph_creator", "produce dot readable output "
-                            "from the graph generating methods", "false");
+        add_option<SymmetriesForMerging>(
+            "symmetries_for_merging",
+            "choose the type of symmetries that should determine "
+            "the set of transition systems to be merged: "
+            "the smallest or the largest",
+            "SMALLEST");
 
-    // Fallback strategy options
-    parser.add_option<shared_ptr<MergeTreeFactory>>(
-        "merge_tree",
-        "the fallback merge 'strategy' to use if a precomputed strategy should"
-        "be used.",
-        options::OptionParser::NONE);
-    parser.add_option<shared_ptr<MergeSelector>>(
-        "merge_selector",
-        "the fallback merge 'strategy' to use if a stateless strategy should"
-        "be used.",
-        options::OptionParser::NONE);
+        add_option<InternalMerging>(
+            "internal_merging",
+            "choose the order in which to merge the set of "
+            "transition systems to be merged: "
+            "linear (obvious), "
+            "non linear, which means to first merge every cycle, "
+            "and then the resulting intermediate transition systems, "
+            "secondary: use secondary merge strategy, i.e. either "
+            "a merge tree factory or a merge selector.",
+            "LINEAR");
 
-    add_merge_strategy_options_to_parser(parser);
+        // Options for GraphCreator
+        add_option<bool>("stabilize_transition_systems", "compute symmetries that "
+                                                                "stabilize transition systems, i.e. that are local.", "false");
+        add_option<bool>("debug_graph_creator", "produce dot readable output "
+                                                       "from the graph generating methods", "false");
 
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
-    } else if (options.get<int>("bliss_call_time_limit")
-               && options.get<int>("bliss_total_time_budget")) {
-        cerr << "Please only specify bliss_call_time_limit or "
-            "bliss_total_time_budget but not both" << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
+        // Fallback strategy options
+        add_option<shared_ptr<MergeTreeFactory>>(
+            "merge_tree",
+            "the fallback merge 'strategy' to use if a precomputed strategy should"
+            "be used.",
+            plugins::ArgumentInfo::NO_DEFAULT);
+        add_option<shared_ptr<MergeSelector>>(
+            "merge_selector",
+            "the fallback merge 'strategy' to use if a stateless strategy should"
+            "be used.",
+            plugins::ArgumentInfo::NO_DEFAULT);
+
+        add_merge_strategy_options_to_feature(*this);
     }
-    bool merge_tree = options.contains("merge_tree");
-    bool merge_selector = options.contains("merge_selector");
-    if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
-        cerr << "You have to specify exactly one of the options merge_tree "
-            "and merge_selector!" << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
-    if (parser.dry_run())
-        return nullptr;
-    else
+
+    virtual shared_ptr<MergeStrategyFactorySymmetries> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        if (options.get<int>("bliss_call_time_limit")
+            && options.get<int>("bliss_total_time_budget")) {
+            context.error("Please only specify bliss_call_time_limit or "
+                    "bliss_total_time_budget but not both");
+        }
+        bool merge_tree = options.contains("merge_tree");
+        bool merge_selector = options.contains("merge_selector");
+        if ((merge_tree && merge_selector) || (!merge_tree && !merge_selector)) {
+            context.error("You have to specify exactly one of the options merge_tree "
+                    "and merge_selector!");
+        }
         return make_shared<MergeStrategyFactorySymmetries>(options);
-}
+    }
+};
+static plugins::FeaturePlugin<MergeStrategyFactorySymmetriesFeature> _plugin;
 
-static options::Plugin<MergeStrategyFactory> _plugin("merge_symmetries", _parse);
+static plugins::TypedEnumPlugin<SymmetriesForMerging> _enum_symmetriesformerging_plugin({
+    {"NO_MERGING", ""},
+    {"SMALLEST", ""},
+    {"LARGEST", ""},
+});
+
+static plugins::TypedEnumPlugin<InternalMerging> _enum_internalmerging_plugin({
+    {"LINEAR", ""},
+    {"NON_LINEAR", ""},
+    {"SECONDARY", ""},
+});
 }

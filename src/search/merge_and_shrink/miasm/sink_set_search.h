@@ -21,7 +21,7 @@ namespace causal_graph {
 class CausalGraph;
 }
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -115,7 +115,7 @@ protected:
  */
 class SinkSetSearch {
 public:
-    SinkSetSearch(const options::Options &opts, const TaskProxy &task_proxy);
+    SinkSetSearch(const plugins::Options &opts, const TaskProxy &task_proxy);
 public:
     /** @brief used to build the abstraction on a subset */
     std::shared_ptr<MiasmAbstraction> miasm_abstraction;

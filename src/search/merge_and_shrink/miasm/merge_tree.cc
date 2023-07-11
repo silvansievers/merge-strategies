@@ -4,7 +4,7 @@
 #include "../task_utils/causal_graph.h"
 #include "../../task_proxy.h"
 
-#include "../../ext/tree_util.hh"
+#include "tree_util.hh"
 
 #include <cassert>
 #include <algorithm>

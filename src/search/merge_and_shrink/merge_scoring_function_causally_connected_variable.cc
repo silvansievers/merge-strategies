@@ -5,8 +5,7 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/plugin.h"
+#include "../plugins/plugin.h"
 
 #include "../tasks/root_task.h"
 
@@ -77,19 +76,24 @@ string MergeScoringFunctionCausallyConnectedVariable::name() const {
     return "causally connected variable";
 }
 
-static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "Causally connected variablescoring",
-        "This scoring function assumes that all non-linear merge candidates "
-        "have been filtered out before. It assigns a merge candidate a value "
-        "of 0 iff at least one of the components is atomic and its variable "
-        "causally connected to (at least one of) the composite transition "
-        "system(s), and otherwise infinity.");
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionCausallyConnectedVariable>();
-}
+class MergeScoringFunctionCausallyConnectedVariableFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionCausallyConnectedVariable> {
+public:
+    MergeScoringFunctionCausallyConnectedVariableFeature() : TypedFeature("causally_connected_variable") {
+        document_title("CausallyConnectedVariable");
+        document_synopsis(
+            "This scoring function assumes that all non-linear merge candidates "
+            "have been filtered out before. It assigns a merge candidate a value "
+            "of 0 iff at least one of the components is atomic and its variable "
+            "causally connected to (at least one of) the composite transition "
+            "system(s), and otherwise infinity."
+            );
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin("causally_connected_variable", _parse);
+    virtual shared_ptr<MergeScoringFunctionCausallyConnectedVariable> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionCausallyConnectedVariable>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionCausallyConnectedVariableFeature> _plugin;
 }

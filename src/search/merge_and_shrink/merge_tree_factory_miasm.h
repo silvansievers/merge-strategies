@@ -5,7 +5,7 @@
 
 #include "miasm/merge_tree.h" // for MiasmInternal and MiasmExternal
 
-#include "../options/options.h"
+#include "../plugins/options.h"
 
 #include "../utils/logging.h"
 
@@ -28,7 +28,7 @@ private:
      */
     void greedy_max_set_packing();
     /** @name Protected: Options */
-    options::Options options;
+    plugins::Options options;
     //@{
     /** @brief The enum option that specifies the internal merging strategy */
     const MiasmInternal miasm_internal;
@@ -57,7 +57,7 @@ protected:
     virtual void dump_tree_specific_options(utils::LogProxy &log) const override;
 public:
     /** @brief The option-based constructor */
-    explicit MergeTreeFactoryMiasm(const options::Options &opts);
+    explicit MergeTreeFactoryMiasm(const plugins::Options &opts);
     virtual ~MergeTreeFactoryMiasm() override = default;
     virtual std::unique_ptr<MergeTree> compute_merge_tree(
         const TaskProxy &task_proxy) override;
@@ -82,7 +82,7 @@ public:
         return fallback_merge_selector;
     }
 
-    static void add_options_to_parser(options::OptionParser &parser);
+    static void add_options_to_feature(plugins::Feature &feature);
 };
 }
 

@@ -5,8 +5,7 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/plugin.h"
+#include "../plugins/plugin.h"
 
 using namespace std;
 
@@ -46,18 +45,23 @@ string MergeScoringFunctionGoalVariable::name() const {
     return "goal variable";
 }
 
-static shared_ptr<MergeScoringFunction>_parse(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "Goal variable scoring",
-        "This scoring function assumes that all non-linear merge candidates "
-        "have been filtered out before. It assigns a merge candidate a value "
-        "of 0 iff at least one of the components is atomic and a goal variable, "
-        "otherwise infinity.");
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionGoalVariable>();
-}
+class MergeScoringFunctionGoalVariableFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionGoalVariable> {
+public:
+    MergeScoringFunctionGoalVariableFeature() : TypedFeature("goal_variable") {
+        document_title("Goal variable scoring");
+        document_synopsis(
+            "This scoring function assumes that all non-linear merge candidates "
+            "have been filtered out before. It assigns a merge candidate a value "
+            "of 0 iff at least one of the components is atomic and a goal variable, "
+            "otherwise infinity."
+            );
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin("goal_variable", _parse);
+    virtual shared_ptr<MergeScoringFunctionGoalVariable> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionGoalVariable>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionGoalVariableFeature> _plugin;
 }

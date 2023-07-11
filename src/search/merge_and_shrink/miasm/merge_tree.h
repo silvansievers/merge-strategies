@@ -3,7 +3,7 @@
 
 #include "subset_info.h"
 
-#include "../../ext/tree.hh"
+#include "tree.hh"
 
 #include <cstdlib>
 #include <memory>

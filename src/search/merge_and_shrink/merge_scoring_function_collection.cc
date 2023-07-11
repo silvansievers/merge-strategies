@@ -10,9 +10,8 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../options/plugin.h"
+#include "../plugins/options.h"
+#include "../plugins/plugin.h"
 
 #include "../tasks/root_task.h"
 
@@ -76,18 +75,21 @@ string MergeScoringFunctionCausalConnection::name() const {
     return "causal connection";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_cg(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "causal connection",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionCausalConnection>();
-}
+class MergeScoringFunctionCausalConnectionFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionCausalConnection> {
+public:
+    MergeScoringFunctionCausalConnectionFeature() : TypedFeature("causal_connection") {
+        document_title("causal connection");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_cg("causal_connection", _parse_cg);
+    virtual shared_ptr<MergeScoringFunctionCausalConnection> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionCausalConnection>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionCausalConnectionFeature> _plugin_causal_connection;
 
 
 
@@ -145,18 +147,21 @@ string MergeScoringFunctionBooleanCausalConnection::name() const {
     return "boolean causal connection";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_bcg(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "boolean causal connection",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionBooleanCausalConnection>();
-}
+class MergeScoringFunctionBooleanCausalConnectionFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionBooleanCausalConnection> {
+public:
+    MergeScoringFunctionBooleanCausalConnectionFeature() : TypedFeature("boolean_causal_connection") {
+        document_title("boolean causal connection");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                           "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_bcg("boolean_causal_connection", _parse_bcg);
+    virtual shared_ptr<MergeScoringFunctionBooleanCausalConnection> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionBooleanCausalConnection>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionBooleanCausalConnectionFeature> _plugin_boolean_causal_connection;
 
 
 
@@ -216,23 +221,26 @@ string MergeScoringFunctionNonAdditivity::name() const {
     return "non additivity";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_na(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "non additivity",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionNonAdditivity>();
-}
+class MergeScoringFunctionNonAdditivityFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionNonAdditivity> {
+public:
+    MergeScoringFunctionNonAdditivityFeature() : TypedFeature("non_additivity") {
+        document_title("non additivity");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_na("non_additivity", _parse_na);
+    virtual shared_ptr<MergeScoringFunctionNonAdditivity> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionNonAdditivity>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionNonAdditivityFeature> _plugin_non_additivity;
 
 
 
 MergeScoringFunctionTransitionsStatesQuotient::MergeScoringFunctionTransitionsStatesQuotient(
-    const options::Options &options)
+    const plugins::Options &options)
     : prefer_high(options.get<bool>("prefer_high")) {
 }
 
@@ -278,29 +286,25 @@ string MergeScoringFunctionTransitionsStatesQuotient::name() const {
     return "transitions per states quotient";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_tsq(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "transitions per states quotient",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    parser.add_option<bool>(
-        "prefer_high",
-        "prefer a high value of the quotient",
-        "false");
+class MergeScoringFunctionTransitionsStatesQuotientFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionTransitionsStatesQuotient> {
+public:
+    MergeScoringFunctionTransitionsStatesQuotientFeature() : TypedFeature("transitions_states_quotient") {
+        document_title("transitions per states quotient");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+        add_option<bool>(
+            "prefer_high",
+            "prefer a high value of the quotient",
+            "false");
+    }
+};
 
-    options::Options options = parser.parse();
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionTransitionsStatesQuotient>(options);
-}
-
-static options::Plugin<MergeScoringFunction> _plugin_tsq("transitions_states_quotient", _parse_tsq);
+static plugins::FeaturePlugin<MergeScoringFunctionTransitionsStatesQuotientFeature> _plugin_transitions_states_quotient;
 
 
 
 MergeScoringFunctionInitH::MergeScoringFunctionInitH(
-    const options::Options &options)
+    const plugins::Options &options)
     : inith(options.get<InitH>("choice")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
@@ -370,53 +374,50 @@ string MergeScoringFunctionInitH::name() const {
     return "initial h value";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_ih(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "initial h value",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    vector<string> inith_values;
-    inith_values.push_back("improvement");
-    inith_values.push_back("absolute");
-    inith_values.push_back("sum");
-    parser.add_enum_option<InitH>(
-        "choice",
-        inith_values,
-        "improvement: init h value of the merge minus the maximum of previous "
-        "init h values over both components. "
-        "absolute: init h value of th merge. "
-        "sum: sum of the init h values of the components.",
-        "improvement");
+class MergeScoringFunctionInitHFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionInitH> {
+public:
+    MergeScoringFunctionInitHFeature() : TypedFeature("init_h") {
+        document_title("initial h value");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+        add_option<InitH>(
+            "choice",
+            "improvement: init h value of the merge minus the maximum of previous "
+            "init h values over both components. "
+            "absolute: init h value of th merge. "
+            "sum: sum of the init h values of the components.",
+            "improvement");
 
-    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
-    // instead of having the identical options here again.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "The given shrink stratgy configuration should match the one "
-        "given to merge_and_shrink.");
-    add_transition_system_size_limit_options_to_parser(parser);
-    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
-    utils::add_log_options_to_parser(parser);
-
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
+        // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+        // instead of having the identical options here again.
+        add_option<shared_ptr<ShrinkStrategy>>(
+            "shrink_strategy",
+            "The given shrink stratgy configuration should match the one "
+            "given to merge_and_shrink.");
+        add_transition_system_size_limit_options_to_feature(*this);
+        // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+        utils::add_log_options_to_feature(*this);
     }
 
-    handle_shrink_limit_options_defaults(options);
+    virtual shared_ptr<MergeScoringFunctionInitH> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        plugins::Options options_copy(options);
+        handle_shrink_limit_options_defaults(options_copy, context);
+        return make_shared<MergeScoringFunctionInitH>(options_copy);
+    }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionInitH>(options);
-}
+static plugins::FeaturePlugin<MergeScoringFunctionInitHFeature> _plugin_init_h;
 
-static options::Plugin<MergeScoringFunction> _plugin_ih("init_h", _parse_ih);
+static plugins::TypedEnumPlugin<InitH> _plugin_init_h_enum({
+    {"improvement", ""},
+    {"absolute", ""},
+    {"sum", ""}
+});
 
 
 
 MergeScoringFunctionMaxFGH::MergeScoringFunctionMaxFGH(
-    const options::Options &options)
+    const plugins::Options &options)
     : fgh(options.get<FGH>("fgh")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
@@ -494,46 +495,45 @@ string MergeScoringFunctionMaxFGH::name() const {
     return "maximum f, g or h value";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_fgh(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "maximum f, g or h value",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    vector<string> fgh_values;
-    fgh_values.push_back("f");
-    fgh_values.push_back("g");
-    fgh_values.push_back("h");
-    parser.add_enum_option<FGH>("fgh", fgh_values, "f, g, or h", "f");
+class MergeScoringFunctionMaxFGHFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionMaxFGH> {
+public:
+    MergeScoringFunctionMaxFGHFeature() : TypedFeature("max_fgh") {
+        document_title("maximum f, g or h value");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
 
-    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
-    // instead of having the identical options here again.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "The given shrink stratgy configuration should match the one "
-        "given to merge_and_shrink.");
-    add_transition_system_size_limit_options_to_parser(parser);
-    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
-    utils::add_log_options_to_parser(parser);
+        add_option<FGH>("fgh", "f, g, or h", "f");
 
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
+        // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+        // instead of having the identical options here again.
+        add_option<shared_ptr<ShrinkStrategy>>(
+            "shrink_strategy",
+            "The given shrink stratgy configuration should match the one "
+            "given to merge_and_shrink.");
+        add_transition_system_size_limit_options_to_feature(*this);
+        // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+        utils::add_log_options_to_feature(*this);
     }
 
-    handle_shrink_limit_options_defaults(options);
+    virtual shared_ptr<MergeScoringFunctionMaxFGH> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        plugins::Options options_copy(options);
+        handle_shrink_limit_options_defaults(options_copy, context);
+        return make_shared<MergeScoringFunctionMaxFGH>(options_copy);
+    }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionMaxFGH>(options);
-}
+static plugins::FeaturePlugin<MergeScoringFunctionMaxFGHFeature> _plugin_max_fgh;
 
-static options::Plugin<MergeScoringFunction> _plugin_fgh("max_fgh", _parse_fgh);
+static plugins::TypedEnumPlugin<FGH> _plugin_fgh_enum({
+    {"f", ""},
+    {"g", ""},
+    {"h", ""}
+});
 
 
 
 MergeScoringFunctionAvgH::MergeScoringFunctionAvgH(
-    const options::Options &options)
+    const plugins::Options &options)
     : avgh(options.get<AvgH>("choice")),
       shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
@@ -596,45 +596,43 @@ string MergeScoringFunctionAvgH::name() const {
     return "average h value";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_ah(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "average h value",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    vector<string> avgh_value;
-    avgh_value.push_back("improvement");
-    avgh_value.push_back("absolute");
-    avgh_value.push_back("sum");
-    parser.add_enum_option<AvgH>(
-        "choice",
-        avgh_value,
-        "improvement, sum, or absolute h value",
-        "improvement");
+class MergeScoringFunctionAvgHFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionAvgH> {
+public:
+    MergeScoringFunctionAvgHFeature() : TypedFeature("avg_h") {
+        document_title("average h value");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
 
-    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
-    // instead of having the identical options here again.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "The given shrink stratgy configuration should match the one "
-        "given to merge_and_shrink.");
-    add_transition_system_size_limit_options_to_parser(parser);
-    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
-    utils::add_log_options_to_parser(parser);
+        add_option<AvgH>(
+            "choice",
+            "improvement, sum, or absolute h value",
+            "improvement");
 
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
+        // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+        // instead of having the identical options here again.
+        add_option<shared_ptr<ShrinkStrategy>>(
+            "shrink_strategy",
+            "The given shrink stratgy configuration should match the one "
+            "given to merge_and_shrink.");
+        add_transition_system_size_limit_options_to_feature(*this);
+        // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+        utils::add_log_options_to_feature(*this);
     }
 
-    handle_shrink_limit_options_defaults(options);
+    virtual shared_ptr<MergeScoringFunctionAvgH> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        plugins::Options options_copy(options);
+        handle_shrink_limit_options_defaults(options_copy, context);
+        return make_shared<MergeScoringFunctionAvgH>(options_copy);
+    }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionAvgH>(options);
-}
+static plugins::FeaturePlugin<MergeScoringFunctionAvgHFeature> _plugin_avg_h;
 
-static options::Plugin<MergeScoringFunction> _plugin_ah("avg_h", _parse_ah);
+static plugins::TypedEnumPlugin<AvgH> _plugin_avg_h_enum({
+    {"improvement", ""},
+    {"absolute", ""},
+    {"sum", ""}
+});
 
 
 
@@ -663,18 +661,21 @@ string MergeScoringFunctionGoalRelevanceFine::name() const {
     return "fine goal relevance";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_grf(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "fine goal relevance",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionGoalRelevanceFine>();
-}
+class MergeScoringFunctionGoalRelevanceFineFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionGoalRelevanceFine> {
+public:
+    MergeScoringFunctionGoalRelevanceFineFeature() : TypedFeature("goal_relevance_fine") {
+        document_title("fine goal relevance");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_grf("goal_relevance_fine", _parse_grf);
+    virtual shared_ptr<MergeScoringFunctionGoalRelevanceFine> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionGoalRelevanceFine>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionGoalRelevanceFineFeature> _plugin_goal_relevance_fine;
 
 
 
@@ -699,23 +700,26 @@ string MergeScoringFunctionNumVariables::name() const {
     return "number of variables";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_nv(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "number of variable",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionNumVariables>();
-}
+class MergeScoringFunctionNumVariablesFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionNumVariables> {
+public:
+    MergeScoringFunctionNumVariablesFeature() : TypedFeature("num_variables") {
+        document_title("number of variables");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_nv("num_variables", _parse_nv);
+    virtual shared_ptr<MergeScoringFunctionNumVariables> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionNumVariables>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionNumVariablesFeature> _plugin_num_variables;
 
 
 
 MergeScoringFunctionShrinkPerfectly::MergeScoringFunctionShrinkPerfectly(
-    const options::Options &options)
+    const plugins::Options &options)
     : shrink_stratey(options.get<shared_ptr<ShrinkStrategy>>("shrink_strategy")),
       max_states(options.get<int>("max_states")),
       max_states_before_merge(options.get<int>("max_states_before_merge")),
@@ -745,7 +749,7 @@ vector<double> MergeScoringFunctionShrinkPerfectly::compute_scores(
         // score value in [-infinity,0]
         double score = 1;
         if (ts.is_solvable(distances)) {
-            options::Options options;
+            plugins::Options options;
             options.set<bool>("greedy", false);
             options.set<AtLimit>("at_limit", AtLimit::RETURN);
             ShrinkBisimulation shrink_bisim(options);
@@ -771,36 +775,32 @@ string MergeScoringFunctionShrinkPerfectly::name() const {
     return "perfect shrinking";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_sp(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "perfect shrinking",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
+class MergeScoringFunctionShrinkPerfectlyFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionShrinkPerfectly> {
+public:
+    MergeScoringFunctionShrinkPerfectlyFeature() : TypedFeature("perfect_shrinking") {
+        document_title("perfect shrinking");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
 
-    // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
-    // instead of having the identical options here again.
-    parser.add_option<shared_ptr<ShrinkStrategy>>(
-        "shrink_strategy",
-        "The given shrink stratgy configuration should match the one "
-        "given to merge_and_shrink.");
-    add_transition_system_size_limit_options_to_parser(parser);
-    // TODO: this is only necessary for handle_shrink_limit_options_defaults.
-    utils::add_log_options_to_parser(parser);
-
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
+        // TODO: use shrink strategy and limit options from MergeAndShrinkHeuristic
+        // instead of having the identical options here again.
+        add_option<shared_ptr<ShrinkStrategy>>(
+            "shrink_strategy",
+            "The given shrink stratgy configuration should match the one "
+            "given to merge_and_shrink.");
+        add_transition_system_size_limit_options_to_feature(*this);
+        // TODO: this is only necessary for handle_shrink_limit_options_defaults.
+        utils::add_log_options_to_feature(*this);
     }
 
-    handle_shrink_limit_options_defaults(options);
+    virtual shared_ptr<MergeScoringFunctionShrinkPerfectly> create_component(const plugins::Options &options, const utils::Context &context) const override {
+        plugins::Options options_copy(options);
+        handle_shrink_limit_options_defaults(options_copy, context);
+        return make_shared<MergeScoringFunctionShrinkPerfectly>(options_copy);
+    }
+};
 
-    if (parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionShrinkPerfectly>(options);
-}
-
-static options::Plugin<MergeScoringFunction> _plugin_sp("perfect_shrinking", _parse_sp);
+static plugins::FeaturePlugin<MergeScoringFunctionShrinkPerfectlyFeature> _plugin_perfect_shrinking;
 
 
 
@@ -822,18 +822,21 @@ string MergeScoringFunctionNumTransitions::name() const {
     return "number of transitions";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_nt(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "number of transitions",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionNumTransitions>();
-}
+class MergeScoringFunctionNumTransitionsFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionNumTransitions> {
+public:
+    MergeScoringFunctionNumTransitionsFeature() : TypedFeature("num_transitions") {
+        document_title("number of transitions");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_nt("num_transitions", _parse_nt);
+    virtual shared_ptr<MergeScoringFunctionNumTransitions> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionNumTransitions>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionNumTransitionsFeature> _plugin_num_transitions;
 
 
 
@@ -848,7 +851,7 @@ vector<double> MergeScoringFunctionLROpportunities::compute_scores(
     // Compute the number of labels that are irrelevant in all other transition
     // systems than then current considered pair.
     int num_ts = fts.get_size();
-    int num_labels = fts.get_labels().get_size();
+    int num_labels = fts.get_labels().get_num_active_labels();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
         if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
@@ -902,18 +905,21 @@ string MergeScoringFunctionLROpportunities::name() const {
     return "label reduction opportunities";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_lro(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "label reduction opportunities",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionLROpportunities>();
-}
+class MergeScoringFunctionLROpportunitiesFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionLROpportunities> {
+public:
+    MergeScoringFunctionLROpportunitiesFeature() : TypedFeature("lr_opportunities") {
+        document_title("label reduction opportunities");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_lro("lr_opportunities", _parse_lro);
+    virtual shared_ptr<MergeScoringFunctionLROpportunities> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionLROpportunities>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionLROpportunitiesFeature> _plugin_lr_opportunities;
 
 
 
@@ -929,17 +935,17 @@ vector<double> MergeScoringFunctionMoreLROpportunities::compute_scores(
     // transition systems than then current considered pair.
     int num_ts = fts.get_size();
     const Labels &labels = fts.get_labels();
-    int num_labels = labels.get_size();
+    int num_labels = labels.get_num_active_labels();
     for (int ts_index1 = 0; ts_index1 < num_ts; ++ts_index1) {
         if (fts.is_active(ts_index1)) {
             for (int ts_index2 = ts_index1 + 1; ts_index2 < num_ts; ++ts_index2) {
                 if (fts.is_active(ts_index2)) {
                     int count_combinable_label_pairs = 0;
                     for (int label_no1 = 0; label_no1 < num_labels; ++label_no1) {
-                        if (labels.is_current_label(label_no1)) {
+                        if (labels.is_active_label(label_no1)) {
                             for (int label_no2 = label_no1 + 1;
                                  label_no2 < num_labels; ++label_no2) {
-                                if (labels.is_current_label(label_no2)) {
+                                if (labels.is_active_label(label_no2)) {
                                     bool equivalent_in_all_other_ts = true;
                                     for (int ts_index3 = 0; ts_index3 < num_ts; ++ts_index3) {
                                         if (ts_index3 == ts_index1 || ts_index3 == ts_index2) {
@@ -990,18 +996,21 @@ string MergeScoringFunctionMoreLROpportunities::name() const {
     return "more label reduction opportunities";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_mlro(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "more label reduction opportunities",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionMoreLROpportunities>();
-}
+class MergeScoringFunctionMoreLROpportunitiesFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionMoreLROpportunities> {
+public:
+    MergeScoringFunctionMoreLROpportunitiesFeature() : TypedFeature("more_lr_opportunities") {
+        document_title("more label reduction opportunities");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_mlro("more_lr_opportunities", _parse_mlro);
+    virtual shared_ptr<MergeScoringFunctionMoreLROpportunities> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionMoreLROpportunities>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionMoreLROpportunitiesFeature> _plugin_more_lr_opportunities;
 
 
 
@@ -1035,16 +1044,19 @@ string MergeScoringFunctionMutexes::name() const {
     return "mutexes";
 }
 
-static shared_ptr<MergeScoringFunction>_parse_mx(options::OptionParser &parser) {
-    parser.document_synopsis(
-        "mutexes",
-        "This scoring function assigns a merge candidate a value of 0 iff "
-        "TODO.");
-    if (parser.help_mode() || parser.dry_run())
-        return nullptr;
-    else
-        return make_shared<MergeScoringFunctionMutexes>();
-}
+class MergeScoringFunctionMutexesFeature : public plugins::TypedFeature<MergeScoringFunction, MergeScoringFunctionMutexes> {
+public:
+    MergeScoringFunctionMutexesFeature() : TypedFeature("mutexes") {
+        document_title("mutexes");
+        document_synopsis("This scoring function assigns a merge candidate a value of 0 iff "
+                          "TODO.");
+    }
 
-static options::Plugin<MergeScoringFunction> _plugin_mx("mutexes", _parse_mx);
+    virtual shared_ptr<MergeScoringFunctionMutexes> create_component(
+        const plugins::Options &, const utils::Context &) const override {
+        return make_shared<MergeScoringFunctionMutexes>();
+    }
+};
+
+static plugins::FeaturePlugin<MergeScoringFunctionMutexesFeature> _plugin_mutexes;
 }

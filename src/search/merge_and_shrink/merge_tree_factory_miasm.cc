@@ -7,8 +7,7 @@
 #include "miasm/merge_tree.h"
 #include "miasm/miasm_mas.h"
 
-#include "../options/option_parser.h"
-#include "../options/plugin.h"
+#include "../plugins/plugin.h"
 
 #include "../utils/system.h"
 
@@ -19,7 +18,7 @@
 using namespace std;
 
 namespace merge_and_shrink {
-MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const options::Options &opts)
+MergeTreeFactoryMiasm::MergeTreeFactoryMiasm(const plugins::Options &opts)
     : MergeTreeFactory(opts),
       options(opts),
       miasm_internal(opts.get<MiasmInternal>("miasm_internal")),
@@ -146,25 +145,14 @@ void MergeTreeFactoryMiasm::greedy_max_set_packing() {
     }
 }
 
-void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser) {
-    MergeTreeFactory::add_options_to_parser(parser);
+void MergeTreeFactoryMiasm::add_options_to_feature(plugins::Feature &feature) {
+    MergeTreeFactory::add_options_to_feature(feature);
 
-    //DEFINE_ENUM_OPT(MiasmInternal, "miasm_internal", LEVEL)
-    vector<string> enum_strings;
-    enum_strings.push_back("level");
-    enum_strings.push_back("reverse_level");
-    parser.add_enum_option<MiasmInternal>("miasm_internal",
-                                          enum_strings,
+    feature.add_option<MiasmInternal>("miasm_internal",
                                           "",
                                           "level");
 
-    //DEFINE_ENUM_OPT(MiasmExternal, "miasm_external", NUM_VAR_CGL)
-    enum_strings.clear();
-    enum_strings.push_back("num_var_cgl");
-    enum_strings.push_back("rnr_size_cgl");
-    enum_strings.push_back("cgrl");
-    parser.add_enum_option<MiasmExternal>("miasm_external",
-                                          enum_strings,
+    feature.add_option<MiasmExternal>("miasm_external",
                                           "",
                                           "num_var_cgl");
 
@@ -174,18 +162,18 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
       This is for merge_symmetries, to avoid creating a MiasmAbstraction if
       miasm is not the fallback strategy.
     */
-    parser.add_option<shared_ptr<MiasmAbstraction>>(
+    feature.add_option<shared_ptr<MiasmAbstraction>>(
         MiasmAbstraction::option_key(),
         "",
-        options::OptionParser::NONE);
+        plugins::ArgumentInfo::NO_DEFAULT);
 
     //DEFINE_OPT(double, OptTimeLimit, "time_limit", "30.00")
-    parser.add_option<double>("time_limit",
+    feature.add_option<double>("time_limit",
                               "",
                               "30.0");
 
     //DEFINE_OPT(size_t, OptMemoryLimit, "memory_limit", "1500000000")
-    parser.add_option<int>("memory_limit",
+    feature.add_option<int>("memory_limit",
                            "",
                            "1500000000");
 
@@ -193,72 +181,90 @@ void MergeTreeFactoryMiasm::add_options_to_parser(options::OptionParser &parser)
     /** @brief An \link #DECLARE_INT_OPT int wrapper struct \endlink
      * that provides the limit on the size of an abstraction on a subset
      * that can be "enqueued" in #SinkSetSearch */
-    parser.add_option<int>("size_limit",
+    feature.add_option<int>("size_limit",
                            "",
                            "50000");
 
     //DEFINE_OPT(int, OptCliqueLimit, "clique_limit", "infinity")
-    parser.add_option<int>("clique_limit",
+    feature.add_option<int>("clique_limit",
                            "",
                            "infinity");
 
-    //DEFINE_ENUM_OPT(EnumPriority, "priority", GAIN)
-    enum_strings.clear();
-    enum_strings.push_back("fifo");
-    enum_strings.push_back("ratio");
-    enum_strings.push_back("gain");
-    parser.add_enum_option<EnumPriority>("priority", enum_strings,
+    feature.add_option<EnumPriority>("priority",
                                          "the order in which the subsets "
                                          "are dequeued in the priority queue",
                                          "gain");
 
 
-    //DEFINE_ENUM_OPT(EnumExpand, "expand", SINGLE)
-    enum_strings.clear();
-    enum_strings.push_back("single");
-    enum_strings.push_back("none");
-    parser.add_enum_option<EnumExpand>("expand", enum_strings,
+    feature.add_option<EnumExpand>("expand",
                                        "which new subsets should be added into the search"
                                        "priority queue",
                                        "single");
 
-    //DEFINE_ENUM_OPT(EnumGain, "gain", ALL_ACCUR)
-    enum_strings.clear();
-    enum_strings.push_back("pool_guess");
-    enum_strings.push_back("pool_accur");
-    enum_strings.push_back("all_guess");
-    enum_strings.push_back("all_accur");
-    parser.add_enum_option<EnumGain>("gain", enum_strings,
+    feature.add_option<EnumGain>("gain",
                                      "",
                                      "all_accur");
 
-    //DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
-    enum_strings.clear();
-    enum_strings.push_back("none");
-    enum_strings.push_back("cgwc_mutex");
-    parser.add_enum_option<EnumPrune>("prune", enum_strings,
+    feature.add_option<EnumPrune>("prune",
                                       "",
                                       "none");
 
-    parser.add_option<shared_ptr<MergeSelector>>(
+    feature.add_option<shared_ptr<MergeSelector>>(
         "fallback_merge_selector",
         "the fallback merge 'strategy' to use if a stateless strategy should"
         "be used.",
-        options::OptionParser::NONE);
+        plugins::ArgumentInfo::NO_DEFAULT);
 
-    utils::add_log_options_to_parser(parser);
+    utils::add_log_options_to_feature(feature);
 }
 
-static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
-    MergeTreeFactoryMiasm::add_options_to_parser(parser);
+class MergeTreeFactoryMiasmFeature : public plugins::TypedFeature<MergeTreeFactory, MergeTreeFactoryMiasm> {
+public:
+    MergeTreeFactoryMiasmFeature() : TypedFeature("miasm") {
+        MergeTreeFactory::add_options_to_feature(*this);
+        MergeTreeFactoryMiasm::add_options_to_feature(*this);
+    }
+};
 
-    options::Options opts = parser.parse();
+static plugins::FeaturePlugin<MergeTreeFactoryMiasmFeature> _plugin;
 
-    if (parser.dry_run())
-        return nullptr;
+//DEFINE_ENUM_OPT(MiasmInternal, "miasm_internal", LEVEL)
+static plugins::TypedEnumPlugin<MiasmInternal> _enum_miasminternal_plugin({
+      {"level", ""},
+      {"reverse_level", ""},
+  });
 
-    return make_shared<MergeTreeFactoryMiasm>(opts);
-}
+//DEFINE_ENUM_OPT(MiasmExternal, "miasm_external", NUM_VAR_CGL)
+static plugins::TypedEnumPlugin<MiasmExternal> _enum_miasmexternal_plugin({
+      {"num_var_cgl", ""},
+      {"rnr_size_cgl", ""},
+      {"cgrl", ""},
+  });
 
-static options::Plugin<MergeTreeFactory> _plugin("miasm", _parse);
+//DEFINE_ENUM_OPT(EnumPriority, "priority", GAIN)
+static plugins::TypedEnumPlugin<EnumPriority> _enum_priority_plugin({
+      {"fifo", ""},
+      {"ratio", ""},
+      {"gain", ""},
+  });
+
+//DEFINE_ENUM_OPT(EnumExpand, "expand", SINGLE)
+static plugins::TypedEnumPlugin<EnumExpand> _enum_expand_plugin({
+      {"single", ""},
+      {"none", ""},
+  });
+
+//DEFINE_ENUM_OPT(EnumGain, "gain", ALL_ACCUR)
+static plugins::TypedEnumPlugin<EnumGain> _enum_gain_plugin({
+    {"pool_guess", ""},
+    {"pool_accur", ""},
+    {"all_guess", ""},
+    {"all_accur", ""},
+});
+
+//DEFINE_ENUM_OPT(EnumPrune, "prune", NONE)
+static plugins::TypedEnumPlugin<EnumPrune> _enum_prune_plugin({
+    {"none", ""},
+    {"cgwc_mutex", ""},
+});
 }

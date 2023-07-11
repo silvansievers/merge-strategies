@@ -10,7 +10,7 @@
 #include "symmetries/symmetry_generator.h"
 #include "symmetries/symmetry_group.h"
 
-#include "../options/options.h"
+#include "../plugins/options.h"
 
 #include "../task_proxy.h"
 
@@ -24,7 +24,7 @@ using namespace std;
 namespace merge_and_shrink {
 MergeSymmetries::MergeSymmetries(
     const FactoredTransitionSystem &fts,
-    const options::Options &options,
+    const plugins::Options &options,
     const TaskProxy &task_proxy,
     shared_ptr<MergeTreeFactory> merge_tree_factory,
     shared_ptr<MergeSelector> merge_selector)

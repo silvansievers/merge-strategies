@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace options {
+namespace plugins {
 class Options;
 }
 
@@ -88,7 +88,7 @@ protected:
     virtual std::string name() const override;
 public:
     explicit MergeScoringFunctionTransitionsStatesQuotient(
-        const options::Options &options);
+        const plugins::Options &options);
     virtual ~MergeScoringFunctionTransitionsStatesQuotient() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,
@@ -119,7 +119,7 @@ class MergeScoringFunctionInitH : public MergeScoringFunction {
 protected:
     virtual std::string name() const override;
 public:
-    explicit MergeScoringFunctionInitH(const options::Options &options);
+    explicit MergeScoringFunctionInitH(const plugins::Options &options);
     virtual ~MergeScoringFunctionInitH() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,
@@ -150,7 +150,7 @@ class MergeScoringFunctionMaxFGH : public MergeScoringFunction {
 protected:
     virtual std::string name() const override;
 public:
-    explicit MergeScoringFunctionMaxFGH(const options::Options &options);
+    explicit MergeScoringFunctionMaxFGH(const plugins::Options &options);
     virtual ~MergeScoringFunctionMaxFGH() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,
@@ -181,7 +181,7 @@ class MergeScoringFunctionAvgH : public MergeScoringFunction {
 protected:
     virtual std::string name() const override;
 public:
-    explicit MergeScoringFunctionAvgH(const options::Options &options);
+    explicit MergeScoringFunctionAvgH(const plugins::Options &options);
     virtual ~MergeScoringFunctionAvgH() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,
@@ -249,7 +249,7 @@ protected:
     virtual std::string name() const override;
 public:
     explicit MergeScoringFunctionShrinkPerfectly(
-        const options::Options &options);
+        const plugins::Options &options);
     virtual ~MergeScoringFunctionShrinkPerfectly() override = default;
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,

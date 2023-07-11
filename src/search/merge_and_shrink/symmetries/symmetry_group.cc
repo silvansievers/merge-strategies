@@ -7,8 +7,6 @@
 #include "../transition_system.h"
 #include "../types.h"
 
-#include "../../option_parser.h"
-
 #include "../../algorithms/sccs.h"
 
 #include "../../utils/system.h"

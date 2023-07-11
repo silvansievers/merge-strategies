@@ -4,9 +4,8 @@
 
 #include "../task_proxy.h"
 
-#include "../options/option_parser.h"
-#include "../options/options.h"
-#include "../options/plugin.h"
+#include "../plugins/plugin.h"
+#include "../plugins/options.h"
 
 #include "../utils/logging.h"
 #include "../utils/system.h"
@@ -14,13 +13,14 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <sstream>
 
 using namespace std;
 using utils::ExitCode;
 
 namespace merge_and_shrink {
 MergeTreeFactoryManual::MergeTreeFactoryManual(
-    const options::Options &options)
+    const plugins::Options &options)
     : MergeTreeFactory(options) {
     if (options.contains("merge_order_list")) {
         merge_order_list = options.get_list<vector<int>>("merge_order_list");
@@ -81,56 +81,56 @@ void MergeTreeFactoryManual::dump_tree_specific_options(utils::LogProxy &log) co
     }
 }
 
-static shared_ptr<MergeTreeFactory>_parse(options::OptionParser &parser) {
-    MergeTreeFactory::add_options_to_parser(parser);
-    parser.document_synopsis(
-        "Manuel merge trees.",
-        "Manually specify a merge tree either as a list of merges or a "
-        "specific string describing a tree.");
-    parser.add_list_option<vector<int>>(
-        "merge_order_list",
-        "merge order as list. NOTE/TODO: the resulting merge tree cannot be"
-        "guaranteed to be processed in the exact same order as the list.",
-        options::OptionParser::NONE);
-    parser.add_option<string>(
-        "merge_order_tree_string",
-        "merge tree, specified as a string of the following form: "
-        "xx<X>yxx<Y>yx<Z>yyy, where x and y are opening and closing brackets, "
-        "respectively, and X, Y and Z are integer values denoting variables "
-        "(i.e. indices of atomic transition systems)",
-        options::OptionParser::NONE);
+/*
+class MergeTreeFactoryManualFeature : public plugins::TypedFeature<MergeTreeFactory, MergeTreeFactoryManual> {
+public:
+    MergeTreeFactoryManualFeature() : TypedFeature("manual") {
+        document_title("Manuel merge trees");
+        document_synopsis(
+            "Manually specify a merge tree either as a list of merges or a "
+            "specific string describing a tree.");
+        add_list_option<vector<int>>(
+            "merge_order_list",
+            "merge order as list. NOTE/TODO: the resulting merge tree cannot be"
+            "guaranteed to be processed in the exact same order as the list.",
+            plugins::ArgumentInfo::NO_DEFAULT);
+        add_option<string>(
+            "merge_order_tree_string",
+            "merge tree, specified as a string of the following form: "
+            "xx<X>yxx<Y>yx<Z>yyy, where x and y are opening and closing brackets, "
+            "respectively, and X, Y and Z are integer values denoting variables "
+            "(i.e. indices of atomic transition systems)",
+            plugins::ArgumentInfo::NO_DEFAULT);
 
-    options::Options options = parser.parse();
-    if (parser.help_mode()) {
-        return nullptr;
-    } else if (parser.dry_run()) {
+        MergeTreeFactory::add_options_to_feature(*this);
+        MergeTreeFactoryManual::add_options_to_feature(*this);
+    }
+
+    virtual shared_ptr<MergeTreeFactoryManual> create_component(const plugins::Options &options, const utils::Context &context) const override {
         if (options.contains("merge_order_list") && options.contains("merge_order_tree_string")) {
-            cerr << "Specifying a merge order and a merge tree is not possible!" << endl;
-            utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+            context.error("Specifying a merge order and a merge tree is not possible!");
         } else if (!options.contains("merge_order_list") && !options.contains("merge_order_tree_string")) {
-            cerr << "Neither a merge order nor a merge tree was specified!" << endl;
-            utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+            context.error("Neither a merge order nor a merge tree was specified!");
         }
         if (options.contains("merge_order_list")) {
             vector<vector<int>> merge_order = options.get_list<vector<int>>("merge_order_list");
             if (merge_order.empty()) {
-                cerr << "Got empty merge order, aborting" << endl;
-                utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+                context.error("Got empty merge order, aborting");
             }
             for (const vector<int> &pair : merge_order) {
                 if (pair.size() != 2) {
-                    cerr << "Every element in the list merge_order_list must "
-                        "contain exactly two elements!" << endl;
-                    cerr << pair << endl;
-                    utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+                    stringstream error_msg;
+                    error_msg << "Every element in the list merge_order_list must "
+                                 "contain exactly two elements!" << endl;
+                    error_msg << pair << endl;
+                    context.error(error_msg.str());
                 }
             }
         }
-        return nullptr;
-    } else {
         return make_shared<MergeTreeFactoryManual>(options);
     }
-}
+};
 
-static options::Plugin<MergeTreeFactory> _plugin("manual", _parse);
+static plugins::FeaturePlugin<MergeTreeFactoryManualFeature> _plugin;
+*/
 }

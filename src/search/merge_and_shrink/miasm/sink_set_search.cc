@@ -6,7 +6,7 @@
 #include "../transition_system.h"
 
 #include "../task_utils/causal_graph.h"
-#include "../../option_parser.h"
+#include "../../plugins/options.h"
 
 #include "../../algorithms/sccs.h"
 
@@ -26,7 +26,7 @@ using namespace std;
 namespace merge_and_shrink {
 using namespace mst;
 
-SinkSetSearch::SinkSetSearch(const Options &opts, const TaskProxy &task_proxy)
+SinkSetSearch::SinkSetSearch(const plugins::Options &opts, const TaskProxy &task_proxy)
     : task_proxy(task_proxy),
       causal_graph(task_proxy.get_causal_graph()),
       time_limit(opts.get<double>("time_limit")),
