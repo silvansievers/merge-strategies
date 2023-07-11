@@ -20,16 +20,12 @@ OLD_REVISION='0f9cb8a9184a71c2c770538545b634dae1967328'
 REVISION='1bca2102a7563b2fe93a3bb84a61f41394d20b52'
 REVISIONS = [REVISION]
 CONFIGS = [
-    ## standard configs
-    IssueConfig('b50k-cggl-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_precomputed(merge_tree=linear(variable_order=cg_goal_level)),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-dfp-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-miasm-dfp-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_precomputed(merge_tree=miasm(abstraction=miasm_merge_and_shrink(),fallback_merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)]))),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-rl-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_precomputed(merge_tree=linear(variable_order=reverse_level)),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-sbmiasm-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50K,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-sccdfp-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-
-    ## scoring function collection
-    IssueConfig('b50k-sbcollection-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_weighted_sum(scoring_functions=[causal_connection(),boolean_causal_connection(),non_additivity(),transitions_states_quotient(prefer_high=false),init_h(choice=improvement,shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),max_fgh(fgh=f,shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),avg_h(choice=improvement,shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),goal_relevance_fine(),num_variables(),perfect_shrinking(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50000,threshold_before_merge=1),num_transitions(),lr_opportunities(),more_lr_opportunities(),mutexes(),total_order(atomic_ts_order=reverse_level,product_ts_order=old_to_new,atomic_before_product=true,random_seed=2016)])),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50000,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    ## factored symmetries
+    IssueConfig('b50k-cggl-largest-nonlinear-b60-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_symmetries(merge_tree=linear(variable_order=cg_goal_level,update_option=use_first),stabilize_transition_systems=false,max_bliss_iterations=infinity,bliss_call_time_limit=0,bliss_total_time_budget=60,symmetries_for_merging=largest,internal_merging=non_linear),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-dfp-largest-nonlinear-b60-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_symmetries(merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false,random_seed=2016)]),stabilize_transition_systems=false,max_bliss_iterations=infinity,bliss_call_time_limit=0,bliss_total_time_budget=60,symmetries_for_merging=largest,internal_merging=non_linear),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-miasm-dfp-largest-nonlinear-b60-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_symmetries(merge_tree=miasm(abstraction=miasm_merge_and_shrink(),fallback_merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false,random_seed=2016)])),stabilize_transition_systems=false,max_bliss_iterations=infinity,bliss_call_time_limit=0,bliss_total_time_budget=60,symmetries_for_merging=largest,internal_merging=non_linear),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-rl-largest-nonlinear-b60-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_symmetries(merge_tree=linear(variable_order=reverse_level,update_option=use_first),stabilize_transition_systems=false,max_bliss_iterations=infinity,bliss_call_time_limit=0,bliss_total_time_budget=60,symmetries_for_merging=largest,internal_merging=non_linear),label_reduction=exact(before_shrinking=true,before_merging=false),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-sbmiasm-largest-nonlinear-b60-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_symmetries(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50K,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false,random_seed=2016)]),stabilize_transition_systems=false,max_bliss_iterations=infinity,bliss_call_time_limit=0,bliss_total_time_budget=60,symmetries_for_merging=largest,internal_merging=non_linear),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
 ]
 
 SUITE = common_setup.DEFAULT_OPTIMAL_SUITE
@@ -98,6 +94,21 @@ extra_attributes=[
     Attribute('ms_tiebreaking_iterations', absolute=True, min_wins=True),
     Attribute('ms_tiebreaking_total', absolute=True, min_wins=True),
     Attribute('ms_max_int_abs_size', absolute=False, min_wins=True, function=arithmetic_mean),
+
+    Attribute('number_of_applied_symmetries', absolute=False, min_wins=False),
+    Attribute('bliss_time_average', absolute=False, min_wins=True, function=arithmetic_mean),
+    Attribute('bliss_time_median', absolute=False, min_wins=True, function=arithmetic_mean),
+    Attribute('bliss_memory_out', absolute=True, min_wins=True),
+    Attribute('bliss_timeout', absolute=True, min_wins=True),
+    Attribute('bliss_total_calls', absolute=False, min_wins=False),
+    Attribute('fallback_only', absolute=True, min_wins=True),
+    Attribute('merging_for_symmetries_attempts', absolute=True, min_wins=False),
+    Attribute('merging_for_symmetries_fail_shrinking', absolute=True, min_wins=True),
+    Attribute('merging_for_symmetries_fail_pruning', absolute=True, min_wins=True),
+    Attribute('merging_for_symmetries_fail_any', absolute=True, min_wins=True),
+    Attribute('merging_for_symmetries_success_ratio_shrinking', absolute=False, min_wins=False, function=arithmetic_mean),
+    Attribute('merging_for_symmetries_success_ratio_pruning', absolute=False, min_wins=False, function=arithmetic_mean),
+    Attribute('merging_for_symmetries_success_ratio_any', absolute=False, min_wins=False, function=arithmetic_mean),
 ]
 attributes = list(exp.DEFAULT_TABLE_ATTRIBUTES)
 attributes.extend(extra_attributes)
@@ -108,7 +119,7 @@ exp.add_absolute_report_step(
 )
 
 exp.add_fetcher(
-    'data/2022-08-01-merge-strategies-eval',
+    'data/2022-08-01-symmetries-eval',
     filter_algorithm=[f"{OLD_REVISION}-{config.nick}" for config in CONFIGS],
     merge=True
 )
