@@ -15,6 +15,7 @@ class FactoredTransitionSystem;
 class MergeScoringFunction {
 protected:
     bool initialized;
+    std::vector<std::vector<double>> cached_scores;
     virtual std::string name() const = 0;
     virtual void dump_function_specific_options(utils::LogProxy &) const {}
 public:

@@ -31,38 +31,43 @@ vector<double> MergeScoringFunctionMIASM::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates) {
         int index1 = merge_candidate.first;
         int index2 = merge_candidate.second;
-        unique_ptr<TransitionSystem> product = shrink_before_merge_externally(
-            fts,
-            index1,
-            index2,
-            *shrink_strategy,
-            max_states,
-            max_states_before_merge,
-            shrink_threshold_before_merge,
-            silent_log);
+        if (!utils::in_bounds(index1, cached_scores) || !utils::in_bounds((index2), cached_scores[index1])) {
+            unique_ptr<TransitionSystem> product = shrink_before_merge_externally(
+                fts,
+                index1,
+                index2,
+                *shrink_strategy,
+                max_states,
+                max_states_before_merge,
+                shrink_threshold_before_merge,
+                silent_log);
 
-        // Compute distances for the product and count the alive states.
-        unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
-        const bool compute_init_distances = true;
-        const bool compute_goal_distances = true;
-        distances->compute_distances(compute_init_distances, compute_goal_distances, silent_log);
-        int num_states = product->get_size();
-        int alive_states_count = 0;
-        for (int state = 0; state < num_states; ++state) {
-            if (distances->get_init_distance(state) != INF &&
-                distances->get_goal_distance(state) != INF) {
-                ++alive_states_count;
+            // Compute distances for the product and count the alive states.
+            unique_ptr<Distances> distances = utils::make_unique_ptr<Distances>(*product);
+            const bool compute_init_distances = true;
+            const bool compute_goal_distances = true;
+            distances->compute_distances(compute_init_distances, compute_goal_distances, silent_log);
+            int num_states = product->get_size();
+            int alive_states_count = 0;
+            for (int state = 0; state < num_states; ++state) {
+                if (distances->get_init_distance(state) != INF &&
+                    distances->get_goal_distance(state) != INF) {
+                    ++alive_states_count;
+                }
             }
-        }
 
-        /*
-          Compute the score as the ratio of alive states of the product
-          compared to the number of states of the full product.
-        */
-        assert(num_states);
-        double score = static_cast<double>(alive_states_count) /
-            static_cast<double>(num_states);
-        scores.push_back(score);
+            /*
+              Compute the score as the ratio of alive states of the product
+              compared to the number of states of the full product.
+            */
+            assert(num_states);
+            double score = static_cast<double>(alive_states_count) /
+                static_cast<double>(num_states);
+            cached_scores.resize(index1 + 1);
+            cached_scores[index1].resize(index2 + 1);
+            cached_scores[index1][index2] = score;
+        }
+        scores.push_back(cached_scores[index1][index2]);
     }
     return scores;
 }
