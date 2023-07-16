@@ -71,7 +71,44 @@ vector<double> MergeScoringFunctionDFP::compute_scores(
     for (pair<int, int> merge_candidate : merge_candidates) {
         int index1 = merge_candidate.first;
         int index2 = merge_candidate.second;
-        if (!utils::in_bounds(index1, cached_scores) || !utils::in_bounds((index2), cached_scores[index1])) {
+        vector<int> &label_ranks1 = transition_system_label_ranks[index1];
+        if (label_ranks1.empty()) {
+            label_ranks1 = compute_label_ranks(fts, index1);
+        }
+        vector<int> &label_ranks2 = transition_system_label_ranks[index2];
+        if (label_ranks2.empty()) {
+            label_ranks2 = compute_label_ranks(fts, index2);
+        }
+        assert(label_ranks1.size() == label_ranks2.size());
+
+        // Compute the weight associated with this pair
+        int pair_weight = INF;
+        for (size_t i = 0; i < label_ranks1.size(); ++i) {
+            if (label_ranks1[i] != -1 && label_ranks2[i] != -1) {
+                // label is relevant in both transition_systems
+                int max_label_rank = max(label_ranks1[i], label_ranks2[i]);
+                pair_weight = min(pair_weight, max_label_rank);
+            }
+        }
+        scores.push_back(pair_weight);
+    }
+    return scores;
+}
+
+vector<double> MergeScoringFunctionDFP::compute_scores_caching(
+    const FactoredTransitionSystem &fts,
+    const vector<shared_ptr<MergeCandidate>> &merge_candidates) {
+    int num_ts = fts.get_size();
+    vector<vector<int>> transition_system_label_ranks(num_ts);
+    vector<double> scores;
+    scores.reserve(merge_candidates.size());
+
+    // Go over all pairs of transition systems and compute their weight.
+    for (const auto &merge_candidate : merge_candidates) {
+        int id = merge_candidate->id;
+        if (!cached_scores.count(id)) {
+            int index1 = merge_candidate->index1;
+            int index2 = merge_candidate->index2;
             vector<int> &label_ranks1 = transition_system_label_ranks[index1];
             if (label_ranks1.empty()) {
                 label_ranks1 = compute_label_ranks(fts, index1);
@@ -91,11 +128,9 @@ vector<double> MergeScoringFunctionDFP::compute_scores(
                     pair_weight = min(pair_weight, max_label_rank);
                 }
             }
-            cached_scores.resize(index1 + 1);
-            cached_scores[index1].resize(index2 + 1);
-            cached_scores[index1][index2] = pair_weight;
+            cached_scores[id] = pair_weight;
         }
-        scores.push_back(cached_scores[index1][index2]);
+        scores.push_back(cached_scores[id]);
     }
     return scores;
 }

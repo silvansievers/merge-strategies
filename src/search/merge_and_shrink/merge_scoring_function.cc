@@ -2,6 +2,7 @@
 
 #include "../plugins/plugin.h"
 #include "../utils/logging.h"
+#include "../utils/system.h"
 
 #include <iostream>
 
@@ -10,6 +11,13 @@ using namespace std;
 namespace merge_and_shrink {
 MergeScoringFunction::MergeScoringFunction()
     : initialized(false) {
+}
+
+vector<double> MergeScoringFunction::compute_scores_caching(
+    const FactoredTransitionSystem &,
+    const vector<shared_ptr<MergeCandidate>> &) {
+    cerr << "filter_candidate not implemented by this scoring function" << endl;
+    utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
 }
 
 void MergeScoringFunction::dump_options(utils::LogProxy &log) const {

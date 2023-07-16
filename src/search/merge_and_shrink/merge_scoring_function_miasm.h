@@ -23,6 +23,10 @@ public:
     virtual std::vector<double> compute_scores(
         const FactoredTransitionSystem &fts,
         const std::vector<std::pair<int, int>> &merge_candidates) override;
+    std::vector<double> compute_scores_caching(
+        const FactoredTransitionSystem &fts,
+        const std::vector<std::shared_ptr<MergeCandidate>> &merge_candidates);
+
 
     virtual bool requires_init_distances() const override {
         return true;

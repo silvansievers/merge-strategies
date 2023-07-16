@@ -56,6 +56,37 @@ vector<double> MergeScoringFunctionTotalOrder::compute_scores(
     return scores;
 }
 
+std::vector<double> MergeScoringFunctionTotalOrder::compute_scores_caching(
+    const FactoredTransitionSystem &,
+    const std::vector<std::shared_ptr<MergeCandidate>> &merge_candidates) {
+    assert(initialized);
+    vector<double> scores;
+    scores.reserve(merge_candidates.size());
+    for (size_t candidate_index = 0; candidate_index < merge_candidates.size();
+         ++candidate_index) {
+        const auto &merge_candidate = merge_candidates[candidate_index];
+        int ts_index1 = merge_candidate->index1;
+        int ts_index2 = merge_candidate->index2;
+        for (size_t merge_candidate_order_index = 0;
+             merge_candidate_order_index < merge_candidate_order.size();
+             ++merge_candidate_order_index) {
+            pair<int, int> other_candidate =
+                merge_candidate_order[merge_candidate_order_index];
+            if ((other_candidate.first == ts_index1 &&
+                 other_candidate.second == ts_index2) ||
+                (other_candidate.second == ts_index1 &&
+                 other_candidate.first == ts_index2)) {
+                // use the index in the merge candidate order as score
+                scores.push_back(merge_candidate_order_index);
+                break;
+            }
+        }
+        // We must have inserted a score for the current candidate.
+        assert(scores.size() == candidate_index + 1);
+    }
+    return scores;
+}
+
 void MergeScoringFunctionTotalOrder::initialize(const TaskProxy &task_proxy) {
     initialized = true;
     int num_variables = task_proxy.get_variables().size();
