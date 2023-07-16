@@ -21,9 +21,9 @@ REVISION='edfa190dba742e185605adfb648afcd821cd721c'
 REVISIONS = [REVISION]
 CONFIGS = [
     ## standard configs
-    IssueConfig('b50k-dfp-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-sbmiasm-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50K,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
-    IssueConfig('b50k-sccdfp-time900', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=score_based_filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-dfp-time900-cache', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-sbmiasm-time900-cache', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_stateless(merge_selector=filtering(scoring_functions=[sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=50K,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
+    IssueConfig('b50k-sccdfp-time900-cache', ['--search', 'astar(merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(before_shrinking=true,before_merging=false),merge_strategy=merge_sccs(order_of_sccs=topological,merge_selector=filtering(scoring_functions=[goal_relevance(),dfp(),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),max_states=50K,threshold_before_merge=1,main_loop_max_time=900),verbosity=silent)']),
 ]
 
 SUITE = common_setup.DEFAULT_OPTIMAL_SUITE
@@ -100,6 +100,10 @@ exp.add_absolute_report_step(
     filter_algorithm=[f"{REVISION}-{config.nick}" for config in CONFIGS],
     attributes=attributes,
 )
+
+old_config_nicks = [
+'b50k-dfp-time900-cache'
+]
 
 exp.add_fetcher(
     'data/2023-07-11-merge-strategies-eval',
