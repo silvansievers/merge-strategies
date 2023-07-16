@@ -102,12 +102,14 @@ exp.add_absolute_report_step(
 )
 
 old_config_nicks = [
-'b50k-dfp-time900-cache'
+    'b50k-dfp-time900',
+    'b50k-sbmiasm-time900',
+    'b50k-sccdfp-time900',
 ]
 
 exp.add_fetcher(
     'data/2023-07-11-merge-strategies-eval',
-    filter_algorithm=[f"{OLD_REVISION}-{config.nick}" for config in CONFIGS],
+    filter_algorithm=[f"{OLD_REVISION}-{config_nick}" for config_nick in old_config_nicks],
     merge=True
 )
 
@@ -117,7 +119,7 @@ exp.add_report(
     ComparativeReport(
         attributes=attributes,
         algorithm_pairs=[
-            (f"{OLD_REVISION}-{config.nick}", f"{REVISION}-{config.nick}") for config in CONFIGS
+            (f"{OLD_REVISION}-{old_config_nicks[i]}", f"{REVISION}-{CONFIGS[i].nick}") for i in range(len(CONFIGS))
         ],
     ),
     name=report_name,
