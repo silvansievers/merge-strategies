@@ -69,14 +69,13 @@ vector<double> MergeScoringFunctionMIASM::compute_scores(
 
 vector<double> MergeScoringFunctionMIASM::compute_scores_caching(
     const FactoredTransitionSystem &fts,
-    const vector<shared_ptr<MergeCandidate>> &merge_candidates) {
+    const vector<pair<int, int>> &merge_candidates) {
     vector<double> scores;
     scores.reserve(merge_candidates.size());
-    for (const auto &merge_candidate : merge_candidates) {
-        int id = merge_candidate->id;
-        if (!cached_scores.count(id)) {
-            int index1 = merge_candidate->index1;
-            int index2 = merge_candidate->index2;
+    for (pair<int, int> merge_candidate : merge_candidates) {
+        if (!cached_scores.count(merge_candidate)) {
+            int index1 = merge_candidate.first;
+            int index2 = merge_candidate.second;
             unique_ptr<TransitionSystem> product = shrink_before_merge_externally(
                 fts,
                 index1,
@@ -108,9 +107,9 @@ vector<double> MergeScoringFunctionMIASM::compute_scores_caching(
             assert(num_states);
             double score = static_cast<double>(alive_states_count) /
                            static_cast<double>(num_states);
-            cached_scores[id] = score;
+            cached_scores[merge_candidate] = score;
         }
-        scores.push_back(cached_scores[id]);
+        scores.push_back(cached_scores[merge_candidate]);
     }
     return scores;
 }

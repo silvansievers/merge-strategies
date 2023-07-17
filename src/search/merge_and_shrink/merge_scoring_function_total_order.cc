@@ -58,15 +58,15 @@ vector<double> MergeScoringFunctionTotalOrder::compute_scores(
 
 std::vector<double> MergeScoringFunctionTotalOrder::compute_scores_caching(
     const FactoredTransitionSystem &,
-    const std::vector<std::shared_ptr<MergeCandidate>> &merge_candidates) {
+    const vector<pair<int, int>> &merge_candidates) {
     assert(initialized);
     vector<double> scores;
     scores.reserve(merge_candidates.size());
     for (size_t candidate_index = 0; candidate_index < merge_candidates.size();
          ++candidate_index) {
         const auto &merge_candidate = merge_candidates[candidate_index];
-        int ts_index1 = merge_candidate->index1;
-        int ts_index2 = merge_candidate->index2;
+        int ts_index1 = merge_candidate.first;
+        int ts_index2 = merge_candidate.second;
         for (size_t merge_candidate_order_index = 0;
              merge_candidate_order_index < merge_candidate_order.size();
              ++merge_candidate_order_index) {

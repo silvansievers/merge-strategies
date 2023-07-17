@@ -22,20 +22,40 @@ MergeSelectorFiltering::MergeSelectorFiltering(
       num_candidates(0) {
 }
 
-shared_ptr<MergeCandidate> MergeSelectorFiltering::get_candidate(
-    int index1, int index2) const {
-    assert(utils::in_bounds(index1, merge_candidates_by_indices));
-    assert(utils::in_bounds(index2, merge_candidates_by_indices[index1]));
-    if (merge_candidates_by_indices[index1][index2] == nullptr) {
-        merge_candidates_by_indices[index1][index2] =
-            make_shared<MergeCandidate>(num_candidates, index1, index2);
-        ++num_candidates;
-    }
-    return merge_candidates_by_indices[index1][index2];
-}
+//shared_ptr<MergeCandidate> MergeSelectorFiltering::get_candidate(
+//    int index1, int index2) const {
+//    assert(utils::in_bounds(index1, merge_candidates_by_indices));
+//    assert(utils::in_bounds(index2, merge_candidates_by_indices[index1]));
+//    if (merge_candidates_by_indices[index1][index2] == nullptr) {
+//        merge_candidates_by_indices[index1][index2] =
+//            make_shared<MergeCandidate>(num_candidates, index1, index2);
+//        ++num_candidates;
+//    }
+//    return merge_candidates_by_indices[index1][index2];
+//}
 
-static vector<shared_ptr<MergeCandidate>> get_remaining_candidates(
-    const vector<shared_ptr<MergeCandidate>> &merge_candidates,
+//static vector<shared_ptr<MergeCandidate>> get_remaining_candidates(
+//    const vector<shared_ptr<MergeCandidate>> &merge_candidates,
+//    const vector<double> &scores) {
+//    assert(merge_candidates.size() == scores.size());
+//    double best_score = INF;
+//    for (double score : scores) {
+//        if (score < best_score) {
+//            best_score = score;
+//        }
+//    }
+//
+//    vector<shared_ptr<MergeCandidate>> result;
+//    for (size_t i = 0; i < scores.size(); ++i) {
+//        if (scores[i] == best_score) {
+//            result.push_back(merge_candidates[i]);
+//        }
+//    }
+//    return result;
+//}
+
+static vector<pair<int, int>> get_remaining_candidates(
+    const vector<pair<int, int>> &merge_candidates,
     const vector<double> &scores) {
     assert(merge_candidates.size() == scores.size());
     double best_score = INF;
@@ -45,7 +65,7 @@ static vector<shared_ptr<MergeCandidate>> get_remaining_candidates(
         }
     }
 
-    vector<shared_ptr<MergeCandidate>> result;
+    vector<pair<int, int>> result;
     for (size_t i = 0; i < scores.size(); ++i) {
         if (scores[i] == best_score) {
             result.push_back(merge_candidates[i]);
@@ -57,30 +77,33 @@ static vector<shared_ptr<MergeCandidate>> get_remaining_candidates(
 pair<int, int> MergeSelectorFiltering::select_merge(
     const FactoredTransitionSystem &fts,
     const vector<int> &indices_subset) const {
-    vector<shared_ptr<MergeCandidate>> merge_candidates;
-    if (indices_subset.empty()) {
-        for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
-            if (fts.is_active(ts_index1)) {
-                for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
-                     ++ts_index2) {
-                    if (fts.is_active(ts_index2)) {
-                        merge_candidates.push_back(get_candidate(ts_index1, ts_index2));
-                    }
-                }
-            }
-        }
-    } else {
-        assert(indices_subset.size() > 1);
-        for (size_t i = 0; i < indices_subset.size(); ++i) {
-            int ts_index1 = indices_subset[i];
-            assert(fts.is_active(ts_index1));
-            for (size_t j = i + 1; j < indices_subset.size(); ++j) {
-                int ts_index2 = indices_subset[j];
-                assert(fts.is_active(ts_index2));
-                merge_candidates.push_back(get_candidate(ts_index1, ts_index2));
-            }
-        }
-    }
+//    vector<shared_ptr<MergeCandidate>> merge_candidates;
+//    if (indices_subset.empty()) {
+//        for (int ts_index1 = 0; ts_index1 < fts.get_size(); ++ts_index1) {
+//            if (fts.is_active(ts_index1)) {
+//                for (int ts_index2 = ts_index1 + 1; ts_index2 < fts.get_size();
+//                     ++ts_index2) {
+//                    if (fts.is_active(ts_index2)) {
+//                        merge_candidates.push_back(get_candidate(ts_index1, ts_index2));
+//                    }
+//                }
+//            }
+//        }
+//    } else {
+//        assert(indices_subset.size() > 1);
+//        for (size_t i = 0; i < indices_subset.size(); ++i) {
+//            int ts_index1 = indices_subset[i];
+//            assert(fts.is_active(ts_index1));
+//            for (size_t j = i + 1; j < indices_subset.size(); ++j) {
+//                int ts_index2 = indices_subset[j];
+//                assert(fts.is_active(ts_index2));
+//                merge_candidates.push_back(get_candidate(ts_index1, ts_index2));
+//            }
+//        }
+//    }
+
+    vector<pair<int, int>> merge_candidates =
+        compute_merge_candidates(fts, indices_subset);
 
     for (size_t i = 0; i < merge_scoring_functions.size(); ++i) {
         const shared_ptr<MergeScoringFunction> &scoring_function =
@@ -122,7 +145,8 @@ pair<int, int> MergeSelectorFiltering::select_merge(
         utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
     }
 
-    return make_pair(merge_candidates.front()->index1, merge_candidates.front()->index2);
+//    return make_pair(merge_candidates.front()->index1, merge_candidates.front()->index2);
+    return merge_candidates.front();
 }
 
 void MergeSelectorFiltering::initialize(const TaskProxy &task_proxy) {
@@ -130,12 +154,12 @@ void MergeSelectorFiltering::initialize(const TaskProxy &task_proxy) {
          : merge_scoring_functions) {
         scoring_function->initialize(task_proxy);
     }
-    int num_variables = task_proxy.get_variables().size();
-    int max_factor_index = 2 * num_variables - 1;
-
-    merge_candidates_by_indices.resize(
-        max_factor_index,
-        vector<shared_ptr<MergeCandidate>>(max_factor_index, nullptr));
+//    int num_variables = task_proxy.get_variables().size();
+//    int max_factor_index = 2 * num_variables - 1;
+//
+//    merge_candidates_by_indices.resize(
+//        max_factor_index,
+//        vector<shared_ptr<MergeCandidate>>(max_factor_index, nullptr));
 }
 
 string MergeSelectorFiltering::name() const {

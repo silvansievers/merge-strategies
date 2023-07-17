@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../utils/hash.h"
+
 class TaskProxy;
 
 namespace utils {
@@ -15,19 +17,20 @@ class LogProxy;
 namespace merge_and_shrink {
 class FactoredTransitionSystem;
 
-struct MergeCandidate {
-    int id;
-    int index1;
-    int index2;
-    MergeCandidate(int id, int index1, int index2)
-        : id(id), index1(index1), index2(index2) {
-    }
-};
+//struct MergeCandidate {
+//    int id;
+//    int index1;
+//    int index2;
+//    MergeCandidate(int id, int index1, int index2)
+//        : id(id), index1(index1), index2(index2) {
+//    }
+//};
 
 class MergeScoringFunction {
 protected:
     bool initialized;
-    std::unordered_map<int, double> cached_scores;
+//    std::unordered_map<std::pair<int, int>, double> cached_scores;
+    utils::HashMap<std::pair<int, int>, double> cached_scores;
     virtual std::string name() const = 0;
     virtual void dump_function_specific_options(utils::LogProxy &) const {}
 public:
@@ -38,7 +41,7 @@ public:
         const std::vector<std::pair<int, int>> &merge_candidates) = 0;
     virtual std::vector<double> compute_scores_caching(
         const FactoredTransitionSystem &fts,
-        const std::vector<std::shared_ptr<MergeCandidate>> &merge_candidates);
+        const std::vector<std::pair<int, int>> &merge_candidates);
     virtual bool requires_init_distances() const = 0;
     virtual bool requires_goal_distances() const = 0;
 

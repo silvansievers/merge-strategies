@@ -97,18 +97,17 @@ vector<double> MergeScoringFunctionDFP::compute_scores(
 
 vector<double> MergeScoringFunctionDFP::compute_scores_caching(
     const FactoredTransitionSystem &fts,
-    const vector<shared_ptr<MergeCandidate>> &merge_candidates) {
+    const vector<pair<int, int>> &merge_candidates) {
     int num_ts = fts.get_size();
     vector<vector<int>> transition_system_label_ranks(num_ts);
     vector<double> scores;
     scores.reserve(merge_candidates.size());
 
     // Go over all pairs of transition systems and compute their weight.
-    for (const auto &merge_candidate : merge_candidates) {
-        int id = merge_candidate->id;
-        if (!cached_scores.count(id)) {
-            int index1 = merge_candidate->index1;
-            int index2 = merge_candidate->index2;
+    for (pair<int, int> merge_candidate : merge_candidates) {
+        if (!cached_scores.count(merge_candidate)) {
+            int index1 = merge_candidate.first;
+            int index2 = merge_candidate.second;
             vector<int> &label_ranks1 = transition_system_label_ranks[index1];
             if (label_ranks1.empty()) {
                 label_ranks1 = compute_label_ranks(fts, index1);
@@ -128,9 +127,9 @@ vector<double> MergeScoringFunctionDFP::compute_scores_caching(
                     pair_weight = min(pair_weight, max_label_rank);
                 }
             }
-            cached_scores[id] = pair_weight;
+            cached_scores[merge_candidate] = pair_weight;
         }
-        scores.push_back(cached_scores[id]);
+        scores.push_back(cached_scores[merge_candidate]);
     }
     return scores;
 }

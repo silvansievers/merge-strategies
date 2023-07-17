@@ -15,7 +15,7 @@ MergeScoringFunction::MergeScoringFunction()
 
 vector<double> MergeScoringFunction::compute_scores_caching(
     const FactoredTransitionSystem &,
-    const vector<shared_ptr<MergeCandidate>> &) {
+    const vector<pair<int, int>> &) {
     cerr << "filter_candidate not implemented by this scoring function" << endl;
     utils::exit_with(utils::ExitCode::SEARCH_CRITICAL_ERROR);
 }
